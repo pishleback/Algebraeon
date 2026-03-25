@@ -126,9 +126,9 @@ pub struct ModuloCanonicalStructure<const N: usize> {}
 impl<const N: usize> Signature for ModuloCanonicalStructure<N> {}
 
 impl<const N: usize> SetSignature for ModuloCanonicalStructure<N> {
-    type Set = Modulo<N>;
+    type Elem = Modulo<N>;
 
-    fn validate_element(&self, _x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, _x: &Self::Elem) -> Result<(), String> {
         Ok(())
     }
 }
@@ -142,13 +142,13 @@ impl<const N: usize> MetaType for Modulo<N> {
 }
 
 impl<const N: usize> EqSignature for ModuloCanonicalStructure<N> {
-    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+    fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
         a == b
     }
 }
 
 impl<const N: usize> ToStringSignature for ModuloCanonicalStructure<N> {
-    fn to_string(&self, elem: &Self::Set) -> String {
+    fn to_string(&self, elem: &Self::Elem) -> String {
         format!("{}", elem)
     }
 }
@@ -156,25 +156,25 @@ impl<const N: usize> ToStringSignature for ModuloCanonicalStructure<N> {
 impl<const N: usize> RinglikeSpecializationSignature for ModuloCanonicalStructure<N> {}
 
 impl<const N: usize> ZeroSignature for ModuloCanonicalStructure<N> {
-    fn zero(&self) -> Self::Set {
+    fn zero(&self) -> Self::Elem {
         Modulo { x: 0 }
     }
 }
 
 impl<const N: usize> AdditionSignature for ModuloCanonicalStructure<N> {
-    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn add(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         Modulo { x: (a.x + b.x) % N }
     }
 }
 
 impl<const N: usize> CancellativeAdditionSignature for ModuloCanonicalStructure<N> {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.sub(a, b))
     }
 }
 
 impl<const N: usize> TryNegateSignature for ModuloCanonicalStructure<N> {
-    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
     }
 }
@@ -182,7 +182,7 @@ impl<const N: usize> TryNegateSignature for ModuloCanonicalStructure<N> {
 impl<const N: usize> AdditiveMonoidSignature for ModuloCanonicalStructure<N> {}
 
 impl<const N: usize> AdditiveGroupSignature for ModuloCanonicalStructure<N> {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
+    fn neg(&self, a: &Self::Elem) -> Self::Elem {
         if a.x == 0 {
             Modulo { x: 0 }
         } else {
@@ -192,7 +192,7 @@ impl<const N: usize> AdditiveGroupSignature for ModuloCanonicalStructure<N> {
 }
 
 impl<const N: usize> OneSignature for ModuloCanonicalStructure<N> {
-    fn one(&self) -> Self::Set {
+    fn one(&self) -> Self::Elem {
         if N == 1 {
             Modulo { x: 0 }
         } else {
@@ -202,7 +202,7 @@ impl<const N: usize> OneSignature for ModuloCanonicalStructure<N> {
 }
 
 impl<const N: usize> MultiplicationSignature for ModuloCanonicalStructure<N> {
-    fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn mul(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         Modulo { x: (a.x * b.x) % N }
     }
 }
@@ -228,7 +228,7 @@ impl<const N: usize> CharacteristicSignature for ModuloCanonicalStructure<N> {
 }
 
 impl<const N: usize> TryReciprocalSignature for ModuloCanonicalStructure<N> {
-    fn try_reciprocal(&self, x: &Self::Set) -> Option<Self::Set> {
+    fn try_reciprocal(&self, x: &Self::Elem) -> Option<Self::Elem> {
         if x == &self.zero() {
             None
         } else {
@@ -244,7 +244,7 @@ impl<const N: usize> TryReciprocalSignature for ModuloCanonicalStructure<N> {
 }
 
 impl<const N: usize> CountableSetSignature for ModuloCanonicalStructure<N> {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
         (0..N).map(Modulo::new)
     }
 }
@@ -258,7 +258,7 @@ impl<const N: usize> FiniteSetSignature for ModuloCanonicalStructure<N> {
 macro_rules! impl_field {
     ($N: literal) => {
         impl CancellativeMultiplicationSignature for ModuloCanonicalStructure<$N> {
-            fn try_divide(&self, top: &Self::Set, bot: &Self::Set) -> Option<Self::Set> {
+            fn try_divide(&self, top: &Self::Elem, bot: &Self::Elem) -> Option<Self::Elem> {
                 Some(self.mul(top, &self.try_reciprocal(bot)?))
             }
         }
@@ -305,7 +305,7 @@ impl<
         BE,
     >
 {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
         self.list_all_elements().into_iter()
     }
 }
@@ -319,7 +319,7 @@ impl<
         BE,
     >
 {
-    fn list_all_elements(&self) -> Vec<Self::Set> {
+    fn list_all_elements(&self) -> Vec<Self::Elem> {
         let mut units = vec![];
         let mut u = Integer::from(1);
         while u < Abs::abs(self.monoid().modulus().as_ref()) {
@@ -341,7 +341,7 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>> FiniteFieldSignature
 impl<B: BorrowedStructure<IntegerCanonicalStructure>, const IS_FIELD: bool> CountableSetSignature
     for EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, B, IS_FIELD>
 {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
         (0usize..)
             .map(Integer::from)
             .take_while(|n| n < self.modulus().as_ref())

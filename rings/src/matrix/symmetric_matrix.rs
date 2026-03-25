@@ -165,9 +165,9 @@ impl<RS: SetSignature, RSB: BorrowedStructure<RS>> Signature for SymmetricMatrix
 impl<RS: SetSignature, RSB: BorrowedStructure<RS>> SetSignature
     for SymmetricMatrixStructure<RS, RSB>
 {
-    type Set = SymmetricMatrix<RS::Set>;
+    type Elem = SymmetricMatrix<RS::Elem>;
 
-    fn validate_element(&self, _x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, _x: &Self::Elem) -> Result<(), String> {
         Ok(())
     }
 }
@@ -197,7 +197,7 @@ pub trait ToSymmetrixMatricesSignature: SetSignature {
 impl<RS: SetSignature> ToSymmetrixMatricesSignature for RS {}
 
 impl<RS: EqSignature, RSB: BorrowedStructure<RS>> SymmetricMatrixStructure<RS, RSB> {
-    pub fn equal(&self, a: &SymmetricMatrix<RS::Set>, b: &SymmetricMatrix<RS::Set>) -> bool {
+    pub fn equal(&self, a: &SymmetricMatrix<RS::Elem>, b: &SymmetricMatrix<RS::Elem>) -> bool {
         let n = a.n();
         if n != b.n() {
             false

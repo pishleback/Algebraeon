@@ -211,8 +211,8 @@ impl<
 {
     pub(crate) fn mul_mut_impl(
         &self,
-        a: &mut Factored<Object::Set, Exponent::Set>,
-        b: &Factored<Object::Set, Exponent::Set>,
+        a: &mut Factored<Object::Elem, Exponent::Elem>,
+        b: &Factored<Object::Elem, Exponent::Elem>,
     ) {
         match b {
             Factored::Zero => {
@@ -243,8 +243,8 @@ impl<
 
     pub(crate) fn mul_gcd_impl(
         &self,
-        a: &mut Factored<Object::Set, Exponent::Set>,
-        b: &Factored<Object::Set, Exponent::Set>,
+        a: &mut Factored<Object::Elem, Exponent::Elem>,
+        b: &Factored<Object::Elem, Exponent::Elem>,
     ) {
         match b {
             Factored::Zero => {}
@@ -275,8 +275,8 @@ impl<
 
     pub(crate) fn mul_lcm_impl(
         &self,
-        a: &mut NonZeroFactored<Object::Set, Exponent::Set>,
-        b: &NonZeroFactored<Object::Set, Exponent::Set>,
+        a: &mut NonZeroFactored<Object::Elem, Exponent::Elem>,
+        b: &NonZeroFactored<Object::Elem, Exponent::Elem>,
     ) {
         a.unit = self.objects().units().compose(&a.unit, &b.unit);
         for (b_p, b_k) in &b.powers {
@@ -297,8 +297,8 @@ impl<
 
     pub(crate) fn try_divide_mut_impl(
         &self,
-        a: &mut Option<Factored<Object::Set, Exponent::Set>>,
-        b: &Factored<Object::Set, Exponent::Set>,
+        a: &mut Option<Factored<Object::Elem, Exponent::Elem>>,
+        b: &Factored<Object::Elem, Exponent::Elem>,
     ) {
         match b {
             Factored::Zero => {
@@ -342,7 +342,7 @@ impl<
         }
     }
 
-    pub(crate) fn is_irreducible_impl(&self, a: &Factored<Object::Set, Exponent::Set>) -> bool {
+    pub(crate) fn is_irreducible_impl(&self, a: &Factored<Object::Elem, Exponent::Elem>) -> bool {
         match a {
             Factored::Zero => {}
             Factored::NonZero(a) => {
@@ -374,9 +374,9 @@ impl<
     ExponentB: BorrowedStructure<Exponent>,
 > SetSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
 {
-    type Set = Factored<Object::Set, Exponent::Set>;
+    type Elem = Factored<Object::Elem, Exponent::Elem>;
 
-    fn validate_element(&self, x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
         match x {
             Factored::Zero => Ok(()),
             Factored::NonZero(x) => {
@@ -417,7 +417,7 @@ impl<
     ExponentB: BorrowedStructure<Exponent>,
 > EqSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
 {
-    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+    fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
         #[cfg(debug_assertions)]
         {
             self.validate_element(a).unwrap();
@@ -443,7 +443,7 @@ impl<
     ExponentB: BorrowedStructure<Exponent>,
 > ZeroSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
 {
-    fn zero(&self) -> Self::Set {
+    fn zero(&self) -> Self::Elem {
         Factored::Zero
     }
 }
@@ -455,7 +455,7 @@ impl<
     ExponentB: BorrowedStructure<Exponent>,
 > OneSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
 {
-    fn one(&self) -> Self::Set {
+    fn one(&self) -> Self::Elem {
         Factored::NonZero(NonZeroFactored {
             unit: self.objects().one(),
             powers: vec![],
@@ -470,7 +470,7 @@ impl<
     ExponentB: BorrowedStructure<Exponent>,
 > MultiplicationSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
 {
-    fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn mul(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         #[cfg(debug_assertions)]
         {
             self.validate_element(a).unwrap();
@@ -507,7 +507,7 @@ impl<
     ExponentB: BorrowedStructure<Exponent>,
 > TryReciprocalSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
 {
-    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_reciprocal(&self, a: &Self::Elem) -> Option<Self::Elem> {
         #[cfg(debug_assertions)]
         self.validate_element(a).unwrap();
         match a {
@@ -531,7 +531,7 @@ impl<
     ExponentB: BorrowedStructure<Exponent>,
 > CancellativeMultiplicationSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
 {
-    fn try_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_divide(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         let mut s = Some(a.clone());
         self.try_divide_mut_impl(&mut s, b);
         s
@@ -547,27 +547,27 @@ impl<
 {
     pub fn new_irreducible_unchecked(
         &self,
-        p: Object::Set,
-    ) -> Factored<Object::Set, Exponent::Set> {
+        p: Object::Elem,
+    ) -> Factored<Object::Elem, Exponent::Elem> {
         self.new_unit_and_powers_unchecked(self.objects().one(), vec![(p, self.exponents().one())])
     }
 
-    pub fn new_unit_unchecked(&self, unit: Object::Set) -> Factored<Object::Set, Exponent::Set> {
+    pub fn new_unit_unchecked(&self, unit: Object::Elem) -> Factored<Object::Elem, Exponent::Elem> {
         self.new_unit_and_powers_unchecked(unit, vec![])
     }
 
     pub fn new_powers_unchecked(
         &self,
-        powers: Vec<(Object::Set, Exponent::Set)>,
-    ) -> Factored<Object::Set, Exponent::Set> {
+        powers: Vec<(Object::Elem, Exponent::Elem)>,
+    ) -> Factored<Object::Elem, Exponent::Elem> {
         self.new_unit_and_powers_unchecked(self.objects().one(), powers)
     }
 
     pub fn new_unit_and_powers_unchecked(
         &self,
-        mut unit: Object::Set,
-        powers: Vec<(Object::Set, Exponent::Set)>,
-    ) -> Factored<Object::Set, Exponent::Set> {
+        mut unit: Object::Elem,
+        powers: Vec<(Object::Elem, Exponent::Elem)>,
+    ) -> Factored<Object::Elem, Exponent::Elem> {
         let mut fav_assoc_powers = vec![];
         for (p, k) in powers {
             let (u, p) = self.objects().factor_fav_assoc(&p);
@@ -586,9 +586,9 @@ impl<
 
     pub fn gcd(
         &self,
-        a: &Factored<Object::Set, Exponent::Set>,
-        b: &Factored<Object::Set, Exponent::Set>,
-    ) -> Factored<Object::Set, Exponent::Set> {
+        a: &Factored<Object::Elem, Exponent::Elem>,
+        b: &Factored<Object::Elem, Exponent::Elem>,
+    ) -> Factored<Object::Elem, Exponent::Elem> {
         #[cfg(debug_assertions)]
         {
             self.validate_element(a).unwrap();
@@ -601,9 +601,9 @@ impl<
 
     pub fn lcm(
         &self,
-        a: &Factored<Object::Set, Exponent::Set>,
-        b: &Factored<Object::Set, Exponent::Set>,
-    ) -> Option<Factored<Object::Set, Exponent::Set>> {
+        a: &Factored<Object::Elem, Exponent::Elem>,
+        b: &Factored<Object::Elem, Exponent::Elem>,
+    ) -> Option<Factored<Object::Elem, Exponent::Elem>> {
         #[cfg(debug_assertions)]
         {
             self.validate_element(a).unwrap();
@@ -621,13 +621,13 @@ impl<
         }
     }
 
-    pub fn is_irreducible(&self, a: &Factored<Object::Set, Exponent::Set>) -> bool {
+    pub fn is_irreducible(&self, a: &Factored<Object::Elem, Exponent::Elem>) -> bool {
         #[cfg(debug_assertions)]
         self.validate_element(a).unwrap();
         self.is_irreducible_impl(a)
     }
 
-    pub fn expand(&self, a: &Factored<Object::Set, Exponent::Set>) -> Object::Set {
+    pub fn expand(&self, a: &Factored<Object::Elem, Exponent::Elem>) -> Object::Elem {
         #[cfg(debug_assertions)]
         self.validate_element(a).unwrap();
         match a {
@@ -643,7 +643,7 @@ impl<
         }
     }
 
-    pub fn expand_squarefree(&self, a: &Factored<Object::Set, Exponent::Set>) -> Object::Set {
+    pub fn expand_squarefree(&self, a: &Factored<Object::Elem, Exponent::Elem>) -> Object::Elem {
         #[cfg(debug_assertions)]
         self.validate_element(a).unwrap();
         match a {
@@ -660,9 +660,9 @@ impl<
 
     pub fn pow(
         &self,
-        f: &Factored<Object::Set, Exponent::Set>,
-        n: &Exponent::Set,
-    ) -> Factored<Object::Set, Exponent::Set> {
+        f: &Factored<Object::Elem, Exponent::Elem>,
+        n: &Exponent::Elem,
+    ) -> Factored<Object::Elem, Exponent::Elem> {
         match f {
             Factored::Zero => Factored::Zero,
             Factored::NonZero(f) => Factored::NonZero(NonZeroFactored {
@@ -686,8 +686,8 @@ impl<
     /// Return an iterator over all divisors of a factorization
     pub fn divisors<'a>(
         &'a self,
-        a: &'a Factored<Object::Set, Natural>,
-    ) -> Option<Box<dyn Iterator<Item = Object::Set> + 'a>> {
+        a: &'a Factored<Object::Elem, Natural>,
+    ) -> Option<Box<dyn Iterator<Item = Object::Elem> + 'a>> {
         match a {
             Factored::Zero => None,
             Factored::NonZero(a) => {
@@ -725,7 +725,7 @@ impl<
     }
 
     /// The number of divisors of a factorization
-    pub fn count_divideisors(&self, a: &Factored<Object::Set, Natural>) -> Option<Natural> {
+    pub fn count_divideisors(&self, a: &Factored<Object::Elem, Natural>) -> Option<Natural> {
         #[cfg(debug_assertions)]
         self.validate_element(a).unwrap();
         match a {
@@ -743,7 +743,7 @@ impl<
 
     /// Determine whether it is the square of some element
     #[allow(unused)]
-    fn is_square(&self, a: &Factored<Object::Set, Natural>) -> bool {
+    fn is_square(&self, a: &Factored<Object::Elem, Natural>) -> bool {
         match a {
             Factored::Zero => true,
             Factored::NonZero(a) => a
@@ -754,7 +754,7 @@ impl<
     }
 
     /// Return true if non-zero and factors as a product of distinct primes
-    fn is_squarefree(&self, a: &Factored<Object::Set, Natural>) -> bool {
+    fn is_squarefree(&self, a: &Factored<Object::Elem, Natural>) -> bool {
         match a {
             Factored::Zero => false,
             Factored::NonZero(a) => a
@@ -777,8 +777,8 @@ impl<
     #[allow(unused)]
     fn sqrt_if_square(
         &self,
-        a: &Factored<Object::Set, Natural>,
-    ) -> Option<Factored<Object::Set, Natural>> {
+        a: &Factored<Object::Elem, Natural>,
+    ) -> Option<Factored<Object::Elem, Natural>> {
         #[cfg(debug_assertions)]
         self.validate_element(a).unwrap();
         match a {
@@ -825,13 +825,13 @@ pub trait UniqueFactorizationMonoidSignature:
 
     fn factorization_pow(
         &self,
-        a: &Self::Set,
-        k: &<Self::FactoredExponent as SetSignature>::Set,
-    ) -> Self::Set;
+        a: &Self::Elem,
+        k: &<Self::FactoredExponent as SetSignature>::Elem,
+    ) -> Self::Elem;
 
     /// This should determine whether a is irreducible _without_ factoring it.
     /// Factoring a is not allowed because this function is used by factorizations to validate their state.
-    fn try_is_irreducible(&self, a: &Self::Set) -> Option<bool>;
+    fn try_is_irreducible(&self, a: &Self::Elem) -> Option<bool>;
 }
 pub trait MetaUniqueFactorizationMonoidSignature: MetaType
 where
@@ -847,20 +847,20 @@ impl<R: MetaType> MetaUniqueFactorizationMonoidSignature for R where
 }
 
 pub trait FactoringMonoidSignature: UniqueFactorizationMonoidSignature {
-    fn is_irreducible(&self, a: &Self::Set) -> bool {
+    fn is_irreducible(&self, a: &Self::Elem) -> bool {
         self.factorizations()
             .is_irreducible_impl(&self.factor_unchecked(a))
     }
 
     fn factor_unchecked(
         &self,
-        a: &Self::Set,
-    ) -> Factored<Self::Set, <Self::FactoredExponent as SetSignature>::Set>;
+        a: &Self::Elem,
+    ) -> Factored<Self::Elem, <Self::FactoredExponent as SetSignature>::Elem>;
 
     fn factor(
         &self,
-        a: &Self::Set,
-    ) -> Factored<Self::Set, <Self::FactoredExponent as SetSignature>::Set> {
+        a: &Self::Elem,
+    ) -> Factored<Self::Elem, <Self::FactoredExponent as SetSignature>::Elem> {
         let f = self.factor_unchecked(a);
         #[cfg(debug_assertions)]
         {
@@ -878,11 +878,11 @@ where
         Self::structure().is_irreducible(self)
     }
 
-    fn factor_unchecked(&self) -> Factored<Self, <<Self::Signature as UniqueFactorizationMonoidSignature>::FactoredExponent as SetSignature>::Set>{
+    fn factor_unchecked(&self) -> Factored<Self, <<Self::Signature as UniqueFactorizationMonoidSignature>::FactoredExponent as SetSignature>::Elem>{
         Self::structure().factor_unchecked(self)
     }
 
-    fn factor(&self) -> Factored<Self, <<Self::Signature as UniqueFactorizationMonoidSignature>::FactoredExponent as SetSignature>::Set>{
+    fn factor(&self) -> Factored<Self, <<Self::Signature as UniqueFactorizationMonoidSignature>::FactoredExponent as SetSignature>::Elem>{
         Self::structure().factor(self)
     }
 }
@@ -891,12 +891,12 @@ impl<R: MetaType> MetaFactoringMonoid for R where Self::Signature: FactoringMono
 pub trait FactoringMonoidNaturalExponentSignature:
     FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
 {
-    fn gcd_by_factor(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn gcd_by_factor(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.factorizations()
             .expand(&self.factorizations().gcd(&self.factor(a), &self.factor(b)))
     }
 
-    fn lcm_by_factor(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn lcm_by_factor(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(
             self.factorizations().expand(
                 &self
@@ -906,7 +906,7 @@ pub trait FactoringMonoidNaturalExponentSignature:
         )
     }
 
-    fn is_squarefree(&self, a: &Self::Set) -> bool {
+    fn is_squarefree(&self, a: &Self::Elem) -> bool {
         self.factorizations().is_squarefree(&self.factor(a))
     }
 }
@@ -946,11 +946,11 @@ impl<FS: FieldSignature> UniqueFactorizationMonoidSignature for FS {
         Natural::structure()
     }
 
-    fn try_is_irreducible(&self, _a: &Self::Set) -> Option<bool> {
+    fn try_is_irreducible(&self, _a: &Self::Elem) -> Option<bool> {
         Some(false)
     }
 
-    fn factorization_pow(&self, a: &Self::Set, k: &Natural) -> Self::Set {
+    fn factorization_pow(&self, a: &Self::Elem, k: &Natural) -> Self::Elem {
         self.nat_pow(a, k)
     }
 }
@@ -958,8 +958,8 @@ impl<FS: FieldSignature> UniqueFactorizationMonoidSignature for FS {
 impl<FS: FieldSignature> FactoringMonoidSignature for FS {
     fn factor_unchecked(
         &self,
-        a: &Self::Set,
-    ) -> Factored<Self::Set, <Self::FactoredExponent as SetSignature>::Set> {
+        a: &Self::Elem,
+    ) -> Factored<Self::Elem, <Self::FactoredExponent as SetSignature>::Elem> {
         if self.is_zero(a) {
             Factored::Zero
         } else {
@@ -982,9 +982,9 @@ pub fn factorize_by_find_factor<
     RS: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent> + ZeroEqSignature,
 >(
     ring: &RS,
-    elem: RS::Set,
-    partial_factor: &impl Fn(RS::Set) -> FindFactorResult<RS::Set>,
-) -> Factored<RS::Set, Exponent::Set> {
+    elem: RS::Elem,
+    partial_factor: &impl Fn(RS::Elem) -> FindFactorResult<RS::Elem>,
+) -> Factored<RS::Elem, Exponent::Elem> {
     debug_assert!(!ring.is_zero(&elem));
     if ring.is_unit(&elem) {
         ring.factorizations().new_unit_unchecked(elem)

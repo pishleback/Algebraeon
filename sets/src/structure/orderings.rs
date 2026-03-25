@@ -8,7 +8,7 @@ pub enum MergedSource {
     Second,
 }
 
-struct VecMerger<'s, X, O: OrdSignature, K: Fn(&X) -> &O::Set> {
+struct VecMerger<'s, X, O: OrdSignature, K: Fn(&X) -> &O::Elem> {
     ordering: &'s O,
     i: usize,
     a: Vec<Option<X>>,
@@ -17,7 +17,7 @@ struct VecMerger<'s, X, O: OrdSignature, K: Fn(&X) -> &O::Set> {
     key: K,
 }
 
-impl<'s, X, O: OrdSignature + 's, K: Fn(&X) -> &O::Set> VecMerger<'s, X, O, K> {
+impl<'s, X, O: OrdSignature + 's, K: Fn(&X) -> &O::Elem> VecMerger<'s, X, O, K> {
     fn new(ordering: &'s O, a: Vec<X>, b: Vec<X>, key: K) -> Self {
         Self {
             ordering,
@@ -30,7 +30,7 @@ impl<'s, X, O: OrdSignature + 's, K: Fn(&X) -> &O::Set> VecMerger<'s, X, O, K> {
     }
 }
 
-impl<'s, X, O: OrdSignature + 's, K: Fn(&X) -> &O::Set> Iterator for VecMerger<'s, X, O, K> {
+impl<'s, X, O: OrdSignature + 's, K: Fn(&X) -> &O::Elem> Iterator for VecMerger<'s, X, O, K> {
     type Item = (MergedSource, X);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -71,14 +71,14 @@ use super::MetaType;
 
 #[signature_meta_trait]
 pub trait PartialOrdSignature: EqSignature {
-    fn partial_cmp(&self, a: &Self::Set, b: &Self::Set) -> Option<Ordering>;
+    fn partial_cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Ordering>;
 }
 
 #[signature_meta_trait]
 pub trait OrdSignature: PartialOrdSignature {
-    fn cmp(&self, a: &Self::Set, b: &Self::Set) -> Ordering;
+    fn cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Ordering;
 
-    fn max(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn max(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         let c = self.cmp(a, b);
         match c {
             Ordering::Less | Ordering::Equal => b.clone(),
@@ -86,7 +86,7 @@ pub trait OrdSignature: PartialOrdSignature {
         }
     }
 
-    fn min(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn min(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         let c = self.cmp(a, b);
         match c {
             Ordering::Less | Ordering::Equal => a.clone(),
@@ -94,7 +94,7 @@ pub trait OrdSignature: PartialOrdSignature {
         }
     }
 
-    fn is_sorted(&self, a: &[impl Borrow<Self::Set>]) -> bool {
+    fn is_sorted(&self, a: &[impl Borrow<Self::Elem>]) -> bool {
         for i in 1..a.len() {
             if self.cmp(a[i - 1].borrow(), a[i].borrow()) == Ordering::Greater {
                 return false;
@@ -103,11 +103,11 @@ pub trait OrdSignature: PartialOrdSignature {
         true
     }
 
-    fn is_sorted_by_key<X>(&self, a: &[X], key: impl Fn(&X) -> &Self::Set) -> bool {
+    fn is_sorted_by_key<X>(&self, a: &[X], key: impl Fn(&X) -> &Self::Elem) -> bool {
         self.is_sorted(&a.iter().map(key).collect::<Vec<_>>())
     }
 
-    fn is_sorted_and_unique(&self, a: &[impl Borrow<Self::Set>]) -> bool {
+    fn is_sorted_and_unique(&self, a: &[impl Borrow<Self::Elem>]) -> bool {
         for i in 1..a.len() {
             if self.cmp(a[i - 1].borrow(), a[i].borrow()) != Ordering::Less {
                 return false;
@@ -116,11 +116,11 @@ pub trait OrdSignature: PartialOrdSignature {
         true
     }
 
-    fn is_sorted_and_unique_by_key<X>(&self, a: &[X], key: impl Fn(&X) -> &Self::Set) -> bool {
+    fn is_sorted_and_unique_by_key<X>(&self, a: &[X], key: impl Fn(&X) -> &Self::Elem) -> bool {
         self.is_sorted_and_unique(&a.iter().map(key).collect::<Vec<_>>())
     }
 
-    fn binary_search(&self, v: &[impl Borrow<Self::Set>], target: &Self::Set) -> bool {
+    fn binary_search(&self, v: &[impl Borrow<Self::Elem>], target: &Self::Elem) -> bool {
         self.binary_search_by_key(v, target, |x| x.borrow())
             .is_some()
     }
@@ -128,8 +128,8 @@ pub trait OrdSignature: PartialOrdSignature {
     fn binary_search_by_key<'x, X>(
         &self,
         v: &'x [X],
-        target: &Self::Set,
-        key: impl Fn(&X) -> &Self::Set,
+        target: &Self::Elem,
+        key: impl Fn(&X) -> &Self::Elem,
     ) -> Option<&'x X> {
         debug_assert!(self.is_sorted_by_key(v, &key));
         if v.is_empty() {
@@ -164,7 +164,7 @@ pub trait OrdSignature: PartialOrdSignature {
     }
 
     #[skip_meta]
-    fn merge_sorted<'s, S: Borrow<Self::Set> + 's>(
+    fn merge_sorted<'s, S: Borrow<Self::Elem> + 's>(
         &'s self,
         a: Vec<S>,
         b: Vec<S>,
@@ -177,19 +177,19 @@ pub trait OrdSignature: PartialOrdSignature {
         &self,
         a: Vec<X>,
         b: Vec<X>,
-        key: impl Fn(&X) -> &Self::Set,
+        key: impl Fn(&X) -> &Self::Elem,
     ) -> impl Iterator<Item = (MergedSource, X)> {
         debug_assert!(self.is_sorted_by_key(&a.iter().collect::<Vec<_>>(), |x| key(x)));
         debug_assert!(self.is_sorted_by_key(&b.iter().collect::<Vec<_>>(), |x| key(x)));
         VecMerger::new(self, a, b, key)
     }
 
-    fn sort<S: Borrow<Self::Set>>(&self, a: Vec<S>) -> Vec<S> {
+    fn sort<S: Borrow<Self::Elem>>(&self, a: Vec<S>) -> Vec<S> {
         self.sort_by_key(a, &|x| x.borrow())
     }
 
     #[skip_meta]
-    fn sort_by_key<X>(&self, mut a: Vec<X>, key: &impl Fn(&X) -> &Self::Set) -> Vec<X> {
+    fn sort_by_key<X>(&self, mut a: Vec<X>, key: &impl Fn(&X) -> &Self::Elem) -> Vec<X> {
         match a.len() {
             0 | 1 => a,
             2 => match self.cmp(key(&a[0]).borrow(), key(&a[1]).borrow()) {
@@ -216,9 +216,9 @@ pub trait OrdSignature: PartialOrdSignature {
         }
     }
 
-    fn sort_by_cached_by<X: 'static>(&self, a: Vec<X>, key: impl Fn(&X) -> Self::Set) -> Vec<X>
+    fn sort_by_cached_by<X: 'static>(&self, a: Vec<X>, key: impl Fn(&X) -> Self::Elem) -> Vec<X>
     where
-        Self::Set: 'static,
+        Self::Elem: 'static,
     {
         let mut a = a.into_iter().map(|x| (x, None)).collect::<Vec<_>>();
         for i in 0..a.len() {
@@ -244,27 +244,27 @@ mod tests {
     impl Signature for UsizeStructure {}
 
     impl SetSignature for UsizeStructure {
-        type Set = usize;
+        type Elem = usize;
 
-        fn validate_element(&self, _x: &Self::Set) -> Result<(), String> {
+        fn validate_element(&self, _x: &Self::Elem) -> Result<(), String> {
             Ok(())
         }
     }
 
     impl EqSignature for UsizeStructure {
-        fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+        fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
             a == b
         }
     }
 
     impl PartialOrdSignature for UsizeStructure {
-        fn partial_cmp(&self, a: &Self::Set, b: &Self::Set) -> Option<Ordering> {
+        fn partial_cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Ordering> {
             Some(self.cmp(a, b))
         }
     }
 
     impl OrdSignature for UsizeStructure {
-        fn cmp(&self, a: &Self::Set, b: &Self::Set) -> Ordering {
+        fn cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Ordering {
             usize::cmp(a, b)
         }
     }

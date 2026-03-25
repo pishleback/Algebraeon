@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+ - Added faster Hensel lifting using linear algebra but can only increase linearly multiplying the modulus by an irreducible element each step. Still faster than before and now used in Berlekamp Zassenhaus algorithm.
+ - Added macro for inline loops over const small primes.
+ - Updated macro for generating metatypes to handle generics in trait definitions.
+ - Added structure types for quotient sets.
+ - Renamed `SetSignature::Set` -> `SetSignature::Elem`.
+
 ## [0.0.17] - 2026-03-06
 
  - Added an LLL implementation over any field with the appropriate structure inherited from the real numbers.

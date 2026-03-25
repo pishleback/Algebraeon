@@ -8,8 +8,8 @@ use std::collections::{HashMap, HashSet};
 /// A set with a binary operation of composition.
 #[signature_meta_trait]
 pub trait CompositionSignature: SetSignature {
-    fn compose(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
-    fn compose_mut(&self, a: &mut Self::Set, b: &Self::Set) {
+    fn compose(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem;
+    fn compose_mut(&self, a: &mut Self::Elem, b: &Self::Elem) {
         *a = self.compose(a, b);
     }
 }
@@ -18,7 +18,7 @@ pub trait CompositionSignature: SetSignature {
 #[signature_meta_trait]
 pub trait AssociativeCompositionSignature: CompositionSignature {
     /// Returns `None` if the list is empty.
-    fn compose_nonempty_list(&self, mut elems: Vec<impl Borrow<Self::Set>>) -> Option<Self::Set> {
+    fn compose_nonempty_list(&self, mut elems: Vec<impl Borrow<Self::Elem>>) -> Option<Self::Elem> {
         let mut total = elems.pop()?.borrow().clone();
         for elem in elems {
             total = self.compose(&total, elem.borrow());
@@ -35,14 +35,14 @@ pub trait CommutativeCompositionSignature: CompositionSignature {}
 #[signature_meta_trait]
 pub trait LeftCancellativeCompositionSignature: CompositionSignature {
     /// Try to find `x` such that `a` = `compose(b, x)`.
-    fn try_left_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set>;
+    fn try_left_difference(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem>;
 }
 
 /// When `compose(x, a)` = `compose(y, a)` implies `x` = `y` for all `a`, `x`, `y`.
 #[signature_meta_trait]
 pub trait RightCancellativeCompositionSignature: CompositionSignature {
     /// Try to find `x` such that `a` = `compose(x, b)`.
-    fn try_right_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set>;
+    fn try_right_difference(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem>;
 }
 
 #[signature_meta_trait]
@@ -51,15 +51,15 @@ pub trait CancellativeCompositionSignature:
     + LeftCancellativeCompositionSignature
     + RightCancellativeCompositionSignature
 {
-    fn try_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set>;
+    fn try_difference(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem>;
 }
 impl<S: CancellativeCompositionSignature> LeftCancellativeCompositionSignature for S {
-    fn try_left_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_left_difference(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         self.try_difference(a, b)
     }
 }
 impl<S: CancellativeCompositionSignature> RightCancellativeCompositionSignature for S {
-    fn try_right_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_right_difference(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         self.try_difference(a, b)
     }
 }
@@ -68,21 +68,21 @@ impl<S: CancellativeCompositionSignature> RightCancellativeCompositionSignature 
 #[signature_meta_trait]
 pub trait IdentitySignature: SetSignature {
     /// Returns the identity element `e`.
-    fn identity(&self) -> Self::Set;
+    fn identity(&self) -> Self::Elem;
 }
 
 /// When the solution to `compose(x, a)` = `e` for `x` given `a` is unique whenever it exists.
 #[signature_meta_trait]
 pub trait TryLeftInverseSignature: IdentitySignature + CompositionSignature {
     /// Return `x` such that `compose(x, a)` = `e` or `None` if no such `x` exists.
-    fn try_left_inverse(&self, a: &Self::Set) -> Option<Self::Set>;
+    fn try_left_inverse(&self, a: &Self::Elem) -> Option<Self::Elem>;
 }
 
 /// When the solution to `compose(a, x)` = `e` for `x` given `a` is unique whenever it exists.
 #[signature_meta_trait]
 pub trait TryRightInverseSignature: IdentitySignature + CompositionSignature {
     /// Return `x` such that `compose(a, x)` = `e` or `None` if no such `x` exists.
-    fn try_right_inverse(&self, a: &Self::Set) -> Option<Self::Set>;
+    fn try_right_inverse(&self, a: &Self::Elem) -> Option<Self::Elem>;
 }
 
 /// When the solution to `compose(x, a)` = `compose(a, x)` = `e` for `x` given `a` is unique whenever it exists.
@@ -92,17 +92,17 @@ pub trait TryInverseSignature: IdentitySignature + CompositionSignature {
     ///
     /// Note, whenever `try_inverse` returns `Some`, `try_left_inverse` and `try_right_inverse` must also return the same value.
     /// Also, whenever `try_left_inverse` and `try_right_inverse` both return a value, it must be the same value an `try_inverse` must also return that same value.
-    fn try_inverse(&self, a: &Self::Set) -> Option<Self::Set>;
+    fn try_inverse(&self, a: &Self::Elem) -> Option<Self::Elem>;
 }
 
 impl<S: TryInverseSignature + CommutativeCompositionSignature> TryLeftInverseSignature for S {
-    fn try_left_inverse(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_left_inverse(&self, a: &Self::Elem) -> Option<Self::Elem> {
         self.try_inverse(a)
     }
 }
 
 impl<S: TryInverseSignature + CommutativeCompositionSignature> TryRightInverseSignature for S {
-    fn try_right_inverse(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_right_inverse(&self, a: &Self::Elem) -> Option<Self::Elem> {
         self.try_inverse(a)
     }
 }
@@ -110,7 +110,7 @@ impl<S: TryInverseSignature + CommutativeCompositionSignature> TryRightInverseSi
 /// When `compose(x, e)` = `compose(e, x)` = `x` for all `x`.
 #[signature_meta_trait]
 pub trait MonoidSignature: IdentitySignature + AssociativeCompositionSignature {
-    fn compose_list(&self, elems: Vec<impl Borrow<Self::Set>>) -> Self::Set {
+    fn compose_list(&self, elems: Vec<impl Borrow<Self::Elem>>) -> Self::Elem {
         if elems.is_empty() {
             self.identity()
         } else {
@@ -118,7 +118,7 @@ pub trait MonoidSignature: IdentitySignature + AssociativeCompositionSignature {
         }
     }
 
-    fn nat_pow(&self, a: &Self::Set, n: &Natural) -> Self::Set {
+    fn nat_pow(&self, a: &Self::Elem, n: &Natural) -> Self::Elem {
         if *n == Natural::ZERO {
             self.identity()
         } else if *n == Natural::ONE {
@@ -153,9 +153,9 @@ pub trait GroupSignature:
     + LeftCancellativeCompositionSignature
     + RightCancellativeCompositionSignature
 {
-    fn inverse(&self, a: &Self::Set) -> Self::Set;
+    fn inverse(&self, a: &Self::Elem) -> Self::Elem;
 
-    fn int_pow(&self, a: &Self::Set, n: &Integer) -> Self::Set {
+    fn int_pow(&self, a: &Self::Elem, n: &Integer) -> Self::Elem {
         #[allow(clippy::comparison_chain)]
         if *n == Integer::ZERO {
             self.identity()
@@ -168,18 +168,18 @@ pub trait GroupSignature:
 
     fn generated_finite_subgroup_table(
         &self,
-        generators: Vec<Self::Set>,
+        generators: Vec<Self::Elem>,
     ) -> (
         crate::composition_table::group::FiniteGroupMultiplicationTable,
-        Vec<Self::Set>,
-        HashMap<Self::Set, usize>,
+        Vec<Self::Elem>,
+        HashMap<Self::Elem, usize>,
     )
     where
-        Self::Set: std::hash::Hash + Eq,
+        Self::Elem: std::hash::Hash + Eq,
     {
         let mut n = 0;
-        let mut idx_to_elem: Vec<Self::Set> = vec![];
-        let mut elem_to_idx: HashMap<Self::Set, usize> = HashMap::new();
+        let mut idx_to_elem: Vec<Self::Elem> = vec![];
+        let mut elem_to_idx: HashMap<Self::Elem, usize> = HashMap::new();
         let mut mul: Vec<Vec<Option<usize>>> = vec![];
         let mut to_mul: Vec<(usize, usize)> = vec![];
 
@@ -241,9 +241,9 @@ pub trait GroupSignature:
         (grp, idx_to_elem, elem_to_idx)
     }
 
-    fn generated_finite_subgroup(&self, gens: Vec<Self::Set>) -> FiniteSubgroup<Self::Set>
+    fn generated_finite_subgroup(&self, gens: Vec<Self::Elem>) -> FiniteSubgroup<Self::Elem>
     where
-        Self::Set: std::hash::Hash + Eq,
+        Self::Elem: std::hash::Hash + Eq,
     {
         //generate subgroup by adding all generated elements
         let mut sg = HashSet::new();

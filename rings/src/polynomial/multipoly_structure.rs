@@ -54,7 +54,7 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> Signature
 impl<RS: RingEqSignature + ToStringSignature, RSB: BorrowedStructure<RS>> ToStringSignature
     for MultiPolynomialStructure<RS, RSB>
 {
-    fn to_string(&self, p: &Self::Set) -> String {
+    fn to_string(&self, p: &Self::Elem) -> String {
         if p.terms.is_empty() {
             "0".into()
         } else {
@@ -81,9 +81,9 @@ impl<RS: RingEqSignature + ToStringSignature, RSB: BorrowedStructure<RS>> ToStri
 impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> SetSignature
     for MultiPolynomialStructure<RS, RSB>
 {
-    type Set = MultiPolynomial<RS::Set>;
+    type Elem = MultiPolynomial<RS::Elem>;
 
-    fn validate_element(&self, _x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, _x: &Self::Elem) -> Result<(), String> {
         Ok(())
     }
 }
@@ -91,7 +91,7 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> SetSignature
 impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> EqSignature
     for MultiPolynomialStructure<RS, RSB>
 {
-    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+    fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
         let a = self.reduce(a.clone());
         let b = self.reduce(b.clone());
 
@@ -116,7 +116,7 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> RinglikeSpecializationSign
 impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> ZeroSignature
     for MultiPolynomialStructure<RS, RSB>
 {
-    fn zero(&self) -> Self::Set {
+    fn zero(&self) -> Self::Elem {
         MultiPolynomial { terms: vec![] }
     }
 }
@@ -124,7 +124,7 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> ZeroSignature
 impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> AdditionSignature
     for MultiPolynomialStructure<RS, RSB>
 {
-    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn add(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         let mut a = a.clone();
         let mut existing_monomials: HashMap<Monomial, usize> = HashMap::new(); //the index of each monomial
         for (
@@ -157,7 +157,7 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> AdditionSignature
 impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> CancellativeAdditionSignature
     for MultiPolynomialStructure<RS, RSB>
 {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.sub(a, b))
     }
 }
@@ -165,7 +165,7 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> CancellativeAdditionSignat
 impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> TryNegateSignature
     for MultiPolynomialStructure<RS, RSB>
 {
-    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
     }
 }
@@ -178,7 +178,7 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> AdditiveMonoidSignature
 impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> AdditiveGroupSignature
     for MultiPolynomialStructure<RS, RSB>
 {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
+    fn neg(&self, a: &Self::Elem) -> Self::Elem {
         MultiPolynomial {
             terms: a
                 .terms
@@ -200,7 +200,7 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> AdditiveGroupSignature
 impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> OneSignature
     for MultiPolynomialStructure<RS, RSB>
 {
-    fn one(&self) -> Self::Set {
+    fn one(&self) -> Self::Elem {
         MultiPolynomial {
             terms: vec![Term {
                 coeff: self.coeff_ring().one(),
@@ -213,8 +213,8 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> OneSignature
 impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> MultiplicationSignature
     for MultiPolynomialStructure<RS, RSB>
 {
-    fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
-        let mut terms: HashMap<Monomial, RS::Set> = HashMap::new();
+    fn mul(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+        let mut terms: HashMap<Monomial, RS::Elem> = HashMap::new();
         for Term {
             coeff: a_coeff,
             monomial: a_monomial,
@@ -286,7 +286,7 @@ impl<RS: CharacteristicSignature + RingEqSignature, RSB: BorrowedStructure<RS>>
 impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> TryReciprocalSignature
     for MultiPolynomialStructure<RS, RSB>
 {
-    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_reciprocal(&self, a: &Self::Elem) -> Option<Self::Elem> {
         self.try_divide(&self.one(), a)
     }
 }
@@ -294,7 +294,7 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> TryReciprocalSigna
 impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> CancellativeMultiplicationSignature
     for MultiPolynomialStructure<RS, RSB>
 {
-    fn try_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_divide(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         let mut vars = HashSet::new();
         vars.extend(a.free_vars());
         vars.extend(b.free_vars());
@@ -341,7 +341,7 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> IntegralDomainSign
 impl<RS: FavoriteAssociateSignature + IntegralDomainSignature, RSB: BorrowedStructure<RS>>
     FavoriteAssociateSignature for MultiPolynomialStructure<RS, RSB>
 {
-    fn factor_fav_assoc(&self, mpoly: &Self::Set) -> (Self::Set, Self::Set) {
+    fn factor_fav_assoc(&self, mpoly: &Self::Elem) -> (Self::Elem, Self::Elem) {
         match mpoly.terms.first() {
             None => {
                 debug_assert!(self.is_zero(mpoly));
@@ -362,7 +362,7 @@ impl<RS: FavoriteAssociateSignature + IntegralDomainSignature, RSB: BorrowedStru
 impl<RS: CharZeroRingSignature + EqSignature, RSB: BorrowedStructure<RS>> CharZeroRingSignature
     for MultiPolynomialStructure<RS, RSB>
 {
-    fn try_to_int(&self, x: &Self::Set) -> Option<Integer> {
+    fn try_to_int(&self, x: &Self::Elem) -> Option<Integer> {
         self.coeff_ring().try_to_int(&self.as_constant(x)?)
     }
 }
@@ -374,7 +374,7 @@ impl<
 > CountableSetSignature
     for MultiplicativeMonoidUnitsStructure<MultiPolynomialStructure<RS, RSB>, B>
 {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
         self.list_all_elements().into_iter()
     }
 }
@@ -385,7 +385,7 @@ impl<
     B: BorrowedStructure<MultiPolynomialStructure<RS, RSB>>,
 > FiniteSetSignature for MultiplicativeMonoidUnitsStructure<MultiPolynomialStructure<RS, RSB>, B>
 {
-    fn list_all_elements(&self) -> Vec<Self::Set> {
+    fn list_all_elements(&self) -> Vec<Self::Elem> {
         self.monoid()
             .coeff_ring()
             .all_units()
@@ -401,7 +401,7 @@ impl<
     MPB: BorrowedStructure<MultiPolynomialStructure<RS, RSB>>,
 > GreatestCommonDivisorSignature for PolynomialStructure<MultiPolynomialStructure<RS, RSB>, MPB>
 {
-    fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set {
+    fn gcd(&self, x: &Self::Elem, y: &Self::Elem) -> Self::Elem {
         self.gcd_by_primitive_subresultant(x.clone(), y.clone())
     }
 }
@@ -410,9 +410,9 @@ impl<RS: GreatestCommonDivisorSignature, RSB: BorrowedStructure<RS>> GreatestCom
     for MultiPolynomialStructure<RS, RSB>
 where
     for<'a> PolynomialStructure<MultiPolynomialStructure<RS, RSB>, &'a Self>:
-        SetSignature<Set = Polynomial<MultiPolynomial<RS::Set>>>,
+        SetSignature<Elem = Polynomial<MultiPolynomial<RS::Elem>>>,
 {
-    fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set {
+    fn gcd(&self, x: &Self::Elem, y: &Self::Elem) -> Self::Elem {
         if let Some(free_var) = x.free_vars().into_iter().chain(y.free_vars()).next() {
             let poly_over_self = self.polynomials();
             let x_poly = self.expand(x, &free_var);
@@ -441,11 +441,11 @@ impl<RS: UniqueFactorizationMonoidSignature + IntegralDomainSignature, RSB: Borr
         Natural::structure()
     }
 
-    fn try_is_irreducible(&self, _a: &Self::Set) -> Option<bool> {
+    fn try_is_irreducible(&self, _a: &Self::Elem) -> Option<bool> {
         None
     }
 
-    fn factorization_pow(&self, a: &Self::Set, k: &Natural) -> Self::Set {
+    fn factorization_pow(&self, a: &Self::Elem, k: &Natural) -> Self::Elem {
         self.nat_pow(a, k)
     }
 }
@@ -460,23 +460,23 @@ impl<
     MPB: BorrowedStructure<MultiPolynomialStructure<RS, RSB>>,
 > PolynomialStructure<MultiPolynomialStructure<RS, RSB>, MPB>
 where
-    PolynomialStructure<MultiPolynomialStructure<RS, RSB>, MPB>: SetSignature<Set = Polynomial<MultiPolynomial<RS::Set>>>
+    PolynomialStructure<MultiPolynomialStructure<RS, RSB>, MPB>: SetSignature<Elem = Polynomial<MultiPolynomial<RS::Elem>>>
         + UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
-    PolynomialStructure<RS, RSB>: SetSignature<Set = Polynomial<RS::Set>>
+    PolynomialStructure<RS, RSB>: SetSignature<Elem = Polynomial<RS::Elem>>
         + UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
-    MultiPolynomialStructure<RS, RSB>: SetSignature<Set = MultiPolynomial<RS::Set>>
+    MultiPolynomialStructure<RS, RSB>: SetSignature<Elem = MultiPolynomial<RS::Elem>>
         + UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
         + GreatestCommonDivisorSignature,
 {
     pub fn factor_by_yuns_and_kroneckers_inductively(
         &self,
-        factor_poly: impl Fn(&Polynomial<RS::Set>) -> Factored<Polynomial<RS::Set>, Natural>,
+        factor_poly: impl Fn(&Polynomial<RS::Elem>) -> Factored<Polynomial<RS::Elem>, Natural>,
         factor_multipoly_coeff: impl Fn(
-            &MultiPolynomial<RS::Set>,
-        ) -> Factored<MultiPolynomial<RS::Set>, Natural>,
-        mpoly: &<Self as SetSignature>::Set,
-    ) -> Factored<Polynomial<MultiPolynomial<RS::Set>>, Natural> {
-        match |mpoly: &<Self as SetSignature>::Set| -> Option<Polynomial<RS::Set>> {
+            &MultiPolynomial<RS::Elem>,
+        ) -> Factored<MultiPolynomial<RS::Elem>, Natural>,
+        mpoly: &<Self as SetSignature>::Elem,
+    ) -> Factored<Polynomial<MultiPolynomial<RS::Elem>>, Natural> {
+        match |mpoly: &<Self as SetSignature>::Elem| -> Option<Polynomial<RS::Elem>> {
             let mut const_coeffs = vec![];
             for coeff in self.into_coeffs(mpoly.clone()) {
                 const_coeffs.push(self.coeff_ring().as_constant(&coeff)?);
@@ -514,19 +514,19 @@ impl<
     RSB: BorrowedStructure<RS> + 'static,
 > MultiPolynomialStructure<RS, RSB>
 where
-    MultiPolynomialStructure<RS, RSB>: SetSignature<Set = MultiPolynomial<RS::Set>>
+    MultiPolynomialStructure<RS, RSB>: SetSignature<Elem = MultiPolynomial<RS::Elem>>
         + UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
-    PolynomialStructure<RS, RSB>: SetSignature<Set = Polynomial<RS::Set>>
+    PolynomialStructure<RS, RSB>: SetSignature<Elem = Polynomial<RS::Elem>>
         + UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
-    for<'a> PolynomialStructure<Self, &'a Self>: SetSignature<Set = Polynomial<MultiPolynomial<RS::Set>>>
+    for<'a> PolynomialStructure<Self, &'a Self>: SetSignature<Elem = Polynomial<MultiPolynomial<RS::Elem>>>
         + UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
 {
     pub fn factor_by_yuns_and_kroneckers_inductively(
         &self,
-        factor_coeff: Rc<dyn Fn(&RS::Set) -> Factored<RS::Set, Natural>>,
-        factor_poly: Rc<dyn Fn(&Polynomial<RS::Set>) -> Factored<Polynomial<RS::Set>, Natural>>,
-        mpoly: &<Self as SetSignature>::Set,
-    ) -> Factored<MultiPolynomial<RS::Set>, Natural> {
+        factor_coeff: Rc<dyn Fn(&RS::Elem) -> Factored<RS::Elem, Natural>>,
+        factor_poly: Rc<dyn Fn(&Polynomial<RS::Elem>) -> Factored<Polynomial<RS::Elem>, Natural>>,
+        mpoly: &<Self as SetSignature>::Elem,
+    ) -> Factored<MultiPolynomial<RS::Elem>, Natural> {
         if self.is_zero(mpoly) {
             Factored::Zero
         } else {
@@ -615,7 +615,7 @@ where
 }
 
 impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> MultiPolynomialStructure<RS, RSB> {
-    pub fn reduce(&self, p: MultiPolynomial<RS::Set>) -> MultiPolynomial<RS::Set> {
+    pub fn reduce(&self, p: MultiPolynomial<RS::Elem>) -> MultiPolynomial<RS::Elem> {
         MultiPolynomial::new(
             p.terms
                 .into_iter()
@@ -624,7 +624,7 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> MultiPolynomialStructure<R
         )
     }
 
-    pub fn var_pow(&self, v: Variable, k: usize) -> MultiPolynomial<RS::Set> {
+    pub fn var_pow(&self, v: Variable, k: usize) -> MultiPolynomial<RS::Elem> {
         MultiPolynomial {
             terms: vec![Term {
                 coeff: self.coeff_ring().one(),
@@ -633,11 +633,11 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> MultiPolynomialStructure<R
         }
     }
 
-    pub fn var(&self, v: Variable) -> MultiPolynomial<RS::Set> {
+    pub fn var(&self, v: Variable) -> MultiPolynomial<RS::Elem> {
         self.var_pow(v, 1)
     }
 
-    pub fn as_constant(&self, p: &MultiPolynomial<RS::Set>) -> Option<RS::Set> {
+    pub fn as_constant(&self, p: &MultiPolynomial<RS::Elem>) -> Option<RS::Elem> {
         if p.terms.is_empty() {
             Some(self.coeff_ring().zero())
         } else if p.terms.len() == 1 {
@@ -652,14 +652,14 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> MultiPolynomialStructure<R
         }
     }
 
-    pub fn degree(&self, p: &MultiPolynomial<RS::Set>) -> Option<usize> {
+    pub fn degree(&self, p: &MultiPolynomial<RS::Elem>) -> Option<usize> {
         p.terms.iter().map(Term::degree).max()
     }
 
     pub fn split_by_degree(
         &self,
-        p: MultiPolynomial<RS::Set>,
-    ) -> HashMap<usize, MultiPolynomial<RS::Set>> {
+        p: MultiPolynomial<RS::Elem>,
+    ) -> HashMap<usize, MultiPolynomial<RS::Elem>> {
         let mut p_by_deg = HashMap::new();
         for term in p.terms {
             // let term = MultiPolynomial::new(vec![term]);
@@ -675,9 +675,9 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> MultiPolynomialStructure<R
 
     pub fn homogenize(
         &self,
-        p: &MultiPolynomial<RS::Set>,
+        p: &MultiPolynomial<RS::Elem>,
         v: &Variable,
-    ) -> MultiPolynomial<RS::Set> {
+    ) -> MultiPolynomial<RS::Elem> {
         if self.is_zero(p) {
             self.zero()
         } else {
@@ -698,9 +698,9 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> MultiPolynomialStructure<R
 
     pub fn expand(
         &self,
-        p: &MultiPolynomial<RS::Set>,
+        p: &MultiPolynomial<RS::Elem>,
         v: &Variable,
-    ) -> Polynomial<MultiPolynomial<RS::Set>> {
+    ) -> Polynomial<MultiPolynomial<RS::Elem>> {
         let mut coeffs = vec![];
         for Term { coeff, monomial } in &p.terms {
             let k = monomial.get_var_pow(v);
@@ -729,9 +729,9 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> MultiPolynomialStructure<R
 
     pub fn partial_evaluate(
         &self,
-        poly: &MultiPolynomial<RS::Set>,
-        values: HashMap<Variable, impl Borrow<RS::Set>>,
-    ) -> MultiPolynomial<RS::Set> {
+        poly: &MultiPolynomial<RS::Elem>,
+        values: HashMap<Variable, impl Borrow<RS::Elem>>,
+    ) -> MultiPolynomial<RS::Elem> {
         let mut values = values
             .into_iter()
             .map(|(v, a)| (v, MultiPolynomial::constant(a.borrow().clone())))
@@ -751,9 +751,9 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> MultiPolynomialStructure<R
 
     pub fn evaluate(
         &self,
-        poly: &MultiPolynomial<RS::Set>,
-        values: HashMap<Variable, impl Borrow<RS::Set>>,
-    ) -> RS::Set {
+        poly: &MultiPolynomial<RS::Elem>,
+        values: HashMap<Variable, impl Borrow<RS::Elem>>,
+    ) -> RS::Elem {
         self.coeff_ring().sum(
             &poly
                 .terms

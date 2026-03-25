@@ -37,27 +37,27 @@ impl<Set> Default for EmptySetStructure<Set> {
 impl<Set: Send + Sync> Signature for EmptySetStructure<Set> {}
 
 impl<Set: Debug + Clone + Send + Sync> SetSignature for EmptySetStructure<Set> {
-    type Set = Set;
+    type Elem = Set;
 
-    fn validate_element(&self, _: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, _: &Self::Elem) -> Result<(), String> {
         Err("Empty set has no elements".to_string())
     }
 }
 
 impl<Set: Debug + Clone + Send + Sync> EqSignature for EmptySetStructure<Set> {
-    fn equal(&self, _: &Self::Set, _: &Self::Set) -> bool {
+    fn equal(&self, _: &Self::Elem, _: &Self::Elem) -> bool {
         panic!("Empty set had no elements to compare for equality")
     }
 }
 
 impl<Set: Debug + Clone + Send + Sync> PartialOrdSignature for EmptySetStructure<Set> {
-    fn partial_cmp(&self, a: &Self::Set, b: &Self::Set) -> Option<std::cmp::Ordering> {
+    fn partial_cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Option<std::cmp::Ordering> {
         Some(self.cmp(a, b))
     }
 }
 
 impl<Set: Debug + Clone + Send + Sync> OrdSignature for EmptySetStructure<Set> {
-    fn cmp(&self, _: &Self::Set, _: &Self::Set) -> std::cmp::Ordering {
+    fn cmp(&self, _: &Self::Elem, _: &Self::Elem) -> std::cmp::Ordering {
         panic!("Empty set had no elements to compare for ordering")
     }
 }

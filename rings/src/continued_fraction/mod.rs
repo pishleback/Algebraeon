@@ -181,7 +181,7 @@ pub fn eulers_constant() -> IrrationalSimpleContinuedFraction {
 
 #[derive(Debug)]
 struct SimpleContinuedFractionFromRealStructureCache<R: ToSimpleContinuedFractionSignature> {
-    value: Option<R::Set>, // terminated iff None
+    value: Option<R::Elem>, // terminated iff None
     coeffs: Vec<Integer>,
 }
 
@@ -192,7 +192,7 @@ pub struct SimpleContinuedFractionFromRealStructure<R: ToSimpleContinuedFraction
 }
 
 impl<R: ToSimpleContinuedFractionSignature> SimpleContinuedFractionFromRealStructure<R> {
-    fn new(ring: R, value: R::Set) -> Self {
+    fn new(ring: R, value: R::Elem) -> Self {
         Self {
             ring,
             cache: Arc::new(Mutex::new(SimpleContinuedFractionFromRealStructureCache {
@@ -234,7 +234,7 @@ pub trait ToSimpleContinuedFractionSignature: RealRoundingSignature + RingUnitsS
     /// If `value` is not irrational then calls to `.next()` on the resulting `SimpleContinuedFraction` may panic.
     fn simple_continued_fraction(
         &self,
-        value: Self::Set,
+        value: Self::Elem,
     ) -> SimpleContinuedFractionFromRealStructure<Self> {
         SimpleContinuedFractionFromRealStructure::new(self.clone(), value)
     }

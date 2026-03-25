@@ -36,9 +36,9 @@ impl<M: TryReciprocalSignature, MB: BorrowedStructure<M>> Signature
 impl<M: TryReciprocalSignature, MB: BorrowedStructure<M>> SetSignature
     for MultiplicativeMonoidUnitsStructure<M, MB>
 {
-    type Set = M::Set;
+    type Elem = M::Elem;
 
-    fn validate_element(&self, x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
         if self.monoid().validate_element(x).is_ok() {
             if self.monoid().is_unit(x) {
                 Ok(())
@@ -54,7 +54,7 @@ impl<M: TryReciprocalSignature, MB: BorrowedStructure<M>> SetSignature
 impl<M: TryReciprocalSignature, MB: BorrowedStructure<M>> IdentitySignature
     for MultiplicativeMonoidUnitsStructure<M, MB>
 {
-    fn identity(&self) -> Self::Set {
+    fn identity(&self) -> Self::Elem {
         self.monoid().one()
     }
 }
@@ -62,7 +62,7 @@ impl<M: TryReciprocalSignature, MB: BorrowedStructure<M>> IdentitySignature
 impl<M: TryReciprocalSignature, MB: BorrowedStructure<M>> CompositionSignature
     for MultiplicativeMonoidUnitsStructure<M, MB>
 {
-    fn compose(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn compose(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.monoid().mul(a, b)
     }
 }
@@ -80,7 +80,7 @@ impl<M: TryReciprocalSignature, MB: BorrowedStructure<M>> CommutativeComposition
 impl<M: TryReciprocalSignature, MB: BorrowedStructure<M>> TryInverseSignature
     for MultiplicativeMonoidUnitsStructure<M, MB>
 {
-    fn try_inverse(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_inverse(&self, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.inverse(a))
     }
 }
@@ -88,7 +88,7 @@ impl<M: TryReciprocalSignature, MB: BorrowedStructure<M>> TryInverseSignature
 impl<M: TryReciprocalSignature, MB: BorrowedStructure<M>> LeftCancellativeCompositionSignature
     for MultiplicativeMonoidUnitsStructure<M, MB>
 {
-    fn try_left_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_left_difference(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.compose(&self.inverse(b), a))
     }
 }
@@ -96,7 +96,7 @@ impl<M: TryReciprocalSignature, MB: BorrowedStructure<M>> LeftCancellativeCompos
 impl<M: TryReciprocalSignature, MB: BorrowedStructure<M>> RightCancellativeCompositionSignature
     for MultiplicativeMonoidUnitsStructure<M, MB>
 {
-    fn try_right_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_right_difference(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.compose(a, &self.inverse(b)))
     }
 }
@@ -109,7 +109,7 @@ impl<M: TryReciprocalSignature, MB: BorrowedStructure<M>> MonoidSignature
 impl<M: TryReciprocalSignature, MB: BorrowedStructure<M>> GroupSignature
     for MultiplicativeMonoidUnitsStructure<M, MB>
 {
-    fn inverse(&self, a: &Self::Set) -> Self::Set {
+    fn inverse(&self, a: &Self::Elem) -> Self::Elem {
         self.monoid().try_reciprocal(a).unwrap()
     }
 }

@@ -3,8 +3,8 @@ use super::*;
 impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MatrixStructure<FS, FSB> {
     pub fn presentation_matrix(
         &self,
-        m: Matrix<FS::Set>,
-    ) -> Result<Matrix<Polynomial<FS::Set>>, MatOppErr> {
+        m: Matrix<FS::Elem>,
+    ) -> Result<Matrix<Polynomial<FS::Elem>>, MatOppErr> {
         let n = m.rows();
         if n == m.cols() {
             let poly_ring = self.ring().polynomials();
@@ -22,7 +22,10 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MatrixStructure<FS, FSB> {
         }
     }
 
-    pub fn minimal_polynomial(&self, m: Matrix<FS::Set>) -> Result<Polynomial<FS::Set>, MatOppErr> {
+    pub fn minimal_polynomial(
+        &self,
+        m: Matrix<FS::Elem>,
+    ) -> Result<Polynomial<FS::Elem>, MatOppErr> {
         match self.presentation_matrix(m) {
             Ok(pres_mat) => {
                 let poly_ring = self.ring().polynomials();
@@ -38,8 +41,8 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MatrixStructure<FS, FSB> {
 
     pub fn characteristic_polynomial(
         &self,
-        m: Matrix<FS::Set>,
-    ) -> Result<Polynomial<FS::Set>, MatOppErr> {
+        m: Matrix<FS::Elem>,
+    ) -> Result<Polynomial<FS::Elem>, MatOppErr> {
         match self.presentation_matrix(m) {
             Ok(pres_mat) => {
                 let poly_ring = self.ring().polynomials();

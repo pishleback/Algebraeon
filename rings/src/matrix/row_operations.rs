@@ -7,13 +7,13 @@ pub enum ElementaryOppType<RS: RingSignature> {
     //multiply a row by a unit
     UnitMul {
         row: usize,
-        unit: RS::Set,
+        unit: RS::Elem,
     },
     //row(i) -> row(i) + x*row(j)
     AddRowMul {
         i: usize,
         j: usize,
-        x: RS::Set,
+        x: RS::Elem,
     },
     //apply invertible row operations to two rows
     // /a b\
@@ -22,10 +22,10 @@ pub enum ElementaryOppType<RS: RingSignature> {
     TwoInv {
         i: usize,
         j: usize,
-        a: RS::Set,
-        b: RS::Set,
-        c: RS::Set,
-        d: RS::Set,
+        a: RS::Elem,
+        b: RS::Elem,
+        c: RS::Elem,
+        d: RS::Elem,
     },
 }
 
@@ -93,7 +93,7 @@ impl<RS: IntegralDomainSignature> ElementaryOpp<RS> {
         }
     }
 
-    pub fn det(&self) -> RS::Set {
+    pub fn det(&self) -> RS::Elem {
         match &self.opp {
             ElementaryOppType::Swap(_i, _j) => self.ring.neg(&self.ring.one()),
             ElementaryOppType::UnitMul { row: _row, unit } => unit.clone(),
@@ -115,7 +115,7 @@ impl<RS: IntegralDomainSignature> ElementaryOpp<RS> {
         }
     }
 
-    pub fn apply(&self, m: &mut Matrix<RS::Set>) {
+    pub fn apply(&self, m: &mut Matrix<RS::Elem>) {
         debug_assert!(self.check_invariants().is_ok());
         if self.transpose {
             m.transpose_mut();

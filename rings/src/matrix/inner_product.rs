@@ -13,9 +13,9 @@ pub trait ComplexInnerProduct<Ring: ComplexSubsetSignature> {
     /// If the dimensions of `a` and `b` do not match.
     fn inner_product(
         &self,
-        a: &[impl Borrow<Ring::Set>],
-        b: &[impl Borrow<Ring::Set>],
-    ) -> Ring::Set;
+        a: &[impl Borrow<Ring::Elem>],
+        b: &[impl Borrow<Ring::Elem>],
+    ) -> Ring::Elem;
 }
 
 pub trait RealInnerProduct<Ring: RealSubsetSignature>: ComplexInnerProduct<Ring> {}
@@ -50,9 +50,9 @@ impl<
 {
     fn inner_product(
         &self,
-        a: &[impl Borrow<Ring::Set>],
-        b: &[impl Borrow<Ring::Set>],
-    ) -> Ring::Set {
+        a: &[impl Borrow<Ring::Elem>],
+        b: &[impl Borrow<Ring::Elem>],
+    ) -> Ring::Elem {
         let n = a.len();
         assert_eq!(n, b.len());
         let mut t = self.ring().zero();
@@ -76,12 +76,12 @@ impl<Ring: RealSubsetSignature + RingSignature, RingB: BorrowedStructure<Ring>>
 pub struct RealSymmetricInnerProduct<Ring: RealSubsetSignature, RingB: BorrowedStructure<Ring>> {
     _ring: PhantomData<Ring>,
     ring: RingB,
-    mat: SymmetricMatrix<Ring::Set>, // symmetric and positive-definite
+    mat: SymmetricMatrix<Ring::Elem>, // symmetric and positive-definite
 }
 
 fn is_positive_definite<Ring: OrderedRingSignature + RealSubsetSignature>(
     ring: &Ring,
-    mat: &SymmetricMatrix<Ring::Set>,
+    mat: &SymmetricMatrix<Ring::Elem>,
 ) -> bool {
     let ring_mat = ring.matrix_structure();
     let n = mat.n();
@@ -105,7 +105,7 @@ fn is_positive_definite<Ring: OrderedRingSignature + RealSubsetSignature>(
 impl<Ring: RealSubsetSignature, RingB: BorrowedStructure<Ring>>
     RealSymmetricInnerProduct<Ring, RingB>
 {
-    pub fn new(ring: RingB, mat: SymmetricMatrix<Ring::Set>) -> Self
+    pub fn new(ring: RingB, mat: SymmetricMatrix<Ring::Elem>) -> Self
     where
         Ring: OrderedRingSignature,
     {
@@ -127,9 +127,9 @@ impl<Ring: RingSignature + RealSubsetSignature, RingB: BorrowedStructure<Ring>>
 {
     fn inner_product(
         &self,
-        a: &[impl Borrow<Ring::Set>],
-        b: &[impl Borrow<Ring::Set>],
-    ) -> <Ring>::Set {
+        a: &[impl Borrow<Ring::Elem>],
+        b: &[impl Borrow<Ring::Elem>],
+    ) -> <Ring>::Elem {
         let n = self.mat.n();
         assert_eq!(n, a.len());
         assert_eq!(n, b.len());

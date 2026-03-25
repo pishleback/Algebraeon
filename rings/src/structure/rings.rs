@@ -51,15 +51,15 @@ mod unconstructable_universal_structure {
     impl<Set> Signature for UnconstructableStructure<Set> {}
 
     impl<Set: Debug + Clone + Send + Sync> SetSignature for UnconstructableStructure<Set> {
-        type Set = Set;
+        type Elem = Set;
 
-        fn validate_element(&self, _x: &Self::Set) -> Result<(), String> {
+        fn validate_element(&self, _x: &Self::Elem) -> Result<(), String> {
             unreachable!()
         }
     }
 
     impl<Set: Debug + Clone + Send + Sync> EqSignature for UnconstructableStructure<Set> {
-        fn equal(&self, _a: &Self::Set, _b: &Self::Set) -> bool {
+        fn equal(&self, _a: &Self::Elem, _b: &Self::Elem) -> bool {
             unreachable!()
         }
     }
@@ -70,13 +70,13 @@ mod unconstructable_universal_structure {
     }
 
     impl<Set: Debug + Clone + Send + Sync> ZeroSignature for UnconstructableStructure<Set> {
-        fn zero(&self) -> Self::Set {
+        fn zero(&self) -> Self::Elem {
             unreachable!()
         }
     }
 
     impl<Set: Debug + Clone + Send + Sync> AdditionSignature for UnconstructableStructure<Set> {
-        fn add(&self, _a: &Self::Set, _b: &Self::Set) -> Self::Set {
+        fn add(&self, _a: &Self::Elem, _b: &Self::Elem) -> Self::Elem {
             unreachable!()
         }
     }
@@ -84,13 +84,13 @@ mod unconstructable_universal_structure {
     impl<Set: Debug + Clone + Send + Sync> CancellativeAdditionSignature
         for UnconstructableStructure<Set>
     {
-        fn try_sub(&self, _a: &Self::Set, _b: &Self::Set) -> Option<Self::Set> {
+        fn try_sub(&self, _a: &Self::Elem, _b: &Self::Elem) -> Option<Self::Elem> {
             unreachable!()
         }
     }
 
     impl<Set: Debug + Clone + Send + Sync> TryNegateSignature for UnconstructableStructure<Set> {
-        fn try_neg(&self, _a: &Self::Set) -> Option<Self::Set> {
+        fn try_neg(&self, _a: &Self::Elem) -> Option<Self::Elem> {
             unreachable!()
         }
     }
@@ -98,19 +98,19 @@ mod unconstructable_universal_structure {
     impl<Set: Debug + Clone + Send + Sync> AdditiveMonoidSignature for UnconstructableStructure<Set> {}
 
     impl<Set: Debug + Clone + Send + Sync> AdditiveGroupSignature for UnconstructableStructure<Set> {
-        fn neg(&self, _a: &Self::Set) -> Self::Set {
+        fn neg(&self, _a: &Self::Elem) -> Self::Elem {
             unreachable!()
         }
     }
 
     impl<Set: Debug + Clone + Send + Sync> OneSignature for UnconstructableStructure<Set> {
-        fn one(&self) -> Self::Set {
+        fn one(&self) -> Self::Elem {
             unreachable!()
         }
     }
 
     impl<Set: Debug + Clone + Send + Sync> MultiplicationSignature for UnconstructableStructure<Set> {
-        fn mul(&self, _a: &Self::Set, _b: &Self::Set) -> Self::Set {
+        fn mul(&self, _a: &Self::Elem, _b: &Self::Elem) -> Self::Elem {
             unreachable!()
         }
     }
@@ -121,7 +121,7 @@ mod unconstructable_universal_structure {
     }
 
     impl<Set: Debug + Clone + Send + Sync> TryReciprocalSignature for UnconstructableStructure<Set> {
-        fn try_reciprocal(&self, _a: &Self::Set) -> Option<Self::Set> {
+        fn try_reciprocal(&self, _a: &Self::Elem) -> Option<Self::Elem> {
             unreachable!()
         }
     }
@@ -157,7 +157,7 @@ mod unconstructable_universal_structure {
     impl<Set: Debug + Clone + Send + Sync> RingSignature for UnconstructableStructure<Set> {}
 
     impl<Set: Debug + Clone + Send + Sync> CharZeroRingSignature for UnconstructableStructure<Set> {
-        fn try_to_int(&self, _x: &Self::Set) -> Option<algebraeon_nzq::Integer> {
+        fn try_to_int(&self, _x: &Self::Elem) -> Option<algebraeon_nzq::Integer> {
             unreachable!()
         }
     }
@@ -176,8 +176,8 @@ pub trait RinglikeSpecializationSignature: SetSignature + ToOwned<Owned = Self> 
     Used by:
      - Polynomial rings to determine whether the karatsuba is usable.
      */
-    fn try_ring_restructure(&self) -> Option<impl EqSignature<Set = Self::Set> + RingSignature> {
-        Option::<unconstructable_universal_structure::UnconstructableStructure<Self::Set>>::None
+    fn try_ring_restructure(&self) -> Option<impl EqSignature<Elem = Self::Elem> + RingSignature> {
+        Option::<unconstructable_universal_structure::UnconstructableStructure<Self::Elem>>::None
     }
 
     /*
@@ -186,23 +186,23 @@ pub trait RinglikeSpecializationSignature: SetSignature + ToOwned<Owned = Self> 
      */
     fn try_char_zero_ring_restructure(
         &self,
-    ) -> Option<impl EqSignature<Set = Self::Set> + CharZeroRingSignature> {
-        Option::<unconstructable_universal_structure::UnconstructableStructure<Self::Set>>::None
+    ) -> Option<impl EqSignature<Elem = Self::Elem> + CharZeroRingSignature> {
+        Option::<unconstructable_universal_structure::UnconstructableStructure<Self::Elem>>::None
     }
 }
 
 /// A set with a special element `0`.
 #[signature_meta_trait]
 pub trait ZeroSignature: RinglikeSpecializationSignature {
-    fn zero(&self) -> Self::Set;
+    fn zero(&self) -> Self::Elem;
 }
 
 /// A set with an associative commutative binary operation of addition.
 #[signature_meta_trait]
 pub trait AdditionSignature: RinglikeSpecializationSignature {
-    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
+    fn add(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem;
 
-    fn add_mut(&self, a: &mut Self::Set, b: &Self::Set) {
+    fn add_mut(&self, a: &mut Self::Elem, b: &Self::Elem) {
         *a = self.add(a, b);
     }
 }
@@ -211,17 +211,17 @@ pub trait AdditionSignature: RinglikeSpecializationSignature {
 #[signature_meta_trait]
 pub trait CancellativeAdditionSignature: AdditionSignature {
     /// Return the unique `x` such that `a` = `b + x`, or `None` if no such `x` exists.
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set>;
+    fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem>;
 }
 
 #[signature_meta_trait]
 pub trait TryNegateSignature: ZeroSignature + AdditionSignature {
-    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set>;
+    fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem>;
 }
 
 #[signature_meta_trait]
 pub trait AdditiveMonoidSignature: ZeroSignature + AdditionSignature + TryNegateSignature {
-    fn sum(&self, vals: &[impl Borrow<Self::Set>]) -> Self::Set {
+    fn sum(&self, vals: &[impl Borrow<Self::Elem>]) -> Self::Elem {
         let mut sum = self.zero();
         for val in vals {
             self.add_mut(&mut sum, val.borrow());
@@ -232,20 +232,20 @@ pub trait AdditiveMonoidSignature: ZeroSignature + AdditionSignature + TryNegate
 
 #[signature_meta_trait]
 pub trait AdditiveGroupSignature: CancellativeAdditionSignature {
-    fn neg(&self, a: &Self::Set) -> Self::Set;
+    fn neg(&self, a: &Self::Elem) -> Self::Elem;
 
-    fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn sub(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.add(a, &self.neg(b))
     }
 
-    fn sub_mut(&self, a: &mut Self::Set, b: &Self::Set) {
+    fn sub_mut(&self, a: &mut Self::Elem, b: &Self::Elem) {
         *a = self.sub(a, b);
     }
 }
 
 #[signature_meta_trait]
 pub trait ZeroEqSignature: ZeroSignature + EqSignature {
-    fn is_zero(&self, a: &Self::Set) -> bool {
+    fn is_zero(&self, a: &Self::Elem) -> bool {
         self.equal(a, &self.zero())
     }
 }
@@ -254,15 +254,15 @@ impl<R: ZeroSignature + EqSignature> ZeroEqSignature for R {}
 /// A set with a special element `1`.
 #[signature_meta_trait]
 pub trait OneSignature: RinglikeSpecializationSignature {
-    fn one(&self) -> Self::Set;
+    fn one(&self) -> Self::Elem;
 }
 
 /// A set with an associative binary opperation `*`.
 #[signature_meta_trait]
 pub trait MultiplicationSignature: RinglikeSpecializationSignature {
-    fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
+    fn mul(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem;
 
-    fn mul_mut(&self, a: &mut Self::Set, b: &Self::Set) {
+    fn mul_mut(&self, a: &mut Self::Elem, b: &Self::Elem) {
         *a = self.mul(a, b);
     }
 }
@@ -274,7 +274,7 @@ pub trait CommutativeMultiplicationSignature: MultiplicationSignature {}
 /// When `1 * a` = `a * 1` = `a` for all `a`.
 #[signature_meta_trait]
 pub trait MultiplicativeMonoidSignature: OneSignature + MultiplicationSignature {
-    fn product(&self, vals: &[impl Borrow<Self::Set>]) -> Self::Set {
+    fn product(&self, vals: &[impl Borrow<Self::Elem>]) -> Self::Elem {
         let mut prod = self.one();
         for val in vals {
             self.mul_mut(&mut prod, val.borrow());
@@ -282,7 +282,7 @@ pub trait MultiplicativeMonoidSignature: OneSignature + MultiplicationSignature 
         prod
     }
 
-    fn nat_pow(&self, a: &Self::Set, n: &Natural) -> Self::Set {
+    fn nat_pow(&self, a: &Self::Elem, n: &Natural) -> Self::Elem {
         if *n == Natural::ZERO {
             self.one()
         } else if *n == Natural::ONE {
@@ -310,21 +310,21 @@ pub trait MultiplicativeMonoidSignature: OneSignature + MultiplicationSignature 
 #[signature_meta_trait]
 pub trait TryLeftReciprocalSignature: OneSignature + MultiplicationSignature {
     /// `x` such that `x*a`=`1` or `None` if no such `x` exists.
-    fn try_left_reciprocal(&self, a: &Self::Set) -> Option<Self::Set>;
+    fn try_left_reciprocal(&self, a: &Self::Elem) -> Option<Self::Elem>;
 }
 
 #[signature_meta_trait]
 pub trait TryRightReciprocalSignature: OneSignature + MultiplicationSignature {
     /// `x` such that `a*x`=`1` or `None` if no such `x` exists.
-    fn try_right_reciprocal(&self, a: &Self::Set) -> Option<Self::Set>;
+    fn try_right_reciprocal(&self, a: &Self::Elem) -> Option<Self::Elem>;
 }
 
 #[signature_meta_trait]
 pub trait TryReciprocalSignature: OneSignature + MultiplicationSignature {
     /// `b` such that `a*b`=`1` and `b*a`=`1` or `None` if no such `b` exists.
-    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set>;
+    fn try_reciprocal(&self, a: &Self::Elem) -> Option<Self::Elem>;
 
-    fn is_unit(&self, a: &Self::Set) -> bool {
+    fn is_unit(&self, a: &Self::Elem) -> bool {
         self.try_reciprocal(a).is_some()
     }
 
@@ -342,7 +342,7 @@ pub trait TryReciprocalSignature: OneSignature + MultiplicationSignature {
 impl<S: TryReciprocalSignature + CommutativeMultiplicationSignature> TryLeftReciprocalSignature
     for S
 {
-    fn try_left_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_left_reciprocal(&self, a: &Self::Elem) -> Option<Self::Elem> {
         self.try_reciprocal(a)
     }
 }
@@ -350,7 +350,7 @@ impl<S: TryReciprocalSignature + CommutativeMultiplicationSignature> TryLeftReci
 impl<S: TryReciprocalSignature + CommutativeMultiplicationSignature> TryRightReciprocalSignature
     for S
 {
-    fn try_right_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_right_reciprocal(&self, a: &Self::Elem) -> Option<Self::Elem> {
         self.try_reciprocal(a)
     }
 }
@@ -359,7 +359,7 @@ impl<S: TryReciprocalSignature + CommutativeMultiplicationSignature> TryRightRec
 pub trait MultiplicativeMonoidTryInverseSignature:
     MultiplicativeMonoidSignature + TryReciprocalSignature
 {
-    fn try_int_pow(&self, a: &Self::Set, n: &Integer) -> Option<Self::Set> {
+    fn try_int_pow(&self, a: &Self::Elem, n: &Integer) -> Option<Self::Elem> {
         if *n == Integer::ZERO {
             Some(self.one())
         } else if *n > Integer::ZERO {
@@ -376,11 +376,11 @@ impl<S: MultiplicativeMonoidSignature + TryReciprocalSignature>
 
 #[signature_meta_trait]
 pub trait MultiplicativeMonoidSquareOpsSignature: MultiplicativeMonoidSignature {
-    fn is_square(&self, a: &Self::Set) -> bool {
+    fn is_square(&self, a: &Self::Elem) -> bool {
         self.sqrt_if_square(a).is_some()
     }
 
-    fn sqrt_if_square(&self, a: &Self::Set) -> Option<Self::Set>;
+    fn sqrt_if_square(&self, a: &Self::Elem) -> Option<Self::Elem>;
 }
 
 /// 0 is such that `a*0` = `0*a` = `0` for all a in the monoid.
@@ -409,14 +409,14 @@ pub trait RightDistributiveMultiplicationOverAddition:
 #[signature_meta_trait]
 pub trait LeftCancellativeMultiplicationSignature: MultiplicationSignature {
     /// Try to find `x` such that `a` = `b * x`.
-    fn try_left_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set>;
+    fn try_left_divide(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem>;
 }
 
 /// When `x * a` = `y * a` implies `x` = `y` for all `a`, `x`, `y`.
 #[signature_meta_trait]
 pub trait RightCancellativeMultiplicationSignature: MultiplicationSignature {
     /// Try to find `x` such that `a` = `x * b`.
-    fn try_right_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set>;
+    fn try_right_divide(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem>;
 }
 
 #[signature_meta_trait]
@@ -425,22 +425,22 @@ pub trait CancellativeMultiplicationSignature:
     + LeftCancellativeMultiplicationSignature
     + RightCancellativeMultiplicationSignature
 {
-    fn try_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set>;
+    fn try_divide(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem>;
 
     /// return true iff a is divisible by b
-    fn divisible(&self, a: &Self::Set, b: &Self::Set) -> bool {
+    fn divisible(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
         self.try_divide(a, b).is_some()
     }
 }
 
 impl<S: CancellativeMultiplicationSignature> LeftCancellativeMultiplicationSignature for S {
-    fn try_left_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_left_divide(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         self.try_divide(a, b)
     }
 }
 
 impl<S: CancellativeMultiplicationSignature> RightCancellativeMultiplicationSignature for S {
-    fn try_right_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_right_divide(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         self.try_divide(a, b)
     }
 }
@@ -449,7 +449,7 @@ impl<S: CancellativeMultiplicationSignature> RightCancellativeMultiplicationSign
 pub trait AreAssociateMultiplicationSignature:
     CancellativeMultiplicationSignature + ZeroEqSignature
 {
-    fn are_associate(&self, a: &Self::Set, b: &Self::Set) -> bool {
+    fn are_associate(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
         if self.equal(a, &self.zero()) && self.equal(b, &self.zero()) {
             true
         } else {
@@ -483,7 +483,7 @@ pub trait SemiRingSignature:
     + LeftDistributiveMultiplicationOverAddition
     + RightDistributiveMultiplicationOverAddition
 {
-    fn from_nat(&self, x: impl Into<Natural>) -> Self::Set {
+    fn from_nat(&self, x: impl Into<Natural>) -> Self::Elem {
         let x = x.into();
         if x == Natural::ZERO {
             self.zero()
@@ -524,11 +524,11 @@ pub trait RingSignature: SemiRingSignature + AdditiveGroupSignature {
         Err("unable to decide whether the ring is reduced".to_string())
     }
 
-    fn bracket(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn bracket(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.sub(&self.mul(a, b), &self.mul(b, a))
     }
 
-    fn from_int(&self, x: impl Into<Integer>) -> Self::Set {
+    fn from_int(&self, x: impl Into<Integer>) -> Self::Elem {
         let x = x.into();
         if x < Integer::ZERO {
             self.neg(&self.from_int(-x))
@@ -560,7 +560,7 @@ pub trait IntegralDomainSignature:
     + CancellativeMultiplicationSignature
     + EqSignature
 {
-    fn try_from_rat(&self, x: &Rational) -> Option<Self::Set> {
+    fn try_from_rat(&self, x: &Rational) -> Option<Self::Elem> {
         let n = Fraction::numerator(x);
         let d = Fraction::denominator(x);
         debug_assert!(!d.is_zero());
@@ -576,11 +576,11 @@ pub trait FavoriteAssociateSignature: TryReciprocalSignature + EqSignature {
     //every unit u is required to return (u, 1) i.e. 1 is the favorite associate of every unit
     //it seems to happen that the product of favorite associates is another favorite associate. Should this be a requirement?
 
-    fn factor_fav_assoc(&self, a: &Self::Set) -> (Self::Set, Self::Set);
-    fn fav_assoc(&self, a: &Self::Set) -> Self::Set {
+    fn factor_fav_assoc(&self, a: &Self::Elem) -> (Self::Elem, Self::Elem);
+    fn fav_assoc(&self, a: &Self::Elem) -> Self::Elem {
         self.factor_fav_assoc(a).1
     }
-    fn is_fav_assoc(&self, a: &Self::Set) -> bool {
+    fn is_fav_assoc(&self, a: &Self::Elem) -> bool {
         let (_u, b) = self.factor_fav_assoc(a);
         self.equal(a, &b)
     }
@@ -593,7 +593,7 @@ pub trait CharacteristicSignature: SemiRingSignature {
 
 #[signature_meta_trait]
 pub trait OrderedRingSignature: IntegralDomainSignature + OrdSignature {
-    fn abs(&self, a: &Self::Set) -> Self::Set {
+    fn abs(&self, a: &Self::Elem) -> Self::Elem {
         match self.cmp(a, &self.zero()) {
             std::cmp::Ordering::Less => self.neg(a),
             std::cmp::Ordering::Equal => self.zero(),
@@ -604,9 +604,9 @@ pub trait OrderedRingSignature: IntegralDomainSignature + OrdSignature {
 
 #[signature_meta_trait]
 pub trait FiniteUnitsSignature: RingSignature {
-    fn all_units(&self) -> Vec<Self::Set>;
+    fn all_units(&self) -> Vec<Self::Elem>;
 
-    fn all_units_and_zero(&self) -> Vec<Self::Set> {
+    fn all_units_and_zero(&self) -> Vec<Self::Elem> {
         let mut elems = vec![self.zero()];
         elems.append(&mut self.all_units());
         elems
@@ -615,9 +615,9 @@ pub trait FiniteUnitsSignature: RingSignature {
 
 impl<R: RingSignature + TryReciprocalSignature> FiniteUnitsSignature for R
 where
-    for<'a> MultiplicativeMonoidUnitsStructure<R, &'a R>: FiniteSetSignature<Set = R::Set>,
+    for<'a> MultiplicativeMonoidUnitsStructure<R, &'a R>: FiniteSetSignature<Elem = R::Elem>,
 {
-    fn all_units(&self) -> Vec<Self::Set> {
+    fn all_units(&self) -> Vec<Self::Elem> {
         self.units().list_all_elements()
     }
 }
@@ -628,22 +628,22 @@ pub trait GreatestCommonDivisorSignature:
 {
     //any gcds should be the standard associate representative
     //euclidean_gcd can be used to implement this
-    fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set;
-    fn gcd_list(&self, elems: Vec<impl Borrow<Self::Set>>) -> Self::Set {
+    fn gcd(&self, x: &Self::Elem, y: &Self::Elem) -> Self::Elem;
+    fn gcd_list(&self, elems: Vec<impl Borrow<Self::Elem>>) -> Self::Elem {
         let mut gcd = self.zero();
         for x in elems {
             gcd = self.gcd(&gcd, x.borrow());
         }
         gcd
     }
-    fn lcm(&self, x: &Self::Set, y: &Self::Set) -> Self::Set {
+    fn lcm(&self, x: &Self::Elem, y: &Self::Elem) -> Self::Elem {
         if self.is_zero(x) && self.is_zero(y) {
             self.zero()
         } else {
             self.try_divide(&self.mul(x, y), &self.gcd(x, y)).unwrap()
         }
     }
-    fn lcm_list(&self, elems: Vec<impl Borrow<Self::Set>>) -> Self::Set {
+    fn lcm_list(&self, elems: Vec<impl Borrow<Self::Elem>>) -> Self::Elem {
         let mut lcm = self.one();
         for x in elems {
             lcm = self.lcm(&lcm, x.borrow());
@@ -655,8 +655,8 @@ pub trait GreatestCommonDivisorSignature:
 #[signature_meta_trait]
 pub trait BezoutDomainSignature: GreatestCommonDivisorSignature {
     //any gcds should be the standard associate representative
-    fn xgcd(&self, a: &Self::Set, b: &Self::Set) -> (Self::Set, Self::Set, Self::Set); //(g, x, y) s.t. g = ax + by
-    fn xgcd_list(&self, elems: Vec<&Self::Set>) -> (Self::Set, Vec<Self::Set>) {
+    fn xgcd(&self, a: &Self::Elem, b: &Self::Elem) -> (Self::Elem, Self::Elem, Self::Elem); //(g, x, y) s.t. g = ax + by
+    fn xgcd_list(&self, elems: Vec<&Self::Elem>) -> (Self::Elem, Vec<Self::Elem>) {
         // println!("{:?}", elems);
         match elems.len() {
             0 => (self.zero(), vec![]),
@@ -689,16 +689,16 @@ pub trait BezoutDomainSignature: GreatestCommonDivisorSignature {
 #[signature_meta_trait]
 pub trait EuclideanDivisionSignature: SemiRingEqSignature {
     /// None for 0 and Some(norm) for everything else
-    fn norm(&self, elem: &Self::Set) -> Option<Natural>;
+    fn norm(&self, elem: &Self::Elem) -> Option<Natural>;
 
     /// None if b is 0 and Some((q, r)) such that a=bq+r and r=0 or norm(r) < norm(b)
-    fn quorem(&self, a: &Self::Set, b: &Self::Set) -> Option<(Self::Set, Self::Set)>;
+    fn quorem(&self, a: &Self::Elem, b: &Self::Elem) -> Option<(Self::Elem, Self::Elem)>;
 
-    fn quo(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn quo(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         self.quorem(a, b).map(|(q, _r)| q)
     }
 
-    fn rem(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn rem(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         if self.is_zero(b) {
             a.clone()
         } else {
@@ -707,7 +707,7 @@ pub trait EuclideanDivisionSignature: SemiRingEqSignature {
         }
     }
 
-    fn euclidean_gcd(&self, mut x: Self::Set, mut y: Self::Set) -> Self::Set
+    fn euclidean_gcd(&self, mut x: Self::Elem, mut y: Self::Elem) -> Self::Elem
     where
         Self: FavoriteAssociateSignature,
     {
@@ -722,9 +722,9 @@ pub trait EuclideanDivisionSignature: SemiRingEqSignature {
 
     fn euclidean_xgcd(
         &self,
-        mut x: Self::Set,
-        mut y: Self::Set,
-    ) -> (Self::Set, Self::Set, Self::Set)
+        mut x: Self::Elem,
+        mut y: Self::Elem,
+    ) -> (Self::Elem, Self::Elem, Self::Elem)
     where
         Self: FavoriteAssociateSignature + IntegralDomainSignature,
     {
@@ -770,18 +770,18 @@ impl<Ring: EuclideanDivisionSignature + IntegralDomainSignature> EuclideanDomain
 
 #[signature_meta_trait]
 pub trait InfiniteSignature: RinglikeSpecializationSignature {
-    fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = Self::Set>>;
+    fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = Self::Elem>>;
 }
 
 #[signature_meta_trait]
 pub trait FieldSignature: IntegralDomainSignature {
-    fn from_rat(&self, x: &Rational) -> Self::Set {
+    fn from_rat(&self, x: &Rational) -> Self::Elem {
         self.try_from_rat(x).unwrap()
     }
 }
 
 impl<FS: FieldSignature> FavoriteAssociateSignature for FS {
-    fn factor_fav_assoc(&self, a: &Self::Set) -> (Self::Set, Self::Set) {
+    fn factor_fav_assoc(&self, a: &Self::Elem) -> (Self::Elem, Self::Elem) {
         if self.is_zero(a) {
             (self.one(), self.zero())
         } else {
@@ -791,7 +791,7 @@ impl<FS: FieldSignature> FavoriteAssociateSignature for FS {
 }
 
 impl<FS: FieldSignature> EuclideanDivisionSignature for FS {
-    fn norm(&self, elem: &Self::Set) -> Option<Natural> {
+    fn norm(&self, elem: &Self::Elem) -> Option<Natural> {
         if self.is_zero(elem) {
             None
         } else {
@@ -799,7 +799,7 @@ impl<FS: FieldSignature> EuclideanDivisionSignature for FS {
         }
     }
 
-    fn quorem(&self, a: &Self::Set, b: &Self::Set) -> Option<(Self::Set, Self::Set)> {
+    fn quorem(&self, a: &Self::Elem, b: &Self::Elem) -> Option<(Self::Elem, Self::Elem)> {
         if self.is_zero(b) {
             None
         } else {
@@ -809,13 +809,13 @@ impl<FS: FieldSignature> EuclideanDivisionSignature for FS {
 }
 
 impl<FS: FieldSignature> GreatestCommonDivisorSignature for FS {
-    fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set {
+    fn gcd(&self, x: &Self::Elem, y: &Self::Elem) -> Self::Elem {
         self.euclidean_gcd(x.clone(), y.clone())
     }
 }
 
 impl<FS: FieldSignature> BezoutDomainSignature for FS {
-    fn xgcd(&self, x: &Self::Set, y: &Self::Set) -> (Self::Set, Self::Set, Self::Set) {
+    fn xgcd(&self, x: &Self::Elem, y: &Self::Elem) -> (Self::Elem, Self::Elem, Self::Elem) {
         self.euclidean_xgcd(x.clone(), y.clone())
     }
 }
@@ -823,18 +823,18 @@ impl<FS: FieldSignature> BezoutDomainSignature for FS {
 /// When `.characteristic()` always returns 0
 #[signature_meta_trait]
 pub trait CharZeroRingSignature: RingSignature + CharacteristicSignature {
-    fn try_to_int(&self, x: &Self::Set) -> Option<Integer>;
+    fn try_to_int(&self, x: &Self::Elem) -> Option<Integer>;
 }
 
 impl<RS: CharZeroRingSignature + 'static> InfiniteSignature for RS {
-    fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = <Self as SetSignature>::Set>> {
+    fn generate_distinct_elements(&self) -> Box<dyn Iterator<Item = <Self as SetSignature>::Elem>> {
         struct IntegerIterator<RS: CharZeroRingSignature> {
             ring: RS,
             next: Integer,
         }
 
         impl<RS: CharZeroRingSignature> Iterator for IntegerIterator<RS> {
-            type Item = RS::Set;
+            type Item = RS::Elem;
 
             fn next(&mut self) -> Option<Self::Item> {
                 let next = self.next.clone();
@@ -856,7 +856,7 @@ impl<RS: CharZeroRingSignature + 'static> InfiniteSignature for RS {
 
 #[signature_meta_trait]
 pub trait CharZeroFieldSignature: FieldSignature + CharZeroRingSignature {
-    fn try_to_rat(&self, x: &Self::Set) -> Option<Rational>;
+    fn try_to_rat(&self, x: &Self::Elem) -> Option<Rational>;
 
     #[skip_meta]
     fn inbound_principal_rational_map(&self) -> PrincipalRationalMap<Self, &Self> {
@@ -877,20 +877,20 @@ pub trait FiniteFieldSignature: FieldSignature + FiniteUnitsSignature + FiniteSe
 //is a subset of the complex numbers
 #[signature_meta_trait]
 pub trait ComplexSubsetSignature: RinglikeSpecializationSignature {
-    fn as_f32_real_and_imaginary_parts(&self, z: &Self::Set) -> (f32, f32);
-    fn as_f64_real_and_imaginary_parts(&self, z: &Self::Set) -> (f64, f64);
+    fn as_f32_real_and_imaginary_parts(&self, z: &Self::Elem) -> (f32, f32);
+    fn as_f64_real_and_imaginary_parts(&self, z: &Self::Elem) -> (f64, f64);
 }
 
 //is a subset of the real numbers
 #[signature_meta_trait]
 pub trait RealSubsetSignature: ComplexSubsetSignature {
-    fn as_f64(&self, x: &Self::Set) -> f64 {
+    fn as_f64(&self, x: &Self::Elem) -> f64 {
         let (r, i) = self.as_f64_real_and_imaginary_parts(x);
         debug_assert_eq!(i, 0.0);
         r
     }
 
-    fn as_f32(&self, x: &Self::Set) -> f32 {
+    fn as_f32(&self, x: &Self::Elem) -> f32 {
         let (r, i) = self.as_f32_real_and_imaginary_parts(x);
         debug_assert_eq!(i, 0.0);
         r
@@ -899,25 +899,25 @@ pub trait RealSubsetSignature: ComplexSubsetSignature {
 
 #[signature_meta_trait]
 pub trait RealRoundingSignature: RealSubsetSignature {
-    fn floor(&self, x: &Self::Set) -> Integer; //round down
-    fn ceil(&self, x: &Self::Set) -> Integer; //round up
-    fn round(&self, x: &Self::Set) -> Integer; //round closets, either direction is fine if mid way
+    fn floor(&self, x: &Self::Elem) -> Integer; //round down
+    fn ceil(&self, x: &Self::Elem) -> Integer; //round up
+    fn round(&self, x: &Self::Elem) -> Integer; //round closets, either direction is fine if mid way
 }
 
 #[signature_meta_trait]
 pub trait RealFromFloatSignature: RealSubsetSignature {
-    fn from_f64_approx(&self, x: f64) -> Self::Set;
-    fn from_f32_approx(&self, x: f32) -> Self::Set {
+    fn from_f64_approx(&self, x: f64) -> Self::Elem;
+    fn from_f32_approx(&self, x: f32) -> Self::Elem {
         self.from_f64_approx(f64::from(x))
     }
 }
 
 #[signature_meta_trait]
 pub trait ComplexConjugateSignature: ComplexSubsetSignature {
-    fn conjugate(&self, x: &Self::Set) -> Self::Set;
+    fn conjugate(&self, x: &Self::Elem) -> Self::Elem;
 }
 impl<RS: RealSubsetSignature> ComplexConjugateSignature for RS {
-    fn conjugate(&self, x: &Self::Set) -> Self::Set {
+    fn conjugate(&self, x: &Self::Elem) -> Self::Elem {
         x.clone()
     }
 }
@@ -926,11 +926,11 @@ impl<RS: RealSubsetSignature> ComplexConjugateSignature for RS {
 pub trait PositiveRealNthRootSignature: ComplexSubsetSignature {
     //if x is a non-negative real number, return the nth root of x
     //may also return Ok for other well-defined values such as for 1st root of any x and 0th root of any non-zero x, but is not required to
-    fn nth_root(&self, x: &Self::Set, n: usize) -> Result<Self::Set, ()>;
-    fn square_root(&self, x: &Self::Set) -> Result<Self::Set, ()> {
+    fn nth_root(&self, x: &Self::Elem, n: usize) -> Result<Self::Elem, ()>;
+    fn square_root(&self, x: &Self::Elem) -> Result<Self::Elem, ()> {
         self.nth_root(x, 2)
     }
-    fn cube_root(&self, x: &Self::Set) -> Result<Self::Set, ()> {
+    fn cube_root(&self, x: &Self::Elem) -> Result<Self::Elem, ()> {
         self.nth_root(x, 3)
     }
 }
@@ -941,24 +941,24 @@ pub trait AlgebraicClosureSignature: FieldSignature
 where
     //TODO: can this allow polynomial structures taking a reference to the base field rather than an instance?
     PolynomialStructure<Self::BFS, Self::BFS>: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
-        + SetSignature<Set = Polynomial<<Self::BFS as SetSignature>::Set>>,
+        + SetSignature<Elem = Polynomial<<Self::BFS as SetSignature>::Elem>>,
 {
     type BFS: FieldSignature; //base field structure
 
     fn base_field(&self) -> Self::BFS;
 
-    fn base_field_inclusion(&self, x: &<Self::BFS as SetSignature>::Set) -> Self::Set;
+    fn base_field_inclusion(&self, x: &<Self::BFS as SetSignature>::Elem) -> Self::Elem;
 
     //return None for the zero polynomial
     fn all_roots_list(
         &self,
-        poly: &Polynomial<<Self::BFS as SetSignature>::Set>,
-    ) -> Option<Vec<Self::Set>>;
+        poly: &Polynomial<<Self::BFS as SetSignature>::Elem>,
+    ) -> Option<Vec<Self::Elem>>;
 
     fn all_roots_unique(
         &self,
-        poly: &Polynomial<<Self::BFS as SetSignature>::Set>,
-    ) -> Option<Vec<Self::Set>> {
+        poly: &Polynomial<<Self::BFS as SetSignature>::Elem>,
+    ) -> Option<Vec<Self::Elem>> {
         let base_field_poly = self.base_field().into_polynomials();
         self.all_roots_list(
             &base_field_poly
@@ -969,8 +969,8 @@ where
 
     fn all_roots_powers(
         &self,
-        poly: &Polynomial<<Self::BFS as SetSignature>::Set>,
-    ) -> Option<Vec<(Self::Set, usize)>> {
+        poly: &Polynomial<<Self::BFS as SetSignature>::Elem>,
+    ) -> Option<Vec<(Self::Elem, usize)>> {
         let mut root_powers = vec![];
         let base_field_poly = self.base_field().into_polynomials();
         for (factor, k) in base_field_poly.factor(poly).into_powers()? {

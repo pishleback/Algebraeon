@@ -134,7 +134,7 @@ impl<'a> StateAtGoodPrime<'a> {
 
 struct MemoryStack<SG: AssociativeCompositionSignature> {
     semigroup: SG,
-    modular_factor_values: Vec<SG::Set>,
+    modular_factor_values: Vec<SG::Elem>,
     // Store the partial products of a previous calculation
     // Since subsets are visited in lexcographic order, if a test is performed frequently, values towards the right will need to be updated
     /*
@@ -145,11 +145,11 @@ struct MemoryStack<SG: AssociativeCompositionSignature> {
         v(0)v(2) = b
         v(0)v(2)v(3) = c
      */
-    prev_calc: Vec<(usize, SG::Set)>,
+    prev_calc: Vec<(usize, SG::Elem)>,
 }
 
 impl<SG: AssociativeCompositionSignature> MemoryStack<SG> {
-    fn new(semigroup: SG, modular_factor_values: Vec<SG::Set>) -> Self {
+    fn new(semigroup: SG, modular_factor_values: Vec<SG::Elem>) -> Self {
         Self {
             semigroup,
             modular_factor_values,
@@ -157,11 +157,11 @@ impl<SG: AssociativeCompositionSignature> MemoryStack<SG> {
         }
     }
 
-    fn get_val(&self, i: usize) -> &<SG as SetSignature>::Set {
+    fn get_val(&self, i: usize) -> &<SG as SetSignature>::Elem {
         &self.modular_factor_values[i]
     }
 
-    fn get_product(&mut self, subset: &[usize]) -> &<SG as SetSignature>::Set {
+    fn get_product(&mut self, subset: &[usize]) -> &<SG as SetSignature>::Elem {
         debug_assert!(!subset.is_empty());
         let mut i = 0;
         loop {
@@ -226,14 +226,14 @@ mod dminusone_test {
     struct DMinusOneTestSemigroup {}
     impl Signature for DMinusOneTestSemigroup {}
     impl SetSignature for DMinusOneTestSemigroup {
-        type Set = DMinusOneTestSemigroupElem;
+        type Elem = DMinusOneTestSemigroupElem;
 
-        fn validate_element(&self, _x: &Self::Set) -> Result<(), String> {
+        fn validate_element(&self, _x: &Self::Elem) -> Result<(), String> {
             Ok(())
         }
     }
     impl CompositionSignature for DMinusOneTestSemigroup {
-        fn compose(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+        fn compose(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
             DMinusOneTestSemigroupElem {
                 approx_coeff_lower_bound: a
                     .approx_coeff_lower_bound
@@ -346,7 +346,7 @@ type ModularFactorMultSemigrp = PolynomialStructure<
     >,
 >;
 impl CompositionSignature for ModularFactorMultSemigrp {
-    fn compose(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn compose(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.mul(a, b)
     }
 }
@@ -357,13 +357,13 @@ impl AssociativeCompositionSignature for ModularFactorMultSemigrp {}
 struct ModularFactorDegreeSumSemigrp {}
 impl Signature for ModularFactorDegreeSumSemigrp {}
 impl SetSignature for ModularFactorDegreeSumSemigrp {
-    type Set = usize;
-    fn validate_element(&self, _x: &Self::Set) -> Result<(), String> {
+    type Elem = usize;
+    fn validate_element(&self, _x: &Self::Elem) -> Result<(), String> {
         Ok(())
     }
 }
 impl CompositionSignature for ModularFactorDegreeSumSemigrp {
-    fn compose(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn compose(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         a + b
     }
 }

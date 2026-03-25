@@ -34,8 +34,13 @@ impl<Ring: HermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> MatrixStru
     /// - pivots[r] is the column of the rth pivot
     pub fn row_hermite_algorithm(
         &self,
-        mut m: Matrix<Ring::Set>,
-    ) -> (Matrix<Ring::Set>, Matrix<Ring::Set>, Ring::Set, Vec<usize>) {
+        mut m: Matrix<Ring::Elem>,
+    ) -> (
+        Matrix<Ring::Elem>,
+        Matrix<Ring::Elem>,
+        Ring::Elem,
+        Vec<usize>,
+    ) {
         //build up U by applying row operations to the identity as we go
         let mut u = self.ident(m.rows());
         let mut u_det = self.ring().one();
@@ -131,13 +136,18 @@ impl<Ring: HermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> MatrixStru
 
     pub fn col_hermite_algorithm(
         &self,
-        a: Matrix<Ring::Set>,
-    ) -> (Matrix<Ring::Set>, Matrix<Ring::Set>, Ring::Set, Vec<usize>) {
+        a: Matrix<Ring::Elem>,
+    ) -> (
+        Matrix<Ring::Elem>,
+        Matrix<Ring::Elem>,
+        Ring::Elem,
+        Vec<usize>,
+    ) {
         let (rh, ru, u_det, pivs) = self.row_hermite_algorithm(a.transpose());
         (rh.transpose(), ru.transpose(), u_det, pivs)
     }
 
-    fn det_hermite(&self, a: Matrix<Ring::Set>) -> Ring::Set {
+    fn det_hermite(&self, a: Matrix<Ring::Elem>) -> Ring::Elem {
         let n = a.rows();
         debug_assert_eq!(n, a.cols());
         let (h, _u, u_det, _pivs) = self.row_hermite_algorithm(a);
@@ -149,7 +159,7 @@ impl<Ring: HermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> MatrixStru
         self.ring().try_divide(&h_det, &u_det).unwrap()
     }
 
-    pub fn det(&self, a: Matrix<Ring::Set>) -> Result<Ring::Set, MatOppErr> {
+    pub fn det(&self, a: Matrix<Ring::Elem>) -> Result<Ring::Elem, MatOppErr> {
         let n = a.rows();
         if n != a.cols() {
             Err(MatOppErr::NotSquare)
@@ -161,7 +171,7 @@ impl<Ring: HermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> MatrixStru
         }
     }
 
-    pub fn rank(&self, a: Matrix<Ring::Set>) -> usize {
+    pub fn rank(&self, a: Matrix<Ring::Elem>) -> usize {
         let (_h, _u, _u_det, pivs) = self.row_hermite_algorithm(a);
         pivs.len()
     }
@@ -177,8 +187,13 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
     /// - pivots[r] is the column of the rth pivot and pivots.len() == rank(A)
     pub fn row_reduced_hermite_algorithm(
         &self,
-        m: Matrix<Ring::Set>,
-    ) -> (Matrix<Ring::Set>, Matrix<Ring::Set>, Ring::Set, Vec<usize>) {
+        m: Matrix<Ring::Elem>,
+    ) -> (
+        Matrix<Ring::Elem>,
+        Matrix<Ring::Elem>,
+        Ring::Elem,
+        Vec<usize>,
+    ) {
         let (mut h, mut u, u_det, pivs) = self.row_hermite_algorithm(m);
 
         for (pr, pc) in pivs.iter().enumerate() {
@@ -205,23 +220,28 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         (h, u, u_det, pivs)
     }
 
-    pub fn row_reduced_hermite_normal_form(&self, m: Matrix<Ring::Set>) -> Matrix<Ring::Set> {
+    pub fn row_reduced_hermite_normal_form(&self, m: Matrix<Ring::Elem>) -> Matrix<Ring::Elem> {
         self.row_reduced_hermite_algorithm(m).0
     }
 
     pub fn col_reduced_hermite_algorithm(
         &self,
-        m: Matrix<Ring::Set>,
-    ) -> (Matrix<Ring::Set>, Matrix<Ring::Set>, Ring::Set, Vec<usize>) {
+        m: Matrix<Ring::Elem>,
+    ) -> (
+        Matrix<Ring::Elem>,
+        Matrix<Ring::Elem>,
+        Ring::Elem,
+        Vec<usize>,
+    ) {
         let (rh, ru, ru_det, pivs) = self.row_reduced_hermite_algorithm(m.transpose());
         (rh.transpose(), ru.transpose(), ru_det, pivs)
     }
 
-    pub fn col_reduced_hermite_normal_form(&self, m: Matrix<Ring::Set>) -> Matrix<Ring::Set> {
+    pub fn col_reduced_hermite_normal_form(&self, m: Matrix<Ring::Elem>) -> Matrix<Ring::Elem> {
         self.col_reduced_hermite_algorithm(m).0
     }
 
-    pub fn inv(&self, a: Matrix<Ring::Set>) -> Result<Matrix<Ring::Set>, MatOppErr> {
+    pub fn inv(&self, a: Matrix<Ring::Elem>) -> Result<Matrix<Ring::Elem>, MatOppErr> {
         let n = a.rows();
         if n == a.cols() {
             let (h, u, _u_det, _pivs) = self.row_reduced_hermite_algorithm(a);
@@ -236,25 +256,25 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         }
     }
 
-    pub fn row_span(&self, matrix: Matrix<Ring::Set>) -> FinitelyFreeSubmodule<Ring::Set> {
+    pub fn row_span(&self, matrix: Matrix<Ring::Elem>) -> FinitelyFreeSubmodule<Ring::Elem> {
         FinitelyFreeModuleStructure::<Ring, _>::new(self.ring(), matrix.cols())
             .into_submodules()
             .matrix_row_span(matrix)
     }
 
-    pub fn col_span(&self, matrix: Matrix<Ring::Set>) -> FinitelyFreeSubmodule<Ring::Set> {
+    pub fn col_span(&self, matrix: Matrix<Ring::Elem>) -> FinitelyFreeSubmodule<Ring::Elem> {
         FinitelyFreeModuleStructure::<Ring, _>::new(self.ring(), matrix.rows())
             .into_submodules()
             .matrix_col_span(matrix)
     }
 
-    pub fn row_kernel(&self, matrix: Matrix<Ring::Set>) -> FinitelyFreeSubmodule<Ring::Set> {
+    pub fn row_kernel(&self, matrix: Matrix<Ring::Elem>) -> FinitelyFreeSubmodule<Ring::Elem> {
         FinitelyFreeModuleStructure::<Ring, _>::new(self.ring(), matrix.rows())
             .into_submodules()
             .matrix_row_kernel(matrix)
     }
 
-    pub fn col_kernel(&self, matrix: Matrix<Ring::Set>) -> FinitelyFreeSubmodule<Ring::Set> {
+    pub fn col_kernel(&self, matrix: Matrix<Ring::Elem>) -> FinitelyFreeSubmodule<Ring::Elem> {
         FinitelyFreeModuleStructure::<Ring, _>::new(self.ring(), matrix.cols())
             .into_submodules()
             .matrix_col_kernel(matrix)
@@ -262,9 +282,9 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
 
     pub fn row_preimage(
         &self,
-        matrix: &Matrix<Ring::Set>,
-        space: &FinitelyFreeSubmodule<Ring::Set>,
-    ) -> FinitelyFreeSubmodule<Ring::Set> {
+        matrix: &Matrix<Ring::Elem>,
+        space: &FinitelyFreeSubmodule<Ring::Elem>,
+    ) -> FinitelyFreeSubmodule<Ring::Elem> {
         FinitelyFreeModuleStructure::<Ring, _>::new(self.ring(), matrix.rows())
             .into_submodules()
             .matrix_row_preimage(matrix, space)
@@ -272,9 +292,9 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
 
     pub fn col_preimage(
         &self,
-        matrix: &Matrix<Ring::Set>,
-        space: &FinitelyFreeSubmodule<Ring::Set>,
-    ) -> FinitelyFreeSubmodule<Ring::Set> {
+        matrix: &Matrix<Ring::Elem>,
+        space: &FinitelyFreeSubmodule<Ring::Elem>,
+    ) -> FinitelyFreeSubmodule<Ring::Elem> {
         FinitelyFreeModuleStructure::<Ring, _>::new(self.ring(), matrix.rows())
             .into_submodules()
             .matrix_col_preimage(matrix, space)
@@ -282,8 +302,8 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
 
     pub fn row_affine_span(
         &self,
-        matrix: Matrix<Ring::Set>,
-    ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Set> {
+        matrix: Matrix<Ring::Elem>,
+    ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Elem> {
         let span = (0..matrix.rows())
             .map(|r| matrix.get_row(r))
             .collect::<Vec<_>>();
@@ -294,16 +314,16 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
 
     pub fn col_affine_span(
         &self,
-        matrix: Matrix<Ring::Set>,
-    ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Set> {
+        matrix: Matrix<Ring::Elem>,
+    ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Elem> {
         self.row_affine_span(matrix.transpose())
     }
 
     pub fn row_solve(
         &self,
-        matrix: Matrix<Ring::Set>,
-        y: &Vec<Ring::Set>,
-    ) -> Option<Vec<Ring::Set>> {
+        matrix: Matrix<Ring::Elem>,
+        y: &Vec<Ring::Elem>,
+    ) -> Option<Vec<Ring::Elem>> {
         let submodules = FinitelyFreeModuleStructure::<Ring, _>::new(self.ring(), matrix.cols())
             .into_submodules();
         let (row_span_submodule, basis_in_terms_of_matrix_rows) =
@@ -325,17 +345,17 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
 
     pub fn col_solve(
         &self,
-        matrix: Matrix<Ring::Set>,
-        y: &Vec<Ring::Set>,
-    ) -> Option<Vec<Ring::Set>> {
+        matrix: Matrix<Ring::Elem>,
+        y: &Vec<Ring::Elem>,
+    ) -> Option<Vec<Ring::Elem>> {
         self.row_solve(matrix.transpose(), y)
     }
 
     pub fn row_solution_set(
         &self,
-        matrix: Matrix<Ring::Set>,
-        y: &Vec<Ring::Set>,
-    ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Set> {
+        matrix: Matrix<Ring::Elem>,
+        y: &Vec<Ring::Elem>,
+    ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Elem> {
         let module = FinitelyFreeModuleStructure::<Ring, _>::new(self.ring(), matrix.rows());
         match self.row_solve(matrix.clone(), y) {
             Some(offset) => FinitelyFreeSubmoduleAffineSubset::NonEmpty(
@@ -349,9 +369,9 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
 
     pub fn col_solution_set(
         &self,
-        matrix: Matrix<Ring::Set>,
-        y: &Vec<Ring::Set>,
-    ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Set> {
+        matrix: Matrix<Ring::Elem>,
+        y: &Vec<Ring::Elem>,
+    ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Elem> {
         self.row_solution_set(matrix.transpose(), y)
     }
 }

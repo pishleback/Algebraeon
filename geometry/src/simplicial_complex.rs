@@ -54,7 +54,7 @@ impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone + Send + Sync>
 impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone + Send + Sync>
     LabelledSimplexCollection<'f, FS, T> for LabelledSimplicialComplex<'f, FS, T>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type WithLabel<S: Eq + Clone + Send + Sync> = LabelledSimplicialComplex<'f, FS, S>;
     type SubsetType = LabelledPartialSimplicialComplex<'f, FS, T>;
@@ -159,7 +159,7 @@ where
 impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone + Send + Sync>
     LabelledSimplicialComplex<'f, FS, T>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     #[allow(unused)]
     pub(crate) fn check(&self) {
@@ -193,7 +193,7 @@ where
 
 impl<'f, FS: OrderedRingSignature + FieldSignature> SimplicialComplex<'f, FS>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     pub fn interior_and_boundary(&self) -> LabelledSimplicialComplex<'f, FS, InteriorOrBoundary> {
         /*
@@ -290,7 +290,7 @@ fn simplify_in_region<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clo
     labelled_interior: HashMap<Simplex<'f, FS>, T>,
 ) -> Option<HashMap<Simplex<'f, FS>, T>>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     let labelled_interior =
         LabelledSimplicialDisjointUnion::new_labelled_unchecked(space, labelled_interior);
@@ -418,7 +418,7 @@ where
 impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone + Send + Sync>
     LabelledSimplicialComplex<'f, FS, T>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     pub fn simplify(mut self) -> Self {
         //go through each point

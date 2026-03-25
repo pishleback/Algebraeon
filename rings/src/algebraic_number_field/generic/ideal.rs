@@ -149,9 +149,9 @@ impl<
     OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
 > SetSignature for OrderIdealsStructure<K, KB, MAXIMAL, OB>
 {
-    type Set = OrderIdeal;
+    type Elem = OrderIdeal;
 
-    fn validate_element(&self, ideal: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, ideal: &Self::Elem) -> Result<(), String> {
         match ideal {
             OrderIdeal::Zero => Ok(()),
             OrderIdeal::NonZero(integer_submodule) => {
@@ -435,7 +435,7 @@ impl<
     OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
 > EqSignature for OrderIdealsStructure<K, KB, MAXIMAL, OB>
 {
-    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+    fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
         debug_assert!(self.validate_element(a).is_ok());
         debug_assert!(self.validate_element(b).is_ok());
         match (a, b) {
@@ -469,8 +469,8 @@ impl<
     OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
 > ZeroSignature for OrderIdealsStructure<K, KB, MAXIMAL, OB>
 {
-    fn zero(&self) -> Self::Set {
-        Self::Set::Zero
+    fn zero(&self) -> Self::Elem {
+        Self::Elem::Zero
     }
 }
 
@@ -481,7 +481,7 @@ impl<
     OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
 > AdditionSignature for OrderIdealsStructure<K, KB, MAXIMAL, OB>
 {
-    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn add(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         debug_assert!(self.validate_element(a).is_ok());
         debug_assert!(self.validate_element(b).is_ok());
         match (a, b) {
@@ -491,7 +491,7 @@ impl<
             (
                 OrderIdeal::NonZero(a_integer_submodule),
                 OrderIdeal::NonZero(b_integer_submodule),
-            ) => Self::Set::NonZero(
+            ) => Self::Elem::NonZero(
                 self.order()
                     .free_integer_submodule_restructure()
                     .submodules()
@@ -508,7 +508,7 @@ impl<
     OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
 > TryNegateSignature for OrderIdealsStructure<K, KB, MAXIMAL, OB>
 {
-    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
         if self.is_zero(a) {
             Some(self.zero())
         } else {
@@ -533,7 +533,7 @@ impl<
     OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
 > OneSignature for OrderIdealsStructure<K, KB, MAXIMAL, OB>
 {
-    fn one(&self) -> Self::Set {
+    fn one(&self) -> Self::Elem {
         self.principal_ideal(&self.ring().one())
     }
 }
@@ -545,7 +545,7 @@ impl<
     OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
 > MultiplicationSignature for OrderIdealsStructure<K, KB, MAXIMAL, OB>
 {
-    fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn mul(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         debug_assert!(self.validate_element(a).is_ok());
         debug_assert!(self.validate_element(b).is_ok());
         match (a, b) {
@@ -568,7 +568,7 @@ impl<
                 }
                 self.from_integer_span(span)
             }
-            _ => Self::Set::Zero,
+            _ => Self::Elem::Zero,
         }
     }
 }
@@ -634,7 +634,7 @@ impl<
     OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
 > TryReciprocalSignature for OrderIdealsStructure<K, KB, MAXIMAL, OB>
 {
-    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_reciprocal(&self, a: &Self::Elem) -> Option<Self::Elem> {
         // (1)=R is the only unit since a product of proper ideals is always a proper ideal
         if self.equal(a, &self.one()) {
             Some(self.one())
@@ -651,7 +651,7 @@ impl<
     OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
 > FavoriteAssociateSignature for OrderIdealsStructure<K, KB, MAXIMAL, OB>
 {
-    fn factor_fav_assoc(&self, a: &Self::Set) -> (Self::Set, Self::Set) {
+    fn factor_fav_assoc(&self, a: &Self::Elem) -> (Self::Elem, Self::Elem) {
         (self.one(), a.clone())
     }
 }
@@ -664,9 +664,9 @@ impl<
 > IdealsArithmeticSignature<OrderWithBasis<K, KB, MAXIMAL>, OB>
     for OrderIdealsStructure<K, KB, MAXIMAL, OB>
 {
-    fn principal_ideal(&self, a: &Vec<Integer>) -> Self::Set {
+    fn principal_ideal(&self, a: &Vec<Integer>) -> Self::Elem {
         if self.order().is_zero(a) {
-            Self::Set::Zero
+            Self::Elem::Zero
         } else {
             let n = self.order().n();
             let ideal = self.from_integer_span(
@@ -687,7 +687,7 @@ impl<
         }
     }
 
-    fn contains_ideal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+    fn contains_ideal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
         debug_assert!(self.validate_element(a).is_ok());
         debug_assert!(self.validate_element(b).is_ok());
         match (a, b) {
@@ -707,7 +707,7 @@ impl<
         }
     }
 
-    fn contains_element(&self, a: &Self::Set, x: &Vec<Integer>) -> bool {
+    fn contains_element(&self, a: &Self::Elem, x: &Vec<Integer>) -> bool {
         debug_assert!(self.validate_element(a).is_ok());
         debug_assert!(self.order().validate_element(x).is_ok());
         match a {
@@ -720,24 +720,24 @@ impl<
         }
     }
 
-    fn intersect(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn intersect(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         debug_assert!(self.validate_element(a).is_ok());
         debug_assert!(self.validate_element(b).is_ok());
         match (a, b) {
             (
                 OrderIdeal::NonZero(a_integer_submodule),
                 OrderIdeal::NonZero(b_integer_submodule),
-            ) => Self::Set::NonZero(
+            ) => Self::Elem::NonZero(
                 self.order()
                     .free_integer_submodule_restructure()
                     .submodules()
                     .intersect(a_integer_submodule.clone(), b_integer_submodule.clone()),
             ),
-            _ => Self::Set::Zero,
+            _ => Self::Elem::Zero,
         }
     }
 
-    fn quotient(&self, i: &Self::Set, j: &Self::Set) -> Self::Set {
+    fn quotient(&self, i: &Self::Elem, j: &Self::Elem) -> Self::Elem {
         let j = self.to_integer_submodule(j);
         let j = j.as_ref();
         self.quotient_ideal_by_integer_submodule(i, j)
@@ -753,9 +753,9 @@ impl<
 {
     fn quotient_ideal_by_integer_submodule(
         &self,
-        i: &<Self as SetSignature>::Set,
+        i: &<Self as SetSignature>::Elem,
         s: &FinitelyFreeSubmodule<Integer>,
-    ) -> <Self as SetSignature>::Set {
+    ) -> <Self as SetSignature>::Elem {
         let i = self.to_integer_submodule(i);
         let i = i.as_ref();
 
@@ -800,13 +800,13 @@ impl<
 
     fn factorization_pow(
         &self,
-        a: &Self::Set,
-        k: &<Self::FactoredExponent as SetSignature>::Set,
-    ) -> Self::Set {
+        a: &Self::Elem,
+        k: &<Self::FactoredExponent as SetSignature>::Elem,
+    ) -> Self::Elem {
         self.nat_pow(a, k)
     }
 
-    fn try_is_irreducible(&self, _a: &Self::Set) -> Option<bool> {
+    fn try_is_irreducible(&self, _a: &Self::Elem) -> Option<bool> {
         None
     }
 }
@@ -837,7 +837,7 @@ where
             IdealsR = OrderIdealsStructure<K, KB, true, &'a OrderWithBasis<K, KB, true>>,
         >,
 {
-    fn factor_unchecked(&self, ideal: &Self::Set) -> Factored<Self::Set, Natural> {
+    fn factor_unchecked(&self, ideal: &Self::Elem) -> Factored<Self::Elem, Natural> {
         if let Some(factored_ideal) = self
             .order()
             .outbound_roi_to_anf_inclusion()
@@ -883,7 +883,7 @@ where
         >,
 {
     /// Determine whether an ideal is a square, i.e. every prime ideal in its factorization has even valuation.
-    fn is_square(&self, ideal: &Self::Set) -> bool {
+    fn is_square(&self, ideal: &Self::Elem) -> bool {
         if let Some(powers) = self.factor(ideal).into_powers() {
             powers
                 .into_iter()
@@ -895,7 +895,7 @@ where
     }
 
     /// Return an ideal whose square equals the input, if it exists.
-    fn sqrt_if_square(&self, ideal: &Self::Set) -> Option<Self::Set> {
+    fn sqrt_if_square(&self, ideal: &Self::Elem) -> Option<Self::Elem> {
         if let Some(powers) = self.factor(ideal).into_powers() {
             let mut sqrt_factor_powers = vec![];
             for (prime, exponent) in powers {
@@ -1181,14 +1181,14 @@ impl<
         self.r_ideals()
     }
 
-    fn ideal_norm(&self, ideal: &<Self::IdealsR as SetSignature>::Set) -> Natural {
+    fn ideal_norm(&self, ideal: &<Self::IdealsR as SetSignature>::Elem) -> Natural {
         self.r_ideals().norm(ideal)
     }
 
     fn factor_prime_ideal(
         &self,
         prime_ideal: Natural,
-    ) -> DedekindExtensionIdealFactorsAbovePrime<Natural, <Self::IdealsR as SetSignature>::Set>
+    ) -> DedekindExtensionIdealFactorsAbovePrime<Natural, <Self::IdealsR as SetSignature>::Elem>
     {
         // https://en.wikipedia.org/wiki/Dedekind%E2%80%93Kummer_theorem
         let p = Integer::structure().ideals().ideal_generator(&prime_ideal);

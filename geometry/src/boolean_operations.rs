@@ -24,7 +24,7 @@ fn simplex_venn<'f, FS: OrderedRingSignature + FieldSignature>(
     right_simplex: &Simplex<'f, FS>,
 ) -> LabelledPartialSimplicialComplex<'f, FS, VennLabel>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     let ambient_space =
         common_space(left_simplex.ambient_space(), right_simplex.ambient_space()).unwrap();
@@ -99,7 +99,7 @@ where
 impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone + Send + Sync>
     LabelledSimplicialDisjointUnion<'f, FS, T>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     pub(crate) fn subtract_raw<S: Eq + Clone + Send + Sync>(
         &self,
@@ -192,7 +192,7 @@ impl<
 > Difference<LabelledSimplicialDisjointUnion<'f, FS, S>>
     for LabelledSimplicialDisjointUnion<'f, FS, T>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type Output = LabelledPartialSimplicialComplex<'f, FS, T>;
 
@@ -211,7 +211,7 @@ impl<
 > Difference<LabelledPartialSimplicialComplex<'f, FS, S>>
     for LabelledSimplicialDisjointUnion<'f, FS, T>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type Output = LabelledPartialSimplicialComplex<'f, FS, T>;
 
@@ -228,7 +228,7 @@ impl<
 > Difference<LabelledSimplicialDisjointUnion<'f, FS, S>>
     for LabelledPartialSimplicialComplex<'f, FS, T>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type Output = LabelledPartialSimplicialComplex<'f, FS, T>;
 
@@ -247,7 +247,7 @@ impl<
 > Difference<LabelledPartialSimplicialComplex<'f, FS, S>>
     for LabelledPartialSimplicialComplex<'f, FS, T>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type Output = LabelledPartialSimplicialComplex<'f, FS, T>;
 
@@ -265,7 +265,7 @@ impl<
     S: Eq + Clone + Send + Sync,
 > Difference<LabelledSimplicialComplex<'f, FS, S>> for LabelledSimplicialDisjointUnion<'f, FS, T>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type Output = LabelledPartialSimplicialComplex<'f, FS, T>;
 
@@ -281,7 +281,7 @@ impl<
     S: Eq + Clone + Send + Sync,
 > Difference<LabelledSimplicialComplex<'f, FS, S>> for LabelledPartialSimplicialComplex<'f, FS, T>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type Output = LabelledPartialSimplicialComplex<'f, FS, T>;
 
@@ -299,7 +299,7 @@ impl<
     S: Eq + Clone + Send + Sync,
 > Difference<LabelledSimplicialDisjointUnion<'f, FS, S>> for LabelledSimplicialComplex<'f, FS, T>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type Output = LabelledPartialSimplicialComplex<'f, FS, T>;
 
@@ -317,7 +317,7 @@ impl<
     S: Eq + Clone + Send + Sync,
 > Difference<LabelledPartialSimplicialComplex<'f, FS, S>> for LabelledSimplicialComplex<'f, FS, T>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type Output = LabelledPartialSimplicialComplex<'f, FS, T>;
 
@@ -335,7 +335,7 @@ impl<
     S: Eq + Clone + Send + Sync,
 > Difference<LabelledSimplicialComplex<'f, FS, S>> for LabelledSimplicialComplex<'f, FS, T>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type Output = LabelledPartialSimplicialComplex<'f, FS, T>;
 
@@ -349,7 +349,7 @@ where
 impl<'f, FS: OrderedRingSignature + FieldSignature> Intersect<SimplicialDisjointUnion<'f, FS>>
     for SimplicialDisjointUnion<'f, FS>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type Output = PartialSimplicialComplex<'f, FS>;
 
@@ -364,7 +364,7 @@ where
 impl<'f, FS: OrderedRingSignature + FieldSignature> Intersect<PartialSimplicialComplex<'f, FS>>
     for SimplicialDisjointUnion<'f, FS>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type Output = PartialSimplicialComplex<'f, FS>;
 
@@ -376,7 +376,7 @@ where
 impl<'f, FS: OrderedRingSignature + FieldSignature> Intersect<SimplicialDisjointUnion<'f, FS>>
     for PartialSimplicialComplex<'f, FS>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type Output = PartialSimplicialComplex<'f, FS>;
 
@@ -390,7 +390,7 @@ where
 impl<'f, FS: OrderedRingSignature + FieldSignature> Intersect<PartialSimplicialComplex<'f, FS>>
     for PartialSimplicialComplex<'f, FS>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type Output = PartialSimplicialComplex<'f, FS>;
 
@@ -404,7 +404,7 @@ where
 impl<'f, FS: OrderedRingSignature + FieldSignature> Intersect<SimplicialDisjointUnion<'f, FS>>
     for SimplicialComplex<'f, FS>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type Output = PartialSimplicialComplex<'f, FS>;
 
@@ -418,7 +418,7 @@ where
 impl<'f, FS: OrderedRingSignature + FieldSignature> Intersect<PartialSimplicialComplex<'f, FS>>
     for SimplicialComplex<'f, FS>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type Output = PartialSimplicialComplex<'f, FS>;
 
@@ -432,7 +432,7 @@ where
 impl<'f, FS: OrderedRingSignature + FieldSignature> Intersect<SimplicialComplex<'f, FS>>
     for SimplicialDisjointUnion<'f, FS>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type Output = PartialSimplicialComplex<'f, FS>;
 
@@ -444,7 +444,7 @@ where
 impl<'f, FS: OrderedRingSignature + FieldSignature> Intersect<SimplicialComplex<'f, FS>>
     for PartialSimplicialComplex<'f, FS>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type Output = PartialSimplicialComplex<'f, FS>;
 
@@ -458,7 +458,7 @@ where
 impl<'f, FS: OrderedRingSignature + FieldSignature> Intersect<SimplicialComplex<'f, FS>>
     for SimplicialComplex<'f, FS>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type Output = SimplicialComplex<'f, FS>;
 
@@ -474,7 +474,7 @@ where
 impl<'f, FS: OrderedRingSignature + FieldSignature> Union<SimplicialDisjointUnion<'f, FS>>
     for SimplicialDisjointUnion<'f, FS>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type Output = PartialSimplicialComplex<'f, FS>;
 
@@ -488,7 +488,7 @@ where
 impl<'f, FS: OrderedRingSignature + FieldSignature> Union<PartialSimplicialComplex<'f, FS>>
     for SimplicialDisjointUnion<'f, FS>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type Output = PartialSimplicialComplex<'f, FS>;
 
@@ -500,7 +500,7 @@ where
 impl<'f, FS: OrderedRingSignature + FieldSignature> Union<SimplicialDisjointUnion<'f, FS>>
     for PartialSimplicialComplex<'f, FS>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type Output = PartialSimplicialComplex<'f, FS>;
 
@@ -512,7 +512,7 @@ where
 impl<'f, FS: OrderedRingSignature + FieldSignature> Union<PartialSimplicialComplex<'f, FS>>
     for PartialSimplicialComplex<'f, FS>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type Output = PartialSimplicialComplex<'f, FS>;
 
@@ -526,7 +526,7 @@ where
 impl<'f, FS: OrderedRingSignature + FieldSignature> Union<SimplicialDisjointUnion<'f, FS>>
     for SimplicialComplex<'f, FS>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type Output = PartialSimplicialComplex<'f, FS>;
 
@@ -538,7 +538,7 @@ where
 impl<'f, FS: OrderedRingSignature + FieldSignature> Union<PartialSimplicialComplex<'f, FS>>
     for SimplicialComplex<'f, FS>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type Output = PartialSimplicialComplex<'f, FS>;
 
@@ -552,7 +552,7 @@ where
 impl<'f, FS: OrderedRingSignature + FieldSignature> Union<SimplicialComplex<'f, FS>>
     for SimplicialDisjointUnion<'f, FS>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type Output = PartialSimplicialComplex<'f, FS>;
 
@@ -564,7 +564,7 @@ where
 impl<'f, FS: OrderedRingSignature + FieldSignature> Union<SimplicialComplex<'f, FS>>
     for PartialSimplicialComplex<'f, FS>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type Output = PartialSimplicialComplex<'f, FS>;
 
@@ -578,7 +578,7 @@ where
 impl<'f, FS: OrderedRingSignature + FieldSignature> Union<SimplicialComplex<'f, FS>>
     for SimplicialComplex<'f, FS>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type Output = SimplicialComplex<'f, FS>;
 
@@ -593,7 +593,7 @@ where
 
 // impl<'f, FS: OrderedRingSignature + FieldSignature> SimplicialComplex<'f, FS>
 // where
-//     FS::Set: Hash,
+//     FS::Elem: Hash,
 // {
 //     pub fn union_raw(&self, other: &Self) -> Self {
 //         LabelledSimplicialDisjointUnion::union_raw(&self.into(), &other.into())

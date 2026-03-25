@@ -69,7 +69,7 @@ impl<'f, FS: FieldSignature> AffineSpace<'f, FS> {
     pub fn empty_subset(&self) -> impl LabelledSimplexCollection<'f, FS, ()>
     where
         FS: OrderedRingSignature,
-        FS::Set: Hash,
+        FS::Elem: Hash,
     {
         SimplicialDisjointUnion::new_unchecked(*self, std::collections::HashSet::new())
     }

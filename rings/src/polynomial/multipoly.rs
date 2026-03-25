@@ -164,8 +164,8 @@ impl Monomial {
     pub fn evaluate<RS: RingSignature>(
         &self,
         ring: &RS,
-        values: &HashMap<Variable, impl Borrow<RS::Set>>,
-    ) -> RS::Set {
+        values: &HashMap<Variable, impl Borrow<RS::Elem>>,
+    ) -> RS::Elem {
         ring.product(
             &self
                 .prod

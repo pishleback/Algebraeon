@@ -163,8 +163,8 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
 
     pub fn factor_primitive_sqfree_by_symmetric_root_polynomials(
         &self,
-        p: &<Self as SetSignature>::Set,
-    ) -> Factored<<Self as SetSignature>::Set, Natural> {
+        p: &<Self as SetSignature>::Elem,
+    ) -> Factored<<Self as SetSignature>::Elem, Natural> {
         //https://www.cse.iitk.ac.in/users/nitin/courses/scribed2-WS2011-12.pdf
 
         let rat_poly_poly_poly = Rational::structure()
@@ -238,8 +238,8 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
 
     pub fn factor_primitive_sqfree_by_reduced_ring(
         &self,
-        p: &<Self as SetSignature>::Set,
-    ) -> Factored<<Self as SetSignature>::Set, Natural> {
+        p: &<Self as SetSignature>::Elem,
+    ) -> Factored<<Self as SetSignature>::Elem, Natural> {
         debug_assert!(!self.is_zero(p));
 
         /*
@@ -548,11 +548,11 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
     //factor over the rationals first, then factor each irreducible rational factor over the anf
     pub fn factorize_rational_factorize_first(
         &self,
-        f: &<Self as SetSignature>::Set,
+        f: &<Self as SetSignature>::Elem,
         factorize: &impl Fn(
-            &<Self as SetSignature>::Set,
-        ) -> Factored<<Self as SetSignature>::Set, Natural>,
-    ) -> Factored<<Self as SetSignature>::Set, Natural> {
+            &<Self as SetSignature>::Elem,
+        ) -> Factored<<Self as SetSignature>::Elem, Natural>,
+    ) -> Factored<<Self as SetSignature>::Elem, Natural> {
         debug_assert!(!self.is_zero(f));
         // println!("f = {}", f);
 
@@ -591,7 +591,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
 impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>> FactoringMonoidSignature
     for PolynomialStructure<AlgebraicNumberFieldPolynomialQuotientStructure, B>
 {
-    fn factor_unchecked(&self, f: &Self::Set) -> Factored<Self::Set, Natural> {
+    fn factor_unchecked(&self, f: &Self::Elem) -> Factored<Self::Elem, Natural> {
         if self.is_zero(f) {
             Factored::Zero
         } else {

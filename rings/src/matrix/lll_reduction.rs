@@ -34,10 +34,10 @@ impl<
     /// `delta` must be in the range (-0.25, 1] with polynomial time complexity only for `delta` in (-0.25, 1). `delta` = 3/4 is the "default" value to use.
     pub fn lll_row_reduction_algorithm(
         &self,
-        mut basis: Matrix<FS::Set>,
+        mut basis: Matrix<FS::Elem>,
         inner_product: &impl RealInnerProduct<FS>,
         delta: &Rational,
-    ) -> (Matrix<FS::Set>, Matrix<FS::Set>) {
+    ) -> (Matrix<FS::Elem>, Matrix<FS::Elem>) {
         let n = basis.rows(); // size of the basis
         let m = basis.cols(); // dimension of the ambient space
         assert!(m >= n);
@@ -62,10 +62,10 @@ impl<
             // <bk, bk>
             basis_gs_sq: Set,
         }
-        let mut cache = Vec::<CacheEntry<FS::Set>>::with_capacity(n);
+        let mut cache = Vec::<CacheEntry<FS::Elem>>::with_capacity(n);
 
         #[cfg(debug_assertions)]
-        let validate_cache = |basis: &Matrix<FS::Set>, cache: &Vec<CacheEntry<FS::Set>>| {
+        let validate_cache = |basis: &Matrix<FS::Elem>, cache: &Vec<CacheEntry<FS::Elem>>| {
             let true_mat_gs = self.gram_schmidt_row_orthogonalization(basis.clone(), inner_product);
             for (k, cache_entry) in cache.iter().enumerate() {
                 // check mu
@@ -115,9 +115,9 @@ impl<
 
         let mut h = self.ident(n);
 
-        let reduce = |cache: &mut Vec<CacheEntry<FS::Set>>,
-                      h: &mut Matrix<FS::Set>,
-                      basis: &mut Matrix<FS::Set>,
+        let reduce = |cache: &mut Vec<CacheEntry<FS::Elem>>,
+                      h: &mut Matrix<FS::Elem>,
+                      basis: &mut Matrix<FS::Elem>,
                       k: usize,
                       j: usize| {
             let mu_rounded = self.ring().round(&cache[k].mu[j]);
@@ -304,10 +304,10 @@ impl<
     /// `delta` must be in the range (-0.25, 1] with polynomial time complexity only for `delta` in (-0.25, 1). `delta` = 3/4 is the "default" value to use.
     pub fn lll_col_reduction_algorithm(
         &self,
-        basis: Matrix<FS::Set>,
+        basis: Matrix<FS::Elem>,
         inner_product: &impl RealInnerProduct<FS>,
         delta: &Rational,
-    ) -> (Matrix<FS::Set>, Matrix<FS::Set>) {
+    ) -> (Matrix<FS::Elem>, Matrix<FS::Elem>) {
         let (h, b) = self.lll_row_reduction_algorithm(basis.transpose(), inner_product, delta);
         (h.transpose(), b.transpose())
     }

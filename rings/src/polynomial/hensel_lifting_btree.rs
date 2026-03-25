@@ -16,8 +16,8 @@ enum HenselFactorizationNodeCases<
         // `af + bg = 1 mod i`, or if LIFTED_BEZOUT_COEFFS = true, `af + bg = 1 mod i^n`
         f_factorization: Box<HenselFactorizationNode<LIFTED_BEZOUT_COEFFS, RS>>, // defined modulo i^n
         g_factorization: Box<HenselFactorizationNode<LIFTED_BEZOUT_COEFFS, RS>>, // defined modulo i^n
-        a: Polynomial<RS::Set>,                                                  // defined modulo i
-        b: Polynomial<RS::Set>,                                                  // defined modulo i
+        a: Polynomial<RS::Elem>,                                                 // defined modulo i
+        b: Polynomial<RS::Elem>,                                                 // defined modulo i
     },
 }
 
@@ -26,7 +26,7 @@ struct HenselFactorizationNode<
     const LIFTED_BEZOUT_COEFFS: bool,
     RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature,
 > {
-    h: Polynomial<RS::Set>,
+    h: Polynomial<RS::Elem>,
     factorization: HenselFactorizationNodeCases<LIFTED_BEZOUT_COEFFS, RS>,
 }
 
@@ -37,7 +37,7 @@ pub struct HenselFactorization<
     RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature,
 > {
     ring: RS,
-    i: RS::Set,
+    i: RS::Elem,
     n: Natural,
     factorization: HenselFactorizationNode<LIFTED_BEZOUT_COEFFS, RS>, //defined absolutely and factored modulo i^n
 }
@@ -47,7 +47,7 @@ impl<
     RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature,
 > HenselFactorization<LIFTED_BEZOUT_COEFFS, RS>
 {
-    pub fn bezout_coeff_modulus_base(&self) -> &RS::Set {
+    pub fn bezout_coeff_modulus_base(&self) -> &RS::Elem {
         &self.i
     }
 
@@ -59,7 +59,7 @@ impl<
         }
     }
 
-    pub fn factorization_modulus_base(&self) -> &RS::Set {
+    pub fn factorization_modulus_base(&self) -> &RS::Elem {
         &self.i
     }
 
@@ -77,8 +77,8 @@ impl<
     fn check(
         &self,
         ring: &RS,
-        h: &Polynomial<RS::Set>,
-        i: &RS::Set,
+        h: &Polynomial<RS::Elem>,
+        i: &RS::Elem,
         n: &Natural,
     ) -> Result<(), &'static str> {
         match self {
@@ -147,10 +147,10 @@ impl<
 
     fn new_split(
         ring: &RS,
-        p: &RS::Set,
+        p: &RS::Elem,
         n: &Natural,
-        first_fs: Vec<&Polynomial<RS::Set>>,
-        second_fs: Vec<&Polynomial<RS::Set>>,
+        first_fs: Vec<&Polynomial<RS::Elem>>,
+        second_fs: Vec<&Polynomial<RS::Elem>>,
     ) -> Self {
         let poly_ring = ring.polynomials();
         let poly_ring_mod_p = ring.quotient_field_unchecked(p.clone()).into_polynomials();
@@ -180,7 +180,7 @@ impl<
         }
     }
 
-    fn factor_list<'a>(&'a self, h: &'a Polynomial<RS::Set>) -> Vec<&'a Polynomial<RS::Set>> {
+    fn factor_list<'a>(&'a self, h: &'a Polynomial<RS::Elem>) -> Vec<&'a Polynomial<RS::Elem>> {
         match self {
             HenselFactorizationNodeCases::Leaf => vec![h],
             HenselFactorizationNodeCases::Branch {
@@ -235,18 +235,18 @@ fn compute_lift_factors<
     RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature,
 >(
     ring: &RS,
-    i: &RS::Set,
+    i: &RS::Elem,
     n: &Natural,
-    a: &Polynomial<RS::Set>,
-    b: &Polynomial<RS::Set>,
-    f: &Polynomial<RS::Set>,
-    g: &Polynomial<RS::Set>,
-    h: &Polynomial<RS::Set>,
+    a: &Polynomial<RS::Elem>,
+    b: &Polynomial<RS::Elem>,
+    f: &Polynomial<RS::Elem>,
+    g: &Polynomial<RS::Elem>,
+    h: &Polynomial<RS::Elem>,
 ) -> (
-    Polynomial<RS::Set>,
-    Polynomial<RS::Set>,
-    Polynomial<RS::Set>,
-    Polynomial<RS::Set>,
+    Polynomial<RS::Elem>,
+    Polynomial<RS::Elem>,
+    Polynomial<RS::Elem>,
+    Polynomial<RS::Elem>,
 ) {
     let poly_ring = ring.polynomials();
 
@@ -317,7 +317,7 @@ fn compute_lift_factors<
 impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature>
     HenselFactorizationNodeCases<false, RS>
 {
-    fn linear_lift(&mut self, ring: &RS, i: &RS::Set, n: &Natural, h: &Polynomial<RS::Set>) {
+    fn linear_lift(&mut self, ring: &RS, i: &RS::Elem, n: &Natural, h: &Polynomial<RS::Elem>) {
         match self {
             HenselFactorizationNodeCases::Leaf => {}
             HenselFactorizationNodeCases::Branch {
@@ -345,7 +345,7 @@ impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMo
 impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature>
     HenselFactorizationNodeCases<true, RS>
 {
-    fn quadratic_lift(&mut self, ring: &RS, i: &RS::Set, n: &Natural, h: &Polynomial<RS::Set>) {
+    fn quadratic_lift(&mut self, ring: &RS, i: &RS::Elem, n: &Natural, h: &Polynomial<RS::Elem>) {
         match self {
             HenselFactorizationNodeCases::Leaf => {}
             HenselFactorizationNodeCases::Branch {
@@ -413,7 +413,7 @@ impl<
 > HenselFactorizationNode<LIFTED_BEZOUT_COEFFS, RS>
 {
     #[allow(unused)]
-    fn check(&self, ring: &RS, i: &RS::Set, n: &Natural) -> Result<(), &'static str> {
+    fn check(&self, ring: &RS, i: &RS::Elem, n: &Natural) -> Result<(), &'static str> {
         // let poly_ring = PolynomialStructure::new(ring.clone().into());
         // if !poly_ring.is_monic(&self.h) {
         //     return Err("h is not monic");
@@ -424,10 +424,10 @@ impl<
 
     fn new(
         ring: &RS,
-        p: &RS::Set,
+        p: &RS::Elem,
         n: &Natural,
-        h: Polynomial<RS::Set>,
-        mut fs: Vec<&Polynomial<RS::Set>>,
+        h: Polynomial<RS::Elem>,
+        mut fs: Vec<&Polynomial<RS::Elem>>,
     ) -> Self {
         debug_assert!(!fs.is_empty());
         match fs.len() {
@@ -459,7 +459,7 @@ impl<
         }
     }
 
-    fn factor_list(&self) -> Vec<&Polynomial<RS::Set>> {
+    fn factor_list(&self) -> Vec<&Polynomial<RS::Elem>> {
         self.factorization.factor_list(&self.h)
     }
 }
@@ -478,7 +478,7 @@ impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMo
 impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature>
     HenselFactorizationNode<false, RS>
 {
-    fn linear_lift(&mut self, ring: &RS, i: &RS::Set, n: &Natural) {
+    fn linear_lift(&mut self, ring: &RS, i: &RS::Elem, n: &Natural) {
         self.factorization.linear_lift(ring, i, n, &self.h);
     }
 }
@@ -486,7 +486,7 @@ impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMo
 impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature>
     HenselFactorizationNode<true, RS>
 {
-    fn quadratic_lift(&mut self, ring: &RS, i: &RS::Set, n: &Natural) {
+    fn quadratic_lift(&mut self, ring: &RS, i: &RS::Elem, n: &Natural) {
         self.factorization.quadratic_lift(ring, i, n, &self.h);
     }
 }
@@ -503,10 +503,10 @@ impl<
 
     pub fn new(
         ring: RS,
-        p: RS::Set,
+        p: RS::Elem,
         n: Natural,
-        h: Polynomial<RS::Set>,
-        fs: Vec<Polynomial<RS::Set>>,
+        h: Polynomial<RS::Elem>,
+        fs: Vec<Polynomial<RS::Elem>>,
     ) -> Self {
         let poly_ring = ring.polynomials();
 
@@ -545,12 +545,12 @@ impl<
         ans
     }
 
-    pub fn modulus(&self) -> RS::Set {
+    pub fn modulus(&self) -> RS::Elem {
         self.ring.nat_pow(&self.i, &self.n)
     }
 
     //return the lifted factors in order
-    pub fn factors(&self) -> Vec<&Polynomial<RS::Set>> {
+    pub fn factors(&self) -> Vec<&Polynomial<RS::Elem>> {
         self.factorization.factor_list()
     }
 }
@@ -613,14 +613,14 @@ impl<
     >
 where
     PolynomialStructure<EuclideanRemainderQuotientStructure<RS, RSB, true>, RSQB>:
-        SetSignature<Set = Polynomial<RS::Set>>
+        SetSignature<Elem = Polynomial<RS::Elem>>
             + FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
 {
     /// If the polynomial is squarefree return a hensel factorization, otherwise return None
     pub fn into_hensel_factorization(
         &self,
-        a: NonZeroFactored<Polynomial<RS::Set>, Natural>,
-        h: Polynomial<RS::Set>,
+        a: NonZeroFactored<Polynomial<RS::Elem>, Natural>,
+        h: Polynomial<RS::Elem>,
     ) -> Option<HenselFactorization<true, RS>>
     where
         RS: EuclideanDomainSignature + GreatestCommonDivisorSignature,
@@ -650,8 +650,8 @@ where
     /// If the polynomial is squarefree return a hensel factorization, otherwise return None
     pub fn into_hensel_factorization_unchecked(
         &self,
-        a: NonZeroFactored<Polynomial<RS::Set>, Natural>,
-        h: Polynomial<RS::Set>,
+        a: NonZeroFactored<Polynomial<RS::Elem>, Natural>,
+        h: Polynomial<RS::Elem>,
     ) -> HenselFactorization<true, RS>
     where
         RS: EuclideanDomainSignature + GreatestCommonDivisorSignature,

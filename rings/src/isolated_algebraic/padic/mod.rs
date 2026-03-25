@@ -739,9 +739,9 @@ impl PAdicAlgebraicStructure {
 impl Signature for PAdicAlgebraicStructure {}
 
 impl SetSignature for PAdicAlgebraicStructure {
-    type Set = PAdicAlgebraic;
+    type Elem = PAdicAlgebraic;
 
-    fn validate_element(&self, x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
         if &self.p != x.p() {
             return Err("primes don't match".to_string());
         }
@@ -750,7 +750,7 @@ impl SetSignature for PAdicAlgebraicStructure {
 }
 
 impl EqSignature for PAdicAlgebraicStructure {
-    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+    fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
         debug_assert!(self.validate_element(a).is_ok());
         debug_assert!(self.validate_element(b).is_ok());
         match (a, b) {
@@ -769,7 +769,7 @@ impl EqSignature for PAdicAlgebraicStructure {
 impl RinglikeSpecializationSignature for PAdicAlgebraicStructure {}
 
 impl ZeroSignature for PAdicAlgebraicStructure {
-    fn zero(&self) -> Self::Set {
+    fn zero(&self) -> Self::Elem {
         PAdicAlgebraic::Rational(PAdicRational {
             p: self.p.clone(),
             rat: Rational::ZERO,
@@ -778,7 +778,7 @@ impl ZeroSignature for PAdicAlgebraicStructure {
 }
 
 impl AdditionSignature for PAdicAlgebraicStructure {
-    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn add(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         debug_assert!(self.validate_element(a).is_ok());
         debug_assert!(self.validate_element(b).is_ok());
         match (a, b) {
@@ -799,13 +799,13 @@ impl AdditionSignature for PAdicAlgebraicStructure {
 }
 
 impl CancellativeAdditionSignature for PAdicAlgebraicStructure {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.sub(a, b))
     }
 }
 
 impl TryNegateSignature for PAdicAlgebraicStructure {
-    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
     }
 }
@@ -813,14 +813,14 @@ impl TryNegateSignature for PAdicAlgebraicStructure {
 impl AdditiveMonoidSignature for PAdicAlgebraicStructure {}
 
 impl AdditiveGroupSignature for PAdicAlgebraicStructure {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
+    fn neg(&self, a: &Self::Elem) -> Self::Elem {
         debug_assert!(self.validate_element(a).is_ok());
         a.clone().neg()
     }
 }
 
 impl OneSignature for PAdicAlgebraicStructure {
-    fn one(&self) -> Self::Set {
+    fn one(&self) -> Self::Elem {
         PAdicAlgebraic::Rational(PAdicRational {
             p: self.p.clone(),
             rat: Rational::ONE,
@@ -829,7 +829,7 @@ impl OneSignature for PAdicAlgebraicStructure {
 }
 
 impl MultiplicationSignature for PAdicAlgebraicStructure {
-    fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn mul(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         debug_assert!(self.validate_element(a).is_ok());
         debug_assert!(self.validate_element(b).is_ok());
         match (a, b) {
@@ -883,7 +883,7 @@ impl TryReciprocalSignature for PAdicAlgebraicStructure {
 }
 
 impl CancellativeMultiplicationSignature for PAdicAlgebraicStructure {
-    fn try_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_divide(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         debug_assert!(self.validate_element(a).is_ok());
         debug_assert!(self.validate_element(b).is_ok());
         #[allow(clippy::single_match)]
@@ -903,7 +903,7 @@ impl CancellativeMultiplicationSignature for PAdicAlgebraicStructure {
 impl MultiplicativeIntegralMonoidSignature for PAdicAlgebraicStructure {}
 
 impl IntegralDomainSignature for PAdicAlgebraicStructure {
-    fn try_from_rat(&self, x: &Rational) -> Option<Self::Set> {
+    fn try_from_rat(&self, x: &Rational) -> Option<Self::Elem> {
         Some(PAdicAlgebraic::Rational(PAdicRational {
             p: self.p.clone(),
             rat: x.clone(),
@@ -914,7 +914,7 @@ impl IntegralDomainSignature for PAdicAlgebraicStructure {
 impl FieldSignature for PAdicAlgebraicStructure {}
 
 impl CharZeroRingSignature for PAdicAlgebraicStructure {
-    fn try_to_int(&self, x: &Self::Set) -> Option<Integer> {
+    fn try_to_int(&self, x: &Self::Elem) -> Option<Integer> {
         match x {
             PAdicAlgebraic::Rational(padic_rational) => {
                 Rational::structure().try_to_int(&padic_rational.rat)
@@ -925,7 +925,7 @@ impl CharZeroRingSignature for PAdicAlgebraicStructure {
 }
 
 impl CharZeroFieldSignature for PAdicAlgebraicStructure {
-    fn try_to_rat(&self, x: &Self::Set) -> Option<Rational> {
+    fn try_to_rat(&self, x: &Self::Elem) -> Option<Rational> {
         match x {
             PAdicAlgebraic::Rational(padic_rational) => Some(padic_rational.rat.clone()),
             PAdicAlgebraic::Algebraic(_) => None,

@@ -78,9 +78,9 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> Sig
 impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> SetSignature
     for FinitelyFreeSubmoduleAffineSubsetStructure<Ring, RingB>
 {
-    type Set = FinitelyFreeSubmoduleAffineSubset<Ring::Set>;
+    type Elem = FinitelyFreeSubmoduleAffineSubset<Ring::Elem>;
 
-    fn validate_element(&self, _x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, _x: &Self::Elem) -> Result<(), String> {
         //TODO: better checks
         Ok(())
     }
@@ -99,8 +99,8 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
 
     pub fn from_affine_span(
         &self,
-        mut span: Vec<&Vec<Ring::Set>>,
-    ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Set> {
+        mut span: Vec<&Vec<Ring::Elem>>,
+    ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Elem> {
         for v in &span {
             debug_assert_eq!(v.len(), self.module().rank());
         }
@@ -124,8 +124,8 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
 
     pub fn affine_basis(
         &self,
-        subset: &FinitelyFreeSubmoduleAffineSubset<Ring::Set>,
-    ) -> Vec<Vec<Ring::Set>> {
+        subset: &FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
+    ) -> Vec<Vec<Ring::Elem>> {
         match &subset {
             FinitelyFreeSubmoduleAffineSubset::Empty => vec![],
             FinitelyFreeSubmoduleAffineSubset::NonEmpty(coset) => {
@@ -140,9 +140,9 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
 
     pub fn add(
         &self,
-        x: FinitelyFreeSubmoduleAffineSubset<Ring::Set>,
-        y: FinitelyFreeSubmoduleAffineSubset<Ring::Set>,
-    ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Set> {
+        x: FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
+        y: FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
+    ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Elem> {
         debug_assert!(self.validate_element(&x).is_ok());
         debug_assert!(self.validate_element(&y).is_ok());
         match (x, y) {
@@ -161,9 +161,9 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
 
     pub fn intersect(
         &self,
-        x: &FinitelyFreeSubmoduleAffineSubset<Ring::Set>,
-        y: &FinitelyFreeSubmoduleAffineSubset<Ring::Set>,
-    ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Set> {
+        x: &FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
+        y: &FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
+    ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Elem> {
         debug_assert!(self.validate_element(x).is_ok());
         debug_assert!(self.validate_element(y).is_ok());
         match (x, y) {
@@ -180,8 +180,8 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
 
     pub fn intersect_list(
         &self,
-        xs: Vec<impl Borrow<FinitelyFreeSubmoduleAffineSubset<Ring::Set>>>,
-    ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Set> {
+        xs: Vec<impl Borrow<FinitelyFreeSubmoduleAffineSubset<Ring::Elem>>>,
+    ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Elem> {
         for x in &xs {
             debug_assert!(self.validate_element(x.borrow()).is_ok());
         }
@@ -199,8 +199,8 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
 
     pub fn contains_element(
         &self,
-        x: &FinitelyFreeSubmoduleAffineSubset<Ring::Set>,
-        p: &Vec<Ring::Set>,
+        x: &FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
+        p: &Vec<Ring::Elem>,
     ) -> bool {
         debug_assert!(self.validate_element(x).is_ok());
         debug_assert!(self.module().validate_element(p).is_ok());
@@ -214,8 +214,8 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
 
     pub fn equal_slow(
         &self,
-        x: &FinitelyFreeSubmoduleAffineSubset<Ring::Set>,
-        y: &FinitelyFreeSubmoduleAffineSubset<Ring::Set>,
+        x: &FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
+        y: &FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
     ) -> bool {
         debug_assert!(self.validate_element(x).is_ok());
         debug_assert!(self.validate_element(y).is_ok());
@@ -246,8 +246,8 @@ impl<Ring: UniqueReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring
 {
     fn equal(
         &self,
-        x: &FinitelyFreeSubmoduleAffineSubset<Ring::Set>,
-        y: &FinitelyFreeSubmoduleAffineSubset<Ring::Set>,
+        x: &FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
+        y: &FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
     ) -> bool {
         debug_assert!(self.validate_element(x).is_ok());
         debug_assert!(self.validate_element(y).is_ok());

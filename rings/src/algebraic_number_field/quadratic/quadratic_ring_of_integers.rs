@@ -64,9 +64,9 @@ impl<D: BorrowedSet<Integer>> QuadraticRingOfIntegersStructure<D> {
 impl<D: BorrowedSet<Integer>> Signature for QuadraticRingOfIntegersStructure<D> {}
 
 impl<D: BorrowedSet<Integer>> SetSignature for QuadraticRingOfIntegersStructure<D> {
-    type Set = QuadraticNumberFieldElement;
+    type Elem = QuadraticNumberFieldElement;
 
-    fn validate_element(&self, a: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, a: &Self::Elem) -> Result<(), String> {
         if self.anf().is_algebraic_integer(a) {
             Ok(())
         } else {
@@ -76,7 +76,7 @@ impl<D: BorrowedSet<Integer>> SetSignature for QuadraticRingOfIntegersStructure<
 }
 
 impl<D: BorrowedSet<Integer>> EqSignature for QuadraticRingOfIntegersStructure<D> {
-    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+    fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
         self.anf().equal(a, b)
     }
 }
@@ -84,25 +84,25 @@ impl<D: BorrowedSet<Integer>> EqSignature for QuadraticRingOfIntegersStructure<D
 impl<D: BorrowedSet<Integer>> RinglikeSpecializationSignature
     for QuadraticRingOfIntegersStructure<D>
 {
-    fn try_ring_restructure(&self) -> Option<impl EqSignature<Set = Self::Set> + RingSignature> {
+    fn try_ring_restructure(&self) -> Option<impl EqSignature<Elem = Self::Elem> + RingSignature> {
         Some(self.clone())
     }
 
     fn try_char_zero_ring_restructure(
         &self,
-    ) -> Option<impl EqSignature<Set = Self::Set> + CharZeroRingSignature> {
+    ) -> Option<impl EqSignature<Elem = Self::Elem> + CharZeroRingSignature> {
         Some(self.clone())
     }
 }
 
 impl<D: BorrowedSet<Integer>> ZeroSignature for QuadraticRingOfIntegersStructure<D> {
-    fn zero(&self) -> Self::Set {
+    fn zero(&self) -> Self::Elem {
         self.anf().zero()
     }
 }
 
 impl<D: BorrowedSet<Integer>> AdditionSignature for QuadraticRingOfIntegersStructure<D> {
-    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn add(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.anf().add(a, b)
     }
 }
@@ -110,13 +110,13 @@ impl<D: BorrowedSet<Integer>> AdditionSignature for QuadraticRingOfIntegersStruc
 impl<D: BorrowedSet<Integer>> CancellativeAdditionSignature
     for QuadraticRingOfIntegersStructure<D>
 {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.sub(a, b))
     }
 }
 
 impl<D: BorrowedSet<Integer>> TryNegateSignature for QuadraticRingOfIntegersStructure<D> {
-    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
     }
 }
@@ -124,19 +124,19 @@ impl<D: BorrowedSet<Integer>> TryNegateSignature for QuadraticRingOfIntegersStru
 impl<D: BorrowedSet<Integer>> AdditiveMonoidSignature for QuadraticRingOfIntegersStructure<D> {}
 
 impl<D: BorrowedSet<Integer>> AdditiveGroupSignature for QuadraticRingOfIntegersStructure<D> {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
+    fn neg(&self, a: &Self::Elem) -> Self::Elem {
         self.anf().neg(a)
     }
 }
 
 impl<D: BorrowedSet<Integer>> OneSignature for QuadraticRingOfIntegersStructure<D> {
-    fn one(&self) -> Self::Set {
+    fn one(&self) -> Self::Elem {
         self.anf().one()
     }
 }
 
 impl<D: BorrowedSet<Integer>> MultiplicationSignature for QuadraticRingOfIntegersStructure<D> {
-    fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn mul(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.anf().mul(a, b)
     }
 }
@@ -171,7 +171,7 @@ impl<D: BorrowedSet<Integer>> SemiRingSignature for QuadraticRingOfIntegersStruc
 impl<D: BorrowedSet<Integer>> RingSignature for QuadraticRingOfIntegersStructure<D> {}
 
 impl<D: BorrowedSet<Integer>> TryReciprocalSignature for QuadraticRingOfIntegersStructure<D> {
-    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_reciprocal(&self, a: &Self::Elem) -> Option<Self::Elem> {
         let b = self.anf().try_reciprocal(a)?;
         if self.anf().is_algebraic_integer(&b) {
             Some(b)
@@ -184,7 +184,7 @@ impl<D: BorrowedSet<Integer>> TryReciprocalSignature for QuadraticRingOfIntegers
 impl<D: BorrowedSet<Integer>> CancellativeMultiplicationSignature
     for QuadraticRingOfIntegersStructure<D>
 {
-    fn try_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_divide(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         let d = self.anf().try_divide(a, b)?;
         if self.anf().is_algebraic_integer(&d) {
             Some(d)
@@ -208,7 +208,7 @@ impl<D: BorrowedSet<Integer>> CharacteristicSignature for QuadraticRingOfInteger
 }
 
 impl<D: BorrowedSet<Integer>> CharZeroRingSignature for QuadraticRingOfIntegersStructure<D> {
-    fn try_to_int(&self, x: &Self::Set) -> Option<Integer> {
+    fn try_to_int(&self, x: &Self::Elem) -> Option<Integer> {
         self.anf().try_to_int(x)
     }
 }
@@ -250,7 +250,7 @@ impl<D: BorrowedSet<Integer>> AlgebraicIntegerRingSignature<QuadraticNumberField
     fn to_anf(&self, x: &QuadraticNumberFieldElement) -> QuadraticNumberFieldElement {
         x.clone()
     }
-    fn integral_basis(&self) -> Vec<Self::Set> {
+    fn integral_basis(&self) -> Vec<Self::Elem> {
         todo!()
     }
 }

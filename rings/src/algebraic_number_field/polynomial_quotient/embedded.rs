@@ -93,11 +93,11 @@ impl AlgebraicClosureSignature for ComplexAlgebraicCanonicalStructure {
         Rational::structure()
     }
 
-    fn base_field_inclusion(&self, x: &Rational) -> Self::Set {
+    fn base_field_inclusion(&self, x: &Rational) -> Self::Elem {
         ComplexAlgebraic::Real(RealAlgebraic::Rational(x.clone()))
     }
 
-    fn all_roots_list(&self, poly: &Polynomial<Rational>) -> Option<Vec<Self::Set>> {
+    fn all_roots_list(&self, poly: &Polynomial<Rational>) -> Option<Vec<Self::Elem>> {
         if poly.is_zero() {
             None
         } else {

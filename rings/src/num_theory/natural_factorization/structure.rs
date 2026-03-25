@@ -21,24 +21,24 @@ impl UniqueFactorizationMonoidSignature for NaturalCanonicalStructure {
         Natural::structure()
     }
 
-    fn try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {
+    fn try_is_irreducible(&self, a: &Self::Elem) -> Option<bool> {
         Some(is_prime_nat(a))
     }
 
-    fn factorization_pow(&self, a: &Self::Set, k: &Natural) -> Self::Set {
+    fn factorization_pow(&self, a: &Self::Elem, k: &Natural) -> Self::Elem {
         self.nat_pow(a, k)
     }
 }
 
 impl FactoringMonoidSignature for NaturalCanonicalStructure {
-    fn is_irreducible(&self, a: &Self::Set) -> bool {
+    fn is_irreducible(&self, a: &Self::Elem) -> bool {
         is_prime_nat(a)
     }
 
     fn factor_unchecked(
         &self,
-        a: &Self::Set,
-    ) -> Factored<Self::Set, <Self::FactoredExponent as SetSignature>::Set> {
+        a: &Self::Elem,
+    ) -> Factored<Self::Elem, <Self::FactoredExponent as SetSignature>::Elem> {
         factor_nat(a.clone())
     }
 }
@@ -116,7 +116,7 @@ impl<
 > ToStringSignature
     for FactoringStructure<NaturalCanonicalStructure, PowersB, NaturalCanonicalStructure, ExponentB>
 {
-    fn to_string(&self, elem: &Self::Set) -> String {
+    fn to_string(&self, elem: &Self::Elem) -> String {
         use std::fmt::Write;
         let mut f = String::new();
         if let Some(powers) = elem.powers() {

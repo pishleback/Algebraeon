@@ -23,8 +23,8 @@ impl<Vertices: SetSignature + EqSignature> GraphSignature for CompleteDirectedGr
 
     fn has_directed_edge(
         &self,
-        source: &Vertices::Set,
-        target: &Vertices::Set,
+        source: &Vertices::Elem,
+        target: &Vertices::Elem,
     ) -> Result<(), String> {
         if let Err(e) = self.vertices.validate_element(source) {
             return Err(format!("Source is not an element of Vertices: {e}"));
@@ -51,8 +51,8 @@ impl<Vertices: SetSignature + EqSignature> GraphWithEdgesSignature
 
     fn endpoints(
         &self,
-        edge: &<Self::Edges as SetSignature>::Set,
-    ) -> UnorderedPair<<Self::Vertices as SetSignature>::Set> {
+        edge: &<Self::Edges as SetSignature>::Elem,
+    ) -> UnorderedPair<<Self::Vertices as SetSignature>::Elem> {
         self.pairs_of_vertices.new_pair(&edge.0, &edge.1).unwrap()
     }
 }

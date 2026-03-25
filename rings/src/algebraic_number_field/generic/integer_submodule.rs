@@ -21,7 +21,7 @@ pub struct FullRankIntegerSubmoduleWithBasis<
 > {
     anf: KB,
     // length = degree of k
-    basis: Vec<K::Set>,
+    basis: Vec<K::Elem>,
 }
 
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>>
@@ -57,17 +57,17 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>>
         Ok(())
     }
 
-    fn new_impl(anf: KB, basis: Vec<K::Set>) -> Self {
+    fn new_impl(anf: KB, basis: Vec<K::Elem>) -> Self {
         Self { anf, basis }
     }
 
-    pub fn new(anf: KB, basis: Vec<K::Set>) -> Result<Self, String> {
+    pub fn new(anf: KB, basis: Vec<K::Elem>) -> Result<Self, String> {
         let s = Self::new_impl(anf, basis);
         s.check()?;
         Ok(s)
     }
 
-    pub fn new_unchecked(anf: KB, basis: Vec<K::Set>) -> Self {
+    pub fn new_unchecked(anf: KB, basis: Vec<K::Elem>) -> Self {
         let s = Self::new_impl(anf, basis);
         #[cfg(debug_assertions)]
         s.check().unwrap();
@@ -108,9 +108,9 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> Signature
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> SetSignature
     for FullRankIntegerSubmoduleWithBasis<K, KB>
 {
-    type Set = Vec<Integer>;
+    type Elem = Vec<Integer>;
 
-    fn validate_element(&self, x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
         if x.len() != self.n() {
             return Err("wrong length".to_string());
         }
@@ -121,7 +121,7 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> SetSignature
 impl<K: AlgebraicNumberFieldSignature + ToStringSignature, KB: BorrowedStructure<K>>
     ToStringSignature for FullRankIntegerSubmoduleWithBasis<K, KB>
 {
-    fn to_string(&self, elem: &Self::Set) -> String {
+    fn to_string(&self, elem: &Self::Elem) -> String {
         self.anf()
             .to_string(&self.outbound_order_to_anf_inclusion().image(elem))
     }
@@ -130,7 +130,7 @@ impl<K: AlgebraicNumberFieldSignature + ToStringSignature, KB: BorrowedStructure
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> EqSignature
     for FullRankIntegerSubmoduleWithBasis<K, KB>
 {
-    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+    fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
         self.free_integer_submodule_restructure().equal(a, b)
     }
 }
@@ -143,7 +143,7 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> RinglikeSpecial
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> ZeroSignature
     for FullRankIntegerSubmoduleWithBasis<K, KB>
 {
-    fn zero(&self) -> Self::Set {
+    fn zero(&self) -> Self::Elem {
         self.free_integer_submodule_restructure().zero()
     }
 }
@@ -151,7 +151,7 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> ZeroSignature
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> AdditionSignature
     for FullRankIntegerSubmoduleWithBasis<K, KB>
 {
-    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn add(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.free_integer_submodule_restructure().add(a, b)
     }
 }
@@ -159,7 +159,7 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> AdditionSignatu
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> CancellativeAdditionSignature
     for FullRankIntegerSubmoduleWithBasis<K, KB>
 {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.sub(a, b))
     }
 }
@@ -167,7 +167,7 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> CancellativeAdd
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> TryNegateSignature
     for FullRankIntegerSubmoduleWithBasis<K, KB>
 {
-    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
     }
 }
@@ -180,11 +180,11 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> AdditiveMonoidS
 impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> AdditiveGroupSignature
     for FullRankIntegerSubmoduleWithBasis<K, KB>
 {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
+    fn neg(&self, a: &Self::Elem) -> Self::Elem {
         self.free_integer_submodule_restructure().neg(a)
     }
 
-    fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn sub(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.free_integer_submodule_restructure().sub(a, b)
     }
 }
@@ -196,7 +196,7 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>>
         self.anf.borrow()
     }
 
-    fn basis(&self) -> &Vec<<K>::Set> {
+    fn basis(&self) -> &Vec<<K>::Elem> {
         &self.basis
     }
 }

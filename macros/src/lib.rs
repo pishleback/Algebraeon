@@ -62,8 +62,8 @@ fn has_option(attrs: &[Attribute], option_name: &str) -> bool {
 /// }
 ///
 /// impl SetSignature for MyValueCanonicalStructure {
-///     type Set = MyValue;
-///     fn validate_element(&self, _x: &Self::Set) -> Result<(), String> {
+///     type Elem = MyValue;
+///     fn validate_element(&self, _x: &Self::Elem) -> Result<(), String> {
 ///         Ok(())
 ///     }
 /// }
@@ -89,7 +89,7 @@ fn has_option(attrs: &[Attribute], option_name: &str) -> bool {
 /// where
 ///     MyValue: Eq,
 /// {
-///     fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+///     fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
 ///         a == b
 ///     }
 /// }
@@ -101,7 +101,7 @@ fn has_option(attrs: &[Attribute], option_name: &str) -> bool {
 /// where
 ///     MyValue: Ord,
 /// {
-///     fn partial_cmp(&self, a: &Self::Set, b: &Self::Set) -> Option<std::cmp::Ordering> {
+///     fn partial_cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Option<std::cmp::Ordering> {
 ///         Some(a.cmp(b))
 ///     }
 /// }
@@ -113,10 +113,10 @@ fn has_option(attrs: &[Attribute], option_name: &str) -> bool {
 /// where
 ///     MyValue: Ord,
 /// {
-///     fn cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
+///     fn cmp(&self, a: &Self::Elem, b: &Self::Elem) -> std::cmp::Ordering {
 ///         a.cmp(b)
 ///     }
-///     fn sort<S: std::borrow::Borrow<Self::Set>>(&self, mut a: Vec<S>) -> Vec<S> {
+///     fn sort<S: std::borrow::Borrow<Self::Elem>>(&self, mut a: Vec<S>) -> Vec<S> {
 ///         a.sort_unstable_by(|x, y| x.borrow().cmp(y.borrow()));
 ///         a
 ///     }
@@ -139,7 +139,7 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
             impl EqSignature for #newtype_name
                 where #name: Eq
             {
-                fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+                fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
                     a == b
                 }
             }
@@ -153,7 +153,7 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
             impl PartialOrdSignature for #newtype_name
                 where #name: Ord
             {
-                fn partial_cmp(&self, a: &Self::Set, b: &Self::Set) -> Option<std::cmp::Ordering> {
+                fn partial_cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Option<std::cmp::Ordering> {
                     Some(a.cmp(b))
                 }
             }
@@ -167,11 +167,11 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
             impl OrdSignature for #newtype_name
                 where #name: Ord
             {
-                fn cmp(&self, a: &Self::Set, b: &Self::Set) -> std::cmp::Ordering {
+                fn cmp(&self, a: &Self::Elem, b: &Self::Elem) -> std::cmp::Ordering {
                     a.cmp(b)
                 }
 
-                fn sort<S: std::borrow::Borrow<Self::Set>>(&self, mut a: Vec<S>) -> Vec<S> {
+                fn sort<S: std::borrow::Borrow<Self::Elem>>(&self, mut a: Vec<S>) -> Vec<S> {
                     a.sort_unstable_by(|x, y| x.borrow().cmp(y.borrow()));
                     a
                 }
@@ -194,9 +194,9 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
         impl Signature for #newtype_name {}
 
         impl SetSignature for #newtype_name {
-            type Set = #name;
+            type Elem = #name;
 
-            fn validate_element(&self, _x : &Self::Set) -> Result<(), String> {
+            fn validate_element(&self, _x : &Self::Elem) -> Result<(), String> {
                 Ok(())
             }
         }
@@ -231,9 +231,9 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
 /// ```rust,ignore
 /// #[signature_meta_trait]
 /// pub trait MySignature: SetSignature {
-///     fn special_element(&self) -> Self::Set;
+///     fn special_element(&self) -> Self::Elem;
 ///     #[skip_meta]
-///     fn binary_operation(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
+///     fn binary_operation(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem;
 /// }
 /// ```
 /// produces the following meta structure trait.
@@ -259,8 +259,8 @@ pub fn skip_meta(_attr: TokenStream, item: TokenStream) -> TokenStream {
 /// ```rust,ignore
 /// #[signature_meta_trait]
 /// pub trait MySignature: SetSignature {
-///     fn special_element(&self) -> Self::Set;
-///     fn binary_operation(&self, a: &Self::Set, b: &Self::Set) -> Self::Set;
+///     fn special_element(&self) -> Self::Elem;
+///     fn binary_operation(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem;
 /// }
 /// ```
 /// produces the following meta structure trait,
@@ -356,8 +356,8 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
                                             type_reference.elem.as_ref()
                                             && is_type_path_self_set(type_path)
                                         {
-                                            // if the first argument is `a: &Self::Set` then replace it with `&self` in the meta type
-                                            // if the first argument is `a: &mut Self::Set` then replace it with `&mut self` in the meta type
+                                            // if the first argument is `a: &Self::Elem` then replace it with `&self` in the meta type
+                                            // if the first argument is `a: &mut Self::Elem` then replace it with `&mut self` in the meta type
                                             meta_args[0] = PatIdent {
                                                 attrs: vec![],
                                                 by_ref: None,
@@ -400,7 +400,7 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
                                         }
                                     }
                                     syn::Type::Path(type_path) => {
-                                        // if the first argument is `a: Self::Set` then replace it with `self` in the meta type (TODO)
+                                        // if the first argument is `a: Self::Elem` then replace it with `self` in the meta type (TODO)
                                         if is_type_path_self_set(type_path) {
                                             meta_args[0] = PatIdent {
                                                 attrs: vec![],
@@ -511,7 +511,7 @@ impl VisitMut for ReplaceSelfSetSignature {
     fn visit_type_path_mut(&mut self, ty: &mut syn::TypePath) {
         syn::visit_mut::visit_type_path_mut(self, ty);
         if is_type_path_self_set(ty) {
-            // Replace `Self::Set` with `Self`
+            // Replace `Self::Elem` with `Self`
             *ty = syn::parse_quote!(Self);
         } else if ty.qself.is_none()
             && ty.path.segments.len() == 1
@@ -549,7 +549,7 @@ fn is_type_path_self_set(ty: &syn::TypePath) -> bool {
     ty.qself.is_none()
         && ty.path.segments.len() == 2
         && ty.path.segments[0].ident == "Self"
-        && ty.path.segments[1].ident == "Set"
+        && ty.path.segments[1].ident == "Elem"
         && ty.path.segments[1].arguments.is_empty()
 }
 

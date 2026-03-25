@@ -30,17 +30,17 @@ pub struct HenselFactorization<
         EuclideanRemainderQuotientStructure<RS, RS, true>,
         EuclideanRemainderQuotientStructure<RS, RS, true>,
     >,
-    p: RS::Set, // An irreducible element of Ring
+    p: RS::Elem, // An irreducible element of Ring
     k: Natural,
-    h: Polynomial<RS::Set>, // A polynomial over Ring
+    h: Polynomial<RS::Elem>, // A polynomial over Ring
     h_deg: usize,
     fs_count: usize,
-    fs: Vec<Polynomial<RS::Set>>, // monic Polynomials over Ring mod p^k
+    fs: Vec<Polynomial<RS::Elem>>, // monic Polynomials over Ring mod p^k
     fs_deg: Vec<usize>,
     // A matrix used to compute lifts. We cache it here since it is unchanged during lifts.
-    lifting_mat_inv_mod_p: Matrix<RS::Set>,
+    lifting_mat_inv_mod_p: Matrix<RS::Elem>,
     // The inverse of the leading coefficient of h modulo p
-    lc_inv_mod_p: RS::Set,
+    lc_inv_mod_p: RS::Elem,
 }
 
 impl<
@@ -53,17 +53,17 @@ impl<
         &self.ring
     }
 
-    pub fn modulus(&self) -> RS::Set {
+    pub fn modulus(&self) -> RS::Elem {
         self.ring().nat_pow(&self.p, &self.k)
     }
 
-    fn lc(&self) -> &RS::Set {
+    fn lc(&self) -> &RS::Elem {
         self.ring.polynomials().leading_coeff(&self.h).unwrap()
     }
 
     fn compute_lifting_mat_inv_mod_p(
         fs_count: usize,
-        fs: &[Polynomial<RS::Set>],
+        fs: &[Polynomial<RS::Elem>],
         fs_deg: &[usize],
         h_deg: usize,
         ring: &RS,
@@ -75,7 +75,7 @@ impl<
             EuclideanRemainderQuotientStructure<RS, RS, true>,
             EuclideanRemainderQuotientStructure<RS, RS, true>,
         >,
-    ) -> Matrix<RS::Set> {
+    ) -> Matrix<RS::Elem> {
         debug_assert_eq!(fs_count, fs.len());
         debug_assert_eq!(fs_count, fs_deg.len());
         debug_assert_eq!(fs_deg.iter().cloned().sum::<usize>(), h_deg);
@@ -89,7 +89,7 @@ impl<
 
         println!("make {}x{} mat", h_deg, h_deg);
 
-        let mat = Matrix::<RS::Set>::from_cols({
+        let mat = Matrix::<RS::Elem>::from_cols({
             let mut cols = vec![];
             for idx in 0..fs_count {
                 let d = fs_deg[idx];
@@ -200,10 +200,10 @@ impl<
 
     pub fn new_unchecked(
         ring: RS,
-        p: RS::Set,
+        p: RS::Elem,
         k: Natural,
-        h: Polynomial<RS::Set>,
-        fs: Vec<Polynomial<RS::Set>>,
+        h: Polynomial<RS::Elem>,
+        fs: Vec<Polynomial<RS::Elem>>,
     ) -> Self {
         let ring_mod_p = ring.clone().into_quotient_field(p.clone()).unwrap();
         let polys = ring.clone().into_polynomials();
@@ -348,7 +348,7 @@ impl<
         self.check().unwrap();
     }
 
-    pub fn factors(&self) -> &Vec<Polynomial<RS::Set>> {
+    pub fn factors(&self) -> &Vec<Polynomial<RS::Elem>> {
         &self.fs
     }
 
@@ -367,8 +367,8 @@ impl<
             NaturalCanonicalStructure,
             NB,
         >,
-        fs: NonZeroFactored<Polynomial<RS::Set>, Natural>,
-        h: Polynomial<RS::Set>,
+        fs: NonZeroFactored<Polynomial<RS::Elem>, Natural>,
+        h: Polynomial<RS::Elem>,
     ) -> Option<Self> {
         let poly_ring_mod = fs_structure.objects().clone();
         let ring_mod = poly_ring_mod.coeff_ring();
@@ -408,8 +408,8 @@ impl<
             NaturalCanonicalStructure,
             NB,
         >,
-        fs: NonZeroFactored<Polynomial<RS::Set>, Natural>,
-        h: Polynomial<RS::Set>,
+        fs: NonZeroFactored<Polynomial<RS::Elem>, Natural>,
+        h: Polynomial<RS::Elem>,
     ) -> Self {
         let poly_ring_mod = fs_structure.objects().clone();
         let ring_mod = poly_ring_mod.coeff_ring();

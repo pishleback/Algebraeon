@@ -10,7 +10,7 @@ pub mod quaternary_field;
 impl<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> FactoringMonoidSignature
     for PolynomialStructure<FS, FSB>
 {
-    fn factor_unchecked(&self, p: &Self::Set) -> Factored<Self::Set, Natural> {
+    fn factor_unchecked(&self, p: &Self::Elem) -> Factored<Self::Elem, Natural> {
         if let Some(p) = self.factorize_monic(p) {
             p.factorize_squarefree()
                 .factorize_distinct_degree()

@@ -208,7 +208,7 @@ impl Permutation {
 // }
 
 impl CompositionSignature for PermutationCanonicalStructure {
-    fn compose(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn compose(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         let n = std::cmp::max(a.perm.len(), b.perm.len());
         Permutation::new_unchecked((0..n).map(|i| a.call(b.call(i))).collect())
     }
@@ -217,19 +217,19 @@ impl CompositionSignature for PermutationCanonicalStructure {
 impl AssociativeCompositionSignature for PermutationCanonicalStructure {}
 
 impl LeftCancellativeCompositionSignature for PermutationCanonicalStructure {
-    fn try_left_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_left_difference(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.compose(&self.inverse(b), a))
     }
 }
 
 impl RightCancellativeCompositionSignature for PermutationCanonicalStructure {
-    fn try_right_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_right_difference(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.compose(a, &self.inverse(b)))
     }
 }
 
 impl IdentitySignature for PermutationCanonicalStructure {
-    fn identity(&self) -> Self::Set {
+    fn identity(&self) -> Self::Elem {
         Permutation { perm: vec![] }
     }
 }
@@ -237,25 +237,25 @@ impl IdentitySignature for PermutationCanonicalStructure {
 impl MonoidSignature for PermutationCanonicalStructure {}
 
 impl TryLeftInverseSignature for PermutationCanonicalStructure {
-    fn try_left_inverse(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_left_inverse(&self, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.inverse(a))
     }
 }
 
 impl TryRightInverseSignature for PermutationCanonicalStructure {
-    fn try_right_inverse(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_right_inverse(&self, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.inverse(a))
     }
 }
 
 impl TryInverseSignature for PermutationCanonicalStructure {
-    fn try_inverse(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_inverse(&self, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.inverse(a))
     }
 }
 
 impl GroupSignature for PermutationCanonicalStructure {
-    fn inverse(&self, a: &Self::Set) -> Self::Set {
+    fn inverse(&self, a: &Self::Elem) -> Self::Elem {
         let mut inv_perm = vec![0; a.perm.len()];
         for (i, j) in a.perm.iter().enumerate() {
             inv_perm[*j] = i;

@@ -63,7 +63,7 @@ impl<
     ///  - has no ring elements equal to 0
     ///
     /// and is equal to the sum of the input vectors terms. In other words, the returned vector will pass self.is_element(..)
-    pub fn collapse_terms(&self, v: <Self as SetSignature>::Set) -> <Self as SetSignature>::Set {
+    pub fn collapse_terms(&self, v: <Self as SetSignature>::Elem) -> <Self as SetSignature>::Elem {
         let mut v = self.set().sort_by_key(v, &|(x, _)| x).into_iter();
 
         let mut current_x = None;
@@ -134,9 +134,9 @@ impl<
 {
     // must be ordered and contain no duplicates wrt the first argument
     // all ring elements in the second argument must be non-zero
-    type Set = Vec<(Set::Set, Ring::Set)>;
+    type Elem = Vec<(Set::Elem, Ring::Elem)>;
 
-    fn validate_element(&self, v: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, v: &Self::Elem) -> Result<(), String> {
         if !self.set().is_sorted_and_unique_by_key(v, |(x, _)| x) {
             return Err("not sorted or has duplicate".to_string());
         }
@@ -156,7 +156,7 @@ impl<
     RingB: BorrowedStructure<Ring>,
 > EqSignature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
 {
-    fn equal(&self, v: &Self::Set, w: &Self::Set) -> bool {
+    fn equal(&self, v: &Self::Elem, w: &Self::Elem) -> bool {
         debug_assert!(self.validate_element(v).is_ok());
         debug_assert!(self.validate_element(w).is_ok());
         // since elements are sorted and exclude entries with zero coefficients, we just need to check if they are identically equal
@@ -189,7 +189,7 @@ impl<
     RingB: BorrowedStructure<Ring>,
 > ZeroSignature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
 {
-    fn zero(&self) -> Self::Set {
+    fn zero(&self) -> Self::Elem {
         vec![]
     }
 }
@@ -201,7 +201,7 @@ impl<
     RingB: BorrowedStructure<Ring>,
 > AdditionSignature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
 {
-    fn add(&self, v: &Self::Set, w: &Self::Set) -> Self::Set {
+    fn add(&self, v: &Self::Elem, w: &Self::Elem) -> Self::Elem {
         self.collapse_terms(v.iter().chain(w.iter()).cloned().collect())
     }
 }
@@ -213,7 +213,7 @@ impl<
     RingB: BorrowedStructure<Ring>,
 > CancellativeAdditionSignature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
 {
-    fn try_sub(&self, _a: &Self::Set, _b: &Self::Set) -> Option<Self::Set> {
+    fn try_sub(&self, _a: &Self::Elem, _b: &Self::Elem) -> Option<Self::Elem> {
         todo!()
     }
 }
@@ -225,7 +225,7 @@ impl<
     RingB: BorrowedStructure<Ring>,
 > TryNegateSignature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
 {
-    fn try_neg(&self, v: &Self::Set) -> Option<Self::Set> {
+    fn try_neg(&self, v: &Self::Elem) -> Option<Self::Elem> {
         v.iter()
             .map(|(x, a)| Some((x.clone(), self.ring().try_neg(a)?)))
             .collect::<Option<_>>()
@@ -248,7 +248,7 @@ impl<
     RingB: BorrowedStructure<Ring>,
 > AdditiveGroupSignature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
 {
-    fn neg(&self, v: &Self::Set) -> Self::Set {
+    fn neg(&self, v: &Self::Elem) -> Self::Elem {
         v.iter()
             .map(|(x, a)| (x.clone(), self.ring().neg(a)))
             .collect()
@@ -266,7 +266,7 @@ impl<
         self.ring.borrow()
     }
 
-    fn scalar_mul(&self, v: &Self::Set, b: &Ring::Set) -> Self::Set {
+    fn scalar_mul(&self, v: &Self::Elem, b: &Ring::Elem) -> Self::Elem {
         v.iter()
             .map(|(x, a)| (x.clone(), self.ring().mul(a, b)))
             .filter(|(_, a)| !self.ring().is_zero(a))
@@ -287,7 +287,7 @@ impl<
         self.set()
     }
 
-    fn to_component<'a>(&self, x: &Set::Set, v: &'a Self::Set) -> Cow<'a, Ring::Set> {
+    fn to_component<'a>(&self, x: &Set::Elem, v: &'a Self::Elem) -> Cow<'a, Ring::Elem> {
         if let Some((_, a)) = self.set().binary_search_by_key(v, x, |(x, _)| x) {
             Cow::Borrowed(a)
         } else {
@@ -295,7 +295,7 @@ impl<
         }
     }
 
-    fn from_component(&self, x: &Set::Set, a: &Ring::Set) -> Self::Set {
+    fn from_component(&self, x: &Set::Elem, a: &Ring::Elem) -> Self::Elem {
         if self.ring().is_zero(a) {
             vec![]
         } else {

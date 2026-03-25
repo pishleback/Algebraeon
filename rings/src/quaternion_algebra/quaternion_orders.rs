@@ -18,7 +18,7 @@ use itertools::Itertools;
 pub struct QuaternionOrderZBasis<ANF: AlgebraicNumberFieldSignature> {
     integers: IntegerCanonicalStructure, // so we can return a reference to it in .ring()
     algebra: QuaternionAlgebraStructure<ANF>,
-    basis: Vec<QuaternionAlgebraElement<ANF::Set>>, // 4n elements
+    basis: Vec<QuaternionAlgebraElement<ANF::Elem>>, // 4n elements
 }
 
 impl<ANF: AlgebraicNumberFieldSignature> PartialEq for QuaternionOrderZBasis<ANF> {
@@ -31,7 +31,7 @@ impl<ANF: AlgebraicNumberFieldSignature> PartialEq for QuaternionOrderZBasis<ANF
 impl<ANF: AlgebraicNumberFieldSignature> Eq for QuaternionOrderZBasis<ANF> {}
 
 impl<ANF: AlgebraicNumberFieldSignature> EqSignature for QuaternionOrderZBasis<ANF> {
-    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+    fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
         self.algebra.equal(a, b)
     }
 }
@@ -39,9 +39,9 @@ impl<ANF: AlgebraicNumberFieldSignature> EqSignature for QuaternionOrderZBasis<A
 impl<ANF: AlgebraicNumberFieldSignature> Signature for QuaternionOrderZBasis<ANF> {}
 
 impl<ANF: AlgebraicNumberFieldSignature> SetSignature for QuaternionOrderZBasis<ANF> {
-    type Set = QuaternionAlgebraElement<ANF::Set>;
+    type Elem = QuaternionAlgebraElement<ANF::Elem>;
 
-    fn validate_element(&self, x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
         let algebra = &self.algebra;
         let submodules = Rational::structure()
             .into_free_module(self.basis.len())
@@ -96,13 +96,13 @@ impl<ANF: AlgebraicNumberFieldSignature> RinglikeSpecializationSignature
 }
 
 impl<ANF: AlgebraicNumberFieldSignature> ZeroSignature for QuaternionOrderZBasis<ANF> {
-    fn zero(&self) -> Self::Set {
+    fn zero(&self) -> Self::Elem {
         self.algebra.zero()
     }
 }
 
 impl<ANF: AlgebraicNumberFieldSignature> AdditionSignature for QuaternionOrderZBasis<ANF> {
-    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn add(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.algebra.add(a, b)
     }
 }
@@ -110,13 +110,13 @@ impl<ANF: AlgebraicNumberFieldSignature> AdditionSignature for QuaternionOrderZB
 impl<ANF: AlgebraicNumberFieldSignature> CancellativeAdditionSignature
     for QuaternionOrderZBasis<ANF>
 {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.sub(a, b))
     }
 }
 
 impl<ANF: AlgebraicNumberFieldSignature> TryNegateSignature for QuaternionOrderZBasis<ANF> {
-    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
     }
 }
@@ -124,7 +124,7 @@ impl<ANF: AlgebraicNumberFieldSignature> TryNegateSignature for QuaternionOrderZ
 impl<ANF: AlgebraicNumberFieldSignature> AdditiveMonoidSignature for QuaternionOrderZBasis<ANF> {}
 
 impl<ANF: AlgebraicNumberFieldSignature> AdditiveGroupSignature for QuaternionOrderZBasis<ANF> {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
+    fn neg(&self, a: &Self::Elem) -> Self::Elem {
         self.algebra.neg(a)
     }
 }
@@ -136,7 +136,7 @@ impl<ANF: AlgebraicNumberFieldSignature> SemiModuleSignature<IntegerCanonicalStr
         &self.integers
     }
 
-    fn scalar_mul(&self, a: &Self::Set, x: &Integer) -> Self::Set {
+    fn scalar_mul(&self, a: &Self::Elem, x: &Integer) -> Self::Elem {
         self.algebra.scalar_mul(
             a,
             &self

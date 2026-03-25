@@ -83,15 +83,15 @@ impl ConwayFiniteFieldStructure {
 impl Signature for ConwayFiniteFieldStructure {}
 
 impl SetSignature for ConwayFiniteFieldStructure {
-    type Set = Polynomial<Integer>;
+    type Elem = Polynomial<Integer>;
 
-    fn validate_element(&self, _: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, _: &Self::Elem) -> Result<(), String> {
         Ok(())
     }
 }
 
 impl EqSignature for ConwayFiniteFieldStructure {
-    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+    fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
         self.structure.equal(a, b)
     }
 }
@@ -99,25 +99,25 @@ impl EqSignature for ConwayFiniteFieldStructure {
 impl RinglikeSpecializationSignature for ConwayFiniteFieldStructure {}
 
 impl ZeroSignature for ConwayFiniteFieldStructure {
-    fn zero(&self) -> Self::Set {
+    fn zero(&self) -> Self::Elem {
         self.structure.zero()
     }
 }
 
 impl AdditionSignature for ConwayFiniteFieldStructure {
-    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn add(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.structure.add(a, b)
     }
 }
 
 impl CancellativeAdditionSignature for ConwayFiniteFieldStructure {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.sub(a, b))
     }
 }
 
 impl TryNegateSignature for ConwayFiniteFieldStructure {
-    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
     }
 }
@@ -125,19 +125,19 @@ impl TryNegateSignature for ConwayFiniteFieldStructure {
 impl AdditiveMonoidSignature for ConwayFiniteFieldStructure {}
 
 impl AdditiveGroupSignature for ConwayFiniteFieldStructure {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
+    fn neg(&self, a: &Self::Elem) -> Self::Elem {
         self.structure.neg(a)
     }
 }
 
 impl OneSignature for ConwayFiniteFieldStructure {
-    fn one(&self) -> Self::Set {
+    fn one(&self) -> Self::Elem {
         self.structure.one()
     }
 }
 
 impl MultiplicationSignature for ConwayFiniteFieldStructure {
-    fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn mul(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.structure.mul(a, b)
     }
 }
@@ -161,7 +161,7 @@ impl RingSignature for ConwayFiniteFieldStructure {
 }
 
 impl CountableSetSignature for ConwayFiniteFieldStructure {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
         self.all_units_and_zero().into_iter()
     }
 }
@@ -175,13 +175,13 @@ impl CharacteristicSignature for ConwayFiniteFieldStructure {
 }
 
 impl TryReciprocalSignature for ConwayFiniteFieldStructure {
-    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_reciprocal(&self, a: &Self::Elem) -> Option<Self::Elem> {
         self.structure.try_reciprocal(a)
     }
 }
 
 impl CancellativeMultiplicationSignature for ConwayFiniteFieldStructure {
-    fn try_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_divide(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         self.structure.try_divide(a, b)
     }
 }
@@ -195,7 +195,7 @@ impl FieldSignature for ConwayFiniteFieldStructure {}
 impl<B: BorrowedStructure<ConwayFiniteFieldStructure>> CountableSetSignature
     for MultiplicativeMonoidUnitsStructure<ConwayFiniteFieldStructure, B>
 {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
         self.list_all_elements().into_iter()
     }
 }
@@ -203,7 +203,7 @@ impl<B: BorrowedStructure<ConwayFiniteFieldStructure>> CountableSetSignature
 impl<B: BorrowedStructure<ConwayFiniteFieldStructure>> FiniteSetSignature
     for MultiplicativeMonoidUnitsStructure<ConwayFiniteFieldStructure, B>
 {
-    fn list_all_elements(&self) -> Vec<Self::Set> {
+    fn list_all_elements(&self) -> Vec<Self::Elem> {
         self.monoid().structure.all_units()
     }
 }
@@ -339,7 +339,7 @@ impl RingHomomorphism<ConwayFiniteFieldStructure, ConwayFiniteFieldStructure>
 // impl SetStructure for ConwayFiniteFieldInclusionStructure {
 //     type Set = ConwayFiniteFieldInclusion;
 
-//     fn is_element(&self, x: &Self::Set) -> bool {
+//     fn is_element(&self, x: &Self::Elem) -> bool {
 //         self.p == x.p
 //     }
 // }

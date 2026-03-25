@@ -6,8 +6,8 @@ pub trait GraphSignature {
 
     fn has_directed_edge(
         &self,
-        source: &<Self::Vertices as SetSignature>::Set,
-        target: &<Self::Vertices as SetSignature>::Set,
+        source: &<Self::Vertices as SetSignature>::Elem,
+        target: &<Self::Vertices as SetSignature>::Elem,
     ) -> Result<(), String>;
 }
 
@@ -23,6 +23,6 @@ pub trait GraphWithEdgesSignature: GraphSignature {
     /// Return the endpoints of an edge.
     fn endpoints(
         &self,
-        edge: &<Self::Edges as SetSignature>::Set,
-    ) -> UnorderedPair<<Self::Vertices as SetSignature>::Set>;
+        edge: &<Self::Edges as SetSignature>::Elem,
+    ) -> UnorderedPair<<Self::Vertices as SetSignature>::Elem>;
 }

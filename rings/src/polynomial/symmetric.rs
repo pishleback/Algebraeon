@@ -33,12 +33,12 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> MultiPolynomialStr
 //TODO: replace integral domain with division ring structure
 where
     MultiPolynomialStructure<RS, RSB>:
-        SetSignature<Set = MultiPolynomial<RS::Set>> + ToStringSignature,
+        SetSignature<Elem = MultiPolynomial<RS::Elem>> + ToStringSignature,
 {
     pub fn is_symmetric(
         &self,
         vars: Vec<impl Borrow<Variable>>,
-        poly: &MultiPolynomial<RS::Set>,
+        poly: &MultiPolynomial<RS::Elem>,
     ) -> bool {
         let vars_hash: HashSet<_> = vars.iter().map(|v| v.borrow().clone()).collect();
         for v in poly.free_vars() {
@@ -100,7 +100,7 @@ where
         &self,
         n: usize,
         vars: &[impl Borrow<Variable>],
-    ) -> MultiPolynomial<RS::Set> {
+    ) -> MultiPolynomial<RS::Elem> {
         let mp_ring = self.coeff_ring().multivariable_polynomial_ring();
         let mut e = mp_ring.zero();
         for vs in algebraeon_sets::combinatorics::subsets_of_vec(vars.iter().collect(), n) {
@@ -116,9 +116,9 @@ where
     fn as_elementary_symmetric_polynomials_homogeneous_impl(
         &self,
         vars: &Vec<Variable>,
-        p: &MultiPolynomial<RS::Set>,
+        p: &MultiPolynomial<RS::Elem>,
         e: &Vec<Variable>,
-    ) -> MultiPolynomial<RS::Set> {
+    ) -> MultiPolynomial<RS::Elem> {
         // println!("e = {:?}", e);
         // println!("p = {}", self.elem_to_string(p));
 
@@ -168,9 +168,9 @@ where
     fn as_elementary_symmetric_polynomials_impl(
         &self,
         vars: &Vec<Variable>,
-        poly: &MultiPolynomial<RS::Set>,
+        poly: &MultiPolynomial<RS::Elem>,
         e: &Vec<Variable>,
-    ) -> MultiPolynomial<RS::Set> {
+    ) -> MultiPolynomial<RS::Elem> {
         let mut total = self.zero();
         for (d, hom_poly) in self.split_by_degree(poly.clone()) {
             if d == 0 {
@@ -189,8 +189,8 @@ where
     pub fn as_elementary_symmetric_polynomials_unchecked(
         &self,
         vars: Vec<impl Borrow<Variable>>,
-        poly: &MultiPolynomial<RS::Set>,
-    ) -> (Vec<Variable>, MultiPolynomial<RS::Set>) {
+        poly: &MultiPolynomial<RS::Elem>,
+    ) -> (Vec<Variable>, MultiPolynomial<RS::Elem>) {
         let e = (0..vars.len())
             .map(|i| Variable::new(format!("e{}", ss_num(i + 1))))
             .collect_vec();
@@ -222,8 +222,8 @@ where
     pub fn as_elementary_symmetric_polynomials(
         &self,
         vars: Vec<impl Borrow<Variable>>,
-        poly: &MultiPolynomial<RS::Set>,
-    ) -> Option<(Vec<Variable>, MultiPolynomial<RS::Set>)> {
+        poly: &MultiPolynomial<RS::Elem>,
+    ) -> Option<(Vec<Variable>, MultiPolynomial<RS::Elem>)> {
         if self.is_symmetric(vars.iter().map(|v| v.borrow().clone()).collect(), poly) {
             Some(self.as_elementary_symmetric_polynomials_unchecked(vars, poly))
         } else {
@@ -236,7 +236,7 @@ impl<R: MetaType> MultiPolynomial<R>
 where
     R::Signature: IntegralDomainSignature,
     MultiPolynomialStructure<R::Signature, R::Signature>:
-        SetSignature<Set = Self> + ToStringSignature,
+        SetSignature<Elem = Self> + ToStringSignature,
 {
     pub fn is_symmetric(&self, vars: Vec<impl Borrow<Variable>>) -> bool {
         Self::structure().is_symmetric(vars, self)

@@ -25,8 +25,8 @@ impl RingToIdealsSignature for IntegerCanonicalStructure {
 impl<B: BorrowedStructure<IntegerCanonicalStructure>> Signature for IntegerIdealsStructure<B> {}
 
 impl<B: BorrowedStructure<IntegerCanonicalStructure>> SetSignature for IntegerIdealsStructure<B> {
-    type Set = Natural;
-    fn validate_element(&self, _x: &Self::Set) -> Result<(), String> {
+    type Elem = Natural;
+    fn validate_element(&self, _x: &Self::Elem) -> Result<(), String> {
         Ok(())
     }
 }
@@ -40,7 +40,7 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>> IdealsSignature<IntegerCan
 }
 
 impl<B: BorrowedStructure<IntegerCanonicalStructure>> EqSignature for IntegerIdealsStructure<B> {
-    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+    fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
         a == b
     }
 }
@@ -51,7 +51,7 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>> RinglikeSpecializationSign
 }
 
 impl<B: BorrowedStructure<IntegerCanonicalStructure>> ZeroSignature for IntegerIdealsStructure<B> {
-    fn zero(&self) -> Self::Set {
+    fn zero(&self) -> Self::Elem {
         Natural::ZERO
     }
 }
@@ -59,7 +59,7 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>> ZeroSignature for IntegerI
 impl<B: BorrowedStructure<IntegerCanonicalStructure>> AdditionSignature
     for IntegerIdealsStructure<B>
 {
-    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn add(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         gcd(a.clone(), b.clone())
     }
 }
@@ -72,7 +72,7 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>> AdditiveMonoidSignature
 impl<B: BorrowedStructure<IntegerCanonicalStructure>> TryNegateSignature
     for IntegerIdealsStructure<B>
 {
-    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
         if self.is_zero(a) {
             Some(self.zero())
         } else {
@@ -82,7 +82,7 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>> TryNegateSignature
 }
 
 impl<B: BorrowedStructure<IntegerCanonicalStructure>> OneSignature for IntegerIdealsStructure<B> {
-    fn one(&self) -> Self::Set {
+    fn one(&self) -> Self::Elem {
         Natural::ONE
     }
 }
@@ -90,7 +90,7 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>> OneSignature for IntegerId
 impl<B: BorrowedStructure<IntegerCanonicalStructure>> MultiplicationSignature
     for IntegerIdealsStructure<B>
 {
-    fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn mul(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         a * b
     }
 }
@@ -128,19 +128,19 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>> SemiRingSignature
 impl<B: BorrowedStructure<IntegerCanonicalStructure>>
     IdealsArithmeticSignature<IntegerCanonicalStructure, B> for IntegerIdealsStructure<B>
 {
-    fn principal_ideal(&self, a: &Integer) -> Self::Set {
+    fn principal_ideal(&self, a: &Integer) -> Self::Elem {
         Abs::abs(a)
     }
 
-    fn contains_ideal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+    fn contains_ideal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
         b % a == Natural::ZERO
     }
 
-    fn intersect(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn intersect(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         lcm(a.clone(), b.clone())
     }
 
-    fn quotient(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn quotient(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         if b == &Natural::ZERO {
             Natural::ONE
         } else {
@@ -165,7 +165,7 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>>
 impl<B: BorrowedStructure<IntegerCanonicalStructure>> TryReciprocalSignature
     for IntegerIdealsStructure<B>
 {
-    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_reciprocal(&self, a: &Self::Elem) -> Option<Self::Elem> {
         self.factorization_exponents().try_reciprocal(a)
     }
 }
@@ -173,7 +173,7 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>> TryReciprocalSignature
 impl<B: BorrowedStructure<IntegerCanonicalStructure>> FavoriteAssociateSignature
     for IntegerIdealsStructure<B>
 {
-    fn factor_fav_assoc(&self, a: &Self::Set) -> (Self::Set, Self::Set) {
+    fn factor_fav_assoc(&self, a: &Self::Elem) -> (Self::Elem, Self::Elem) {
         self.factorization_exponents().factor_fav_assoc(a)
     }
 }
@@ -191,11 +191,11 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>> UniqueFactorizationMonoidS
         Natural::structure()
     }
 
-    fn factorization_pow(&self, a: &Self::Set, k: &Natural) -> Self::Set {
+    fn factorization_pow(&self, a: &Self::Elem, k: &Natural) -> Self::Elem {
         self.factorization_exponents().nat_pow(a, k)
     }
 
-    fn try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {
+    fn try_is_irreducible(&self, a: &Self::Elem) -> Option<bool> {
         self.factorization_exponents().try_is_irreducible(a)
     }
 }

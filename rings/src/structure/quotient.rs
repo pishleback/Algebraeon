@@ -12,7 +12,7 @@ pub trait QuotientRingSignature<PreQuoRing: RingSignature>:
 pub trait QuotientRingGetPrincipalIdealSignature<PreQuoRing: RingSignature>:
     QuotientRingSignature<PreQuoRing>
 {
-    fn modulus<'a>(&'a self) -> Cow<'a, PreQuoRing::Set>;
+    fn modulus<'a>(&'a self) -> Cow<'a, PreQuoRing::Elem>;
 }
 
 /// A quotient ring where we can get the quotient ideal
@@ -22,5 +22,5 @@ pub trait QuotientRingGetIdealSignature<
     PreQuoRingIdeal: IdealsSignature<PreQuoRing, PreQuoRingB>,
 >: QuotientRingSignature<PreQuoRing>
 {
-    fn quotient_ideal<'a>(&'a self) -> Cow<'a, PreQuoRingIdeal::Set>;
+    fn quotient_ideal<'a>(&'a self) -> Cow<'a, PreQuoRingIdeal::Elem>;
 }

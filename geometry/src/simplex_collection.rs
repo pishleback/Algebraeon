@@ -11,7 +11,7 @@ pub trait LabelledSimplexCollection<
     FS: OrderedRingSignature + FieldSignature + 'f,
     T: Eq + Clone + Send + Sync,
 >: Sized where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type WithLabel<S: Eq + Clone + Send + Sync>: LabelledSimplexCollection<'f, FS, S>;
     type SubsetType: LabelledSimplexCollection<'f, FS, T>;
@@ -166,7 +166,7 @@ pub enum InteriorOrBoundary {
 pub trait InteriorOrBoundarySimplexCollection<'f, FS: OrderedRingSignature + FieldSignature + 'f>:
     LabelledSimplexCollection<'f, FS, InteriorOrBoundary>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     fn interior(
         &self,
@@ -189,6 +189,6 @@ impl<
     S: LabelledSimplexCollection<'f, FS, InteriorOrBoundary>,
 > InteriorOrBoundarySimplexCollection<'f, FS> for S
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
 }

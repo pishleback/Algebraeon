@@ -17,7 +17,7 @@ use std::collections::{HashMap, HashSet};
 #[derive(Clone)]
 pub struct ConvexHull<'f, FS: OrderedRingSignature + FieldSignature>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     // the space in which this convex hull lives
     ambient_space: AffineSpace<'f, FS>,
@@ -47,7 +47,7 @@ where
 
 impl<'f, FS: OrderedRingSignature + FieldSignature> std::fmt::Debug for ConvexHull<'f, FS>
 where
-    FS::Set: std::hash::Hash + std::fmt::Debug,
+    FS::Elem: std::hash::Hash + std::fmt::Debug,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ConvexHull")
@@ -63,7 +63,7 @@ where
 
 impl<'f, FS: OrderedRingSignature + FieldSignature> ConvexHull<'f, FS>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     #[allow(unused)]
     fn check(&self) -> Result<(), &'static str> {
@@ -209,7 +209,7 @@ where
 
 impl<'f, FS: OrderedRingSignature + FieldSignature> AffineSpace<'f, FS>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     pub fn convex_hull(&self, points: Vec<Vector<'f, FS>>) -> ConvexHull<'f, FS> {
         ConvexHull::new(*self, points)
@@ -218,7 +218,7 @@ where
 
 impl<'f, FS: OrderedRingSignature + FieldSignature> ConvexHull<'f, FS>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     pub fn affine_span_dimension(&self) -> usize {
         self.subspace.embedded_space().affine_dimension()
@@ -523,7 +523,7 @@ struct ConvexHullWireframe<'f, FS: OrderedRingSignature + FieldSignature> {
 
 impl<'f, FS: OrderedRingSignature + FieldSignature> ConvexHullWireframe<'f, FS>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     fn from_convex_hull(ch: &ConvexHull<'f, FS>) -> Self {
         let mut outer_points = HashSet::new();
@@ -552,7 +552,7 @@ where
             let (_root, span) = ch.subspace.get_root_and_span().unwrap();
             debug_assert_eq!(span.len(), 0);
             debug_assert_eq!(outer_points.len(), 0);
-            outer_points.push(ch.subspace.embedded_space().vector(Vec::<FS::Set>::new()));
+            outer_points.push(ch.subspace.embedded_space().vector(Vec::<FS::Elem>::new()));
         }
 
         // Note that in linear dimension 1 this doesnt quite work for outer edges since the boundary is not connected. Instead, outer edges should just be the edge between the two points.
@@ -692,7 +692,7 @@ where
 
 impl<'f, FS: OrderedRingSignature + FieldSignature> ConvexHull<'f, FS>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     pub fn intersect_with_oriented_hyperplane(
         &self,

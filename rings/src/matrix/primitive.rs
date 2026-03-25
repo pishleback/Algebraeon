@@ -1,7 +1,10 @@
 use super::*;
 
 impl<RS: GreatestCommonDivisorSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
-    pub fn factor_primitive(&self, mut mat: Matrix<RS::Set>) -> Option<(RS::Set, Matrix<RS::Set>)> {
+    pub fn factor_primitive(
+        &self,
+        mut mat: Matrix<RS::Elem>,
+    ) -> Option<(RS::Elem, Matrix<RS::Elem>)> {
         let entries = mat.entries_list();
         let g = self.ring().gcd_list(entries);
         if self.ring().is_zero(&g) {
@@ -17,7 +20,7 @@ impl<RS: GreatestCommonDivisorSignature, RSB: BorrowedStructure<RS>> MatrixStruc
         }
     }
 
-    pub fn primitive_part(&self, mat: Matrix<RS::Set>) -> Option<Matrix<RS::Set>> {
+    pub fn primitive_part(&self, mat: Matrix<RS::Elem>) -> Option<Matrix<RS::Elem>> {
         self.factor_primitive(mat).map(|(_unit, prim)| prim)
     }
 }
@@ -28,8 +31,8 @@ pub fn factor_primitive_fof<
     Fof: FieldOfFractionsInclusion<Ring, Field>,
 >(
     fof_inclusion: &Fof,
-    mat: &Matrix<Field::Set>,
-) -> (Field::Set, Matrix<Ring::Set>) {
+    mat: &Matrix<Field::Elem>,
+) -> (Field::Elem, Matrix<Ring::Elem>) {
     let ring = fof_inclusion.domain();
     let field = fof_inclusion.range();
     let mat_ring = MatrixStructure::new(ring.clone());

@@ -8,33 +8,33 @@ pub struct SingletonSetStructure {}
 impl Signature for SingletonSetStructure {}
 
 impl SetSignature for SingletonSetStructure {
-    type Set = ();
+    type Elem = ();
 
-    fn validate_element(&self, _: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, _: &Self::Elem) -> Result<(), String> {
         Ok(())
     }
 }
 
 impl EqSignature for SingletonSetStructure {
-    fn equal(&self, x: &Self::Set, y: &Self::Set) -> bool {
+    fn equal(&self, x: &Self::Elem, y: &Self::Elem) -> bool {
         x == y
     }
 }
 
 impl PartialOrdSignature for SingletonSetStructure {
-    fn partial_cmp(&self, a: &Self::Set, b: &Self::Set) -> Option<std::cmp::Ordering> {
+    fn partial_cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Option<std::cmp::Ordering> {
         Some(self.cmp(a, b))
     }
 }
 
 impl OrdSignature for SingletonSetStructure {
-    fn cmp(&self, x: &Self::Set, y: &Self::Set) -> std::cmp::Ordering {
+    fn cmp(&self, x: &Self::Elem, y: &Self::Elem) -> std::cmp::Ordering {
         x.cmp(y)
     }
 }
 
 impl CountableSetSignature for SingletonSetStructure {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
         [()].into_iter()
     }
 }

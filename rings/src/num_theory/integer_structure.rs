@@ -11,37 +11,37 @@ use algebraeon_sets::structure::MetaType;
 use std::collections::HashSet;
 
 impl RinglikeSpecializationSignature for IntegerCanonicalStructure {
-    fn try_ring_restructure(&self) -> Option<impl EqSignature<Set = Self::Set> + RingSignature> {
+    fn try_ring_restructure(&self) -> Option<impl EqSignature<Elem = Self::Elem> + RingSignature> {
         Some(self.clone())
     }
 
     fn try_char_zero_ring_restructure(
         &self,
-    ) -> Option<impl EqSignature<Set = Self::Set> + CharZeroRingSignature> {
+    ) -> Option<impl EqSignature<Elem = Self::Elem> + CharZeroRingSignature> {
         Some(self.clone())
     }
 }
 
 impl ZeroSignature for IntegerCanonicalStructure {
-    fn zero(&self) -> Self::Set {
+    fn zero(&self) -> Self::Elem {
         Integer::ZERO
     }
 }
 
 impl AdditionSignature for IntegerCanonicalStructure {
-    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn add(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         a + b
     }
 }
 
 impl CancellativeAdditionSignature for IntegerCanonicalStructure {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.sub(a, b))
     }
 }
 
 impl TryNegateSignature for IntegerCanonicalStructure {
-    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
     }
 }
@@ -49,23 +49,23 @@ impl TryNegateSignature for IntegerCanonicalStructure {
 impl AdditiveMonoidSignature for IntegerCanonicalStructure {}
 
 impl AdditiveGroupSignature for IntegerCanonicalStructure {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
+    fn neg(&self, a: &Self::Elem) -> Self::Elem {
         -a
     }
 
-    fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn sub(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         a - b
     }
 }
 
 impl OneSignature for IntegerCanonicalStructure {
-    fn one(&self) -> Self::Set {
+    fn one(&self) -> Self::Elem {
         Integer::ONE
     }
 }
 
 impl MultiplicationSignature for IntegerCanonicalStructure {
-    fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn mul(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         a * b
     }
 }
@@ -95,13 +95,13 @@ impl CharacteristicSignature for IntegerCanonicalStructure {
 }
 
 impl TryReciprocalSignature for IntegerCanonicalStructure {
-    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_reciprocal(&self, a: &Self::Elem) -> Option<Self::Elem> {
         self.try_divide(&self.one(), a)
     }
 }
 
 impl CancellativeMultiplicationSignature for IntegerCanonicalStructure {
-    fn try_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_divide(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         match self.quorem(a, b) {
             Some((q, r)) => {
                 if r == self.zero() {
@@ -124,7 +124,7 @@ impl OrderedRingSignature for IntegerCanonicalStructure {}
 impl<B: BorrowedStructure<IntegerCanonicalStructure>> CountableSetSignature
     for MultiplicativeMonoidUnitsStructure<IntegerCanonicalStructure, B>
 {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
         self.list_all_elements().into_iter()
     }
 }
@@ -132,13 +132,13 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>> CountableSetSignature
 impl<B: BorrowedStructure<IntegerCanonicalStructure>> FiniteSetSignature
     for MultiplicativeMonoidUnitsStructure<IntegerCanonicalStructure, B>
 {
-    fn list_all_elements(&self) -> Vec<Self::Set> {
+    fn list_all_elements(&self) -> Vec<Self::Elem> {
         vec![Integer::ONE, -Integer::ONE]
     }
 }
 
 impl FavoriteAssociateSignature for IntegerCanonicalStructure {
-    fn factor_fav_assoc(&self, a: &Self::Set) -> (Self::Set, Self::Set) {
+    fn factor_fav_assoc(&self, a: &Self::Elem) -> (Self::Elem, Self::Elem) {
         #[allow(clippy::comparison_chain)]
         if a == &Integer::ZERO {
             (Integer::ONE, Integer::ZERO)
@@ -161,17 +161,17 @@ impl UniqueFactorizationMonoidSignature for IntegerCanonicalStructure {
         Natural::structure()
     }
 
-    fn try_is_irreducible(&self, a: &Self::Set) -> Option<bool> {
+    fn try_is_irreducible(&self, a: &Self::Elem) -> Option<bool> {
         Some(Abs::abs(a).is_irreducible())
     }
 
-    fn factorization_pow(&self, a: &Self::Set, k: &Natural) -> Self::Set {
+    fn factorization_pow(&self, a: &Self::Elem, k: &Natural) -> Self::Elem {
         self.nat_pow(a, k)
     }
 }
 
 impl FactoringMonoidSignature for IntegerCanonicalStructure {
-    fn factor_unchecked(&self, a: &Self::Set) -> Factored<Integer, Natural> {
+    fn factor_unchecked(&self, a: &Self::Elem) -> Factored<Integer, Natural> {
         if a == &Integer::ZERO {
             Factored::Zero
         } else {
@@ -196,7 +196,7 @@ impl FactoringMonoidSignature for IntegerCanonicalStructure {
 }
 
 impl EuclideanDivisionSignature for IntegerCanonicalStructure {
-    fn norm(&self, elem: &Self::Set) -> Option<Natural> {
+    fn norm(&self, elem: &Self::Elem) -> Option<Natural> {
         if elem == &Integer::ZERO {
             None
         } else {
@@ -204,7 +204,7 @@ impl EuclideanDivisionSignature for IntegerCanonicalStructure {
         }
     }
 
-    fn quorem(&self, a: &Self::Set, b: &Self::Set) -> Option<(Self::Set, Self::Set)> {
+    fn quorem(&self, a: &Self::Elem, b: &Self::Elem) -> Option<(Self::Elem, Self::Elem)> {
         if b == &Integer::ZERO {
             None
         } else {
@@ -214,13 +214,13 @@ impl EuclideanDivisionSignature for IntegerCanonicalStructure {
 }
 
 impl GreatestCommonDivisorSignature for IntegerCanonicalStructure {
-    fn gcd(&self, x: &Self::Set, y: &Self::Set) -> Self::Set {
+    fn gcd(&self, x: &Self::Elem, y: &Self::Elem) -> Self::Elem {
         Integer::structure().euclidean_gcd(x.clone(), y.clone())
     }
 }
 
 impl BezoutDomainSignature for IntegerCanonicalStructure {
-    fn xgcd(&self, x: &Self::Set, y: &Self::Set) -> (Self::Set, Self::Set, Self::Set) {
+    fn xgcd(&self, x: &Self::Elem, y: &Self::Elem) -> (Self::Elem, Self::Elem, Self::Elem) {
         Integer::euclidean_xgcd(x.clone(), y.clone())
     }
 }
@@ -252,21 +252,21 @@ impl AlgebraicIntegerRingSignature<RationalCanonicalStructure> for IntegerCanoni
 }
 
 impl ComplexSubsetSignature for IntegerCanonicalStructure {
-    fn as_f64_real_and_imaginary_parts(&self, z: &Self::Set) -> (f64, f64) {
+    fn as_f64_real_and_imaginary_parts(&self, z: &Self::Elem) -> (f64, f64) {
         (self.as_f64(z), 0.0)
     }
 
-    fn as_f32_real_and_imaginary_parts(&self, z: &Self::Set) -> (f32, f32) {
+    fn as_f32_real_and_imaginary_parts(&self, z: &Self::Elem) -> (f32, f32) {
         (self.as_f32(z), 0.0)
     }
 }
 
 impl RealSubsetSignature for IntegerCanonicalStructure {
-    fn as_f64(&self, x: &Self::Set) -> f64 {
+    fn as_f64(&self, x: &Self::Elem) -> f64 {
         x.into()
     }
 
-    fn as_f32(&self, x: &Self::Set) -> f32 {
+    fn as_f32(&self, x: &Self::Elem) -> f32 {
         x.into()
     }
 }

@@ -34,17 +34,17 @@ pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
 
     /// An element which generates this algebraic number field when adjoined to the rational numbers
     /// Such an element always exists by the primitive element theorem
-    fn generator(&self) -> Self::Set;
+    fn generator(&self) -> Self::Elem;
 
     /// Determine whether an element is integral over the integers i.e. is it a root of a monic integer polynomial
-    fn is_algebraic_integer(&self, a: &Self::Set) -> bool;
+    fn is_algebraic_integer(&self, a: &Self::Elem) -> bool;
 
     /// The discriminant of this algebraic number field i.e. the discriminant of its ring of integers
     /// Implementations should not compute this by constructing the ring of integers, as the constructor for a maximal OrderWithBasis calls this function to validate its input
     fn discriminant(&self) -> Integer;
 
     /// A list of self.n() elements which generate the ring of integers as a Z-module
-    fn integral_basis(&self) -> Vec<Self::Set>;
+    fn integral_basis(&self) -> Vec<Self::Elem>;
 
     fn ring_of_integers(&self) -> OrderWithBasis<Self, &Self, true> {
         OrderWithBasis::new_maximal_unchecked(self, self.integral_basis())
@@ -54,12 +54,12 @@ pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
         OrderWithBasis::new_maximal_unchecked(self, basis)
     }
 
-    fn order(&self, basis: Vec<Self::Set>) -> Result<OrderWithBasis<Self, &Self, false>, String> {
+    fn order(&self, basis: Vec<Self::Elem>) -> Result<OrderWithBasis<Self, &Self, false>, String> {
         OrderWithBasis::new(self, basis)
     }
     fn into_order(
         self,
-        basis: Vec<Self::Set>,
+        basis: Vec<Self::Elem>,
     ) -> Result<OrderWithBasis<Self, Self, false>, String> {
         OrderWithBasis::new(self, basis)
     }
@@ -67,7 +67,7 @@ pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
     /// The LCM of the denominators of the coefficients of the minimal polynomial of a.
     ///
     /// It may well be >1 even when the element a is an algebraic integer.
-    fn min_poly_denominator_lcm(&self, a: &Self::Set) -> Integer {
+    fn min_poly_denominator_lcm(&self, a: &Self::Elem) -> Integer {
         Integer::lcm_list(
             self.inbound_finite_dimensional_rational_extension()
                 .min_poly(a)
@@ -80,7 +80,7 @@ pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
     /// A scalar multiple of $a$ which is an algebraic integer.
     ///
     /// It need not return $a$ itself when $a$ is already an algebraic integer.
-    fn integral_multiple(&self, a: &Self::Set) -> Self::Set {
+    fn integral_multiple(&self, a: &Self::Elem) -> Self::Elem {
         let m = self.min_poly_denominator_lcm(a);
         let b = self.mul(&self.try_from_rat(&Rational::from(m)).unwrap(), a);
         debug_assert!(self.is_algebraic_integer(&b));
@@ -98,11 +98,11 @@ pub trait AlgebraicIntegerRingSignature<K: AlgebraicNumberFieldSignature>:
     fn anf(&self) -> &K;
 
     /// A list of self.n() elements which generate this ring as a Z-module
-    fn integral_basis(&self) -> Vec<Self::Set>;
+    fn integral_basis(&self) -> Vec<Self::Elem>;
 
-    fn to_anf(&self, x: &Self::Set) -> K::Set;
+    fn to_anf(&self, x: &Self::Elem) -> K::Elem;
 
-    fn try_from_anf(&self, y: &K::Set) -> Option<Self::Set>;
+    fn try_from_anf(&self, y: &K::Elem) -> Option<Self::Elem>;
 
     fn order(&self) -> OrderWithBasis<K, &K, true> {
         OrderWithBasis::new_maximal_unchecked(
@@ -222,7 +222,7 @@ mod ring_of_integers_to_algebraic_number_field_inclusion {
         RB: BorrowedStructure<R>,
     > Function<R, K> for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
     {
-        fn image(&self, x: &<R as SetSignature>::Set) -> <K as SetSignature>::Set {
+        fn image(&self, x: &<R as SetSignature>::Elem) -> <K as SetSignature>::Elem {
             self.roi().to_anf(x)
         }
     }
@@ -233,7 +233,7 @@ mod ring_of_integers_to_algebraic_number_field_inclusion {
         RB: BorrowedStructure<R>,
     > InjectiveFunction<R, K> for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
     {
-        fn try_preimage(&self, y: &<K as SetSignature>::Set) -> Option<<R as SetSignature>::Set> {
+        fn try_preimage(&self, y: &<K as SetSignature>::Elem) -> Option<<R as SetSignature>::Elem> {
             self.roi().try_from_anf(y)
         }
     }
@@ -252,7 +252,7 @@ mod ring_of_integers_to_algebraic_number_field_inclusion {
         RB: BorrowedStructure<R>,
     > FieldOfFractionsInclusion<R, K> for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
     {
-        fn numerator_and_denominator(&self, a: &<K>::Set) -> (<R>::Set, <R>::Set) {
+        fn numerator_and_denominator(&self, a: &<K>::Elem) -> (<R>::Elem, <R>::Elem) {
             self.zq_extension()
                 .r_to_k_field_of_fractions()
                 .numerator_and_denominator(a)
@@ -304,7 +304,7 @@ mod order_to_ring_of_integers_inclusion {
         roi: RB,
         _kob: PhantomData<KOB>,
         order: OB,
-        order_basis_in_roi: Vec<R::Set>,
+        order_basis_in_roi: Vec<R::Elem>,
     }
 
     impl<
@@ -385,7 +385,7 @@ mod order_to_ring_of_integers_inclusion {
     > Function<OrderWithBasis<K, KOB, MAXIMAL>, R>
         for OrderToRingOfIntegersInclusion<K, R, RB, KOB, MAXIMAL, OB>
     {
-        fn image(&self, x: &Vec<Integer>) -> <R as SetSignature>::Set {
+        fn image(&self, x: &Vec<Integer>) -> <R as SetSignature>::Elem {
             self.roi().sum(
                 &(0..self.n())
                     .map(|i| {
@@ -419,7 +419,7 @@ mod order_to_ring_of_integers_inclusion {
     > InjectiveFunction<OrderWithBasis<K, KOB, MAXIMAL>, R>
         for OrderToRingOfIntegersInclusion<K, R, RB, KOB, MAXIMAL, OB>
     {
-        fn try_preimage(&self, y: &<R as SetSignature>::Set) -> Option<Vec<Integer>> {
+        fn try_preimage(&self, y: &<R as SetSignature>::Elem) -> Option<Vec<Integer>> {
             self.order()
                 .outbound_order_to_anf_inclusion()
                 .try_preimage(&self.roi().outbound_roi_to_anf_inclusion().image(y))
@@ -513,7 +513,7 @@ mod anf_inclusion {
             IntegerModuleB,
         >
     {
-        fn image(&self, x: &Vec<Integer>) -> <K as SetSignature>::Set {
+        fn image(&self, x: &Vec<Integer>) -> <K as SetSignature>::Elem {
             debug_assert!(self.integer_submodule().validate_element(x).is_ok());
             let k = self.integer_submodule().anf();
             let n = k.n();
@@ -537,7 +537,7 @@ mod anf_inclusion {
             IntegerModuleB,
         >
     {
-        fn try_preimage(&self, y: &<K as SetSignature>::Set) -> Option<Vec<Integer>> {
+        fn try_preimage(&self, y: &<K as SetSignature>::Elem) -> Option<Vec<Integer>> {
             let k = self.integer_submodule().anf();
             let n = k.n();
             debug_assert!(k.validate_element(y).is_ok());
@@ -588,10 +588,10 @@ mod anf_inclusion {
     {
         fn numerator_and_denominator(
             &self,
-            a: &<K>::Set,
+            a: &<K>::Elem,
         ) -> (
-            <OrderWithBasis<K, KOB, MAXIMAL> as SetSignature>::Set,
-            <OrderWithBasis<K, KOB, MAXIMAL> as SetSignature>::Set,
+            <OrderWithBasis<K, KOB, MAXIMAL> as SetSignature>::Elem,
+            <OrderWithBasis<K, KOB, MAXIMAL> as SetSignature>::Elem,
         ) {
             self.zq_extension()
                 .r_to_k_field_of_fractions()
@@ -806,7 +806,7 @@ mod anf_inclusion {
                 Cow::Borrowed(self.r_to_k.borrow())
             }
 
-            fn integralize_multiplier(&self, alpha: &<Self::K as SetSignature>::Set) -> Integer {
+            fn integralize_multiplier(&self, alpha: &<Self::K as SetSignature>::Elem) -> Integer {
                 if self.k_field().is_algebraic_integer(alpha) {
                     Integer::ONE
                 } else {
@@ -954,7 +954,7 @@ mod anf_inclusion {
                 Cow::Borrowed(self.r_to_k.borrow())
             }
 
-            fn integralize_multiplier(&self, alpha: &<Self::K as SetSignature>::Set) -> Integer {
+            fn integralize_multiplier(&self, alpha: &<Self::K as SetSignature>::Elem) -> Integer {
                 if self.k_field().is_algebraic_integer(alpha) {
                     Integer::ONE
                 } else {
@@ -1123,8 +1123,8 @@ mod integer_submodule_inclusion {
     {
         fn image(
             &self,
-            x: &<IntegerSubmodule as SetSignature>::Set,
-        ) -> <IntegerModule as SetSignature>::Set {
+            x: &<IntegerSubmodule as SetSignature>::Elem,
+        ) -> <IntegerModule as SetSignature>::Elem {
             self.integer_module()
                 .outbound_order_to_anf_inclusion()
                 .try_preimage(
@@ -1154,8 +1154,8 @@ mod integer_submodule_inclusion {
     {
         fn try_preimage(
             &self,
-            y: &<IntegerModule as SetSignature>::Set,
-        ) -> Option<<IntegerSubmodule as SetSignature>::Set> {
+            y: &<IntegerModule as SetSignature>::Elem,
+        ) -> Option<<IntegerSubmodule as SetSignature>::Elem> {
             self.integer_submodule()
                 .outbound_order_to_anf_inclusion()
                 .try_preimage(
@@ -1438,13 +1438,13 @@ mod integer_submodule_inclusion {
 }
 
 pub trait FullRankIntegerSubmoduleWithBasisSignature<K: AlgebraicNumberFieldSignature>:
-    AdditiveGroupSignature<Set = Vec<Integer>>
+    AdditiveGroupSignature<Elem = Vec<Integer>>
 {
     fn anf(&self) -> &K;
 
-    fn basis(&self) -> &Vec<K::Set>;
+    fn basis(&self) -> &Vec<K::Elem>;
 
-    fn basis_vector(&self, i: usize) -> &K::Set {
+    fn basis_vector(&self, i: usize) -> &K::Elem {
         debug_assert!(i < self.n());
         self.basis().get(i).unwrap()
     }
@@ -1461,7 +1461,7 @@ pub trait FullRankIntegerSubmoduleWithBasisSignature<K: AlgebraicNumberFieldSign
         Integer::structure_ref().free_module(self.n())
     }
 
-    fn contains_element(&self, p: &K::Set) -> bool {
+    fn contains_element(&self, p: &K::Elem) -> bool {
         self.outbound_order_to_anf_inclusion()
             .try_preimage(p)
             .is_some()

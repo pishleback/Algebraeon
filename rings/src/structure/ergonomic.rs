@@ -9,7 +9,7 @@ use algebraeon_sets::structure::*;
 use algebraeon_nzq::*;
 
 pub trait IntoErgonomicSignature: SetSignature {
-    fn into_ergonomic(&self, elem: Self::Set) -> StructuredElement<Self> {
+    fn into_ergonomic(&self, elem: Self::Elem) -> StructuredElement<Self> {
         StructuredElement::new(self.clone(), elem)
     }
 }
@@ -33,11 +33,11 @@ fn common_structure<S: Signature>(structure1: impl Borrow<S>, structure2: impl B
 #[derive(Debug, Clone)]
 pub struct StructuredElement<S: SetSignature> {
     structure: S,
-    elem: S::Set,
+    elem: S::Elem,
 }
 
 impl<S: SetSignature> StructuredElement<S> {
-    pub fn new(structure: S, elem: S::Set) -> Self {
+    pub fn new(structure: S, elem: S::Elem) -> Self {
         Self { structure, elem }
     }
 
@@ -45,18 +45,18 @@ impl<S: SetSignature> StructuredElement<S> {
         self.structure.clone()
     }
 
-    pub fn ref_set(&self) -> &S::Set {
+    pub fn ref_set(&self) -> &S::Elem {
         &self.elem
     }
 
-    pub fn into_verbose(self) -> S::Set {
+    pub fn into_verbose(self) -> S::Elem {
         self.elem
     }
 }
 
 impl<S: SetSignature> std::fmt::Display for StructuredElement<S>
 where
-    S::Set: std::fmt::Display,
+    S::Elem: std::fmt::Display,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         std::fmt::Display::fmt(&self.elem, f)
