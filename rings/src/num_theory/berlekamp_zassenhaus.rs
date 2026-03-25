@@ -504,7 +504,6 @@ fn factorize_primitive_squarefree_by_berlekamp_zassenhaus_algorithm<'a>(
     for p in primes() {
         println!("p = {}", p);
     }
-
     todo!();
 
     let mut good_prime_states: Vec<StateAtGoodPrime<'a>> = vec![];

@@ -231,7 +231,7 @@ pub trait AdditiveMonoidSignature: ZeroSignature + AdditionSignature + TryNegate
 }
 
 #[signature_meta_trait]
-pub trait AdditiveGroupSignature: CancellativeAdditionSignature {
+pub trait AdditiveGroupSignature: AdditiveMonoidSignature + CancellativeAdditionSignature {
     fn neg(&self, a: &Self::Elem) -> Self::Elem;
 
     fn sub(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
