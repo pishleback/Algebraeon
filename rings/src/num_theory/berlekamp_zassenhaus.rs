@@ -58,11 +58,13 @@ some improvements
 
 */
 
+use crate::num_theory::modulo::Modulo;
 use crate::polynomial::hensel_lifting_linalg::HenselFactorization;
 use crate::polynomial::*;
 use crate::structure::*;
 use algebraeon_groups::structure::AssociativeCompositionSignature;
 use algebraeon_groups::structure::CompositionSignature;
+use algebraeon_macros::repeat_small_primes;
 use algebraeon_nzq::primes;
 use algebraeon_nzq::*;
 use algebraeon_sets::combinatorics::LexicographicSubsetsWithRemovals;
@@ -498,6 +500,12 @@ fn factorize_primitive_squarefree_by_berlekamp_zassenhaus_algorithm<'a>(
     // We factor f into its modular factors at some primes p
     // There exists some partition of the modular factors yielding the true irreducible factors of f
     // For each prime we can take the set of possible sums of degrees of modular factors mod p - those are the only possible degrees of irreducible factors of f
+
+    for p in primes() {
+        println!("p = {}", p);
+    }
+
+    todo!();
 
     let mut good_prime_states: Vec<StateAtGoodPrime<'a>> = vec![];
     let mut best_prime_idx: Option<usize> = None;

@@ -3,7 +3,7 @@ use algebraeon_macros::repeat_small_primes;
 use algebraeon_nzq::traits::Abs;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
-use std::{fmt::Display, hash::Hash};
+use std::{borrow::Cow, fmt::Display, hash::Hash};
 
 fn xgcd(mut x: usize, mut y: usize) -> (usize, isize, isize) {
     let mut pa = 1;
@@ -240,6 +240,35 @@ impl<const N: usize> TryReciprocalSignature for ModuloCanonicalStructure<N> {
                 None
             }
         }
+    }
+}
+
+impl<const N: usize> QuotientSetSignature<IntegerCanonicalStructure>
+    for ModuloCanonicalStructure<N>
+{
+    fn pre_quotient_set(&self) -> &IntegerCanonicalStructure {
+        Integer::structure_ref()
+    }
+
+    fn project(&self, x: Integer) -> Self::Elem {
+        x.into()
+    }
+
+    fn project_ref(&self, x: &Integer) -> Self::Elem {
+        x.into()
+    }
+}
+
+impl<const N: usize> QuotientRingSignature<IntegerCanonicalStructure>
+    for ModuloCanonicalStructure<N>
+{
+}
+
+impl<const N: usize> QuotientRingGetPrincipalIdealSignature<IntegerCanonicalStructure>
+    for ModuloCanonicalStructure<N>
+{
+    fn modulus<'a>(&'a self) -> Cow<'a, Integer> {
+        Cow::Owned(Integer::from(N))
     }
 }
 

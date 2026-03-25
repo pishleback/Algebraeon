@@ -4,7 +4,7 @@ pub mod integer_ideal;
 pub mod integer_polynomial;
 pub mod integer_structure;
 pub mod modulo;
-pub mod montgomery_modulo;
+pub mod montgomery_small_modulo;
 pub mod natural_factorization;
 pub mod natural_structure;
 pub mod quadratic_symbols;
