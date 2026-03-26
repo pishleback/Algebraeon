@@ -80,59 +80,32 @@ fn compute_polynomial_factor_bound(poly: &Polynomial<Integer>) -> Natural {
 #[derive(Debug, Clone)]
 struct StateAtGoodPrime<'a> {
     sqfree_prim_poly: &'a Polynomial<Integer>,
-    hensel_factorization: HenselFactorization<
-        IntegerCanonicalStructure,
-        EuclideanRemainderQuotientStructure<
-            IntegerCanonicalStructure,
-            IntegerCanonicalStructure,
-            true,
-        >,
-    >,
+    hensel_factorization:
+        HenselFactorization<IntegerCanonicalStructure, MontgomeryModuloOddPrimeStructure>,
     num_modular_factors: usize,
 }
 
 impl<'a> StateAtGoodPrime<'a> {
     // Some(..) if p is a good prime otherwise None if p is a bad prime
     fn try_new_at_prime(p: usize, sqfree_prim_poly: &'a Polynomial<Integer>) -> Option<Self> {
-        {
-            // TODO use MontgomeryModuloOddPrimeStructure
-            if p != 2 {
-                println!("FAST");
-                let mut mod_p = MontgomeryModuloOddPrimeStructure::new_unchecked(p as u64);
-                mod_p.populate_inv_cache();
-                let poly_mod_p = mod_p.polynomials();
-                let sqfree_prim_poly_mod_p = sqfree_prim_poly.apply_map(|c| mod_p.project_ref(c));
-                if poly_mod_p.degree(&sqfree_prim_poly_mod_p) == sqfree_prim_poly.degree() {
-                    println!(
-                        "sqfree_prim_poly = {}",
-                        poly_mod_p.to_string(&sqfree_prim_poly_mod_p)
-                    );
-                    println!("Start factor mod p");
-                    let fs = poly_mod_p.factorize_monic(&sqfree_prim_poly_mod_p).unwrap();
-                    println!("Factored monic");
-                    let fs = fs.factorize_squarefree();
-                    println!("Factored squarefree");
-                    // quite here if not squarefree
-                    let fs = fs.factorize_distinct_degree();
-                    println!("Factored distinct degree");
-                    let fs = fs.factorize_cantor_zassenhaus().unwrap_nonzero();
-                    println!("Factored fully");
-                }
-                println!("SLOW");
-            }
+        if p == 2 {
+            // Montgomery form can only handle odd primes
+            // mod p=2 is efficient to implement so shouldn't just skip it here though... future optimization
+            return None;
         }
-
         let p_nat = Natural::from(p);
         debug_assert!(is_prime_nat(&p_nat));
-        let mod_p = Integer::structure().into_quotient_field_unchecked(Integer::from(&p_nat));
+        let mut mod_p = MontgomeryModuloOddPrimeStructure::new_unchecked(p as u64);
+        mod_p.populate_inv_cache();
         let poly_mod_p = mod_p.polynomials();
-        if poly_mod_p.degree(sqfree_prim_poly) == sqfree_prim_poly.degree() {
+        let sqfree_prim_poly_mod_p = sqfree_prim_poly.apply_map(|c| mod_p.project_ref(c));
+        if poly_mod_p.degree(&sqfree_prim_poly_mod_p) == sqfree_prim_poly.degree() {
             println!(
                 "sqfree_prim_poly = {}",
                 sqfree_prim_poly.apply_map(|c| c % &p_nat)
             );
             println!("Start factor mod p");
-            let fs = poly_mod_p.factorize_monic(sqfree_prim_poly).unwrap();
+            let fs = poly_mod_p.factorize_monic(&sqfree_prim_poly_mod_p).unwrap();
             println!("Factored monic");
             let fs = fs.factorize_squarefree();
             println!("Factored squarefree");
@@ -447,6 +420,7 @@ impl<'a> StateAtGoodPrime<'a> {
         // Only half of the cardinalities need to be checked since complimentary subsets need not be checked
         // Keep searching for cardinalities up to and including half the number of remaining modular factors
         while k <= std::cmp::min(m / 2, max_subset_size) {
+            println!("k = {}", k);
             let mut k_combinations = LexicographicSubsetsWithRemovals::new(n, k);
             if 2 * k == m {
                 // When m is even and k = m/2 we only need to iterate over half the subsets of size k
@@ -583,8 +557,21 @@ fn factorize_primitive_squarefree_by_berlekamp_zassenhaus_algorithm<'a>(
 
             // Check for factors with small coefficients formed from a small number of modular factors
             p_state.lift_to_modulus(&Natural::from(u128::MAX)); // An arbitraryish choice of big number which we expect to be greater than any factor coeffs in most cases
-            let partially_factored =
-                p_state.partial_factor_by_test_modular_subsets(3, &possible_proper_factor_degrees);
+
+            println!("n = {}", n);
+
+            let partially_factored = p_state.partial_factor_by_test_modular_subsets(
+                if n <= 10 {
+                    4
+                } else if n <= 20 {
+                    3
+                } else if n <= 30 {
+                    2
+                } else {
+                    1
+                },
+                &possible_proper_factor_degrees,
+            );
             println!("Done partial factor");
             debug_assert!(!partially_factored.is_empty());
             if partially_factored.len() >= 2 {

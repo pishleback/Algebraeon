@@ -1,4 +1,4 @@
-use std::ops::Rem;
+use std::{borrow::Cow, ops::Rem};
 
 use crate::{
     num_theory::natural_factorization::primes::is_prime_nat,
@@ -9,8 +9,8 @@ use crate::{
         IntegralDomainSignature, LeftDistributiveMultiplicationOverAddition,
         MultiplicationSignature, MultiplicativeAbsorptionMonoidSignature,
         MultiplicativeIntegralMonoidSignature, MultiplicativeMonoidSignature,
-        MultiplicativeMonoidUnitsStructure, OneSignature,
-        RightDistributiveMultiplicationOverAddition, RingSignature,
+        MultiplicativeMonoidUnitsStructure, OneSignature, QuotientRingGetPrincipalIdealSignature,
+        QuotientRingSignature, RightDistributiveMultiplicationOverAddition, RingSignature,
         RinglikeSpecializationSignature, SemiRingSignature, TryNegateSignature,
         TryReciprocalSignature, ZeroSignature,
     },
@@ -266,6 +266,16 @@ impl QuotientSetSignature<IntegerCanonicalStructure> for MontgomeryModuloOddStru
     }
 }
 
+impl QuotientRingSignature<IntegerCanonicalStructure> for MontgomeryModuloOddStructure {}
+
+impl QuotientRingGetPrincipalIdealSignature<IntegerCanonicalStructure>
+    for MontgomeryModuloOddStructure
+{
+    fn modulus<'a>(&'a self) -> Cow<'a, Integer> {
+        Cow::Owned(Integer::from(self.n))
+    }
+}
+
 impl CountableSetSignature for MontgomeryModuloOddStructure {
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
         0..self.n
@@ -437,6 +447,16 @@ impl QuotientSetSignature<IntegerCanonicalStructure> for MontgomeryModuloOddPrim
 
     fn unproject_ref(&self, x: &Self::Elem) -> Integer {
         self.sup.unproject_ref(x)
+    }
+}
+
+impl QuotientRingSignature<IntegerCanonicalStructure> for MontgomeryModuloOddPrimeStructure {}
+
+impl QuotientRingGetPrincipalIdealSignature<IntegerCanonicalStructure>
+    for MontgomeryModuloOddPrimeStructure
+{
+    fn modulus<'a>(&'a self) -> Cow<'a, Integer> {
+        self.sup.modulus()
     }
 }
 
