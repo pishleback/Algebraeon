@@ -5,7 +5,7 @@ include!(concat!(env!("OUT_DIR"), "/generated_docs.rs"));
 
 #[cfg(test)]
 mod tests {
-    use algebraeon::{rings::num_theory::modulo::Modulo, sets::structure::*};
+    use algebraeon::{rings::num_theory::modulo::const_naive::Modulo, sets::structure::*};
 
     #[test]
     fn enumerate_functions_finite_sets() {

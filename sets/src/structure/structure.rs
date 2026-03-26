@@ -106,6 +106,10 @@ pub trait QuotientSetSignature<PreQuoSet: SetSignature>: SetSignature {
 
     fn project(&self, x: PreQuoSet::Elem) -> Self::Elem;
     fn project_ref(&self, x: &PreQuoSet::Elem) -> Self::Elem;
+
+    /// Return an element of the pre-quotient set which projects to the given element.
+    fn unproject(&self, x: Self::Elem) -> PreQuoSet::Elem;
+    fn unproject_ref(&self, x: &Self::Elem) -> PreQuoSet::Elem;
 }
 
 /// A quotient set where elements are represented using representative elements of the pre-quotient set

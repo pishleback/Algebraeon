@@ -1,4 +1,6 @@
-use crate::{num_theory::modulo::ModuloCanonicalStructure, polynomial::*, structure::*};
+use crate::{
+    num_theory::modulo::const_naive::ModuloCanonicalStructure, polynomial::*, structure::*,
+};
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
@@ -80,7 +82,7 @@ pub(crate) fn f9() -> PolynomialQuotientRingStructure<
     PolynomialStructure<ModuloCanonicalStructure<3>, ModuloCanonicalStructure<3>>,
     true,
 > {
-    use crate::num_theory::modulo::*;
+    use crate::num_theory::modulo::const_naive::*;
     new_finite_field_extension::<ModuloCanonicalStructure<3>>(
         Modulo::<3>::structure(),
         Polynomial::from_coeffs(vec![1, 1, 2]),

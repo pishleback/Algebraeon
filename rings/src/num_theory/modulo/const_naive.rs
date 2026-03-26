@@ -257,6 +257,14 @@ impl<const N: usize> QuotientSetSignature<IntegerCanonicalStructure>
     fn project_ref(&self, x: &Integer) -> Self::Elem {
         x.into()
     }
+
+    fn unproject(&self, x: Self::Elem) -> Integer {
+        x.lift_int()
+    }
+
+    fn unproject_ref(&self, x: &Self::Elem) -> Integer {
+        x.lift_int()
+    }
 }
 
 impl<const N: usize> QuotientRingSignature<IntegerCanonicalStructure>
@@ -321,7 +329,7 @@ macro_rules! impl_field {
     };
 }
 
-repeat_small_primes!(100, p =>
+repeat_small_primes!(20, p =>
     impl_field!(p);
 );
 

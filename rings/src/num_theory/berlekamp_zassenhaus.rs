@@ -58,13 +58,13 @@ some improvements
 
 */
 
-use crate::num_theory::modulo::Modulo;
+use crate::num_theory::modulo::montgomery::MontgomeryModuloOddPrimeStructure;
+use crate::num_theory::natural_factorization::primes::is_prime_nat;
 use crate::polynomial::hensel_lifting_linalg::HenselFactorization;
 use crate::polynomial::*;
 use crate::structure::*;
 use algebraeon_groups::structure::AssociativeCompositionSignature;
 use algebraeon_groups::structure::CompositionSignature;
-use algebraeon_macros::repeat_small_primes;
 use algebraeon_nzq::primes;
 use algebraeon_nzq::*;
 use algebraeon_sets::combinatorics::LexicographicSubsetsWithRemovals;
@@ -80,20 +80,56 @@ fn compute_polynomial_factor_bound(poly: &Polynomial<Integer>) -> Natural {
 #[derive(Debug, Clone)]
 struct StateAtGoodPrime<'a> {
     sqfree_prim_poly: &'a Polynomial<Integer>,
-    hensel_factorization: HenselFactorization<IntegerCanonicalStructure>,
+    hensel_factorization: HenselFactorization<
+        IntegerCanonicalStructure,
+        EuclideanRemainderQuotientStructure<
+            IntegerCanonicalStructure,
+            IntegerCanonicalStructure,
+            true,
+        >,
+    >,
     num_modular_factors: usize,
 }
 
 impl<'a> StateAtGoodPrime<'a> {
     // Some(..) if p is a good prime otherwise None if p is a bad prime
-    fn try_new_at_prime(p: Natural, sqfree_prim_poly: &'a Polynomial<Integer>) -> Option<Self> {
-        debug_assert!(p.is_irreducible());
-        let mod_p = Integer::structure().into_quotient_field_unchecked(Integer::from(&p));
+    fn try_new_at_prime(p: usize, sqfree_prim_poly: &'a Polynomial<Integer>) -> Option<Self> {
+        {
+            // TODO use MontgomeryModuloOddPrimeStructure
+            if p != 2 {
+                println!("FAST");
+                let mut mod_p = MontgomeryModuloOddPrimeStructure::new_unchecked(p as u64);
+                mod_p.populate_inv_cache();
+                let poly_mod_p = mod_p.polynomials();
+                let sqfree_prim_poly_mod_p = sqfree_prim_poly.apply_map(|c| mod_p.project_ref(c));
+                if poly_mod_p.degree(&sqfree_prim_poly_mod_p) == sqfree_prim_poly.degree() {
+                    println!(
+                        "sqfree_prim_poly = {}",
+                        poly_mod_p.to_string(&sqfree_prim_poly_mod_p)
+                    );
+                    println!("Start factor mod p");
+                    let fs = poly_mod_p.factorize_monic(&sqfree_prim_poly_mod_p).unwrap();
+                    println!("Factored monic");
+                    let fs = fs.factorize_squarefree();
+                    println!("Factored squarefree");
+                    // quite here if not squarefree
+                    let fs = fs.factorize_distinct_degree();
+                    println!("Factored distinct degree");
+                    let fs = fs.factorize_cantor_zassenhaus().unwrap_nonzero();
+                    println!("Factored fully");
+                }
+                println!("SLOW");
+            }
+        }
+
+        let p_nat = Natural::from(p);
+        debug_assert!(is_prime_nat(&p_nat));
+        let mod_p = Integer::structure().into_quotient_field_unchecked(Integer::from(&p_nat));
         let poly_mod_p = mod_p.polynomials();
         if poly_mod_p.degree(sqfree_prim_poly) == sqfree_prim_poly.degree() {
             println!(
                 "sqfree_prim_poly = {}",
-                sqfree_prim_poly.apply_map(|c| c % &p)
+                sqfree_prim_poly.apply_map(|c| c % &p_nat)
             );
             println!("Start factor mod p");
             let fs = poly_mod_p.factorize_monic(sqfree_prim_poly).unwrap();
@@ -500,18 +536,11 @@ fn factorize_primitive_squarefree_by_berlekamp_zassenhaus_algorithm<'a>(
     // We factor f into its modular factors at some primes p
     // There exists some partition of the modular factors yielding the true irreducible factors of f
     // For each prime we can take the set of possible sums of degrees of modular factors mod p - those are the only possible degrees of irreducible factors of f
-
-    for p in primes() {
-        println!("p = {}", p);
-    }
-    todo!();
-
     let mut good_prime_states: Vec<StateAtGoodPrime<'a>> = vec![];
     let mut best_prime_idx: Option<usize> = None;
     let mut possible_proper_factor_degrees = (1..f.degree().unwrap()).collect::<BTreeSet<_>>();
     for p in primes() {
-        let p = Natural::from(p);
-        print!("p = {} is ", p);
+        println!("p = {}", p);
 
         if let Some(mut p_state) = StateAtGoodPrime::try_new_at_prime(p, f) {
             let n = p_state.num_modular_factors;

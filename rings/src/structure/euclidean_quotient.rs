@@ -182,6 +182,14 @@ impl<
     fn project_ref(&self, x: &<RS as SetSignature>::Elem) -> Self::Elem {
         x.clone()
     }
+
+    fn unproject(&self, x: Self::Elem) -> <RS as SetSignature>::Elem {
+        x
+    }
+
+    fn unproject_ref(&self, x: &Self::Elem) -> <RS as SetSignature>::Elem {
+        x.clone()
+    }
 }
 
 impl<

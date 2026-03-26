@@ -1,7 +1,7 @@
 use algebraeon_groups::examples::symmetric::*;
 use algebraeon_rings::{
-    finite_fields::quaternary_field::QuaternaryField, matrix::Matrix, num_theory::modulo::Modulo,
-    structure::*,
+    finite_fields::quaternary_field::QuaternaryField, matrix::Matrix,
+    num_theory::modulo::const_naive::Modulo, structure::*,
 };
 use derivative::Derivative;
 use itertools::Itertools;

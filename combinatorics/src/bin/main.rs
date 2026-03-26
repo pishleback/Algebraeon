@@ -1,15 +1,14 @@
 #![allow(dead_code, warnings, unused)]
 
-use std::marker::PhantomData;
-use std::str::FromStr;
-use std::task::Poll;
-
 use algebraeon_groups::examples::symmetric::*;
 use algebraeon_groups::structure::*;
 use algebraeon_rings::matrix::*;
-use algebraeon_rings::num_theory::modulo::*;
+use algebraeon_rings::num_theory::modulo::const_naive::*;
 use algebraeon_rings::polynomial::*;
 use algebraeon_rings::structure::*;
+use std::marker::PhantomData;
+use std::str::FromStr;
+use std::task::Poll;
 
 fn main() {
     let a = algebraeon_combinatorics::modular_permutations::modular_permutation::<24>(|x| {
