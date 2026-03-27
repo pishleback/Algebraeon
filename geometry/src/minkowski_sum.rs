@@ -22,7 +22,7 @@ pub trait MinkowskiSum<Other> {
 impl<'f, FS: OrderedRingSignature + FieldSignature>
     MinkowskiSumRaw<PartialSimplicialComplex<'f, FS>> for PartialSimplicialComplex<'f, FS>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type Output = SimplicialDisjointUnion<'f, FS>;
 
@@ -57,7 +57,7 @@ where
 impl<'f, FS: OrderedRingSignature + FieldSignature> MinkowskiSum<PartialSimplicialComplex<'f, FS>>
     for PartialSimplicialComplex<'f, FS>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type Output = PartialSimplicialComplex<'f, FS>;
 

@@ -61,8 +61,8 @@ impl GraphSignature for WheelGraph {
 
     fn has_directed_edge(
         &self,
-        source: &<Self::Vertices as SetSignature>::Set,
-        target: &<Self::Vertices as SetSignature>::Set,
+        source: &<Self::Vertices as SetSignature>::Elem,
+        target: &<Self::Vertices as SetSignature>::Elem,
     ) -> Result<(), String> {
         if let Err(e) = self.vertices.validate_element(source) {
             return Err(format!("Source is not an element of Vertices: {e}"));
@@ -113,8 +113,8 @@ impl GraphWithEdgesSignature for WheelGraph {
 
     fn endpoints(
         &self,
-        edge: &<Self::Edges as SetSignature>::Set,
-    ) -> UnorderedPair<<Self::Vertices as SetSignature>::Set> {
+        edge: &<Self::Edges as SetSignature>::Elem,
+    ) -> UnorderedPair<<Self::Vertices as SetSignature>::Elem> {
         edge.clone()
     }
 }

@@ -1004,7 +1004,7 @@ mod tests {
 
     #[test]
     fn test_squarefree_polynomial_real_root_isolation() {
-        let f = Polynomial::product(vec![
+        let f = Polynomial::product(&[
             &Polynomial::from_coeffs(vec![
                 Integer::from(-2),
                 Integer::from(-4),
@@ -1064,7 +1064,7 @@ mod tests {
             root.check_invariants().unwrap();
         }
 
-        let f = Polynomial::product(vec![
+        let f = Polynomial::product(&[
             &Polynomial::from_coeffs(vec![Integer::from(-1), Integer::from(1)]),
             &Polynomial::from_coeffs(vec![Integer::from(-2), Integer::from(1)]),
             &Polynomial::from_coeffs(vec![Integer::from(-3), Integer::from(1)]),

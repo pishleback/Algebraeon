@@ -18,8 +18,8 @@ pub mod quaternion_orders;
 pub struct QuaternionAlgebraStructure<Field: FieldSignature> {
     base: Field,
     is_char_2: bool,
-    a: Field::Set,
-    b: Field::Set,
+    a: Field::Elem,
+    b: Field::Elem,
 }
 
 impl<Field: FieldSignature + CharacteristicSignature> QuaternionAlgebraStructure<Field> {
@@ -27,7 +27,7 @@ impl<Field: FieldSignature + CharacteristicSignature> QuaternionAlgebraStructure
         &self.base
     }
 
-    pub fn new(base: Field, a: Field::Set, b: Field::Set) -> Self {
+    pub fn new(base: Field, a: Field::Elem, b: Field::Elem) -> Self {
         let is_char_2 = base.characteristic() == Natural::TWO;
         Self {
             base,
@@ -62,7 +62,7 @@ pub enum QuaternionAlgebraBasis {
 }
 
 impl CountableSetSignature for QuaternionAlgebraBasisCanonicalStructure {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
         vec![
             QuaternionAlgebraBasis::R,
             QuaternionAlgebraBasis::I,
@@ -99,7 +99,7 @@ impl<Field: FieldSignature> PartialEq for QuaternionAlgebraStructure<Field> {
 impl<Field: FieldSignature> Eq for QuaternionAlgebraStructure<Field> {}
 
 impl<Field: FieldSignature> EqSignature for QuaternionAlgebraStructure<Field> {
-    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+    fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
         self.base.equal(&a.x, &b.x)
             && self.base.equal(&a.y, &b.y)
             && self.base.equal(&a.z, &b.z)
@@ -110,21 +110,21 @@ impl<Field: FieldSignature> EqSignature for QuaternionAlgebraStructure<Field> {
 impl<Field: FieldSignature> Signature for QuaternionAlgebraStructure<Field> {}
 
 impl<Field: FieldSignature> SetSignature for QuaternionAlgebraStructure<Field> {
-    type Set = QuaternionAlgebraElement<Field::Set>;
+    type Elem = QuaternionAlgebraElement<Field::Elem>;
 
-    fn validate_element(&self, _x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, _x: &Self::Elem) -> Result<(), String> {
         Ok(())
     }
 }
 
 impl<Field: FieldSignature> RinglikeSpecializationSignature for QuaternionAlgebraStructure<Field> {
-    fn try_ring_restructure(&self) -> Option<impl EqSignature<Set = Self::Set> + RingSignature> {
+    fn try_ring_restructure(&self) -> Option<impl EqSignature<Elem = Self::Elem> + RingSignature> {
         Some(self.clone())
     }
 }
 
 impl<Field: FieldSignature> ZeroSignature for QuaternionAlgebraStructure<Field> {
-    fn zero(&self) -> Self::Set {
+    fn zero(&self) -> Self::Elem {
         QuaternionAlgebraElement {
             x: self.base.zero(),
             y: self.base.zero(),
@@ -135,7 +135,7 @@ impl<Field: FieldSignature> ZeroSignature for QuaternionAlgebraStructure<Field> 
 }
 
 impl<Field: FieldSignature> AdditionSignature for QuaternionAlgebraStructure<Field> {
-    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn add(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         QuaternionAlgebraElement {
             x: self.base.add(&a.x, &b.x),
             y: self.base.add(&a.y, &b.y),
@@ -146,13 +146,13 @@ impl<Field: FieldSignature> AdditionSignature for QuaternionAlgebraStructure<Fie
 }
 
 impl<Field: FieldSignature> CancellativeAdditionSignature for QuaternionAlgebraStructure<Field> {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.sub(a, b))
     }
 }
 
 impl<Field: FieldSignature> TryNegateSignature for QuaternionAlgebraStructure<Field> {
-    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
     }
 }
@@ -160,7 +160,7 @@ impl<Field: FieldSignature> TryNegateSignature for QuaternionAlgebraStructure<Fi
 impl<Field: FieldSignature> AdditiveMonoidSignature for QuaternionAlgebraStructure<Field> {}
 
 impl<Field: FieldSignature> AdditiveGroupSignature for QuaternionAlgebraStructure<Field> {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
+    fn neg(&self, a: &Self::Elem) -> Self::Elem {
         QuaternionAlgebraElement {
             x: self.base.neg(&a.x),
             y: self.base.neg(&a.y),
@@ -169,7 +169,7 @@ impl<Field: FieldSignature> AdditiveGroupSignature for QuaternionAlgebraStructur
         }
     }
 
-    fn sub(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn sub(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         QuaternionAlgebraElement {
             x: self.base.sub(&a.x, &b.x),
             y: self.base.sub(&a.y, &b.y),
@@ -180,7 +180,7 @@ impl<Field: FieldSignature> AdditiveGroupSignature for QuaternionAlgebraStructur
 }
 
 impl<Field: FieldSignature> OneSignature for QuaternionAlgebraStructure<Field> {
-    fn one(&self) -> Self::Set {
+    fn one(&self) -> Self::Elem {
         QuaternionAlgebraElement {
             x: self.base.one(),
             y: self.base.zero(),
@@ -191,7 +191,7 @@ impl<Field: FieldSignature> OneSignature for QuaternionAlgebraStructure<Field> {
 }
 
 impl<Field: FieldSignature> MultiplicationSignature for QuaternionAlgebraStructure<Field> {
-    fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn mul(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         let a_param = &self.a;
         let b_param = &self.b;
         let base = &self.base;
@@ -278,12 +278,12 @@ impl<Field: FieldSignature> RightDistributiveMultiplicationOverAddition
 impl<Field: FieldSignature> SemiRingSignature for QuaternionAlgebraStructure<Field> {}
 
 impl<Field: FieldSignature> TryReciprocalSignature for QuaternionAlgebraStructure<Field> {
-    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_reciprocal(&self, a: &Self::Elem) -> Option<Self::Elem> {
         let n_inv = self.base.try_reciprocal(&self.reduced_norm(a))?;
         Some(self.scalar_mul(&self.conjugate(a), &n_inv))
     }
 
-    fn is_unit(&self, a: &Self::Set) -> bool {
+    fn is_unit(&self, a: &Self::Elem) -> bool {
         self.base.is_unit(&self.reduced_norm(a))
     }
 }
@@ -295,7 +295,7 @@ impl<Field: FieldSignature> SemiModuleSignature<Field> for QuaternionAlgebraStru
         &self.base
     }
 
-    fn scalar_mul(&self, a: &Self::Set, x: &Field::Set) -> Self::Set {
+    fn scalar_mul(&self, a: &Self::Elem, x: &Field::Elem) -> Self::Elem {
         let base = &self.base;
         QuaternionAlgebraElement {
             x: base.mul(x, &a.x),
@@ -318,8 +318,8 @@ impl<Field: FieldSignature> FreeModuleSignature<Field> for QuaternionAlgebraStru
     fn to_component<'a>(
         &self,
         b: &QuaternionAlgebraBasis,
-        v: &'a Self::Set,
-    ) -> Cow<'a, Field::Set> {
+        v: &'a Self::Elem,
+    ) -> Cow<'a, Field::Elem> {
         Cow::Borrowed(match b {
             QuaternionAlgebraBasis::R => &v.x,
             QuaternionAlgebraBasis::I => &v.y,
@@ -328,7 +328,7 @@ impl<Field: FieldSignature> FreeModuleSignature<Field> for QuaternionAlgebraStru
         })
     }
 
-    fn from_component(&self, b: &QuaternionAlgebraBasis, r: &Field::Set) -> Self::Set {
+    fn from_component(&self, b: &QuaternionAlgebraBasis, r: &Field::Elem) -> Self::Elem {
         let mut v = self.zero();
         match b {
             QuaternionAlgebraBasis::R => v.x = r.clone(),
@@ -349,7 +349,7 @@ impl<Field: FieldSignature + CharacteristicSignature> CharacteristicSignature
 }
 
 impl<Field: CharZeroFieldSignature> CharZeroRingSignature for QuaternionAlgebraStructure<Field> {
-    fn try_to_int(&self, a: &Self::Set) -> Option<algebraeon_nzq::Integer> {
+    fn try_to_int(&self, a: &Self::Elem) -> Option<algebraeon_nzq::Integer> {
         // The element must be of the form [a.x, 0, 0, 0]
         if self.base.is_zero(&a.y) && self.base.is_zero(&a.z) && self.base.is_zero(&a.w) {
             self.base.try_to_int(&a.x)
@@ -360,7 +360,7 @@ impl<Field: CharZeroFieldSignature> CharZeroRingSignature for QuaternionAlgebraS
 }
 
 impl<Field: FieldSignature> QuaternionAlgebraStructure<Field> {
-    pub fn i(&self) -> QuaternionAlgebraElement<Field::Set> {
+    pub fn i(&self) -> QuaternionAlgebraElement<Field::Elem> {
         QuaternionAlgebraElement {
             x: self.base.zero(),
             y: self.base.one(),
@@ -369,7 +369,7 @@ impl<Field: FieldSignature> QuaternionAlgebraStructure<Field> {
         }
     }
 
-    pub fn j(&self) -> QuaternionAlgebraElement<Field::Set> {
+    pub fn j(&self) -> QuaternionAlgebraElement<Field::Elem> {
         QuaternionAlgebraElement {
             x: self.base.zero(),
             y: self.base.zero(),
@@ -378,7 +378,7 @@ impl<Field: FieldSignature> QuaternionAlgebraStructure<Field> {
         }
     }
 
-    pub fn k(&self) -> QuaternionAlgebraElement<Field::Set> {
+    pub fn k(&self) -> QuaternionAlgebraElement<Field::Elem> {
         QuaternionAlgebraElement {
             x: self.base.zero(),
             y: self.base.zero(),
@@ -389,8 +389,8 @@ impl<Field: FieldSignature> QuaternionAlgebraStructure<Field> {
 
     pub fn conjugate(
         &self,
-        a: &QuaternionAlgebraElement<Field::Set>,
-    ) -> QuaternionAlgebraElement<Field::Set> {
+        a: &QuaternionAlgebraElement<Field::Elem>,
+    ) -> QuaternionAlgebraElement<Field::Elem> {
         let base = &self.base;
         if self.is_char_2 {
             // https://jvoight.github.io/quat-book.pdf paragraph 6.2.6.
@@ -410,7 +410,7 @@ impl<Field: FieldSignature> QuaternionAlgebraStructure<Field> {
         }
     }
 
-    pub fn reduced_trace(&self, a: &QuaternionAlgebraElement<Field::Set>) -> Field::Set {
+    pub fn reduced_trace(&self, a: &QuaternionAlgebraElement<Field::Elem>) -> Field::Elem {
         if self.is_char_2 {
             // https://jvoight.github.io/quat-book.pdf paragraph 6.2.6.
             a.y.clone()
@@ -419,7 +419,7 @@ impl<Field: FieldSignature> QuaternionAlgebraStructure<Field> {
         }
     }
 
-    pub fn reduced_norm(&self, a: &QuaternionAlgebraElement<Field::Set>) -> Field::Set {
+    pub fn reduced_norm(&self, a: &QuaternionAlgebraElement<Field::Elem>) -> Field::Elem {
         let base = &self.base;
         let a_param = &self.a;
         let b_param = &self.b;

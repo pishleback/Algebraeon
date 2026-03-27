@@ -187,7 +187,7 @@ pub fn simplicial_complex_shapes<
     sc: &impl algebraeon_geometry::simplex_collection::LabelledSimplexCollection<'f, FS, T>,
 ) -> impl IntoIterator<Item = Shape>
 where
-    FS::Set: std::hash::Hash,
+    FS::Elem: std::hash::Hash,
 {
     let sp = sc.ambient_space();
     let field = sp.field();

@@ -24,5 +24,6 @@ pub use pairs::{PairsStructure, UnorderedPair, UnorderedPairs};
 pub use singleton_set::SingletonSetStructure;
 pub use structure::{
     BorrowedSet, BorrowedStructure, CountableSetSignature, EqSignature, FiniteSetSignature,
-    MaybeFiniteSetSignature, MetaType, SetSignature, Signature, ToStringSignature,
+    MaybeFiniteSetSignature, MetaType, QuotientSetRepresentativesSignature, QuotientSetSignature,
+    SetSignature, Signature, ToStringSignature,
 };

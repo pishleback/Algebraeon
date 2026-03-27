@@ -8,7 +8,7 @@ use std::hash::Hash;
 #[derive(Clone)]
 pub struct Vector<'f, FS: FieldSignature + 'f> {
     ambient_space: AffineSpace<'f, FS>,
-    coordinates: Vec<FS::Set>, //length equal to ambient_space.dimension()
+    coordinates: Vec<FS::Elem>, //length equal to ambient_space.dimension()
 }
 
 impl<'f, FS: FieldSignature> std::fmt::Debug for Vector<'f, FS> {
@@ -35,7 +35,7 @@ impl<'f, FS: FieldSignature> Eq for Vector<'f, FS> {}
 
 impl<'f, FS: FieldSignature> Hash for Vector<'f, FS>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         // self.ambient_space.borrow().hash(state);
@@ -49,7 +49,7 @@ impl<'f, FS: FieldSignature> Vector<'f, FS> {
 
     fn new(
         ambient_space: AffineSpace<'f, FS>,
-        coordinates: impl IntoIterator<Item = impl Into<FS::Set>>,
+        coordinates: impl IntoIterator<Item = impl Into<FS::Elem>>,
     ) -> Self {
         let coordinates = coordinates
             .into_iter()
@@ -64,7 +64,7 @@ impl<'f, FS: FieldSignature> Vector<'f, FS> {
 
     pub fn construct(
         ambient_space: AffineSpace<'f, FS>,
-        coordinate_func: impl FnMut(usize) -> FS::Set,
+        coordinate_func: impl FnMut(usize) -> FS::Elem,
     ) -> Self {
         let coordinates = (0..ambient_space.borrow().linear_dimension().unwrap())
             .map(coordinate_func)
@@ -80,19 +80,19 @@ impl<'f, FS: FieldSignature> Vector<'f, FS> {
         Self::construct(ambient_space, |_i| field.zero())
     }
 
-    pub fn coordinate(&self, i: usize) -> &FS::Set {
+    pub fn coordinate(&self, i: usize) -> &FS::Elem {
         self.coordinates.get(i).unwrap()
     }
 
-    pub fn coordinate_mut(&mut self, i: usize) -> &mut FS::Set {
+    pub fn coordinate_mut(&mut self, i: usize) -> &mut FS::Elem {
         self.coordinates.get_mut(i).unwrap()
     }
 
-    pub fn into_coordinates(self) -> Vec<FS::Set> {
+    pub fn into_coordinates(self) -> Vec<FS::Elem> {
         self.coordinates
     }
 
-    pub fn into_row(&self) -> Matrix<FS::Set> {
+    pub fn into_row(&self) -> Matrix<FS::Elem> {
         Matrix::construct(
             1,
             self.ambient_space().linear_dimension().unwrap(),
@@ -100,7 +100,7 @@ impl<'f, FS: FieldSignature> Vector<'f, FS> {
         )
     }
 
-    pub fn into_col(&self) -> Matrix<FS::Set> {
+    pub fn into_col(&self) -> Matrix<FS::Elem> {
         Matrix::construct(
             self.ambient_space().linear_dimension().unwrap(),
             1,
@@ -112,12 +112,12 @@ impl<'f, FS: FieldSignature> Vector<'f, FS> {
 impl<'f, FS: FieldSignature> AffineSpace<'f, FS> {
     pub fn vector(
         self,
-        coordinates: impl IntoIterator<Item = impl Into<FS::Set>>,
+        coordinates: impl IntoIterator<Item = impl Into<FS::Elem>>,
     ) -> Vector<'f, FS> {
         Vector::new(self, coordinates)
     }
 
-    pub fn rows_from_vectors(&self, vecs: Vec<&Vector<'f, FS>>) -> Matrix<FS::Set> {
+    pub fn rows_from_vectors(&self, vecs: Vec<&Vector<'f, FS>>) -> Matrix<FS::Elem> {
         for vec in &vecs {
             assert_eq!(*self, vec.ambient_space());
         }
@@ -126,29 +126,29 @@ impl<'f, FS: FieldSignature> AffineSpace<'f, FS> {
         })
     }
 
-    pub fn cols_from_vectors(&self, vecs: Vec<&Vector<'f, FS>>) -> Matrix<FS::Set> {
+    pub fn cols_from_vectors(&self, vecs: Vec<&Vector<'f, FS>>) -> Matrix<FS::Elem> {
         self.rows_from_vectors(vecs).transpose()
     }
 
-    pub fn vectors_from_rows(self, mat: &Matrix<FS::Set>) -> Vec<Vector<'f, FS>> {
+    pub fn vectors_from_rows(self, mat: &Matrix<FS::Elem>) -> Vec<Vector<'f, FS>> {
         assert_eq!(mat.cols(), self.linear_dimension().unwrap());
         (0..mat.rows())
             .map(|r| Vector::new(self, (0..mat.cols()).map(|c| mat.at(r, c).unwrap().clone())))
             .collect()
     }
 
-    pub fn vectors_from_cols(self, mat: &Matrix<FS::Set>) -> Vec<Vector<'f, FS>> {
+    pub fn vectors_from_cols(self, mat: &Matrix<FS::Elem>) -> Vec<Vector<'f, FS>> {
         assert_eq!(mat.rows(), self.linear_dimension().unwrap());
         self.vectors_from_rows(&mat.transpose_ref())
     }
 
-    pub fn vector_from_row(self, mat: &Matrix<FS::Set>) -> Vector<'f, FS> {
+    pub fn vector_from_row(self, mat: &Matrix<FS::Elem>) -> Vector<'f, FS> {
         assert_eq!(mat.rows(), 1);
         assert_eq!(mat.cols(), self.linear_dimension().unwrap());
         self.vectors_from_rows(mat).pop().unwrap()
     }
 
-    pub fn vector_from_col(self, mat: &Matrix<FS::Set>) -> Vector<'f, FS> {
+    pub fn vector_from_col(self, mat: &Matrix<FS::Elem>) -> Vector<'f, FS> {
         assert_eq!(mat.rows(), self.linear_dimension().unwrap());
         assert_eq!(mat.cols(), 1);
         self.vector_from_row(&mat.transpose_ref())
@@ -169,7 +169,7 @@ impl<'f, FS: FieldSignature> AffineSpace<'f, FS> {
         }
     }
 
-    pub fn determinant(&self, vecs: Vec<&Vector<'f, FS>>) -> FS::Set {
+    pub fn determinant(&self, vecs: Vec<&Vector<'f, FS>>) -> FS::Elem {
         MatrixStructure::new(self.field().clone())
             .det(self.rows_from_vectors(vecs))
             .unwrap()
@@ -245,7 +245,7 @@ impl<'f, FS: FieldSignature> std::ops::Sub<&Vector<'f, FS>> for &Vector<'f, FS> 
 
 // &vector * &scalar
 impl<'f, FS: FieldSignature> Vector<'f, FS> {
-    pub fn scalar_mul(&self, other: &FS::Set) -> Vector<'f, FS> {
+    pub fn scalar_mul(&self, other: &FS::Elem) -> Vector<'f, FS> {
         Vector {
             ambient_space: self.ambient_space,
             coordinates: self
@@ -290,16 +290,16 @@ pub trait DotProduct<Other> {
 
 // &vector . &vector
 impl<'f, FS: FieldSignature> DotProduct<&Vector<'f, FS>> for &Vector<'f, FS> {
-    type Output = FS::Set;
+    type Output = FS::Elem;
 
     fn dot(self, other: &Vector<'f, FS>) -> Self::Output {
         match common_space(self.ambient_space, other.ambient_space) {
             Some(space) => {
                 let n = space.linear_dimension().unwrap();
                 space.field().sum(
-                    (0..n)
+                    &(0..n)
                         .map(|i| space.field().mul(self.coordinate(i), other.coordinate(i)))
-                        .collect(),
+                        .collect::<Vec<_>>(),
                 )
             }
             None => panic!("Can't add vectors belonging to different spaces"),

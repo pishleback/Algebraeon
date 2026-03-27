@@ -19,6 +19,7 @@ algebraeon-groups = { version = "=0.0.17", path = "../groups", default-features 
 algebraeon-rings = { version = "=0.0.17", path = "../rings", default-features = false }
 algebraeon-geometry = { version = "=0.0.17", path = "../geometry", default-features = false }
 algebraeon-drawing = { version = "=0.0.17", path = "../drawing", default-features = false }
+algebraeon-macros = { version = "=0.0.17", path = "../macros", default-features = false }
 
 # Benchmarking stuff
 [dev-dependencies]

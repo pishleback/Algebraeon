@@ -22,7 +22,7 @@ use std::{
 pub struct Rational(malachite_q::Rational);
 
 impl ToStringSignature for RationalCanonicalStructure {
-    fn to_string(&self, elem: &Self::Set) -> String {
+    fn to_string(&self, elem: &Self::Elem) -> String {
         format!("{}", elem)
     }
 }
@@ -669,7 +669,7 @@ impl Rational {
 }
 
 impl CountableSetSignature for RationalCanonicalStructure {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
         use malachite_q::exhaustive::exhaustive_rationals;
         exhaustive_rationals().map(Rational::from_malachite)
     }

@@ -59,9 +59,9 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> Sig
 impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> SetSignature
     for FinitelyFreeSubmoduleCosetStructure<Ring, RingB>
 {
-    type Set = FinitelyFreeSubmoduleCoset<Ring::Set>;
+    type Elem = FinitelyFreeSubmoduleCoset<Ring::Elem>;
 
-    fn validate_element(&self, _x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, _x: &Self::Elem) -> Result<(), String> {
         //TODO: better checks here
         Ok(())
     }
@@ -80,9 +80,9 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
 
     pub fn from_offset_and_submodule(
         &self,
-        offset: &Vec<Ring::Set>,
-        submodule: FinitelyFreeSubmodule<Ring::Set>,
-    ) -> FinitelyFreeSubmoduleCoset<Ring::Set> {
+        offset: &Vec<Ring::Elem>,
+        submodule: FinitelyFreeSubmodule<Ring::Elem>,
+    ) -> FinitelyFreeSubmoduleCoset<Ring::Elem> {
         debug_assert!(self.module().validate_element(offset).is_ok());
         debug_assert!(
             self.module()
@@ -99,8 +99,8 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
 
     pub fn from_submodule(
         &self,
-        submodule: FinitelyFreeSubmodule<Ring::Set>,
-    ) -> FinitelyFreeSubmoduleCoset<Ring::Set> {
+        submodule: FinitelyFreeSubmodule<Ring::Elem>,
+    ) -> FinitelyFreeSubmoduleCoset<Ring::Elem> {
         FinitelyFreeSubmoduleCoset {
             offset: self.module().zero(),
             submodule,
@@ -109,8 +109,8 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
 
     pub fn equal_slow(
         &self,
-        x: &FinitelyFreeSubmoduleCoset<Ring::Set>,
-        y: &FinitelyFreeSubmoduleCoset<Ring::Set>,
+        x: &FinitelyFreeSubmoduleCoset<Ring::Elem>,
+        y: &FinitelyFreeSubmoduleCoset<Ring::Elem>,
     ) -> bool {
         debug_assert!(self.validate_element(x).is_ok());
         debug_assert!(self.validate_element(y).is_ok());
@@ -128,9 +128,9 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
 
     pub fn add(
         &self,
-        x: FinitelyFreeSubmoduleCoset<Ring::Set>,
-        y: FinitelyFreeSubmoduleCoset<Ring::Set>,
-    ) -> FinitelyFreeSubmoduleCoset<Ring::Set> {
+        x: FinitelyFreeSubmoduleCoset<Ring::Elem>,
+        y: FinitelyFreeSubmoduleCoset<Ring::Elem>,
+    ) -> FinitelyFreeSubmoduleCoset<Ring::Elem> {
         debug_assert!(self.validate_element(&x).is_ok());
         debug_assert!(self.validate_element(&y).is_ok());
         self.from_offset_and_submodule(
@@ -141,9 +141,9 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
 
     pub fn intersect(
         &self,
-        x: &FinitelyFreeSubmoduleCoset<Ring::Set>,
-        y: &FinitelyFreeSubmoduleCoset<Ring::Set>,
-    ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Set> {
+        x: &FinitelyFreeSubmoduleCoset<Ring::Elem>,
+        y: &FinitelyFreeSubmoduleCoset<Ring::Elem>,
+    ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Elem> {
         debug_assert!(self.validate_element(x).is_ok());
         debug_assert!(self.validate_element(y).is_ok());
         let cols = self.module().rank();
@@ -256,8 +256,8 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
 
     pub fn contains_element(
         &self,
-        x: &FinitelyFreeSubmoduleCoset<Ring::Set>,
-        p: &Vec<Ring::Set>,
+        x: &FinitelyFreeSubmoduleCoset<Ring::Elem>,
+        p: &Vec<Ring::Elem>,
     ) -> bool {
         debug_assert_eq!(p.len(), self.module().rank());
         self.module().submodules().contains_element(
@@ -270,7 +270,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
 impl<Ring: UniqueReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> EqSignature
     for FinitelyFreeSubmoduleCosetStructure<Ring, RingB>
 {
-    fn equal(&self, x: &Self::Set, y: &Self::Set) -> bool {
+    fn equal(&self, x: &Self::Elem, y: &Self::Elem) -> bool {
         self.module().equal(&x.offset, &y.offset)
             && self.module().submodules().equal(&x.submodule, &y.submodule)
     }

@@ -39,7 +39,7 @@ fn simplex_overlap_impl<
     b: &Simplex<'f, FS>,
 ) -> SimplexOverlapResult
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     let space = common_space(a.ambient_space(), b.ambient_space()).unwrap();
 
@@ -268,7 +268,7 @@ pub fn simplex_interior_overlap<'f, FS: OrderedRingSignature + FieldSignature>(
     b: &Simplex<'f, FS>,
 ) -> bool
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     match simplex_overlap_impl::<FS, true>(a, b) {
         SimplexOverlapResult::Disjoint => false,
@@ -282,7 +282,7 @@ pub fn simplex_closure_overlap<'f, FS: OrderedRingSignature + FieldSignature>(
     b: &Simplex<'f, FS>,
 ) -> bool
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     match simplex_overlap_impl::<FS, false>(a, b) {
         SimplexOverlapResult::Disjoint => false,
@@ -296,7 +296,7 @@ pub fn simplex_overlap<'f, FS: OrderedRingSignature + FieldSignature>(
     b: &Simplex<'f, FS>,
 ) -> SimplexOverlapResult
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     simplex_overlap_impl::<FS, false>(a, b)
 }

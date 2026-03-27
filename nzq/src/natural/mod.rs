@@ -47,7 +47,7 @@ impl Natural {
 }
 
 impl ToStringSignature for NaturalCanonicalStructure {
-    fn to_string(&self, elem: &Self::Set) -> String {
+    fn to_string(&self, elem: &Self::Elem) -> String {
         format!("{}", elem)
     }
 }
@@ -773,7 +773,7 @@ impl_try_into_unsigned!(u8, u16, u32, u64, u128, usize);
 impl_try_into_signed!(i8, i16, i32, i64, i128, isize);
 
 impl CountableSetSignature for NaturalCanonicalStructure {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
         use malachite_nz::natural::exhaustive::exhaustive_naturals;
         exhaustive_naturals().map(Natural::from_malachite)
     }

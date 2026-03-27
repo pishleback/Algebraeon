@@ -637,31 +637,31 @@ impl Display for ComplexAlgebraic {
 }
 
 impl ToStringSignature for ComplexAlgebraicCanonicalStructure {
-    fn to_string(&self, elem: &Self::Set) -> String {
+    fn to_string(&self, elem: &Self::Elem) -> String {
         format!("{}", elem)
     }
 }
 
 impl RinglikeSpecializationSignature for ComplexAlgebraicCanonicalStructure {
-    fn try_ring_restructure(&self) -> Option<impl EqSignature<Set = Self::Set> + RingSignature> {
+    fn try_ring_restructure(&self) -> Option<impl EqSignature<Elem = Self::Elem> + RingSignature> {
         Some(self.clone())
     }
 
     fn try_char_zero_ring_restructure(
         &self,
-    ) -> Option<impl EqSignature<Set = Self::Set> + CharZeroRingSignature> {
+    ) -> Option<impl EqSignature<Elem = Self::Elem> + CharZeroRingSignature> {
         Some(self.clone())
     }
 }
 
 impl ZeroSignature for ComplexAlgebraicCanonicalStructure {
-    fn zero(&self) -> Self::Set {
+    fn zero(&self) -> Self::Elem {
         ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::zero()))
     }
 }
 
 impl AdditionSignature for ComplexAlgebraicCanonicalStructure {
-    fn add(&self, alg1: &Self::Set, alg2: &Self::Set) -> Self::Set {
+    fn add(&self, alg1: &Self::Elem, alg2: &Self::Elem) -> Self::Elem {
         // println!("add {:?} {:?}", alg1, alg2);
         // alg1.check_invariants().unwrap();
         // alg2.check_invariants().unwrap();
@@ -734,13 +734,13 @@ impl AdditionSignature for ComplexAlgebraicCanonicalStructure {
 }
 
 impl CancellativeAdditionSignature for ComplexAlgebraicCanonicalStructure {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.sub(a, b))
     }
 }
 
 impl TryNegateSignature for ComplexAlgebraicCanonicalStructure {
-    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
     }
 }
@@ -748,7 +748,7 @@ impl TryNegateSignature for ComplexAlgebraicCanonicalStructure {
 impl AdditiveMonoidSignature for ComplexAlgebraicCanonicalStructure {}
 
 impl AdditiveGroupSignature for ComplexAlgebraicCanonicalStructure {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
+    fn neg(&self, a: &Self::Elem) -> Self::Elem {
         match a {
             ComplexAlgebraic::Real(root) => ComplexAlgebraic::Real(RealAlgebraic::neg(root)),
             ComplexAlgebraic::Complex(root) => ComplexAlgebraic::Complex(root.clone().neg()),
@@ -757,13 +757,13 @@ impl AdditiveGroupSignature for ComplexAlgebraicCanonicalStructure {
 }
 
 impl OneSignature for ComplexAlgebraicCanonicalStructure {
-    fn one(&self) -> Self::Set {
+    fn one(&self) -> Self::Elem {
         ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::one()))
     }
 }
 
 impl MultiplicationSignature for ComplexAlgebraicCanonicalStructure {
-    fn mul(&self, alg1: &Self::Set, alg2: &Self::Set) -> Self::Set {
+    fn mul(&self, alg1: &Self::Elem, alg2: &Self::Elem) -> Self::Elem {
         // println!("mul {:?} {:?}", alg1, alg2);
         // alg1.check_invariants().unwrap();
         // alg2.check_invariants().unwrap();
@@ -919,7 +919,7 @@ impl CharacteristicSignature for ComplexAlgebraicCanonicalStructure {
 }
 
 impl TryReciprocalSignature for ComplexAlgebraicCanonicalStructure {
-    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_reciprocal(&self, a: &Self::Elem) -> Option<Self::Elem> {
         // println!("inv {:?}", a);
         // a.check_invariants().unwrap();
 
@@ -1034,7 +1034,7 @@ impl TryReciprocalSignature for ComplexAlgebraicCanonicalStructure {
 }
 
 impl CancellativeMultiplicationSignature for ComplexAlgebraicCanonicalStructure {
-    fn try_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_divide(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.mul(a, &self.try_reciprocal(b)?))
     }
 }
@@ -1046,7 +1046,7 @@ impl IntegralDomainSignature for ComplexAlgebraicCanonicalStructure {}
 impl FieldSignature for ComplexAlgebraicCanonicalStructure {}
 
 impl CharZeroRingSignature for ComplexAlgebraicCanonicalStructure {
-    fn try_to_int(&self, alg: &Self::Set) -> Option<Integer> {
+    fn try_to_int(&self, alg: &Self::Elem) -> Option<Integer> {
         match alg {
             ComplexAlgebraic::Real(real_alg) => real_alg.try_to_int(),
             ComplexAlgebraic::Complex(_) => None,
@@ -1055,7 +1055,7 @@ impl CharZeroRingSignature for ComplexAlgebraicCanonicalStructure {
 }
 
 impl CharZeroFieldSignature for ComplexAlgebraicCanonicalStructure {
-    fn try_to_rat(&self, x: &Self::Set) -> Option<Rational> {
+    fn try_to_rat(&self, x: &Self::Elem) -> Option<Rational> {
         match x {
             ComplexAlgebraic::Real(real_algebraic) => {
                 RealAlgebraic::structure().try_to_rat(real_algebraic)
@@ -1066,7 +1066,7 @@ impl CharZeroFieldSignature for ComplexAlgebraicCanonicalStructure {
 }
 
 impl ComplexSubsetSignature for ComplexAlgebraicCanonicalStructure {
-    fn as_f32_real_and_imaginary_parts(&self, z: &Self::Set) -> (f32, f32) {
+    fn as_f32_real_and_imaginary_parts(&self, z: &Self::Elem) -> (f32, f32) {
         match z {
             ComplexAlgebraic::Real(z) => z.as_f32_real_and_imaginary_parts(),
             ComplexAlgebraic::Complex(z) => {
@@ -1083,7 +1083,7 @@ impl ComplexSubsetSignature for ComplexAlgebraicCanonicalStructure {
         }
     }
 
-    fn as_f64_real_and_imaginary_parts(&self, z: &Self::Set) -> (f64, f64) {
+    fn as_f64_real_and_imaginary_parts(&self, z: &Self::Elem) -> (f64, f64) {
         match z {
             ComplexAlgebraic::Real(z) => z.as_f64_real_and_imaginary_parts(),
             ComplexAlgebraic::Complex(z) => {
@@ -1102,7 +1102,7 @@ impl ComplexSubsetSignature for ComplexAlgebraicCanonicalStructure {
 }
 
 impl ComplexConjugateSignature for ComplexAlgebraicCanonicalStructure {
-    fn conjugate(&self, x: &Self::Set) -> Self::Set {
+    fn conjugate(&self, x: &Self::Elem) -> Self::Elem {
         match x {
             ComplexAlgebraic::Real(x) => ComplexAlgebraic::Real(x.clone()),
             ComplexAlgebraic::Complex(x) => ComplexAlgebraic::Complex(x.clone().conj()),
@@ -1111,7 +1111,7 @@ impl ComplexConjugateSignature for ComplexAlgebraicCanonicalStructure {
 }
 
 impl PositiveRealNthRootSignature for ComplexAlgebraicCanonicalStructure {
-    fn nth_root(&self, x: &Self::Set, n: usize) -> Result<Self::Set, ()> {
+    fn nth_root(&self, x: &Self::Elem, n: usize) -> Result<Self::Elem, ()> {
         match x {
             ComplexAlgebraic::Real(x) => Ok(ComplexAlgebraic::Real(x.nth_root(n)?)),
             ComplexAlgebraic::Complex(_) => Err(()),
@@ -1216,7 +1216,7 @@ mod tests {
     fn test_complex_root_sum() {
         let f = Polynomial::<Integer>::from_coeffs(vec![1, 0, 0, 1]);
         let roots = f.all_complex_roots();
-        let s = ComplexAlgebraic::sum(roots.iter().collect());
+        let s = ComplexAlgebraic::sum(&roots.iter().collect::<Vec<_>>());
         println!("{:?}", s);
         assert_eq!(s, ComplexAlgebraic::zero());
 
@@ -1226,7 +1226,7 @@ mod tests {
         for root in &roots {
             println!("root = {}", root);
         }
-        let s = ComplexAlgebraic::sum(roots.iter().collect());
+        let s = ComplexAlgebraic::sum(&roots.iter().collect::<Vec<_>>());
         println!("root sum = {:?}", s);
         assert_eq!(
             s,
@@ -1241,7 +1241,7 @@ mod tests {
     fn test_complex_mul() {
         let f = Polynomial::<Integer>::from_coeffs(vec![1, 0, 0, 1]);
         let roots = f.all_complex_roots();
-        let s = ComplexAlgebraic::product(roots.iter().collect());
+        let s = ComplexAlgebraic::product(&roots.iter().collect::<Vec<_>>());
         println!("{:?}", s);
         assert_eq!(s, ComplexAlgebraic::one().neg());
 
@@ -1251,7 +1251,7 @@ mod tests {
         for root in &roots {
             println!("root = {}", root);
         }
-        let s = ComplexAlgebraic::product(roots.iter().collect());
+        let s = ComplexAlgebraic::product(&roots.iter().collect::<Vec<_>>());
         println!("root prod = {:?}", s);
         assert_eq!(
             s,

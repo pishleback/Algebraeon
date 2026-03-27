@@ -32,7 +32,7 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> Eq for Simplex<'f, FS> {}
 
 impl<'f, FS: OrderedRingSignature + FieldSignature> Hash for Simplex<'f, FS>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.points.hash(state);

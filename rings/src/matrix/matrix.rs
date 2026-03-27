@@ -202,6 +202,17 @@ impl<Set: Clone> Matrix<Set> {
         }
     }
 
+    pub fn apply_map_into<NewSet: Clone>(self, f: impl Fn(Set) -> NewSet) -> Matrix<NewSet> {
+        Matrix {
+            dim1: self.dim1,
+            dim2: self.dim2,
+            transpose: self.transpose,
+            flip_rows: self.flip_rows,
+            flip_cols: self.flip_cols,
+            elems: self.elems.into_iter().map(f).collect(),
+        }
+    }
+
     pub fn transpose(mut self) -> Self {
         self.transpose_mut();
         self
@@ -305,9 +316,9 @@ pub struct MatrixStructure<RS: SetSignature, RSB: BorrowedStructure<RS>> {
 impl<RS: SetSignature, RSB: BorrowedStructure<RS>> Signature for MatrixStructure<RS, RSB> {}
 
 impl<RS: SetSignature, RSB: BorrowedStructure<RS>> SetSignature for MatrixStructure<RS, RSB> {
-    type Set = Matrix<RS::Set>;
+    type Elem = Matrix<RS::Elem>;
 
-    fn validate_element(&self, _x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, _x: &Self::Elem) -> Result<(), String> {
         Ok(())
     }
 }
@@ -337,7 +348,7 @@ pub trait RingMatricesSignature: SetSignature {
 impl<RS: SetSignature> RingMatricesSignature for RS {}
 
 impl<RS: EqSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
-    pub fn equal(&self, a: &Matrix<RS::Set>, b: &Matrix<RS::Set>) -> bool {
+    pub fn equal(&self, a: &Matrix<RS::Elem>, b: &Matrix<RS::Elem>) -> bool {
         let rows = a.rows();
         let cols = a.cols();
         if rows != b.rows() || cols != b.cols() {
@@ -356,7 +367,7 @@ impl<RS: EqSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
 }
 
 impl<RS: ToStringSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
-    pub fn pprint(&self, mat: &Matrix<RS::Set>) {
+    pub fn pprint(&self, mat: &Matrix<RS::Elem>) {
         let mut str_rows = vec![];
         for r in 0..mat.rows() {
             str_rows.push(vec![]);
@@ -415,11 +426,11 @@ impl<RS: ToStringSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB>
 }
 
 impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
-    pub fn zero(&self, rows: usize, cols: usize) -> Matrix<RS::Set> {
+    pub fn zero(&self, rows: usize, cols: usize) -> Matrix<RS::Elem> {
         Matrix::construct(rows, cols, |_r, _c| self.ring().zero())
     }
 
-    pub fn ident(&self, n: usize) -> Matrix<RS::Set> {
+    pub fn ident(&self, n: usize) -> Matrix<RS::Elem> {
         Matrix::construct(n, n, |r, c| {
             if r == c {
                 self.ring().one()
@@ -429,7 +440,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
         })
     }
 
-    pub fn diag(&self, diag: &[RS::Set]) -> Matrix<RS::Set> {
+    pub fn diag(&self, diag: &[RS::Elem]) -> Matrix<RS::Elem> {
         Matrix::construct(diag.len(), diag.len(), |r, c| {
             if r == c {
                 diag[r].clone()
@@ -439,7 +450,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
         })
     }
 
-    pub fn join_diag<MatT: Borrow<Matrix<RS::Set>>>(&self, mats: Vec<MatT>) -> Matrix<RS::Set> {
+    pub fn join_diag<MatT: Borrow<Matrix<RS::Elem>>>(&self, mats: Vec<MatT>) -> Matrix<RS::Elem> {
         if mats.is_empty() {
             Matrix::construct(0, 0, |_r, _c| unreachable!())
         } else if mats.len() == 1 {
@@ -467,7 +478,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
         }
     }
 
-    pub fn dot(&self, a: &Matrix<RS::Set>, b: &Matrix<RS::Set>) -> RS::Set {
+    pub fn dot(&self, a: &Matrix<RS::Elem>, b: &Matrix<RS::Elem>) -> RS::Elem {
         let rows = a.rows();
         let cols = a.cols();
         assert_eq!(rows, b.rows());
@@ -484,7 +495,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
         tot
     }
 
-    pub fn add_mut(&self, a: &mut Matrix<RS::Set>, b: &Matrix<RS::Set>) -> Result<(), MatOppErr> {
+    pub fn add_mut(&self, a: &mut Matrix<RS::Elem>, b: &Matrix<RS::Elem>) -> Result<(), MatOppErr> {
         if a.rows() != b.rows() || a.cols() != b.cols() {
             Err(MatOppErr::DimMismatch)
         } else {
@@ -502,9 +513,9 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
 
     pub fn add(
         &self,
-        a: &Matrix<RS::Set>,
-        b: &Matrix<RS::Set>,
-    ) -> Result<Matrix<RS::Set>, MatOppErr> {
+        a: &Matrix<RS::Elem>,
+        b: &Matrix<RS::Elem>,
+    ) -> Result<Matrix<RS::Elem>, MatOppErr> {
         let mut new_a = a.clone();
         match self.add_mut(&mut new_a, b) {
             Ok(()) => Ok(new_a),
@@ -512,7 +523,7 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
         }
     }
 
-    pub fn neg_mut(&self, a: &mut Matrix<RS::Set>) {
+    pub fn neg_mut(&self, a: &mut Matrix<RS::Elem>) {
         for r in 0..a.rows() {
             for c in 0..a.cols() {
                 let neg_elem = self.ring().neg(a.at(r, c).unwrap());
@@ -521,16 +532,16 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
         }
     }
 
-    pub fn neg(&self, mut a: Matrix<RS::Set>) -> Matrix<RS::Set> {
+    pub fn neg(&self, mut a: Matrix<RS::Elem>) -> Matrix<RS::Elem> {
         self.neg_mut(&mut a);
         a
     }
 
     pub fn mul(
         &self,
-        a: &Matrix<RS::Set>,
-        b: &Matrix<RS::Set>,
-    ) -> Result<Matrix<RS::Set>, MatOppErr> {
+        a: &Matrix<RS::Elem>,
+        b: &Matrix<RS::Elem>,
+    ) -> Result<Matrix<RS::Elem>, MatOppErr> {
         let mids = a.cols();
         if mids != b.rows() {
             return Err(MatOppErr::DimMismatch);
@@ -551,33 +562,41 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
         Ok(s)
     }
 
-    pub fn apply_row(&self, mat: &Matrix<RS::Set>, row: &[RS::Set]) -> Vec<RS::Set> {
+    pub fn apply_row(
+        &self,
+        mat: &Matrix<RS::Elem>,
+        row: &[impl Borrow<RS::Elem>],
+    ) -> Vec<RS::Elem> {
         assert_eq!(mat.rows(), row.len());
         (0..mat.cols())
             .map(|c| {
                 self.ring().sum(
-                    (0..mat.rows())
-                        .map(|r| self.ring().mul(mat.at(r, c).unwrap(), &row[r]))
-                        .collect(),
+                    &(0..mat.rows())
+                        .map(|r| self.ring().mul(mat.at(r, c).unwrap(), row[r].borrow()))
+                        .collect::<Vec<_>>(),
                 )
             })
             .collect()
     }
 
-    pub fn apply_col(&self, mat: &Matrix<RS::Set>, col: &[RS::Set]) -> Vec<RS::Set> {
+    pub fn apply_col(
+        &self,
+        mat: &Matrix<RS::Elem>,
+        col: &[impl Borrow<RS::Elem>],
+    ) -> Vec<RS::Elem> {
         assert_eq!(mat.cols(), col.len());
         (0..mat.rows())
             .map(|r| {
                 self.ring().sum(
-                    (0..mat.cols())
-                        .map(|c| self.ring().mul(mat.at(r, c).unwrap(), &col[c]))
-                        .collect(),
+                    &(0..mat.cols())
+                        .map(|c| self.ring().mul(mat.at(r, c).unwrap(), col[c].borrow()))
+                        .collect::<Vec<_>>(),
                 )
             })
             .collect()
     }
 
-    pub fn mul_scalar(&self, mut a: Matrix<RS::Set>, scalar: &RS::Set) -> Matrix<RS::Set> {
+    pub fn mul_scalar(&self, mut a: Matrix<RS::Elem>, scalar: &RS::Elem) -> Matrix<RS::Elem> {
         for r in 0..a.rows() {
             for c in 0..a.cols() {
                 self.ring().mul_mut(a.at_mut(r, c).unwrap(), scalar);
@@ -586,11 +605,11 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
         a
     }
 
-    pub fn mul_scalar_ref(&self, a: &Matrix<RS::Set>, scalar: &RS::Set) -> Matrix<RS::Set> {
+    pub fn mul_scalar_ref(&self, a: &Matrix<RS::Elem>, scalar: &RS::Elem) -> Matrix<RS::Elem> {
         self.mul_scalar(a.clone(), scalar)
     }
 
-    pub fn det_naive(&self, a: &Matrix<RS::Set>) -> Result<RS::Set, MatOppErr> {
+    pub fn det_naive(&self, a: &Matrix<RS::Elem>) -> Result<RS::Elem, MatOppErr> {
         let n = a.rows();
         if n == a.cols() {
             let mut det = self.ring().zero();
@@ -615,18 +634,22 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
         }
     }
 
-    pub fn trace(&self, a: &Matrix<RS::Set>) -> Result<RS::Set, MatOppErr> {
+    pub fn trace(&self, a: &Matrix<RS::Elem>) -> Result<RS::Elem, MatOppErr> {
         let n = a.rows();
         if n == a.cols() {
             Ok(self
                 .ring()
-                .sum((0..n).map(|i| a.at(i, i).unwrap()).collect()))
+                .sum(&(0..n).map(|i| a.at(i, i).unwrap()).collect::<Vec<_>>()))
         } else {
             Err(MatOppErr::NotSquare)
         }
     }
 
-    pub fn nat_pow(&self, a: &Matrix<RS::Set>, k: &Natural) -> Result<Matrix<RS::Set>, MatOppErr> {
+    pub fn nat_pow(
+        &self,
+        a: &Matrix<RS::Elem>,
+        k: &Natural,
+    ) -> Result<Matrix<RS::Elem>, MatOppErr> {
         let n = a.rows();
         if n != a.cols() {
             Err(MatOppErr::NotSquare)

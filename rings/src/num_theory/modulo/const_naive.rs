@@ -1,8 +1,9 @@
 use crate::structure::*;
+use algebraeon_macros::repeat_small_primes;
 use algebraeon_nzq::traits::Abs;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
-use std::{fmt::Display, hash::Hash};
+use std::{borrow::Cow, fmt::Display, hash::Hash};
 
 fn xgcd(mut x: usize, mut y: usize) -> (usize, isize, isize) {
     let mut pa = 1;
@@ -125,9 +126,9 @@ pub struct ModuloCanonicalStructure<const N: usize> {}
 impl<const N: usize> Signature for ModuloCanonicalStructure<N> {}
 
 impl<const N: usize> SetSignature for ModuloCanonicalStructure<N> {
-    type Set = Modulo<N>;
+    type Elem = Modulo<N>;
 
-    fn validate_element(&self, _x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, _x: &Self::Elem) -> Result<(), String> {
         Ok(())
     }
 }
@@ -141,13 +142,13 @@ impl<const N: usize> MetaType for Modulo<N> {
 }
 
 impl<const N: usize> EqSignature for ModuloCanonicalStructure<N> {
-    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+    fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
         a == b
     }
 }
 
 impl<const N: usize> ToStringSignature for ModuloCanonicalStructure<N> {
-    fn to_string(&self, elem: &Self::Set) -> String {
+    fn to_string(&self, elem: &Self::Elem) -> String {
         format!("{}", elem)
     }
 }
@@ -155,25 +156,25 @@ impl<const N: usize> ToStringSignature for ModuloCanonicalStructure<N> {
 impl<const N: usize> RinglikeSpecializationSignature for ModuloCanonicalStructure<N> {}
 
 impl<const N: usize> ZeroSignature for ModuloCanonicalStructure<N> {
-    fn zero(&self) -> Self::Set {
+    fn zero(&self) -> Self::Elem {
         Modulo { x: 0 }
     }
 }
 
 impl<const N: usize> AdditionSignature for ModuloCanonicalStructure<N> {
-    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn add(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         Modulo { x: (a.x + b.x) % N }
     }
 }
 
 impl<const N: usize> CancellativeAdditionSignature for ModuloCanonicalStructure<N> {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.sub(a, b))
     }
 }
 
 impl<const N: usize> TryNegateSignature for ModuloCanonicalStructure<N> {
-    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
     }
 }
@@ -181,7 +182,7 @@ impl<const N: usize> TryNegateSignature for ModuloCanonicalStructure<N> {
 impl<const N: usize> AdditiveMonoidSignature for ModuloCanonicalStructure<N> {}
 
 impl<const N: usize> AdditiveGroupSignature for ModuloCanonicalStructure<N> {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
+    fn neg(&self, a: &Self::Elem) -> Self::Elem {
         if a.x == 0 {
             Modulo { x: 0 }
         } else {
@@ -191,7 +192,7 @@ impl<const N: usize> AdditiveGroupSignature for ModuloCanonicalStructure<N> {
 }
 
 impl<const N: usize> OneSignature for ModuloCanonicalStructure<N> {
-    fn one(&self) -> Self::Set {
+    fn one(&self) -> Self::Elem {
         if N == 1 {
             Modulo { x: 0 }
         } else {
@@ -201,7 +202,7 @@ impl<const N: usize> OneSignature for ModuloCanonicalStructure<N> {
 }
 
 impl<const N: usize> MultiplicationSignature for ModuloCanonicalStructure<N> {
-    fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn mul(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         Modulo { x: (a.x * b.x) % N }
     }
 }
@@ -227,7 +228,7 @@ impl<const N: usize> CharacteristicSignature for ModuloCanonicalStructure<N> {
 }
 
 impl<const N: usize> TryReciprocalSignature for ModuloCanonicalStructure<N> {
-    fn try_reciprocal(&self, x: &Self::Set) -> Option<Self::Set> {
+    fn try_reciprocal(&self, x: &Self::Elem) -> Option<Self::Elem> {
         if x == &self.zero() {
             None
         } else {
@@ -242,8 +243,45 @@ impl<const N: usize> TryReciprocalSignature for ModuloCanonicalStructure<N> {
     }
 }
 
+impl<const N: usize> QuotientSetSignature<IntegerCanonicalStructure>
+    for ModuloCanonicalStructure<N>
+{
+    fn pre_quotient_set(&self) -> &IntegerCanonicalStructure {
+        Integer::structure_ref()
+    }
+
+    fn project(&self, x: Integer) -> Self::Elem {
+        x.into()
+    }
+
+    fn project_ref(&self, x: &Integer) -> Self::Elem {
+        x.into()
+    }
+
+    fn unproject(&self, x: Self::Elem) -> Integer {
+        x.lift_int()
+    }
+
+    fn unproject_ref(&self, x: &Self::Elem) -> Integer {
+        x.lift_int()
+    }
+}
+
+impl<const N: usize> QuotientRingSignature<IntegerCanonicalStructure>
+    for ModuloCanonicalStructure<N>
+{
+}
+
+impl<const N: usize> QuotientRingGetPrincipalIdealSignature<IntegerCanonicalStructure>
+    for ModuloCanonicalStructure<N>
+{
+    fn modulus<'a>(&'a self) -> Cow<'a, Integer> {
+        Cow::Owned(Integer::from(N))
+    }
+}
+
 impl<const N: usize> CountableSetSignature for ModuloCanonicalStructure<N> {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
         (0..N).map(Modulo::new)
     }
 }
@@ -257,7 +295,7 @@ impl<const N: usize> FiniteSetSignature for ModuloCanonicalStructure<N> {
 macro_rules! impl_field {
     ($N: literal) => {
         impl CancellativeMultiplicationSignature for ModuloCanonicalStructure<$N> {
-            fn try_divide(&self, top: &Self::Set, bot: &Self::Set) -> Option<Self::Set> {
+            fn try_divide(&self, top: &Self::Elem, bot: &Self::Elem) -> Option<Self::Elem> {
                 Some(self.mul(top, &self.try_reciprocal(bot)?))
             }
         }
@@ -291,175 +329,69 @@ macro_rules! impl_field {
     };
 }
 
-impl_field!(2);
-impl_field!(3);
-impl_field!(5);
-impl_field!(7);
-impl_field!(11);
-impl_field!(13);
-impl_field!(17);
-impl_field!(19);
-impl_field!(23);
-impl_field!(29);
-impl_field!(31);
-impl_field!(37);
-impl_field!(41);
-impl_field!(43);
-impl_field!(47);
-impl_field!(53);
-impl_field!(59);
-impl_field!(61);
-impl_field!(67);
-impl_field!(71);
-impl_field!(73);
-impl_field!(79);
-impl_field!(83);
-impl_field!(89);
-impl_field!(97);
-impl_field!(101);
-impl_field!(103);
-impl_field!(107);
-impl_field!(109);
-impl_field!(113);
-impl_field!(127);
-impl_field!(131);
-impl_field!(137);
-impl_field!(139);
-impl_field!(149);
-impl_field!(151);
-impl_field!(157);
-impl_field!(163);
-impl_field!(167);
-impl_field!(173);
-impl_field!(179);
-impl_field!(181);
-impl_field!(191);
-impl_field!(193);
-impl_field!(197);
-impl_field!(199);
-impl_field!(211);
-impl_field!(223);
-impl_field!(227);
-impl_field!(229);
-impl_field!(233);
-impl_field!(239);
-impl_field!(241);
-impl_field!(251);
-impl_field!(257);
-impl_field!(263);
-impl_field!(269);
-impl_field!(271);
-impl_field!(277);
-impl_field!(281);
-impl_field!(283);
-impl_field!(293);
-impl_field!(307);
-impl_field!(311);
-impl_field!(313);
-impl_field!(317);
-impl_field!(331);
-impl_field!(337);
-impl_field!(347);
-impl_field!(349);
-impl_field!(353);
-impl_field!(359);
-impl_field!(367);
-impl_field!(373);
-impl_field!(379);
-impl_field!(383);
-impl_field!(389);
-impl_field!(397);
-impl_field!(401);
-impl_field!(409);
-impl_field!(419);
-impl_field!(421);
-impl_field!(431);
-impl_field!(433);
-impl_field!(439);
-impl_field!(443);
-impl_field!(449);
-impl_field!(457);
-impl_field!(461);
-impl_field!(463);
-impl_field!(467);
-impl_field!(479);
-impl_field!(487);
-impl_field!(491);
-impl_field!(499);
-impl_field!(503);
-impl_field!(509);
-impl_field!(521);
-impl_field!(523);
-impl_field!(541);
-impl_field!(547);
-impl_field!(557);
-impl_field!(563);
-impl_field!(569);
-impl_field!(571);
-impl_field!(577);
-impl_field!(587);
-impl_field!(593);
-impl_field!(599);
-impl_field!(601);
-impl_field!(607);
-impl_field!(613);
-impl_field!(617);
-impl_field!(619);
-impl_field!(631);
-impl_field!(641);
-impl_field!(643);
-impl_field!(647);
-impl_field!(653);
-impl_field!(659);
-impl_field!(661);
-impl_field!(673);
-impl_field!(677);
-impl_field!(683);
-impl_field!(691);
-impl_field!(701);
-impl_field!(709);
-impl_field!(719);
-impl_field!(727);
-impl_field!(733);
-impl_field!(739);
-impl_field!(743);
-impl_field!(751);
-impl_field!(757);
-impl_field!(761);
-impl_field!(769);
-impl_field!(773);
-impl_field!(787);
-impl_field!(797);
-impl_field!(809);
-impl_field!(811);
-impl_field!(821);
-impl_field!(823);
-impl_field!(827);
-impl_field!(829);
-impl_field!(839);
-impl_field!(853);
-impl_field!(857);
-impl_field!(859);
-impl_field!(863);
-impl_field!(877);
-impl_field!(881);
-impl_field!(883);
-impl_field!(887);
-impl_field!(907);
-impl_field!(911);
-impl_field!(919);
-impl_field!(929);
-impl_field!(937);
-impl_field!(941);
-impl_field!(947);
-impl_field!(953);
-impl_field!(967);
-impl_field!(971);
-impl_field!(977);
-impl_field!(983);
-impl_field!(991);
-impl_field!(997);
-//TODO: add more or generate these with a proc macro
+repeat_small_primes!(20, p =>
+    impl_field!(p);
+);
+
+impl<
+    B: BorrowedStructure<IntegerCanonicalStructure>,
+    BE: BorrowedStructure<EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, B, true>>,
+> CountableSetSignature
+    for MultiplicativeMonoidUnitsStructure<
+        EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, B, true>,
+        BE,
+    >
+{
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
+        self.list_all_elements().into_iter()
+    }
+}
+
+impl<
+    B: BorrowedStructure<IntegerCanonicalStructure>,
+    BE: BorrowedStructure<EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, B, true>>,
+> FiniteSetSignature
+    for MultiplicativeMonoidUnitsStructure<
+        EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, B, true>,
+        BE,
+    >
+{
+    fn list_all_elements(&self) -> Vec<Self::Elem> {
+        let mut units = vec![];
+        let mut u = Integer::from(1);
+        while u < Abs::abs(self.monoid().modulus().as_ref()) {
+            units.push(u.clone());
+            u += Integer::ONE;
+        }
+        units
+    }
+}
+
+impl<B: BorrowedStructure<IntegerCanonicalStructure>> FiniteFieldSignature
+    for EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, B, true>
+{
+    fn characteristic_and_power(&self) -> (Natural, Natural) {
+        (Abs::abs(self.modulus().as_ref()), Natural::ONE)
+    }
+}
+
+impl<B: BorrowedStructure<IntegerCanonicalStructure>, const IS_FIELD: bool> CountableSetSignature
+    for EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, B, IS_FIELD>
+{
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
+        (0usize..)
+            .map(Integer::from)
+            .take_while(|n| n < self.modulus().as_ref())
+    }
+}
+
+impl<B: BorrowedStructure<IntegerCanonicalStructure>, const IS_FIELD: bool> FiniteSetSignature
+    for EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, B, IS_FIELD>
+{
+    fn size(&self) -> usize {
+        Abs::abs(self.modulus().as_ref()).try_into().unwrap()
+    }
+}
 
 #[cfg(test)]
 mod tests {

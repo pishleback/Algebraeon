@@ -16,7 +16,7 @@ pub struct LabelledSimplicialDisjointUnion<
     FS: OrderedRingSignature + FieldSignature,
     T: Eq + Clone + Send + Sync,
 > where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     ambient_space: AffineSpace<'f, FS>,
     simplexes: HashMap<Simplex<'f, FS>, T>,
@@ -27,7 +27,7 @@ pub type SimplicialDisjointUnion<'f, FS> = LabelledSimplicialDisjointUnion<'f, F
 impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone + Send + Sync>
     LabelledSimplexCollection<'f, FS, T> for LabelledSimplicialDisjointUnion<'f, FS, T>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type WithLabel<S: Eq + Clone + Send + Sync> = LabelledSimplicialDisjointUnion<'f, FS, S>;
     type SubsetType = LabelledSimplicialDisjointUnion<'f, FS, T>;
@@ -88,7 +88,7 @@ where
 impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone + Send + Sync>
     LabelledSimplicialDisjointUnion<'f, FS, T>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     #[allow(unused)]
     pub(crate) fn check(&self) {

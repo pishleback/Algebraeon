@@ -14,14 +14,14 @@ pub trait Endomorphism<X: Signature>: Morphism<X, X> {}
 impl<X: Signature, T: Morphism<X, X>> Endomorphism<X> for T {}
 
 pub trait Function<Domain: SetSignature, Range: SetSignature>: Morphism<Domain, Range> {
-    fn image(&self, x: &Domain::Set) -> Range::Set;
+    fn image(&self, x: &Domain::Elem) -> Range::Elem;
 }
 
 /// A function from a set into itself
 pub trait Endofunction<X: SetSignature + EqSignature>: Function<X, X> {
     // TODO: remove EqSignature requirement and use specialization once it is stable.
     /// check if an element is fixed
-    fn is_fixed_point(&self, x: X::Set) -> bool {
+    fn is_fixed_point(&self, x: X::Elem) -> bool {
         self.domain().equal(&self.image(&x), &x)
     }
 }
@@ -29,13 +29,13 @@ pub trait Endofunction<X: SetSignature + EqSignature>: Function<X, X> {
 pub trait InjectiveFunction<Domain: SetSignature, Range: SetSignature>:
     Function<Domain, Range>
 {
-    fn try_preimage(&self, y: &Range::Set) -> Option<Domain::Set>;
+    fn try_preimage(&self, y: &Range::Elem) -> Option<Domain::Elem>;
 }
 
 pub trait BijectiveFunction<Domain: SetSignature, Range: SetSignature>:
     InjectiveFunction<Domain, Range>
 {
-    fn preimage(&self, y: &Range::Set) -> Domain::Set {
+    fn preimage(&self, y: &Range::Elem) -> Domain::Elem {
         self.try_preimage(y).unwrap()
     }
 }
@@ -68,13 +68,13 @@ impl<X: Signature> Morphism<X, X> for IdentityMorphism<X> {
 }
 
 impl<X: SetSignature> Function<X, X> for IdentityMorphism<X> {
-    fn image(&self, x: &X::Set) -> X::Set {
+    fn image(&self, x: &X::Elem) -> X::Elem {
         x.clone()
     }
 }
 
 impl<X: SetSignature> InjectiveFunction<X, X> for IdentityMorphism<X> {
-    fn try_preimage(&self, x: &X::Set) -> Option<X::Set> {
+    fn try_preimage(&self, x: &X::Elem) -> Option<X::Elem> {
         Some(x.clone())
     }
 }
@@ -150,7 +150,7 @@ impl<A: Signature, B: Signature, C: Signature, AB: Morphism<A, B>, BC: Morphism<
 impl<A: SetSignature, B: SetSignature, C: SetSignature, AB: Function<A, B>, BC: Function<B, C>>
     Function<A, C> for CompositionMorphism<A, B, C, AB, BC>
 {
-    fn image(&self, x: &A::Set) -> C::Set {
+    fn image(&self, x: &A::Elem) -> C::Elem {
         self.b_to_c.image(&self.a_to_b.image(x))
     }
 }
@@ -163,7 +163,7 @@ impl<
     BC: InjectiveFunction<B, C>,
 > InjectiveFunction<A, C> for CompositionMorphism<A, B, C, AB, BC>
 {
-    fn try_preimage(&self, x: &C::Set) -> Option<A::Set> {
+    fn try_preimage(&self, x: &C::Elem) -> Option<A::Elem> {
         self.a_to_b.try_preimage(&self.b_to_c.try_preimage(x)?)
     }
 }
@@ -176,7 +176,7 @@ impl<
     BC: BijectiveFunction<B, C>,
 > BijectiveFunction<A, C> for CompositionMorphism<A, B, C, AB, BC>
 {
-    fn preimage(&self, x: &C::Set) -> A::Set {
+    fn preimage(&self, x: &C::Elem) -> A::Elem {
         self.a_to_b.preimage(&self.b_to_c.preimage(x))
     }
 }
@@ -197,9 +197,9 @@ impl<Domain: SetSignature, Range: SetSignature> Functions<Domain, Range> {
 impl<Domain: SetSignature, Range: SetSignature> Signature for Functions<Domain, Range> {}
 
 impl<Domain: FiniteSetSignature, Range: EqSignature> SetSignature for Functions<Domain, Range> {
-    type Set = Vec<Range::Set>;
+    type Elem = Vec<Range::Elem>;
 
-    fn validate_element(&self, x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
         if x.len() != self.domain.size() {
             return Err("Incorrect vector length".to_string());
         }
@@ -213,7 +213,7 @@ impl<Domain: FiniteSetSignature, Range: EqSignature> SetSignature for Functions<
 impl<Domain: FiniteSetSignature, Range: EqSignature + FiniteSetSignature> CountableSetSignature
     for Functions<Domain, Range>
 {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
         (0..self.domain.size())
             .map(|_| self.range.list_all_elements())
             .multi_cartesian_product()
@@ -240,9 +240,9 @@ impl<X: FiniteSetSignature + EqSignature> FiniteSetEndofunctions<X> {
 impl<X: FiniteSetSignature + EqSignature> Signature for FiniteSetEndofunctions<X> {}
 
 impl<X: FiniteSetSignature + EqSignature> SetSignature for FiniteSetEndofunctions<X> {
-    type Set = Vec<X::Set>;
+    type Elem = Vec<X::Elem>;
 
-    fn validate_element(&self, f: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, f: &Self::Elem) -> Result<(), String> {
         if f.len() != self.set.size() {
             return Err("Function must have one value per element in the domain.".to_string());
         }
@@ -254,7 +254,7 @@ impl<X: FiniteSetSignature + EqSignature> SetSignature for FiniteSetEndofunction
 }
 
 impl<X: FiniteSetSignature + EqSignature> CountableSetSignature for FiniteSetEndofunctions<X> {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
         (0..self.set.size())
             .map(|_| self.set.list_all_elements())
             .multi_cartesian_product()

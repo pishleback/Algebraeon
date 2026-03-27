@@ -15,7 +15,7 @@ impl<S: SetSignature> PairsStructure<S> {
     }
 
     /// Construct a new pair from two elements of a set
-    pub fn new_pair(&self, a: S::Set, b: S::Set) -> Result<(S::Set, S::Set), String> {
+    pub fn new_pair(&self, a: S::Elem, b: S::Elem) -> Result<(S::Elem, S::Elem), String> {
         self.set.validate_element(&a)?;
         self.set.validate_element(&b)?;
         Ok((a, b))
@@ -25,9 +25,9 @@ impl<S: SetSignature> PairsStructure<S> {
 impl<S: SetSignature> Signature for PairsStructure<S> {}
 
 impl<S: SetSignature> SetSignature for PairsStructure<S> {
-    type Set = (S::Set, S::Set);
+    type Elem = (S::Elem, S::Elem);
 
-    fn validate_element(&self, x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
         self.set.validate_element(&x.0)?;
         self.set.validate_element(&x.1)?;
         Ok(())
@@ -35,7 +35,7 @@ impl<S: SetSignature> SetSignature for PairsStructure<S> {
 }
 
 impl<S: SetSignature + EqSignature> EqSignature for PairsStructure<S> {
-    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+    fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
         self.set.equal(&a.0, &b.0) && self.set.equal(&a.1, &b.1)
     }
 }
@@ -56,7 +56,7 @@ impl<Set: SetSignature> UnorderedPairs<Set> {
 pub struct UnorderedPair<T>(T, T);
 
 impl<S: SetSignature + EqSignature> UnorderedPairs<S> {
-    pub fn new_pair(&self, a: &S::Set, b: &S::Set) -> Result<UnorderedPair<S::Set>, String> {
+    pub fn new_pair(&self, a: &S::Elem, b: &S::Elem) -> Result<UnorderedPair<S::Elem>, String> {
         if self.set.equal(a, b) {
             Err("UnorderedPair elements must be distinct".to_string())
         } else {
@@ -68,9 +68,9 @@ impl<S: SetSignature + EqSignature> UnorderedPairs<S> {
 impl<S: SetSignature> Signature for UnorderedPairs<S> {}
 
 impl<S: SetSignature + EqSignature> SetSignature for UnorderedPairs<S> {
-    type Set = UnorderedPair<S::Set>;
+    type Elem = UnorderedPair<S::Elem>;
 
-    fn validate_element(&self, x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
         self.set.validate_element(&x.0)?;
         self.set.validate_element(&x.1)?;
         if self.set.equal(&x.0, &x.1) {
@@ -82,7 +82,7 @@ impl<S: SetSignature + EqSignature> SetSignature for UnorderedPairs<S> {
 }
 
 impl<S: SetSignature + EqSignature> EqSignature for UnorderedPairs<S> {
-    fn equal(&self, a: &Self::Set, b: &Self::Set) -> bool {
+    fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
         self.set.equal(&a.0, &b.0) && self.set.equal(&a.1, &b.1)
             || self.set.equal(&a.0, &b.1) && self.set.equal(&a.1, &b.0)
     }

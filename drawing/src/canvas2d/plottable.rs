@@ -31,7 +31,7 @@ fn plot_simplex_collection<
     canvas: &mut Canvas2D,
     shape: &impl LabelledSimplexCollection<'f, FS, ()>,
 ) where
-    FS::Set: std::hash::Hash,
+    FS::Elem: std::hash::Hash,
 {
     let x = shape.to_partial_simplicial_complex();
     let y = x.closure().difference(&x);
@@ -77,7 +77,7 @@ impl<
         + 'f,
 > Plottable for SimplicialDisjointUnion<'f, FS>
 where
-    FS::Set: std::hash::Hash,
+    FS::Elem: std::hash::Hash,
 {
     fn plot(&self, canvas: &mut Canvas2D) {
         plot_simplex_collection(canvas, self);
@@ -92,7 +92,7 @@ impl<
         + 'f,
 > Plottable for PartialSimplicialComplex<'f, FS>
 where
-    FS::Set: std::hash::Hash,
+    FS::Elem: std::hash::Hash,
 {
     fn plot(&self, canvas: &mut Canvas2D) {
         plot_simplex_collection(canvas, self);
@@ -107,7 +107,7 @@ impl<
         + 'f,
 > Plottable for SimplicialComplex<'f, FS>
 where
-    FS::Set: std::hash::Hash,
+    FS::Elem: std::hash::Hash,
 {
     fn plot(&self, canvas: &mut Canvas2D) {
         plot_simplex_collection(canvas, self);

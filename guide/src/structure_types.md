@@ -33,7 +33,7 @@ struct IntegersModuloN {
 impl Signature for IntegersModuloN {}
 
 impl SetSignature for IntegersModuloN {
-    type Set = Integer;
+    type Elem = Integer;
 
     fn validate_element(&self, x: &Integer) -> Result<(), String> {
         if x >= &self.n {
@@ -52,25 +52,25 @@ impl EqSignature for IntegersModuloN {
 impl RinglikeSpecializationSignature for IntegersModuloN {}
 
 impl ZeroSignature for IntegersModuloN {
-    fn zero(&self) -> Self::Set {
+    fn zero(&self) -> Self::Elem {
         Integer::ZERO
     }
 }
 
 impl AdditionSignature for IntegersModuloN {
-    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn add(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         ((a + b) % &self.n).into()
     }
 }
 
 impl CancellativeAdditionSignature for IntegersModuloN {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.sub(a, b))
     }
 }
 
 impl TryNegateSignature for IntegersModuloN {
-    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
     }
 }
@@ -78,19 +78,19 @@ impl TryNegateSignature for IntegersModuloN {
 impl AdditiveMonoidSignature for IntegersModuloN {}
 
 impl AdditiveGroupSignature for IntegersModuloN {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
+    fn neg(&self, a: &Self::Elem) -> Self::Elem {
         (-a % &self.n).into()
     }
 }
 
 impl OneSignature for IntegersModuloN {
-    fn one(&self) -> Self::Set {
+    fn one(&self) -> Self::Elem {
         (Integer::ONE % &self.n).into()
     }
 }
 
 impl MultiplicationSignature for IntegersModuloN {
-    fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn mul(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         ((a * b) % &self.n).into()
     }
 }

@@ -1,11 +1,11 @@
 use super::*;
 
 impl<FS: ComplexConjugateSignature, FSB: BorrowedStructure<FS>> MatrixStructure<FS, FSB> {
-    pub fn conjugate(&self, mat: &Matrix<FS::Set>) -> Matrix<FS::Set> {
+    pub fn conjugate(&self, mat: &Matrix<FS::Elem>) -> Matrix<FS::Elem> {
         mat.apply_map(|x| self.ring().conjugate(x))
     }
 
-    pub fn conjugate_transpose(&self, mat: &Matrix<FS::Set>) -> Matrix<FS::Set> {
+    pub fn conjugate_transpose(&self, mat: &Matrix<FS::Elem>) -> Matrix<FS::Elem> {
         self.conjugate(mat).transpose()
     }
 }
@@ -16,9 +16,9 @@ impl<FS: ComplexConjugateSignature + FieldSignature + ToStringSignature, FSB: Bo
     /// return L and Q such that mat=L*Q where L is lower triangular and Q is row-orthogonal (not orthonormal)
     pub fn gram_schmidt_row_orthogonalization_algorithm(
         &self,
-        mut mat: Matrix<FS::Set>,
+        mut mat: Matrix<FS::Elem>,
         inner_product: &impl ComplexInnerProduct<FS>,
-    ) -> (Matrix<FS::Set>, Matrix<FS::Set>) {
+    ) -> (Matrix<FS::Elem>, Matrix<FS::Elem>) {
         #[cfg(debug_assertions)]
         let original_mat = mat.clone();
 
@@ -65,9 +65,9 @@ impl<FS: ComplexConjugateSignature + FieldSignature + ToStringSignature, FSB: Bo
     //return mat=QR where Q is col-orthogonal (not orthonormal) and R is upper triangular and
     pub fn gram_schmidt_col_orthogonalization_algorithm(
         &self,
-        mat: Matrix<FS::Set>,
+        mat: Matrix<FS::Elem>,
         inner_product: &impl ComplexInnerProduct<FS>,
-    ) -> (Matrix<FS::Set>, Matrix<FS::Set>) {
+    ) -> (Matrix<FS::Elem>, Matrix<FS::Elem>) {
         let (l, q) =
             self.gram_schmidt_row_orthogonalization_algorithm(mat.transpose(), inner_product);
         (q.transpose(), l.transpose())
@@ -75,18 +75,18 @@ impl<FS: ComplexConjugateSignature + FieldSignature + ToStringSignature, FSB: Bo
 
     pub fn gram_schmidt_row_orthogonalization(
         &self,
-        mat: Matrix<FS::Set>,
+        mat: Matrix<FS::Elem>,
         inner_product: &impl ComplexInnerProduct<FS>,
-    ) -> Matrix<FS::Set> {
+    ) -> Matrix<FS::Elem> {
         self.gram_schmidt_row_orthogonalization_algorithm(mat, inner_product)
             .1
     }
 
     pub fn gram_schmidt_col_orthogonalization(
         &self,
-        mat: Matrix<FS::Set>,
+        mat: Matrix<FS::Elem>,
         inner_product: &impl ComplexInnerProduct<FS>,
-    ) -> Matrix<FS::Set> {
+    ) -> Matrix<FS::Elem> {
         self.gram_schmidt_col_orthogonalization_algorithm(mat, inner_product)
             .0
     }
@@ -100,9 +100,9 @@ impl<
     //return L*mat=Q where L is lower triangular and Q is orthonormal
     pub fn lq_decomposition_algorithm(
         &self,
-        mat: Matrix<FS::Set>,
+        mat: Matrix<FS::Elem>,
         inner_product: &impl ComplexInnerProduct<FS>,
-    ) -> (Matrix<FS::Set>, Matrix<FS::Set>) {
+    ) -> (Matrix<FS::Elem>, Matrix<FS::Elem>) {
         let (mut lt, mut mat) =
             self.gram_schmidt_row_orthogonalization_algorithm(mat, inner_product);
 
@@ -138,26 +138,26 @@ impl<
     //return mat*R=Q where Q is col-orthogonal (not orthonormal) and R is upper triangular
     pub fn qr_decomposition_algorithm(
         &self,
-        mat: Matrix<FS::Set>,
+        mat: Matrix<FS::Elem>,
         inner_product: &impl ComplexInnerProduct<FS>,
-    ) -> (Matrix<FS::Set>, Matrix<FS::Set>) {
+    ) -> (Matrix<FS::Elem>, Matrix<FS::Elem>) {
         let (l, q) = self.lq_decomposition_algorithm(mat.transpose(), inner_product);
         (q.transpose(), l.transpose())
     }
 
     pub fn gram_schmidt_row_orthonormalization(
         &self,
-        mat: Matrix<FS::Set>,
+        mat: Matrix<FS::Elem>,
         inner_product: &impl ComplexInnerProduct<FS>,
-    ) -> Matrix<FS::Set> {
+    ) -> Matrix<FS::Elem> {
         self.lq_decomposition_algorithm(mat, inner_product).1
     }
 
     pub fn gram_schmidt_col_orthonormalization(
         &self,
-        mat: Matrix<FS::Set>,
+        mat: Matrix<FS::Elem>,
         inner_product: &impl ComplexInnerProduct<FS>,
-    ) -> Matrix<FS::Set> {
+    ) -> Matrix<FS::Elem> {
         self.qr_decomposition_algorithm(mat, inner_product).0
     }
 }

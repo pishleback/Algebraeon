@@ -16,15 +16,15 @@ pub struct MyRationalCanonicalStructure {}
 impl Signature for MyRationalCanonicalStructure {}
 
 impl SetSignature for MyRationalCanonicalStructure {
-    type Set = MyRational;
+    type Elem = MyRational;
 
-    fn validate_element(&self, _x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, _x: &Self::Elem) -> Result<(), String> {
         Ok(())
     }
 }
 
 impl EqSignature for MyRationalCanonicalStructure {
-    fn equal(&self, x: &Self::Set, y: &Self::Set) -> bool {
+    fn equal(&self, x: &Self::Elem, y: &Self::Elem) -> bool {
         x == y
     }
 }
@@ -48,25 +48,25 @@ In any case, once we have the structure type `MyRationalCanonicalStructure` impl
 // We can proceed to implement more interesting structures.
 
 impl SemiRingStructure for MyRationalCanonicalStructure {
-    fn zero(&self) -> Self::Set {
+    fn zero(&self) -> Self::Elem {
         MyRational {
             value: Rational::ZERO,
         }
     }
 
-    fn one(&self) -> Self::Set {
+    fn one(&self) -> Self::Elem {
         MyRational {
             value: Rational::ONE,
         }
     }
 
-    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn add(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         MyRational {
             value: &a.value + &b.value,
         }
     }
 
-    fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn mul(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         MyRational {
             value: &a.value * &b.value,
         }
@@ -74,7 +74,7 @@ impl SemiRingStructure for MyRationalCanonicalStructure {
 }
 
 impl RingStructure for MyRationalCanonicalStructure {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
+    fn neg(&self, a: &Self::Elem) -> Self::Elem {
         MyRational { value: -&a.value }
     }
 }

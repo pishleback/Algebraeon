@@ -42,17 +42,17 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FinitelyFreeModuleStru
         self.ring.borrow()
     }
 
-    pub fn to_col(&self, v: &<Self as SetSignature>::Set) -> Matrix<Ring::Set> {
+    pub fn to_col(&self, v: &<Self as SetSignature>::Elem) -> Matrix<Ring::Elem> {
         debug_assert!(self.validate_element(v).is_ok());
         Matrix::construct(self.rank(), 1, |r, _| v[r].clone())
     }
 
-    pub fn to_row(&self, v: &<Self as SetSignature>::Set) -> Matrix<Ring::Set> {
+    pub fn to_row(&self, v: &<Self as SetSignature>::Elem) -> Matrix<Ring::Elem> {
         debug_assert!(self.validate_element(v).is_ok());
         Matrix::construct(1, self.rank(), |_, c| v[c].clone())
     }
 
-    pub fn from_row(&self, m: &Matrix<Ring::Set>) -> <Self as SetSignature>::Set {
+    pub fn from_row(&self, m: &Matrix<Ring::Elem>) -> <Self as SetSignature>::Elem {
         debug_assert_eq!(m.rows(), 1);
         debug_assert_eq!(m.cols(), self.rank());
         (0..self.rank())
@@ -60,7 +60,7 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FinitelyFreeModuleStru
             .collect()
     }
 
-    pub fn from_col(&self, m: &Matrix<Ring::Set>) -> <Self as SetSignature>::Set {
+    pub fn from_col(&self, m: &Matrix<Ring::Elem>) -> <Self as SetSignature>::Elem {
         debug_assert_eq!(m.cols(), 1);
         debug_assert_eq!(m.rows(), self.rank());
         (0..self.rank())
@@ -68,7 +68,7 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FinitelyFreeModuleStru
             .collect()
     }
 
-    pub fn basis_element(&self, i: usize) -> <Self as SetSignature>::Set {
+    pub fn basis_element(&self, i: usize) -> <Self as SetSignature>::Elem {
         debug_assert!(i < self.rank());
         (0..self.rank())
             .map(|j| {
@@ -118,15 +118,15 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         FinitelyFreeSubmoduleAffineSubsetStructure::new(self)
     }
 
-    pub fn improper_submodule(&self) -> FinitelyFreeSubmodule<Ring::Set> {
+    pub fn improper_submodule(&self) -> FinitelyFreeSubmodule<Ring::Elem> {
         self.submodules()
             .matrix_row_span(MatrixStructure::new(self.ring().clone()).ident(self.rank()))
     }
 
     pub fn generated_submodule(
         &self,
-        generators: Vec<&Vec<Ring::Set>>,
-    ) -> FinitelyFreeSubmodule<Ring::Set> {
+        generators: Vec<&Vec<Ring::Elem>>,
+    ) -> FinitelyFreeSubmodule<Ring::Elem> {
         for generator in &generators {
             debug_assert!(self.validate_element(generator).is_ok());
         }
@@ -145,9 +145,9 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> Signature
 impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> SetSignature
     for FinitelyFreeModuleStructure<Ring, RingB>
 {
-    type Set = Vec<Ring::Set>;
+    type Elem = Vec<Ring::Elem>;
 
-    fn validate_element(&self, v: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, v: &Self::Elem) -> Result<(), String> {
         if self.rank() != v.len() {
             return Err("wrong size".to_string());
         }
@@ -161,7 +161,7 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> SetSignature
 impl<Ring: RingSignature + EqSignature, RingB: BorrowedStructure<Ring>> EqSignature
     for FinitelyFreeModuleStructure<Ring, RingB>
 {
-    fn equal(&self, v: &Self::Set, w: &Self::Set) -> bool {
+    fn equal(&self, v: &Self::Elem, w: &Self::Elem) -> bool {
         debug_assert!(self.validate_element(v).is_ok());
         debug_assert!(self.validate_element(w).is_ok());
         (0..self.rank()).all(|i| self.ring().equal(&v[i], &w[i]))
@@ -176,7 +176,7 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> RinglikeSpecialization
 impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> ZeroSignature
     for FinitelyFreeModuleStructure<Ring, RingB>
 {
-    fn zero(&self) -> Self::Set {
+    fn zero(&self) -> Self::Elem {
         (0..self.rank()).map(|_| self.ring().zero()).collect()
     }
 }
@@ -184,7 +184,7 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> ZeroSignature
 impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> AdditionSignature
     for FinitelyFreeModuleStructure<Ring, RingB>
 {
-    fn add(&self, v: &Self::Set, w: &Self::Set) -> Self::Set {
+    fn add(&self, v: &Self::Elem, w: &Self::Elem) -> Self::Elem {
         debug_assert!(self.validate_element(v).is_ok());
         debug_assert!(self.validate_element(w).is_ok());
         (0..self.rank())
@@ -196,7 +196,7 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> AdditionSignature
 impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> CancellativeAdditionSignature
     for FinitelyFreeModuleStructure<Ring, RingB>
 {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.sub(a, b))
     }
 }
@@ -204,7 +204,7 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> CancellativeAdditionSi
 impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> TryNegateSignature
     for FinitelyFreeModuleStructure<Ring, RingB>
 {
-    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
     }
 }
@@ -217,12 +217,12 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> AdditiveMonoidSignatur
 impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> AdditiveGroupSignature
     for FinitelyFreeModuleStructure<Ring, RingB>
 {
-    fn neg(&self, v: &Self::Set) -> Self::Set {
+    fn neg(&self, v: &Self::Elem) -> Self::Elem {
         debug_assert!(self.validate_element(v).is_ok());
         v.iter().map(|r| self.ring().neg(r)).collect()
     }
 
-    fn sub(&self, v: &Self::Set, w: &Self::Set) -> Self::Set {
+    fn sub(&self, v: &Self::Elem, w: &Self::Elem) -> Self::Elem {
         debug_assert!(self.validate_element(v).is_ok());
         debug_assert!(self.validate_element(w).is_ok());
         (0..self.rank())
@@ -238,7 +238,7 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> SemiModuleSignature<Ri
         self.ring.borrow()
     }
 
-    fn scalar_mul(&self, v: &Self::Set, r: &Ring::Set) -> Self::Set {
+    fn scalar_mul(&self, v: &Self::Elem, r: &Ring::Elem) -> Self::Elem {
         debug_assert!(self.validate_element(v).is_ok());
         v.iter().map(|s| self.ring().mul(r, s)).collect()
     }
@@ -253,12 +253,12 @@ impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> FreeModuleSignature<Ri
         &self.basis_set
     }
 
-    fn to_component<'a>(&self, b: &usize, v: &'a Self::Set) -> Cow<'a, Ring::Set> {
+    fn to_component<'a>(&self, b: &usize, v: &'a Self::Elem) -> Cow<'a, Ring::Elem> {
         debug_assert!(*b < self.rank());
         Cow::Borrowed(&v[*b])
     }
 
-    fn from_component(&self, b: &usize, r: &<Ring>::Set) -> Self::Set {
+    fn from_component(&self, b: &usize, r: &<Ring>::Elem) -> Self::Elem {
         debug_assert!(*b < self.rank());
         let mut element = self.zero();
         element[*b] = r.clone();
@@ -279,7 +279,7 @@ pub struct FreeModuleFiniteNumberedBasisLinearTransformation<
     ring: RingB,
     domain: FinitelyFreeModuleStructure<Ring, RingDomainB>,
     range: FinitelyFreeModuleStructure<Ring, RingRangeB>,
-    matrix: Matrix<Ring::Set>, // v -> Mv
+    matrix: Matrix<Ring::Elem>, // v -> Mv
 }
 
 impl<
@@ -303,7 +303,7 @@ impl<
         ring: RingB,
         domain: FinitelyFreeModuleStructure<Ring, RingDomainB>,
         range: FinitelyFreeModuleStructure<Ring, RingRangeB>,
-        matrix: Matrix<Ring::Set>,
+        matrix: Matrix<Ring::Elem>,
     ) -> Self {
         debug_assert_eq!(ring.borrow(), domain.ring());
         debug_assert_eq!(ring.borrow(), range.ring());
@@ -328,7 +328,7 @@ impl<
         ring: RingB,
         domain: FinitelyFreeModuleStructure<Ring, RingDomainB>,
         range: FinitelyFreeModuleStructure<Ring, RingRangeB>,
-        basis_image: impl Fn(usize) -> Vec<Ring::Set>,
+        basis_image: impl Fn(usize) -> Vec<Ring::Elem>,
     ) -> Self {
         let matrix = Matrix::from_cols(
             (0..domain.rank())
@@ -362,7 +362,7 @@ impl<
         ring: RingB,
         domain: FinitelyFreeModuleStructure<Ring, RingDomainB>,
         range: FinitelyFreeModuleStructure<Ring, RingRangeB>,
-        basis_image: impl Fn(usize) -> Vec<Ring::Set>,
+        basis_image: impl Fn(usize) -> Vec<Ring::Elem>,
     ) -> Self {
         Self::construct_impl(ring, domain, range, basis_image)
     }
@@ -387,7 +387,7 @@ impl<
         ring: RingB,
         domain: FinitelyFreeModuleStructure<Ring, RingDomainB>,
         range: FinitelyFreeModuleStructure<Ring, RingRangeB>,
-        basis_image: impl Fn(usize) -> Vec<Ring::Set>,
+        basis_image: impl Fn(usize) -> Vec<Ring::Elem>,
     ) -> Self {
         Self::construct_impl(ring, domain, range, basis_image)
     }
@@ -412,7 +412,7 @@ impl<
         ring: RingB,
         domain: FinitelyFreeModuleStructure<Ring, RingDomainB>,
         range: FinitelyFreeModuleStructure<Ring, RingRangeB>,
-        basis_image: impl Fn(usize) -> Vec<Ring::Set>,
+        basis_image: impl Fn(usize) -> Vec<Ring::Elem>,
     ) -> Self {
         Self::construct_impl(ring, domain, range, basis_image)
     }
@@ -437,7 +437,7 @@ impl<
         ring: RingB,
         domain: FinitelyFreeModuleStructure<Ring, RingDomainB>,
         range: FinitelyFreeModuleStructure<Ring, RingRangeB>,
-        basis_image: impl Fn(usize) -> Vec<Ring::Set>,
+        basis_image: impl Fn(usize) -> Vec<Ring::Elem>,
     ) -> Self {
         Self::construct_impl(ring, domain, range, basis_image)
     }
@@ -494,7 +494,7 @@ impl<
         SURJECTIVE,
     >
 {
-    fn image(&self, x: &Vec<Ring::Set>) -> Vec<Ring::Set> {
+    fn image(&self, x: &Vec<Ring::Elem>) -> Vec<Ring::Elem> {
         self.range.from_col(
             &MatrixStructure::new(self.ring.clone())
                 .mul(&self.matrix, &self.domain.to_col(x))
@@ -523,7 +523,7 @@ impl<
         SURJECTIVE,
     >
 {
-    fn try_preimage(&self, y: &Vec<Ring::Set>) -> Option<Vec<Ring::Set>> {
+    fn try_preimage(&self, y: &Vec<Ring::Elem>) -> Option<Vec<Ring::Elem>> {
         MatrixStructure::new(self.ring.clone()).col_solve(self.matrix.clone(), y)
     }
 }
@@ -547,7 +547,7 @@ impl<
         true,
     >
 {
-    fn preimage(&self, y: &Vec<Ring::Set>) -> Vec<Ring::Set> {
+    fn preimage(&self, y: &Vec<Ring::Elem>) -> Vec<Ring::Elem> {
         self.try_preimage(y).unwrap()
     }
 }

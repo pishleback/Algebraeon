@@ -4,8 +4,8 @@ impl<RS: BezoutDomainSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, 
     //return (u, s, v, k) such that self = usv and s is in smith normal form (with diagonal entries their favorite associates) and u, v are invertible and k is the number of non-zero elements in the diagonal of s
     pub fn smith_algorithm(
         &self,
-        mut m: Matrix<RS::Set>,
-    ) -> (Matrix<RS::Set>, Matrix<RS::Set>, Matrix<RS::Set>, usize) {
+        mut m: Matrix<RS::Elem>,
+    ) -> (Matrix<RS::Elem>, Matrix<RS::Elem>, Matrix<RS::Elem>, usize) {
         let mut u = self.ident(m.rows());
         let mut v = self.ident(m.cols());
 

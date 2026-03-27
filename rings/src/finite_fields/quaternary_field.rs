@@ -14,7 +14,7 @@ pub enum QuaternaryField {
 }
 
 impl ToStringSignature for QuaternaryFieldCanonicalStructure {
-    fn to_string(&self, elem: &Self::Set) -> String {
+    fn to_string(&self, elem: &Self::Elem) -> String {
         format!("{}", elem)
     }
 }
@@ -33,13 +33,13 @@ impl Display for QuaternaryField {
 impl RinglikeSpecializationSignature for QuaternaryFieldCanonicalStructure {}
 
 impl ZeroSignature for QuaternaryFieldCanonicalStructure {
-    fn zero(&self) -> Self::Set {
+    fn zero(&self) -> Self::Elem {
         QuaternaryField::Zero
     }
 }
 
 impl AdditionSignature for QuaternaryFieldCanonicalStructure {
-    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn add(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         #[allow(clippy::match_same_arms)]
         match (a, b) {
             (_, QuaternaryField::Zero) => *a,
@@ -58,13 +58,13 @@ impl AdditionSignature for QuaternaryFieldCanonicalStructure {
 }
 
 impl CancellativeAdditionSignature for QuaternaryFieldCanonicalStructure {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.sub(a, b))
     }
 }
 
 impl TryNegateSignature for QuaternaryFieldCanonicalStructure {
-    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
     }
 }
@@ -72,13 +72,13 @@ impl TryNegateSignature for QuaternaryFieldCanonicalStructure {
 impl AdditiveMonoidSignature for QuaternaryFieldCanonicalStructure {}
 
 impl OneSignature for QuaternaryFieldCanonicalStructure {
-    fn one(&self) -> Self::Set {
+    fn one(&self) -> Self::Elem {
         QuaternaryField::One
     }
 }
 
 impl MultiplicationSignature for QuaternaryFieldCanonicalStructure {
-    fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn mul(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         #[allow(clippy::match_same_arms)]
         match (a, b) {
             (_, QuaternaryField::Zero) => QuaternaryField::Zero,
@@ -118,19 +118,19 @@ impl CharacteristicSignature for QuaternaryFieldCanonicalStructure {
 }
 
 impl AdditiveGroupSignature for QuaternaryFieldCanonicalStructure {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
+    fn neg(&self, a: &Self::Elem) -> Self::Elem {
         *a
     }
 }
 
 impl TryReciprocalSignature for QuaternaryFieldCanonicalStructure {
-    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_reciprocal(&self, a: &Self::Elem) -> Option<Self::Elem> {
         self.try_divide(&self.one(), a)
     }
 }
 
 impl CancellativeMultiplicationSignature for QuaternaryFieldCanonicalStructure {
-    fn try_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_divide(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         #[allow(clippy::match_same_arms)]
         match (&a, &b) {
             (_, QuaternaryField::Zero) => None,
@@ -155,7 +155,7 @@ impl FieldSignature for QuaternaryFieldCanonicalStructure {}
 impl<B: BorrowedStructure<QuaternaryFieldCanonicalStructure>> CountableSetSignature
     for MultiplicativeMonoidUnitsStructure<QuaternaryFieldCanonicalStructure, B>
 {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
         self.list_all_elements().into_iter()
     }
 }
@@ -163,7 +163,7 @@ impl<B: BorrowedStructure<QuaternaryFieldCanonicalStructure>> CountableSetSignat
 impl<B: BorrowedStructure<QuaternaryFieldCanonicalStructure>> FiniteSetSignature
     for MultiplicativeMonoidUnitsStructure<QuaternaryFieldCanonicalStructure, B>
 {
-    fn list_all_elements(&self) -> Vec<Self::Set> {
+    fn list_all_elements(&self) -> Vec<Self::Elem> {
         vec![
             QuaternaryField::One,
             QuaternaryField::Alpha,
@@ -173,7 +173,7 @@ impl<B: BorrowedStructure<QuaternaryFieldCanonicalStructure>> FiniteSetSignature
 }
 
 impl CountableSetSignature for QuaternaryFieldCanonicalStructure {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
         self.all_units_and_zero().into_iter()
     }
 }

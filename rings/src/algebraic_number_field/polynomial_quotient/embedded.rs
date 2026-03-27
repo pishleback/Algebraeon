@@ -93,11 +93,11 @@ impl AlgebraicClosureSignature for ComplexAlgebraicCanonicalStructure {
         Rational::structure()
     }
 
-    fn base_field_inclusion(&self, x: &Rational) -> Self::Set {
+    fn base_field_inclusion(&self, x: &Rational) -> Self::Elem {
         ComplexAlgebraic::Real(RealAlgebraic::Rational(x.clone()))
     }
 
-    fn all_roots_list(&self, poly: &Polynomial<Rational>) -> Option<Vec<Self::Set>> {
+    fn all_roots_list(&self, poly: &Polynomial<Rational>) -> Option<Vec<Self::Elem>> {
         if poly.is_zero() {
             None
         } else {
@@ -196,6 +196,7 @@ pub fn anf_pair_primitive_element_theorem(
 
         if let Some(a_rel_gen) = as_poly_expr(a, &generator) {
             let anf = generator.generated_algebraic_number_field();
+
             //gen = xa + yb
             //so b = (gen - xa) / y
             let b_rel_gen = anf.mul(
@@ -237,7 +238,7 @@ pub fn anf_multi_primitive_element_theorem(
         let new_g_anf = new_g.generated_algebraic_number_field();
         p = p
             .into_iter()
-            .map(|old_p| new_g_anf.reduce(Polynomial::compose(&old_p, &old_g_poly)))
+            .map(|old_p| new_g_anf.reduce(&Polynomial::compose(&old_p, &old_g_poly)))
             .collect();
         p.push(num_poly);
         g = new_g;

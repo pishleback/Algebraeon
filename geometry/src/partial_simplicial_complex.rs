@@ -33,7 +33,7 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> std::fmt::Debug
 impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone + Send + Sync>
     LabelledSimplexCollection<'f, FS, T> for LabelledPartialSimplicialComplex<'f, FS, T>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     type WithLabel<S: Eq + Clone + Send + Sync> = LabelledPartialSimplicialComplex<'f, FS, S>;
     type SubsetType = LabelledPartialSimplicialComplex<'f, FS, T>;
@@ -87,7 +87,7 @@ where
 impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone + Send + Sync>
     LabelledPartialSimplicialComplex<'f, FS, T>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     pub fn try_into_simplicial_complex(
         self,
@@ -125,7 +125,7 @@ where
 
 impl<'f, FS: OrderedRingSignature + FieldSignature> PartialSimplicialComplex<'f, FS>
 where
-    FS::Set: Hash,
+    FS::Elem: Hash,
 {
     pub fn closure(&self) -> SimplicialComplex<'f, FS> {
         self.into_labelled_simplicial_complex().forget_labels()

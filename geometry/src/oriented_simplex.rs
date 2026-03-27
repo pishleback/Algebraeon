@@ -145,7 +145,7 @@ impl<'f, FS: OrderedRingSignature + FieldSignature> OrientedSimplex<'f, FS> {
         }
     }
 
-    fn classify_point_quantitatively(&self, point: &Vector<'f, FS>) -> FS::Set {
+    fn classify_point_quantitatively(&self, point: &Vector<'f, FS>) -> FS::Elem {
         match &self.orientation {
             Some(OrientedSimplexOrientation {
                 flip,

@@ -8,18 +8,18 @@ use crate::linear::{
 pub struct JordanBlock<FS: AlgebraicClosureSignature>
 where
     PolynomialStructure<FS::BFS, FS::BFS>: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
-        + SetSignature<Set = Polynomial<<FS::BFS as SetSignature>::Set>>,
+        + SetSignature<Elem = Polynomial<<FS::BFS as SetSignature>::Elem>>,
 {
-    eigenvalue: FS::Set,
+    eigenvalue: FS::Elem,
     blocksize: usize,
 }
 
 impl<FS: AlgebraicClosureSignature> JordanBlock<FS>
 where
     PolynomialStructure<FS::BFS, FS::BFS>: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
-        + SetSignature<Set = Polynomial<<FS::BFS as SetSignature>::Set>>,
+        + SetSignature<Elem = Polynomial<<FS::BFS as SetSignature>::Elem>>,
 {
-    pub fn matrix(&self, field: &FS) -> Matrix<FS::Set> {
+    pub fn matrix(&self, field: &FS) -> Matrix<FS::Elem> {
         // let base_field = field.base_field();
         Matrix::construct(self.blocksize, self.blocksize, |r, c| {
             if r == c {
@@ -37,7 +37,7 @@ where
 pub struct JordanNormalForm<FS: AlgebraicClosureSignature>
 where
     PolynomialStructure<FS::BFS, FS::BFS>: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
-        + SetSignature<Set = Polynomial<<FS::BFS as SetSignature>::Set>>,
+        + SetSignature<Elem = Polynomial<<FS::BFS as SetSignature>::Elem>>,
 {
     field: FS,
     blocks: Vec<JordanBlock<FS>>,
@@ -46,9 +46,9 @@ where
 impl<FS: AlgebraicClosureSignature> JordanNormalForm<FS>
 where
     PolynomialStructure<FS::BFS, FS::BFS>: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
-        + SetSignature<Set = Polynomial<<FS::BFS as SetSignature>::Set>>,
+        + SetSignature<Elem = Polynomial<<FS::BFS as SetSignature>::Elem>>,
 {
-    pub fn matrix(&self) -> Matrix<FS::Set> {
+    pub fn matrix(&self) -> Matrix<FS::Elem> {
         let ac_mat_structure = MatrixStructure::new(self.field.clone());
         ac_mat_structure.join_diag(
             self.blocks
@@ -62,9 +62,9 @@ where
 impl<FS: AlgebraicClosureSignature, FSB: BorrowedStructure<FS>> MatrixStructure<FS, FSB>
 where
     PolynomialStructure<FS::BFS, FS::BFS>: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
-        + SetSignature<Set = Polynomial<<FS::BFS as SetSignature>::Set>>,
+        + SetSignature<Elem = Polynomial<<FS::BFS as SetSignature>::Elem>>,
 {
-    pub fn eigenvalues_list(&self, mat: Matrix<<FS::BFS as SetSignature>::Set>) -> Vec<FS::Set> {
+    pub fn eigenvalues_list(&self, mat: Matrix<<FS::BFS as SetSignature>::Elem>) -> Vec<FS::Elem> {
         let base_field_mat_structure = MatrixStructure::new(self.ring().base_field().clone());
         self.ring()
             .all_roots_list(
@@ -75,7 +75,10 @@ where
             .unwrap()
     }
 
-    pub fn eigenvalues_unique(&self, mat: Matrix<<FS::BFS as SetSignature>::Set>) -> Vec<FS::Set> {
+    pub fn eigenvalues_unique(
+        &self,
+        mat: Matrix<<FS::BFS as SetSignature>::Elem>,
+    ) -> Vec<FS::Elem> {
         let base_field_mat_structure = MatrixStructure::new(self.ring().base_field().clone());
         self.ring()
             .all_roots_unique(
@@ -88,8 +91,8 @@ where
 
     pub fn eigenvalues_powers(
         &self,
-        mat: Matrix<<FS::BFS as SetSignature>::Set>,
-    ) -> Vec<(FS::Set, usize)> {
+        mat: Matrix<<FS::BFS as SetSignature>::Elem>,
+    ) -> Vec<(FS::Elem, usize)> {
         let base_field_mat_structure = MatrixStructure::new(self.ring().base_field().clone());
         self.ring()
             .all_roots_powers(
@@ -102,10 +105,10 @@ where
 
     pub fn generalized_col_eigenspace(
         &self,
-        mat: &Matrix<<FS::BFS as SetSignature>::Set>,
-        eigenvalue: &FS::Set,
+        mat: &Matrix<<FS::BFS as SetSignature>::Elem>,
+        eigenvalue: &FS::Elem,
         k: usize,
-    ) -> FinitelyFreeSubmodule<FS::Set> {
+    ) -> FinitelyFreeSubmodule<FS::Elem> {
         let n = mat.rows();
         assert_eq!(n, mat.cols());
         //compute ker((M - xI)^k)
@@ -125,26 +128,26 @@ where
 
     pub fn generalized_row_eigenspace(
         &self,
-        mat: &Matrix<<FS::BFS as SetSignature>::Set>,
-        eigenvalue: &FS::Set,
+        mat: &Matrix<<FS::BFS as SetSignature>::Elem>,
+        eigenvalue: &FS::Elem,
         k: usize,
-    ) -> FinitelyFreeSubmodule<FS::Set> {
+    ) -> FinitelyFreeSubmodule<FS::Elem> {
         self.generalized_col_eigenspace(&mat.transpose_ref(), eigenvalue, k)
     }
 
     pub fn col_eigenspace(
         &self,
-        mat: &Matrix<<FS::BFS as SetSignature>::Set>,
-        eigenvalue: &FS::Set,
-    ) -> FinitelyFreeSubmodule<FS::Set> {
+        mat: &Matrix<<FS::BFS as SetSignature>::Elem>,
+        eigenvalue: &FS::Elem,
+    ) -> FinitelyFreeSubmodule<FS::Elem> {
         self.generalized_col_eigenspace(mat, eigenvalue, 1)
     }
 
     pub fn row_eigenspace(
         &self,
-        mat: &Matrix<<FS::BFS as SetSignature>::Set>,
-        eigenvalue: &FS::Set,
-    ) -> FinitelyFreeSubmodule<FS::Set> {
+        mat: &Matrix<<FS::BFS as SetSignature>::Elem>,
+        eigenvalue: &FS::Elem,
+    ) -> FinitelyFreeSubmodule<FS::Elem> {
         self.generalized_row_eigenspace(mat, eigenvalue, 1)
     }
 
@@ -152,8 +155,8 @@ where
     // B^-1 M B = J
     pub fn jordan_algorithm(
         &self,
-        mat: &Matrix<<FS::BFS as SetSignature>::Set>,
-    ) -> (JordanNormalForm<FS>, Matrix<FS::Set>) {
+        mat: &Matrix<<FS::BFS as SetSignature>::Elem>,
+    ) -> (JordanNormalForm<FS>, Matrix<FS::Elem>) {
         let n = mat.rows();
         assert_eq!(n, mat.cols());
 
@@ -300,7 +303,7 @@ where
             .collect_vec();
 
         let mut jordan_blocks = vec![];
-        let mut jnf_basis_rel_gesp_basis: Vec<Matrix<FS::Set>> = vec![];
+        let mut jnf_basis_rel_gesp_basis: Vec<Matrix<FS::Elem>> = vec![];
         for (eval, mult, blocks) in jnf_info {
             // println!("eval={:?}, mult={}", eval, mult);
             let mut eigenblock_basis = vec![];
@@ -358,8 +361,8 @@ where
 
     pub fn jordan_normal_form(
         &self,
-        mat: &Matrix<<FS::BFS as SetSignature>::Set>,
-    ) -> Matrix<FS::Set> {
+        mat: &Matrix<<FS::BFS as SetSignature>::Elem>,
+    ) -> Matrix<FS::Elem> {
         self.jordan_algorithm(mat).0.matrix()
     }
 

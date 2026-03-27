@@ -16,9 +16,9 @@ impl EnumeratedFiniteSetStructure {
 impl Signature for EnumeratedFiniteSetStructure {}
 
 impl SetSignature for EnumeratedFiniteSetStructure {
-    type Set = usize;
+    type Elem = usize;
 
-    fn validate_element(&self, x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
         if x >= &self.n {
             return Err("Too big to be an element".to_string());
         }
@@ -27,25 +27,25 @@ impl SetSignature for EnumeratedFiniteSetStructure {
 }
 
 impl EqSignature for EnumeratedFiniteSetStructure {
-    fn equal(&self, x: &Self::Set, y: &Self::Set) -> bool {
+    fn equal(&self, x: &Self::Elem, y: &Self::Elem) -> bool {
         x == y
     }
 }
 
 impl PartialOrdSignature for EnumeratedFiniteSetStructure {
-    fn partial_cmp(&self, x: &Self::Set, y: &Self::Set) -> Option<std::cmp::Ordering> {
+    fn partial_cmp(&self, x: &Self::Elem, y: &Self::Elem) -> Option<std::cmp::Ordering> {
         Some(self.cmp(x, y))
     }
 }
 
 impl OrdSignature for EnumeratedFiniteSetStructure {
-    fn cmp(&self, x: &Self::Set, y: &Self::Set) -> std::cmp::Ordering {
+    fn cmp(&self, x: &Self::Elem, y: &Self::Elem) -> std::cmp::Ordering {
         x.cmp(y)
     }
 }
 
 impl CountableSetSignature for EnumeratedFiniteSetStructure {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
         0..self.n
     }
 }

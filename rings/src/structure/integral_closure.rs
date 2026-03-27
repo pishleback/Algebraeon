@@ -39,7 +39,7 @@ impl<ICS: IntegralClosureExtension> Morphism<ICS::R, ICS::K>
 impl<ICS: IntegralClosureExtension> Function<ICS::R, ICS::K>
     for FieldOfFractionsInclusionForIntegralClosure<ICS>
 {
-    fn image(&self, x: &<ICS::R as SetSignature>::Set) -> <ICS::K as SetSignature>::Set {
+    fn image(&self, x: &<ICS::R as SetSignature>::Elem) -> <ICS::K as SetSignature>::Elem {
         self.square.r_to_k().image(x)
     }
 }
@@ -49,8 +49,8 @@ impl<ICS: IntegralClosureExtension> InjectiveFunction<ICS::R, ICS::K>
 {
     fn try_preimage(
         &self,
-        x: &<ICS::K as SetSignature>::Set,
-    ) -> Option<<ICS::R as SetSignature>::Set> {
+        x: &<ICS::K as SetSignature>::Elem,
+    ) -> Option<<ICS::R as SetSignature>::Elem> {
         self.square.r_to_k().try_preimage(x)
     }
 }
@@ -65,8 +65,11 @@ impl<ICS: IntegralClosureExtension> FieldOfFractionsInclusion<ICS::R, ICS::K>
 {
     fn numerator_and_denominator(
         &self,
-        a: &<ICS::K as SetSignature>::Set,
-    ) -> (<ICS::R as SetSignature>::Set, <ICS::R as SetSignature>::Set) {
+        a: &<ICS::K as SetSignature>::Elem,
+    ) -> (
+        <ICS::R as SetSignature>::Elem,
+        <ICS::R as SetSignature>::Elem,
+    ) {
         // let d in Z such that d*a is in R
         let d = self.square.integralize_multiplier(a);
         // take d in R
@@ -134,8 +137,8 @@ pub trait IntegralClosureExtension: Debug + Clone + Send + Sync {
     /// The monic minimal polynomial of alpha in K over Q
     fn min_poly_k_over_q(
         &self,
-        alpha: &<Self::K as SetSignature>::Set,
-    ) -> Polynomial<<Self::Q as SetSignature>::Set> {
+        alpha: &<Self::K as SetSignature>::Elem,
+    ) -> Polynomial<<Self::Q as SetSignature>::Elem> {
         let alpha_min_poly_monic = self.q_to_k().min_poly(alpha);
         #[cfg(debug_assertions)]
         {
@@ -149,8 +152,8 @@ pub trait IntegralClosureExtension: Debug + Clone + Send + Sync {
     /// By definition of R as the integral closure of Z in K every element of R, when considered as an element of K, has minimal polynomial over Q which is monic with coefficients in Z
     fn min_poly_r_over_z(
         &self,
-        alpha: &<Self::R as SetSignature>::Set,
-    ) -> Polynomial<<Self::Z as SetSignature>::Set> {
+        alpha: &<Self::R as SetSignature>::Elem,
+    ) -> Polynomial<<Self::Z as SetSignature>::Elem> {
         let alpha_min_poly_monic = self
             .min_poly_k_over_q(&self.r_to_k().image(alpha))
             .apply_map_into(|c| self.z_to_q().try_preimage(&c).unwrap());
@@ -166,13 +169,13 @@ pub trait IntegralClosureExtension: Debug + Clone + Send + Sync {
     /// For alpha in K return non-zero d in Z such that d*alpha is in R
     fn integralize_multiplier(
         &self,
-        alpha: &<Self::K as SetSignature>::Set,
-    ) -> <Self::Z as SetSignature>::Set;
+        alpha: &<Self::K as SetSignature>::Elem,
+    ) -> <Self::Z as SetSignature>::Elem;
 
     fn integral_scalar_multiple_r(
         &self,
-        alpha: &<Self::K as SetSignature>::Set,
-    ) -> <Self::R as SetSignature>::Set {
+        alpha: &<Self::K as SetSignature>::Elem,
+    ) -> <Self::R as SetSignature>::Elem {
         self.r_to_k()
             .try_preimage(&self.integral_scalar_multiple_k(alpha))
             .unwrap()
@@ -180,8 +183,8 @@ pub trait IntegralClosureExtension: Debug + Clone + Send + Sync {
 
     fn integral_scalar_multiple_k(
         &self,
-        alpha: &<Self::K as SetSignature>::Set,
-    ) -> <Self::K as SetSignature>::Set {
+        alpha: &<Self::K as SetSignature>::Elem,
+    ) -> <Self::K as SetSignature>::Elem {
         let d = self.integralize_multiplier(alpha);
         // This is the LCM of the denominators of the coefficients of a,
         // and thus it may well be > 1 even when the element is an algebraic integer.
@@ -223,31 +226,31 @@ where
 
     fn ideal_norm(
         &self,
-        ideal: &<Self::IdealsR as SetSignature>::Set,
-    ) -> <Self::IdealsZ as SetSignature>::Set;
+        ideal: &<Self::IdealsR as SetSignature>::Elem,
+    ) -> <Self::IdealsZ as SetSignature>::Elem;
 
     fn factor_prime_ideal(
         &self,
-        prime_ideal: <Self::IdealsZ as SetSignature>::Set,
+        prime_ideal: <Self::IdealsZ as SetSignature>::Elem,
     ) -> DedekindExtensionIdealFactorsAbovePrime<
-        <Self::IdealsZ as SetSignature>::Set,
-        <Self::IdealsR as SetSignature>::Set,
+        <Self::IdealsZ as SetSignature>::Elem,
+        <Self::IdealsR as SetSignature>::Elem,
     >;
 
     fn factor_ideal(
         &self,
-        ideal: &<Self::IdealsR as SetSignature>::Set,
+        ideal: &<Self::IdealsR as SetSignature>::Elem,
     ) -> Option<
         DedekindExtensionIdealFactorization<
-            <Self::IdealsZ as SetSignature>::Set,
-            <Self::IdealsR as SetSignature>::Set,
+            <Self::IdealsZ as SetSignature>::Elem,
+            <Self::IdealsR as SetSignature>::Elem,
         >,
     >;
 
     fn padic_k_element_valuation(
         &self,
-        prime: &<Self::IdealsR as SetSignature>::Set,
-        a: &<Self::K as SetSignature>::Set,
+        prime: &<Self::IdealsR as SetSignature>::Elem,
+        a: &<Self::K as SetSignature>::Elem,
     ) -> Valuation {
         #[cfg(debug_assertions)]
         assert_ne!(self.r_ideals().try_is_irreducible(prime), Some(false));
@@ -265,8 +268,8 @@ where
     #[allow(non_snake_case)]
     fn is_S_integral(
         &self,
-        S: Vec<&<Self::IdealsR as SetSignature>::Set>,
-        a: &<Self::K as SetSignature>::Set,
+        S: Vec<&<Self::IdealsR as SetSignature>::Elem>,
+        a: &<Self::K as SetSignature>::Elem,
     ) -> bool {
         #[cfg(debug_assertions)]
         for s in &S {
@@ -309,10 +312,10 @@ where
     fn expand_extension_ideal_factorization(
         &self,
         f: &DedekindExtensionIdealFactorization<
-            <Self::IdealsZ as SetSignature>::Set,
-            <Self::IdealsR as SetSignature>::Set,
+            <Self::IdealsZ as SetSignature>::Elem,
+            <Self::IdealsR as SetSignature>::Elem,
         >,
-    ) -> Factored<<Self::IdealsR as SetSignature>::Set, Natural> {
+    ) -> Factored<<Self::IdealsR as SetSignature>::Elem, Natural> {
         self.r_ideals()
             .factorizations()
             .new_unit_and_powers_unchecked(self.r_ideals().one(), f.clone().into_powers())

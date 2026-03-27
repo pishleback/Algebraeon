@@ -209,9 +209,9 @@ pub struct PermutationCanonicalStructure<const N: usize> {}
 impl<const N: usize> Signature for PermutationCanonicalStructure<N> {}
 
 impl<const N: usize> SetSignature for PermutationCanonicalStructure<N> {
-    type Set = Permutation<N>;
+    type Elem = Permutation<N>;
 
-    fn validate_element(&self, _x: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, _x: &Self::Elem) -> Result<(), String> {
         Ok(())
     }
 }
@@ -225,7 +225,7 @@ impl<const N: usize> MetaType for Permutation<N> {
 }
 
 impl<const N: usize> CompositionSignature for PermutationCanonicalStructure<N> {
-    fn compose(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn compose(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         let mut comp_perm = [0; N];
         for i in 0..N {
             comp_perm[i] = a.perm[b.perm[i]];
@@ -237,19 +237,19 @@ impl<const N: usize> CompositionSignature for PermutationCanonicalStructure<N> {
 impl<const N: usize> AssociativeCompositionSignature for PermutationCanonicalStructure<N> {}
 
 impl<const N: usize> LeftCancellativeCompositionSignature for PermutationCanonicalStructure<N> {
-    fn try_left_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_left_difference(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.compose(&self.inverse(b), a))
     }
 }
 
 impl<const N: usize> RightCancellativeCompositionSignature for PermutationCanonicalStructure<N> {
-    fn try_right_difference(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_right_difference(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.compose(a, &self.inverse(b)))
     }
 }
 
 impl<const N: usize> IdentitySignature for PermutationCanonicalStructure<N> {
-    fn identity(&self) -> Self::Set {
+    fn identity(&self) -> Self::Elem {
         let mut perm = [0; N];
         for i in 0..N {
             perm[i] = i;
@@ -261,25 +261,25 @@ impl<const N: usize> IdentitySignature for PermutationCanonicalStructure<N> {
 impl<const N: usize> MonoidSignature for PermutationCanonicalStructure<N> {}
 
 impl<const N: usize> TryLeftInverseSignature for PermutationCanonicalStructure<N> {
-    fn try_left_inverse(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_left_inverse(&self, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.inverse(a))
     }
 }
 
 impl<const N: usize> TryRightInverseSignature for PermutationCanonicalStructure<N> {
-    fn try_right_inverse(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_right_inverse(&self, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.inverse(a))
     }
 }
 
 impl<const N: usize> TryInverseSignature for PermutationCanonicalStructure<N> {
-    fn try_inverse(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_inverse(&self, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.inverse(a))
     }
 }
 
 impl<const N: usize> GroupSignature for PermutationCanonicalStructure<N> {
-    fn inverse(&self, a: &Self::Set) -> Self::Set {
+    fn inverse(&self, a: &Self::Elem) -> Self::Elem {
         let mut inv_perm = [0; N];
         for (i, j) in a.perm.into_iter().enumerate() {
             inv_perm[j] = i;

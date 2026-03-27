@@ -27,7 +27,7 @@ pub struct RealAlgebraicRoot {
 
 impl std::hash::Hash for RealAlgebraicRoot {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        debug_assert!(self.poly.leading_coeff().unwrap() > Integer::ZERO);
+        debug_assert!(self.poly.leading_coeff().unwrap() > &Integer::ZERO);
         self.poly.hash(state);
     }
 }
@@ -407,7 +407,7 @@ impl RealAlgebraic {
 }
 
 impl PositiveRealNthRootSignature for RealAlgebraicCanonicalStructure {
-    fn nth_root(&self, x: &Self::Set, n: usize) -> Result<Self::Set, ()> {
+    fn nth_root(&self, x: &Self::Elem, n: usize) -> Result<Self::Elem, ()> {
         nth_root(x, n)
     }
 }
@@ -450,31 +450,31 @@ impl Display for RealAlgebraic {
 }
 
 impl ToStringSignature for RealAlgebraicCanonicalStructure {
-    fn to_string(&self, elem: &Self::Set) -> String {
+    fn to_string(&self, elem: &Self::Elem) -> String {
         format!("{}", elem)
     }
 }
 
 impl RinglikeSpecializationSignature for RealAlgebraicCanonicalStructure {
-    fn try_ring_restructure(&self) -> Option<impl EqSignature<Set = Self::Set> + RingSignature> {
+    fn try_ring_restructure(&self) -> Option<impl EqSignature<Elem = Self::Elem> + RingSignature> {
         Some(self.clone())
     }
 
     fn try_char_zero_ring_restructure(
         &self,
-    ) -> Option<impl EqSignature<Set = Self::Set> + CharZeroRingSignature> {
+    ) -> Option<impl EqSignature<Elem = Self::Elem> + CharZeroRingSignature> {
         Some(self.clone())
     }
 }
 
 impl ZeroSignature for RealAlgebraicCanonicalStructure {
-    fn zero(&self) -> Self::Set {
+    fn zero(&self) -> Self::Elem {
         RealAlgebraic::Rational(Rational::from(0))
     }
 }
 
 impl AdditionSignature for RealAlgebraicCanonicalStructure {
-    fn add(&self, alg1: &Self::Set, alg2: &Self::Set) -> Self::Set {
+    fn add(&self, alg1: &Self::Elem, alg2: &Self::Elem) -> Self::Elem {
         // println!("add {:?} {:?}", alg1, alg2);
 
         fn add_rat(mut elem: RealAlgebraicRoot, rat: &Rational) -> RealAlgebraicRoot {
@@ -539,13 +539,13 @@ impl AdditionSignature for RealAlgebraicCanonicalStructure {
 }
 
 impl CancellativeAdditionSignature for RealAlgebraicCanonicalStructure {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.sub(a, b))
     }
 }
 
 impl TryNegateSignature for RealAlgebraicCanonicalStructure {
-    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
     }
 }
@@ -553,7 +553,7 @@ impl TryNegateSignature for RealAlgebraicCanonicalStructure {
 impl AdditiveMonoidSignature for RealAlgebraicCanonicalStructure {}
 
 impl AdditiveGroupSignature for RealAlgebraicCanonicalStructure {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
+    fn neg(&self, a: &Self::Elem) -> Self::Elem {
         match a {
             RealAlgebraic::Rational(a) => RealAlgebraic::Rational(-a),
             RealAlgebraic::Real(root) => RealAlgebraic::Real(root.clone().neg()),
@@ -562,13 +562,13 @@ impl AdditiveGroupSignature for RealAlgebraicCanonicalStructure {
 }
 
 impl OneSignature for RealAlgebraicCanonicalStructure {
-    fn one(&self) -> Self::Set {
+    fn one(&self) -> Self::Elem {
         RealAlgebraic::Rational(Rational::from(1))
     }
 }
 
 impl MultiplicationSignature for RealAlgebraicCanonicalStructure {
-    fn mul(&self, elem1: &Self::Set, elem2: &Self::Set) -> Self::Set {
+    fn mul(&self, elem1: &Self::Elem, elem2: &Self::Elem) -> Self::Elem {
         match elem1.cmp(&self.zero()) {
             std::cmp::Ordering::Less => {
                 return self.neg(&self.mul(&self.neg(elem1), elem2));
@@ -671,7 +671,7 @@ impl CharacteristicSignature for RealAlgebraicCanonicalStructure {
 }
 
 impl TryReciprocalSignature for RealAlgebraicCanonicalStructure {
-    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_reciprocal(&self, a: &Self::Elem) -> Option<Self::Elem> {
         let mut a = a.clone();
         match RealAlgebraic::cmp_mut(&mut a, &mut self.zero()) {
             std::cmp::Ordering::Less => Some(self.neg(&self.try_reciprocal(&self.neg(&a))?)),
@@ -750,7 +750,7 @@ impl TryReciprocalSignature for RealAlgebraicCanonicalStructure {
 }
 
 impl CancellativeMultiplicationSignature for RealAlgebraicCanonicalStructure {
-    fn try_divide(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_divide(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.mul(a, &self.try_reciprocal(b)?))
     }
 }
@@ -762,7 +762,7 @@ impl IntegralDomainSignature for RealAlgebraicCanonicalStructure {}
 impl FieldSignature for RealAlgebraicCanonicalStructure {}
 
 impl CharZeroRingSignature for RealAlgebraicCanonicalStructure {
-    fn try_to_int(&self, alg: &Self::Set) -> Option<Integer> {
+    fn try_to_int(&self, alg: &Self::Elem) -> Option<Integer> {
         match alg {
             RealAlgebraic::Rational(rat) => rat.try_to_int(),
             RealAlgebraic::Real(_) => None,
@@ -771,7 +771,7 @@ impl CharZeroRingSignature for RealAlgebraicCanonicalStructure {
 }
 
 impl CharZeroFieldSignature for RealAlgebraicCanonicalStructure {
-    fn try_to_rat(&self, x: &Self::Set) -> Option<Rational> {
+    fn try_to_rat(&self, x: &Self::Elem) -> Option<Rational> {
         match x {
             RealAlgebraic::Rational(rational) => Some(rational.clone()),
             RealAlgebraic::Real(_) => None,
@@ -780,17 +780,17 @@ impl CharZeroFieldSignature for RealAlgebraicCanonicalStructure {
 }
 
 impl ComplexSubsetSignature for RealAlgebraicCanonicalStructure {
-    fn as_f32_real_and_imaginary_parts(&self, z: &Self::Set) -> (f32, f32) {
+    fn as_f32_real_and_imaginary_parts(&self, z: &Self::Elem) -> (f32, f32) {
         (z.as_f32(), 0.0)
     }
 
-    fn as_f64_real_and_imaginary_parts(&self, z: &Self::Set) -> (f64, f64) {
+    fn as_f64_real_and_imaginary_parts(&self, z: &Self::Elem) -> (f64, f64) {
         (z.as_f64(), 0.0)
     }
 }
 
 impl RealSubsetSignature for RealAlgebraicCanonicalStructure {
-    fn as_f64(&self, x: &Self::Set) -> f64 {
+    fn as_f64(&self, x: &Self::Elem) -> f64 {
         match x {
             RealAlgebraic::Rational(x) => x.as_f64(),
             RealAlgebraic::Real(x) => {
@@ -804,7 +804,7 @@ impl RealSubsetSignature for RealAlgebraicCanonicalStructure {
         }
     }
 
-    fn as_f32(&self, x: &Self::Set) -> f32 {
+    fn as_f32(&self, x: &Self::Elem) -> f32 {
         self.as_f64(x) as f32
     }
 }
@@ -812,7 +812,7 @@ impl RealSubsetSignature for RealAlgebraicCanonicalStructure {
 impl OrderedRingSignature for RealAlgebraicCanonicalStructure {}
 
 impl RealRoundingSignature for RealAlgebraicCanonicalStructure {
-    fn floor(&self, x: &Self::Set) -> Integer {
+    fn floor(&self, x: &Self::Elem) -> Integer {
         let mut x = x.clone();
         loop {
             match x.isolate() {
@@ -831,7 +831,7 @@ impl RealRoundingSignature for RealAlgebraicCanonicalStructure {
             }
         }
     }
-    fn ceil(&self, x: &Self::Set) -> Integer {
+    fn ceil(&self, x: &Self::Elem) -> Integer {
         let mut x = x.clone();
         loop {
             match x.isolate() {
@@ -850,7 +850,7 @@ impl RealRoundingSignature for RealAlgebraicCanonicalStructure {
             }
         }
     }
-    fn round(&self, x: &Self::Set) -> Integer {
+    fn round(&self, x: &Self::Elem) -> Integer {
         let mut x = x.clone();
         loop {
             match x.isolate() {
@@ -952,17 +952,17 @@ mod tests {
     fn test_real_add() {
         let f = Polynomial::<Integer>::from_coeffs(vec![-2, 0, 3]);
         let roots = f.all_real_roots();
-        let a = RealAlgebraic::sum(roots.iter().collect());
+        let a = RealAlgebraic::sum(&roots.iter().collect::<Vec<_>>());
         assert_eq!(a, RealAlgebraic::zero());
 
         let f = Polynomial::<Integer>::from_coeffs(vec![-7, 0, 100]);
         let roots = f.all_real_roots();
-        let a = RealAlgebraic::sum(roots.iter().collect());
+        let a = RealAlgebraic::sum(&roots.iter().collect::<Vec<_>>());
         assert_eq!(a, RealAlgebraic::zero());
 
         let f = Polynomial::<Integer>::from_coeffs(vec![-100, 0, 7]);
         let roots = f.all_real_roots();
-        let a = RealAlgebraic::sum(roots.iter().collect());
+        let a = RealAlgebraic::sum(&roots.iter().collect::<Vec<_>>());
         assert_eq!(a, RealAlgebraic::zero());
     }
 
@@ -972,7 +972,7 @@ mod tests {
         // (x-a)(x-b) = x^2 - 100/7
         // so ab=-100/7
         let roots = f.all_real_roots();
-        let a = RealAlgebraic::product(roots.iter().collect());
+        let a = RealAlgebraic::product(&roots.iter().collect::<Vec<_>>());
         assert_eq!(
             a,
             RealAlgebraic::try_from_rat(&Rational::from_integers(-100, 7)).unwrap()

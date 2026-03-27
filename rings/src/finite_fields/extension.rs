@@ -1,9 +1,9 @@
-use crate::{polynomial::*, structure::*};
+use crate::{
+    num_theory::modulo::const_naive::ModuloCanonicalStructure, polynomial::*, structure::*,
+};
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
-
-use super::modulo::ModuloCanonicalStructure;
 
 impl<
     FS: FiniteFieldSignature,
@@ -13,7 +13,7 @@ impl<
 > CountableSetSignature
     for MultiplicativeMonoidUnitsStructure<PolynomialQuotientRingStructure<FS, FSB, FSPB, true>, B>
 {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
         self.list_all_elements().into_iter()
     }
 }
@@ -26,7 +26,7 @@ impl<
 > FiniteSetSignature
     for MultiplicativeMonoidUnitsStructure<PolynomialQuotientRingStructure<FS, FSB, FSPB, true>, B>
 {
-    fn list_all_elements(&self) -> Vec<Self::Set> {
+    fn list_all_elements(&self) -> Vec<Self::Elem> {
         let mut all_base_elements = vec![self.monoid().ring().coeff_ring().zero()];
         for unit in self.monoid().ring().coeff_ring().all_units() {
             all_base_elements.push(unit);
@@ -65,10 +65,10 @@ impl<
 
 pub fn new_finite_field_extension<FS: FiniteFieldSignature>(
     finite_field: FS,
-    poly: Polynomial<FS::Set>,
+    poly: Polynomial<FS::Elem>,
 ) -> PolynomialQuotientRingStructure<FS, FS, PolynomialStructure<FS, FS>, true>
 where
-    PolynomialStructure<FS, FS>: FactoringMonoidSignature<Set = Polynomial<FS::Set>>,
+    PolynomialStructure<FS, FS>: FactoringMonoidSignature<Elem = Polynomial<FS::Elem>>,
 {
     finite_field
         .into_polynomials()
@@ -82,7 +82,7 @@ pub(crate) fn f9() -> PolynomialQuotientRingStructure<
     PolynomialStructure<ModuloCanonicalStructure<3>, ModuloCanonicalStructure<3>>,
     true,
 > {
-    use crate::finite_fields::modulo::*;
+    use crate::num_theory::modulo::const_naive::*;
     new_finite_field_extension::<ModuloCanonicalStructure<3>>(
         Modulo::<3>::structure(),
         Polynomial::from_coeffs(vec![1, 1, 2]),

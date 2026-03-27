@@ -30,9 +30,9 @@ pub fn subsets() -> SubsetsStructure {
 impl Signature for SubsetsStructure {}
 
 impl SetSignature for SubsetsStructure {
-    type Set = Subset;
+    type Elem = Subset;
 
-    fn validate_element(&self, _: &Self::Set) -> Result<(), String> {
+    fn validate_element(&self, _: &Self::Elem) -> Result<(), String> {
         Ok(())
     }
 }

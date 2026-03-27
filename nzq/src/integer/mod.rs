@@ -33,7 +33,7 @@ impl Integer {
 }
 
 impl ToStringSignature for IntegerCanonicalStructure {
-    fn to_string(&self, elem: &Self::Set) -> String {
+    fn to_string(&self, elem: &Self::Elem) -> String {
         format!("{}", elem)
     }
 }
@@ -661,7 +661,7 @@ impl Product for Integer {
 }
 
 impl CountableSetSignature for IntegerCanonicalStructure {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Set> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
         use malachite_nz::integer::exhaustive::exhaustive_integers;
         exhaustive_integers().map(Integer::from_malachite)
     }

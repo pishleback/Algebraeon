@@ -4,14 +4,14 @@ use std::borrow::{Borrow, Cow};
 
 pub trait SemiModuleSignature<Ring: SemiRingSignature>: AdditiveMonoidSignature {
     fn ring(&self) -> &Ring;
-    fn scalar_mul(&self, a: &Self::Set, x: &Ring::Set) -> Self::Set;
+    fn scalar_mul(&self, a: &Self::Elem, x: &Ring::Elem) -> Self::Elem;
 }
 
 pub trait MetaSemiModule<Ring: SemiRingSignature>: MetaType
 where
     Self::Signature: SemiModuleSignature<Ring>,
 {
-    fn scalar_mul(&self, x: &Ring::Set) -> Self {
+    fn scalar_mul(&self, x: &Ring::Elem) -> Self {
         Self::structure().scalar_mul(self, x)
     }
 }
@@ -38,11 +38,12 @@ pub trait FreeModuleSignature<Ring: RingSignature>: ModuleSignature<Ring> {
 
     fn to_component<'a>(
         &self,
-        b: &<Self::Basis as SetSignature>::Set,
-        v: &'a Self::Set,
-    ) -> Cow<'a, Ring::Set>;
+        b: &<Self::Basis as SetSignature>::Elem,
+        v: &'a Self::Elem,
+    ) -> Cow<'a, Ring::Elem>;
 
-    fn from_component(&self, b: &<Self::Basis as SetSignature>::Set, r: &Ring::Set) -> Self::Set;
+    fn from_component(&self, b: &<Self::Basis as SetSignature>::Elem, r: &Ring::Elem)
+    -> Self::Elem;
 }
 
 pub trait FinitelyFreeModuleSignature<Ring: RingSignature>:
@@ -50,7 +51,7 @@ pub trait FinitelyFreeModuleSignature<Ring: RingSignature>:
 where
     Self::Basis: FiniteSetSignature,
 {
-    fn basis(&self) -> Vec<<Self::Basis as SetSignature>::Set> {
+    fn basis(&self) -> Vec<<Self::Basis as SetSignature>::Elem> {
         self.basis_set().borrow().list_all_elements()
     }
 
@@ -59,7 +60,7 @@ where
     }
 
     /// The elementary basis vectors
-    fn basis_vecs(&self) -> Vec<Self::Set> {
+    fn basis_vecs(&self) -> Vec<Self::Elem> {
         let zero = self.ring().zero();
         let one = self.ring().one();
         (0..self.rank())
@@ -73,14 +74,14 @@ where
             .collect()
     }
 
-    fn to_vec(&self, a: &Self::Set) -> Vec<Ring::Set> {
+    fn to_vec(&self, a: &Self::Elem) -> Vec<Ring::Elem> {
         self.basis()
             .iter()
             .map(|b| self.to_component(b, a).as_ref().clone())
             .collect()
     }
 
-    fn from_vec(&self, v: Vec<impl Borrow<Ring::Set>>) -> Self::Set {
+    fn from_vec(&self, v: Vec<impl Borrow<Ring::Elem>>) -> Self::Elem {
         let n = self.rank();
         debug_assert_eq!(v.len(), n);
         let basis = self.basis();
@@ -98,24 +99,24 @@ where
         t
     }
 
-    fn to_col(&self, a: &Self::Set) -> Matrix<Ring::Set> {
+    fn to_col(&self, a: &Self::Elem) -> Matrix<Ring::Elem> {
         let basis = self.basis();
         Matrix::construct(self.rank(), 1, |r, _c| {
             self.to_component(&basis[r], a).into_owned()
         })
     }
 
-    fn from_col(&self, v: Matrix<Ring::Set>) -> Self::Set {
+    fn from_col(&self, v: Matrix<Ring::Elem>) -> Self::Elem {
         assert_eq!(v.cols(), 1);
         assert_eq!(v.rows(), self.rank());
         self.from_vec((0..self.rank()).map(|r| v.at(r, 0).unwrap()).collect())
     }
 
-    fn to_row(&self, a: &Self::Set) -> Matrix<Ring::Set> {
+    fn to_row(&self, a: &Self::Elem) -> Matrix<Ring::Elem> {
         self.to_col(a).transpose()
     }
 
-    fn from_row(&self, v: Matrix<Ring::Set>) -> Self::Set {
+    fn from_row(&self, v: Matrix<Ring::Elem>) -> Self::Elem {
         self.from_col(v.transpose())
     }
 }

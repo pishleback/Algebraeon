@@ -141,7 +141,7 @@ impl<
         Cow::Borrowed(self.r_to_k.borrow())
     }
 
-    fn integralize_multiplier(&self, alpha: &<Self::K as SetSignature>::Set) -> Integer {
+    fn integralize_multiplier(&self, alpha: &<Self::K as SetSignature>::Elem) -> Integer {
         if self.k_field().is_algebraic_integer(alpha) {
             Integer::ONE
         } else {
@@ -260,7 +260,7 @@ impl<
         Cow::Borrowed(self.r_to_k.borrow())
     }
 
-    fn integralize_multiplier(&self, alpha: &<Self::K as SetSignature>::Set) -> Integer {
+    fn integralize_multiplier(&self, alpha: &<Self::K as SetSignature>::Elem) -> Integer {
         if self.k_field().is_algebraic_integer(alpha) {
             Integer::ONE
         } else {

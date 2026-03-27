@@ -6,7 +6,8 @@ use crate::{
     polynomial::Polynomial,
     structure::{
         AdditionSignature, CharZeroFieldSignature, FieldSignature, MetaFactoringMonoid,
-        MetaMultiplicativeMonoidSignature, RingHomomorphism, SemiModuleSignature,
+        MetaMultiplicativeMonoidSignature, QuotientRingGetPrincipalIdealSignature,
+        RingHomomorphism, SemiModuleSignature,
     },
 };
 use algebraeon_nzq::{Integer, Natural, Rational, traits::DivMod};
@@ -37,7 +38,7 @@ impl<
             // let g be the generator of this ANF, so we are QQ[g]
             // g is a root of an integer polynomial
             // ax^2 + bx + c
-            let poly = anf_polyquo_borrowed.modulus().primitive_part_fof();
+            let poly = anf_polyquo_borrowed.modulus().as_ref().primitive_part_fof();
             let poly_coeffs = poly.clone().into_coeffs();
             debug_assert_eq!(poly_coeffs.len(), 3);
             let two_a = Integer::TWO * &poly_coeffs[2];

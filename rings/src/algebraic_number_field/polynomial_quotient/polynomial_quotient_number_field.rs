@@ -58,7 +58,7 @@ impl Polynomial<Rational> {
 }
 
 impl CharZeroFieldSignature for AlgebraicNumberFieldPolynomialQuotientStructure {
-    fn try_to_rat(&self, x: &Self::Set) -> Option<Rational> {
+    fn try_to_rat(&self, x: &Self::Elem) -> Option<Rational> {
         let x = self.reduce(x);
         match x.degree() {
             None => Some(Rational::ZERO),
@@ -115,7 +115,7 @@ impl AlgebraicNumberFieldSignature for AlgebraicNumberFieldPolynomialQuotientStr
         self.into_inbound_principal_rational_map()
     }
 
-    fn generator(&self) -> Self::Set {
+    fn generator(&self) -> Self::Elem {
         self.generator()
     }
 
@@ -123,7 +123,7 @@ impl AlgebraicNumberFieldSignature for AlgebraicNumberFieldPolynomialQuotientStr
         self.compute_integral_basis_and_discriminant().1
     }
 
-    fn integral_basis(&self) -> Vec<Self::Set> {
+    fn integral_basis(&self) -> Vec<Self::Elem> {
         self.compute_integral_basis_and_discriminant().0
     }
 
@@ -183,14 +183,14 @@ impl AlgebraicNumberFieldPolynomialQuotientStructure {
                     for coeffs in (0..n).map(|_i| 0..p).multi_cartesian_product() {
                         let alpha = Polynomial::from_coeffs(
                             Polynomial::sum(
-                                (0..n)
+                                &(0..n)
                                     .map(|i| {
                                         Polynomial::mul(
                                             &Polynomial::constant(Rational::from(coeffs[i])),
                                             &guess[i],
                                         )
                                     })
-                                    .collect(),
+                                    .collect::<Vec<_>>(),
                             )
                             .coeffs()
                             .map(|c| c / Rational::from(p))
@@ -251,7 +251,7 @@ impl
     fn all_roots(
         &self,
         polynomial: &Polynomial<Rational>,
-    ) -> Vec<<AlgebraicNumberFieldPolynomialQuotientStructure as SetSignature>::Set> {
+    ) -> Vec<<AlgebraicNumberFieldPolynomialQuotientStructure as SetSignature>::Elem> {
         let anf = self.range();
         anf.polynomials()
             .factor(&polynomial.apply_map(|x| self.image(x)))

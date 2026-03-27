@@ -67,19 +67,19 @@ impl ApproximatePointsSignature for RealApproximatePointCanonicalStructure {
     type Precision = RationalCanonicalStructure;
     type OpenSubsetsStructure = SubsetsStructure;
 
-    fn open_neighbourhood(&self, approx_point: &Self::Set) -> Subset {
+    fn open_neighbourhood(&self, approx_point: &Self::Elem) -> Subset {
         approx_point.lock().rational_interval_neighbourhood()
     }
 
-    fn precision(&self, approx_point: &Self::Set) -> Rational {
+    fn precision(&self, approx_point: &Self::Elem) -> Rational {
         approx_point.lock().length()
     }
 
-    fn refine(&self, approx_point: &mut Self::Set) {
+    fn refine(&self, approx_point: &mut Self::Elem) {
         approx_point.lock().refine();
     }
 
-    fn refine_to(&self, approx_point: &mut Self::Set, length: &Rational) {
+    fn refine_to(&self, approx_point: &mut Self::Elem, length: &Rational) {
         approx_point.lock().refine_to_length(length);
     }
 }
@@ -212,13 +212,13 @@ impl RealApproximatePointInterface for MulPoints {
 impl RinglikeSpecializationSignature for RealApproximatePointCanonicalStructure {}
 
 impl ZeroSignature for RealApproximatePointCanonicalStructure {
-    fn zero(&self) -> Self::Set {
+    fn zero(&self) -> Self::Elem {
         RealApproximatePoint::new(rational::RationalPoint { x: Rational::ZERO })
     }
 }
 
 impl AdditionSignature for RealApproximatePointCanonicalStructure {
-    fn add(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn add(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         RealApproximatePoint::new(AddPoints {
             first: a.clone(),
             second: b.clone(),
@@ -227,13 +227,13 @@ impl AdditionSignature for RealApproximatePointCanonicalStructure {
 }
 
 impl CancellativeAdditionSignature for RealApproximatePointCanonicalStructure {
-    fn try_sub(&self, a: &Self::Set, b: &Self::Set) -> Option<Self::Set> {
+    fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.sub(a, b))
     }
 }
 
 impl TryNegateSignature for RealApproximatePointCanonicalStructure {
-    fn try_neg(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
     }
 }
@@ -241,19 +241,19 @@ impl TryNegateSignature for RealApproximatePointCanonicalStructure {
 impl AdditiveMonoidSignature for RealApproximatePointCanonicalStructure {}
 
 impl AdditiveGroupSignature for RealApproximatePointCanonicalStructure {
-    fn neg(&self, a: &Self::Set) -> Self::Set {
+    fn neg(&self, a: &Self::Elem) -> Self::Elem {
         RealApproximatePoint::new(NegPoint { pt: a.clone() })
     }
 }
 
 impl OneSignature for RealApproximatePointCanonicalStructure {
-    fn one(&self) -> Self::Set {
+    fn one(&self) -> Self::Elem {
         RealApproximatePoint::new(rational::RationalPoint { x: Rational::ONE })
     }
 }
 
 impl MultiplicationSignature for RealApproximatePointCanonicalStructure {
-    fn mul(&self, a: &Self::Set, b: &Self::Set) -> Self::Set {
+    fn mul(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         RealApproximatePoint::new(MulPoints {
             first: a.clone(),
             second: b.clone(),
@@ -320,7 +320,7 @@ Inverse called on an approximate value which later turned out to be exactly 0.",
 impl TryReciprocalSignature for RealApproximatePointCanonicalStructure {
     /// # Warning
     /// May fail to halt if the input is zero.
-    fn try_reciprocal(&self, a: &Self::Set) -> Option<Self::Set> {
+    fn try_reciprocal(&self, a: &Self::Elem) -> Option<Self::Elem> {
         let nbd = a.lock().rational_interval_neighbourhood();
         match nbd {
             Subset::Singleton(rational) => Some(RealApproximatePoint::new(RationalPoint {
@@ -332,7 +332,7 @@ impl TryReciprocalSignature for RealApproximatePointCanonicalStructure {
 }
 
 impl ComplexSubsetSignature for RealApproximatePointCanonicalStructure {
-    fn as_f32_real_and_imaginary_parts(&self, z: &Self::Set) -> (f32, f32) {
+    fn as_f32_real_and_imaginary_parts(&self, z: &Self::Elem) -> (f32, f32) {
         loop {
             let nbd = z.lock().rational_interval_neighbourhood();
             match nbd {
@@ -351,7 +351,7 @@ impl ComplexSubsetSignature for RealApproximatePointCanonicalStructure {
         }
     }
 
-    fn as_f64_real_and_imaginary_parts(&self, z: &Self::Set) -> (f64, f64) {
+    fn as_f64_real_and_imaginary_parts(&self, z: &Self::Elem) -> (f64, f64) {
         loop {
             let nbd = z.lock().rational_interval_neighbourhood();
             match nbd {
@@ -376,7 +376,7 @@ impl RealSubsetSignature for RealApproximatePointCanonicalStructure {}
 impl RealRoundingSignature for RealApproximatePointCanonicalStructure {
     /// # Warning
     /// May fail to halt on integer inputs.
-    fn floor(&self, x: &Self::Set) -> Integer {
+    fn floor(&self, x: &Self::Elem) -> Integer {
         loop {
             let nbd = x.lock().rational_interval_neighbourhood();
             match nbd {
@@ -398,7 +398,7 @@ impl RealRoundingSignature for RealApproximatePointCanonicalStructure {
 
     /// # Warning!
     /// May fail to halt on integer inputs.
-    fn ceil(&self, x: &Self::Set) -> Integer {
+    fn ceil(&self, x: &Self::Elem) -> Integer {
         loop {
             let nbd = x.lock().rational_interval_neighbourhood();
             match nbd {
@@ -418,7 +418,7 @@ impl RealRoundingSignature for RealApproximatePointCanonicalStructure {
         }
     }
 
-    fn round(&self, x: &Self::Set) -> Integer {
+    fn round(&self, x: &Self::Elem) -> Integer {
         self.floor(&self.add(
             x,
             &RealApproximatePoint::new(RationalPoint {

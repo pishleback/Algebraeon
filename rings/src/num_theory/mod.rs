@@ -6,5 +6,4 @@ pub mod integer_structure;
 pub mod modulo;
 pub mod natural_factorization;
 pub mod natural_structure;
-pub mod quadratic_symbols;
 pub mod zimmermann_polys;
