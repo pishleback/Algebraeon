@@ -93,10 +93,10 @@ impl<
                 g_factorization.check(ring, i, n)?;
 
                 let poly_ring = ring.polynomials();
-                let ring_mod_i = ring.quotient_ring(i.clone()).unwrap();
+                let ring_mod_i = ring.euclidean_quotient_ring(i.clone()).unwrap();
                 let poly_ring_mod_i = ring_mod_i.polynomials();
                 let poly_ring_mod_i_tothe_n = ring
-                    .quotient_ring(ring.nat_pow(i, n))
+                    .euclidean_quotient_ring(ring.nat_pow(i, n))
                     .unwrap()
                     .into_polynomials();
 
@@ -256,7 +256,7 @@ fn compute_lift_factors<
     drop(gcd);
     drop(gamma);
 
-    let ring_mod_i = ring.quotient_ring(i.clone()).unwrap();
+    let ring_mod_i = ring.euclidean_quotient_ring(i.clone()).unwrap();
     debug_assert!(ring_mod_i.equal(alpha, poly_ring.leading_coeff(h).unwrap()));
 
     let delta_h = poly_ring
@@ -269,7 +269,7 @@ fn compute_lift_factors<
     //found delta_h such that
     //delta_h = h - alpha*f*g mod i^n+1
     let poly_ring_mod_i_tothe_nplusone = ring
-        .quotient_ring(ring.nat_pow(i, &(n + Natural::ONE)))
+        .euclidean_quotient_ring(ring.nat_pow(i, &(n + Natural::ONE)))
         .unwrap()
         .into_polynomials();
     debug_assert!(poly_ring_mod_i_tothe_nplusone.equal(
@@ -355,7 +355,7 @@ impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMo
                 b,
             } => {
                 let pring_mod_i2n = ring
-                    .quotient_ring(ring.nat_pow(i, &(n * Natural::TWO)))
+                    .euclidean_quotient_ring(ring.nat_pow(i, &(n * Natural::TWO)))
                     .unwrap()
                     .into_polynomials();
 
@@ -520,7 +520,7 @@ impl<
         }
         // h = product of fs modulo i^n
         let poly_ring_mod_p_tothe_n = ring
-            .quotient_ring(ring.nat_pow(&p, &n))
+            .euclidean_quotient_ring(ring.nat_pow(&p, &n))
             .unwrap()
             .into_polynomials();
         let alpha = poly_ring.leading_coeff(&h).unwrap();

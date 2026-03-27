@@ -196,6 +196,7 @@ pub fn anf_pair_primitive_element_theorem(
 
         if let Some(a_rel_gen) = as_poly_expr(a, &generator) {
             let anf = generator.generated_algebraic_number_field();
+
             //gen = xa + yb
             //so b = (gen - xa) / y
             let b_rel_gen = anf.mul(

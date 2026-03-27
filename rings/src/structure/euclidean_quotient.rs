@@ -66,14 +66,14 @@ impl<RS: EuclideanDomainSignature + FactoringMonoidSignature, RSB: BorrowedStruc
 }
 
 pub trait RingToQuotientRingSignature: EuclideanDomainSignature {
-    fn quotient_ring(
+    fn euclidean_quotient_ring(
         &self,
         modulus: Self::Elem,
     ) -> Option<EuclideanRemainderQuotientStructure<Self, &Self, false>> {
         EuclideanRemainderQuotientStructure::try_new_ring(self, modulus)
     }
 
-    fn into_quotient_ring(
+    fn into_euclidean_quotient_ring(
         self,
         modulus: Self::Elem,
     ) -> Option<EuclideanRemainderQuotientStructure<Self, Self, false>> {

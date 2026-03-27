@@ -110,7 +110,7 @@ fn jacobi_symbol_by_factorization(
         Err(JacobiSymbolError::BottomEven)
     } else {
         let mod_n = Integer::structure_ref()
-            .quotient_ring(Integer::from(n))
+            .euclidean_quotient_ring(Integer::from(n))
             .unwrap();
         let a = mod_n.reduce(a);
         let mut val = QuadraticSymbolValue::Pos;

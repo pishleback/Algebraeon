@@ -202,6 +202,17 @@ impl<Set: Clone> Matrix<Set> {
         }
     }
 
+    pub fn apply_map_into<NewSet: Clone>(self, f: impl Fn(Set) -> NewSet) -> Matrix<NewSet> {
+        Matrix {
+            dim1: self.dim1,
+            dim2: self.dim2,
+            transpose: self.transpose,
+            flip_rows: self.flip_rows,
+            flip_cols: self.flip_cols,
+            elems: self.elems.into_iter().map(f).collect(),
+        }
+    }
+
     pub fn transpose(mut self) -> Self {
         self.transpose_mut();
         self

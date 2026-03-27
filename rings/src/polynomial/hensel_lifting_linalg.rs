@@ -1,143 +1,177 @@
 use crate::{
-    matrix::{Matrix, MatrixStructure},
+    matrix::{Matrix, RingMatricesSignature},
     polynomial::{Polynomial, PolynomialStructure, ToPolynomialSignature},
     structure::{
-        AdditionSignature, AdditiveGroupSignature, AdditiveMonoidSignature,
-        CancellativeMultiplicationSignature, EuclideanDomainSignature, FactoringMonoidSignature,
-        FactoringStructure, FieldSignature, GreatestCommonDivisorSignature,
-        MultiplicationSignature, MultiplicativeMonoidSignature, NonZeroFactored,
-        QuotientRingGetPrincipalIdealSignature, RingToQuotientFieldSignature,
-        RingToQuotientRingSignature, SemiModuleSignature, TryReciprocalSignature, ZeroSignature,
+        AdditionSignature, AdditiveGroupSignature, CancellativeMultiplicationSignature,
+        EuclideanDomainSignature, FactoringMonoidSignature, FactoringStructure, FieldSignature,
+        GreatestCommonDivisorSignature, MultiplicationSignature, MultiplicativeMonoidSignature,
+        NonZeroFactored, QuotientRingGetPrincipalIdealSignature, RingToQuotientRingSignature,
+        SemiModuleSignature, ZeroEqSignature,
     },
 };
 use algebraeon_nzq::{Natural, NaturalCanonicalStructure};
 use algebraeon_sets::structure::{BorrowedStructure, EqSignature};
+use std::sync::Arc;
 
-#[derive(Debug, Clone)]
+fn compute_lifting_mat_mod<
+    Ring: EuclideanDomainSignature
+        + GreatestCommonDivisorSignature
+        + FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
+    RingMod: QuotientRingGetPrincipalIdealSignature<Ring> + EqSignature,
+>(
+    ring_mod_p: &RingMod,
+    fs: &[Polynomial<Ring::Elem>],
+) -> Matrix<RingMod::Elem> {
+    let ring = ring_mod_p.pre_quotient_set();
+
+    let fs_count = fs.len();
+    let fs_deg = fs
+        .iter()
+        .map(|f| {
+            ring_mod_p
+                .pre_quotient_set()
+                .polynomials()
+                .degree(f)
+                .unwrap()
+        })
+        .collect::<Vec<_>>();
+    let h_deg = fs_deg.iter().sum::<usize>();
+
+    let fs_prod = ring.polynomials().product(fs);
+    let fs_prod_excluding_each = (0..fs_count)
+        .map(|i| ring.polynomials().try_divide(&fs_prod, &fs[i]).unwrap())
+        .collect::<Vec<_>>();
+    let fs_prod_excluding_each_mod_p = fs_prod_excluding_each
+        .iter()
+        .map(|f| f.apply_map(|c| ring_mod_p.project_ref(c)))
+        .collect::<Vec<_>>();
+
+    let mat = Matrix::<RingMod::Elem>::from_cols({
+        let mut cols = vec![];
+        for idx in 0..fs_count {
+            let d = fs_deg[idx];
+            for i in 0..d {
+                let mut col = vec![];
+                for _ in 0..i {
+                    col.push(ring_mod_p.zero());
+                }
+                for j in 0..(h_deg - d + 1) {
+                    col.push(
+                        ring_mod_p
+                            .polynomials()
+                            .coeff(&fs_prod_excluding_each_mod_p[idx], j)
+                            .as_ref()
+                            .clone(),
+                    );
+                }
+                for _ in 0..(d - i - 1) {
+                    col.push(ring_mod_p.zero());
+                }
+                debug_assert_eq!(col.len(), h_deg);
+                cols.push(col);
+            }
+        }
+        debug_assert_eq!(cols.len(), h_deg);
+        cols
+    });
+    debug_assert_eq!(mat.rows(), h_deg);
+    debug_assert_eq!(mat.cols(), h_deg);
+    mat
+}
+
+// A factorization h = h.lc() * f1 * f2 * ... * fn mod p^k
+#[derive(Clone)]
 pub struct HenselFactorization<
     Ring: EuclideanDomainSignature
         + GreatestCommonDivisorSignature
         + FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
-    RingModP: QuotientRingGetPrincipalIdealSignature<Ring> + FieldSignature,
+    RingMod: QuotientRingGetPrincipalIdealSignature<Ring> + EqSignature,
 > {
-    // A factorization h = h.lc() * f1 * f2 * ... * fn mod p^k
-    ring_mod_p: RingModP,
+    make_ring_mod: Arc<dyn Fn(&Ring::Elem) -> RingMod + Send + Sync>,
     polys: PolynomialStructure<Ring, Ring>,
-    polys_mod_p: PolynomialStructure<RingModP, RingModP>,
-    mats_mod_p: MatrixStructure<RingModP, RingModP>,
     p: Ring::Elem, // An irreducible element of Ring
     k: Natural,
-    pk: Ring::Elem,            // p^k
     h: Polynomial<Ring::Elem>, // A polynomial over Ring
     h_deg: usize,
     fs_count: usize,
     fs: Vec<Polynomial<Ring::Elem>>, // monic Polynomials over Ring mod p^k
     fs_deg: Vec<usize>,
-    t: Polynomial<RingModP::Elem>, // (h - h.lc() * f1 * f2 * ... * fn) / p^k mod p
-    // A matrix used to compute lifts. We cache it here since it is unchanged during lifts.
-    lifting_mat_inv_mod_p: Matrix<RingModP::Elem>,
+    ring_mod_p: RingMod,
+    // p^k
+    pk: Ring::Elem,
     // The inverse of the leading coefficient of h modulo p
-    lc_inv_mod_p: RingModP::Elem,
+    lc_inv_mod_p: RingMod::Elem,
+    // A matrix used to compute lifts. We cache it here since it is unchanged during lifts.
+    lifting_mat_mod_p: Matrix<RingMod::Elem>,
+    lifting_mat_inv_mod_p: Matrix<RingMod::Elem>,
 }
 
 impl<
     Ring: EuclideanDomainSignature
         + GreatestCommonDivisorSignature
         + FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
-    RingModP: QuotientRingGetPrincipalIdealSignature<Ring> + FieldSignature,
-> HenselFactorization<Ring, RingModP>
+    RingMod: QuotientRingGetPrincipalIdealSignature<Ring> + EqSignature,
+> std::fmt::Debug for HenselFactorization<Ring, RingMod>
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("HenselFactorization")
+            .field("polys", &self.polys)
+            .field("p", &self.p)
+            .field("k", &self.k)
+            .field("h", &self.h)
+            .field("h_deg", &self.h_deg)
+            .field("fs_count", &self.fs_count)
+            .field("fs", &self.fs)
+            .field("fs_deg", &self.fs_deg)
+            .field("ring_mod_p", &self.ring_mod_p)
+            .field("pk", &self.pk)
+            .field("lc_inv_mod_p", &self.lc_inv_mod_p)
+            .field("lifting_mat_mod_p", &self.lifting_mat_mod_p)
+            .field("lifting_mat_inv_mod_p", &self.lifting_mat_inv_mod_p)
+            .finish()
+    }
+}
+
+impl<
+    Ring: EuclideanDomainSignature
+        + GreatestCommonDivisorSignature
+        + FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
+    RingMod: QuotientRingGetPrincipalIdealSignature<Ring> + EqSignature,
+> HenselFactorization<Ring, RingMod>
 {
     pub fn ring(&self) -> &Ring {
         self.ring_mod_p.pre_quotient_set()
     }
 
-    pub fn ring_mod_p(&self) -> &RingModP {
-        &self.ring_mod_p
+    pub fn base_modulus(&self) -> &Ring::Elem {
+        &self.p
     }
 
-    pub fn modulus(&self) -> Ring::Elem {
-        self.ring().nat_pow(&self.p, &self.k)
+    pub fn modulus(&self) -> &Ring::Elem {
+        &self.pk
     }
 
     fn lc(&self) -> &Ring::Elem {
         self.ring().polynomials().leading_coeff(&self.h).unwrap()
     }
 
-    fn compute_lifting_mat_inv_mod_p(
-        fs_count: usize,
-        fs: &[Polynomial<Ring::Elem>],
-        fs_deg: &[usize],
-        h_deg: usize,
-        ring_mod_p: &RingModP,
-        polys_mod_p: &PolynomialStructure<RingModP, RingModP>,
-        mats_mod_p: &MatrixStructure<RingModP, RingModP>,
-    ) -> Matrix<RingModP::Elem> {
-        debug_assert_eq!(fs_count, fs.len());
-        debug_assert_eq!(fs_count, fs_deg.len());
-        debug_assert_eq!(fs_deg.iter().cloned().sum::<usize>(), h_deg);
-
-        println!("make prods");
-
-        let fs_mod_p = fs
-            .iter()
-            .map(|f| f.apply_map(|c| ring_mod_p.project_ref(c)))
-            .collect::<Vec<_>>();
-        let fs_prod = polys_mod_p.product(&fs_mod_p);
-        let fs_prod_excluding_each_mod_p = (0..fs_count)
-            .map(|i| polys_mod_p.try_divide(&fs_prod, &fs_mod_p[i]).unwrap())
-            .collect::<Vec<_>>();
-
-        println!("make {}x{} mat", h_deg, h_deg);
-
-        let mat = Matrix::<RingModP::Elem>::from_cols({
-            let mut cols = vec![];
-            for idx in 0..fs_count {
-                let d = fs_deg[idx];
-                for i in 0..d {
-                    let mut col = vec![];
-                    for _ in 0..i {
-                        col.push(ring_mod_p.zero());
-                    }
-                    for j in 0..(h_deg - d + 1) {
-                        col.push(
-                            polys_mod_p
-                                .coeff(&fs_prod_excluding_each_mod_p[idx], j)
-                                .as_ref()
-                                .clone(),
-                        );
-                    }
-                    for _ in 0..(d - i - 1) {
-                        col.push(ring_mod_p.zero());
-                    }
-                    debug_assert_eq!(col.len(), h_deg);
-                    cols.push(col);
-                }
-            }
-            debug_assert_eq!(cols.len(), h_deg);
-            cols
-        });
-        debug_assert_eq!(mat.rows(), h_deg);
-        debug_assert_eq!(mat.cols(), h_deg);
-        println!("inv mat");
-        mats_mod_p.inv(mat.clone()).unwrap()
-    }
-
-    fn compute_t_poly(
+    fn compute_err_poly_mod_p_poly(
         ring: &Ring,
-        ring_mod_p: &RingModP,
-        polys_mod_p: &PolynomialStructure<RingModP, RingModP>,
+        ring_mod_p: &RingMod,
         p: &Ring::Elem,
         k: &Natural,
         h: &Polynomial<Ring::Elem>,
-        fs: &Vec<Polynomial<Ring::Elem>>,
+        fs: &[Polynomial<Ring::Elem>],
         lc: &Ring::Elem,
-        lc_inv_mod_p: &RingModP::Elem,
-    ) -> Polynomial<RingModP::Elem> {
+    ) -> Polynomial<RingMod::Elem> {
         let pk0 = ring.nat_pow(p, k);
         let pk1 = ring.mul(&pk0, p);
 
         // polynomials mod p^(k+1)
-        let polys_mod_pk1 = ring.quotient_ring(pk1.clone()).unwrap().into_polynomials();
+        let polys_mod_pk1 = ring
+            .euclidean_quotient_ring(pk1.clone())
+            .unwrap()
+            .into_polynomials();
 
         // compute t = (h - lc * (f1 * f2 * f3)) / p^k mod p
         polys_mod_pk1
@@ -157,29 +191,39 @@ impl<
             assert_eq!(self.fs_deg[i], self.polys.degree(&self.fs[i]).unwrap());
         }
 
-        assert!(self.mats_mod_p.equal(
-            &self.lifting_mat_inv_mod_p,
-            &Self::compute_lifting_mat_inv_mod_p(
-                self.fs_count,
-                &self.fs,
-                &self.fs_deg,
-                self.h_deg,
-                &self.ring_mod_p,
-                &self.polys_mod_p,
-                &self.mats_mod_p,
+        assert_eq!(self.lifting_mat_inv_mod_p.rows(), self.h_deg);
+        assert_eq!(self.lifting_mat_inv_mod_p.cols(), self.h_deg);
+        assert!(
+            self.ring_mod_p.matrix_structure().equal(
+                &self
+                    .ring_mod_p
+                    .matrix_structure()
+                    .mul(&self.lifting_mat_mod_p, &self.lifting_mat_inv_mod_p)
+                    .unwrap(),
+                &self.ring_mod_p.matrix_structure().ident(self.h_deg)
             )
-        ));
+        );
+        let mat = compute_lifting_mat_mod(&self.ring_mod_p, &self.fs);
+        assert!(
+            self.ring_mod_p
+                .matrix_structure()
+                .equal(&self.lifting_mat_mod_p, &mat)
+        );
 
-        if !self.ring().is_irreducible(&self.p) {
-            return Err(format!("p={:?} is not irreducible", self.p));
+        if !self.ring().equal(&self.p, &self.ring_mod_p.modulus()) {
+            return Err("Incorrect self.ring_mod_p".to_string());
         }
         if self.k == Natural::ZERO {
             return Err("k=0 is not valid".to_string());
         }
 
-        let ring_mod_p = self.ring().quotient_field(self.p.clone()).unwrap();
-        if !ring_mod_p.is_unit(self.lc()) {
-            return Err("leading coeff is not invertible modulo p".to_string());
+        if !self.ring_mod_p.equal(
+            &self
+                .ring_mod_p
+                .mul(&self.ring_mod_p.project_ref(self.lc()), &self.lc_inv_mod_p),
+            &self.ring_mod_p.one(),
+        ) {
+            return Err("leading coeff bad inverse modulo p".to_string());
         }
 
         let ring_poly = self.ring().polynomials();
@@ -203,9 +247,10 @@ impl<
 
         let ring_poly_mod_pk = self
             .ring()
-            .quotient_ring(self.modulus())
+            .euclidean_quotient_ring(self.pk.clone())
             .unwrap()
             .into_polynomials();
+
         if !ring_poly_mod_pk.equal(
             &self.h,
             &ring_poly_mod_pk.mul(
@@ -222,23 +267,6 @@ impl<
         }
         debug_assert_eq!(ring_poly.degree(&self.h).unwrap(), deg_sum);
 
-        if !self.polys_mod_p.equal(
-            &self.t,
-            &Self::compute_t_poly(
-                self.ring(),
-                &self.ring_mod_p,
-                &self.polys_mod_p,
-                &self.p,
-                &self.k,
-                &self.h,
-                &self.fs,
-                self.lc(),
-                &self.lc_inv_mod_p,
-            ),
-        ) {
-            return Err("Incorrect self.t".to_string());
-        }
-
         if !self
             .ring()
             .equal(&self.ring().nat_pow(&self.p, &self.k), &self.pk)
@@ -250,58 +278,30 @@ impl<
     }
 
     pub fn new_unchecked(
-        ring_mod_p: RingModP,
+        make_ring_mod: impl Fn(&Ring::Elem) -> RingMod + Send + Sync + 'static,
+        ring_mod_p: RingMod,
         k: Natural,
         h: Polynomial<Ring::Elem>,
         fs: Vec<Polynomial<Ring::Elem>>,
+        lifting_mat_inv_mod_p: Matrix<RingMod::Elem>,
+        lc_inv_mod_p: RingMod::Elem,
     ) -> Self {
         let p = ring_mod_p.modulus().into_owned();
         let ring = ring_mod_p.pre_quotient_set();
         let polys = ring.clone().into_polynomials();
-        let polys_mod_p = ring_mod_p.clone().into_polynomials();
-        let mats_mod_p = MatrixStructure::new(ring_mod_p.clone());
-
         let pk = ring.nat_pow(&p, &k);
-
         let h_deg = polys.degree(&h).unwrap();
         let fs_count = fs.len();
         let fs_deg = fs
             .iter()
             .map(|f| polys.degree(f).unwrap())
             .collect::<Vec<_>>();
-
-        let lifting_mat_inv_mod_p = Self::compute_lifting_mat_inv_mod_p(
-            fs_count,
-            &fs,
-            &fs_deg,
-            h_deg,
-            &ring_mod_p,
-            &polys_mod_p,
-            &mats_mod_p,
-        );
-
-        let lc = polys.leading_coeff(&h).unwrap();
-        let lc_inv_mod_p = ring_mod_p
-            .try_reciprocal(&ring_mod_p.project_ref(lc))
-            .unwrap();
-
-        let t = Self::compute_t_poly(
-            ring,
-            &ring_mod_p,
-            &polys_mod_p,
-            &p,
-            &k,
-            &h,
-            &fs,
-            lc,
-            &lc_inv_mod_p,
-        );
+        let lifting_mat_mod_p = compute_lifting_mat_mod(&ring_mod_p, &fs);
 
         let s = Self {
+            make_ring_mod: Arc::new(make_ring_mod),
             ring_mod_p,
             polys,
-            polys_mod_p,
-            mats_mod_p,
             p,
             k,
             pk,
@@ -310,13 +310,83 @@ impl<
             fs_count,
             fs,
             fs_deg,
+            lifting_mat_mod_p,
             lifting_mat_inv_mod_p,
             lc_inv_mod_p,
-            t,
         };
         #[cfg(debug_assertions)]
         s.check().unwrap();
         s
+    }
+
+    pub fn new_unchecked_mod_field<
+        FieldModP: QuotientRingGetPrincipalIdealSignature<Ring> + FieldSignature,
+    >(
+        make_ring_mod: impl Fn(&Ring::Elem) -> RingMod + Send + Sync + 'static,
+        field_mod_p: FieldModP,
+        k: Natural,
+        h: Polynomial<Ring::Elem>,
+        fs: Vec<Polynomial<Ring::Elem>>,
+    ) -> Self {
+        let ring = field_mod_p.pre_quotient_set();
+        let ring_mod_p = make_ring_mod(field_mod_p.modulus().as_ref());
+        let lifting_mat_inv_mod_p = field_mod_p
+            .matrix_structure()
+            .inv(compute_lifting_mat_mod(&field_mod_p, &fs))
+            .unwrap()
+            .apply_map_into(|x| ring_mod_p.project(field_mod_p.unproject(x)));
+        let lc = ring.polynomials().leading_coeff(&h).unwrap();
+        let lc_inv_mod_p = ring_mod_p.project(
+            field_mod_p.unproject(
+                field_mod_p
+                    .try_reciprocal(&field_mod_p.project_ref(lc))
+                    .unwrap(),
+            ),
+        );
+        Self::new_unchecked(
+            make_ring_mod,
+            ring_mod_p,
+            k,
+            h,
+            fs,
+            lifting_mat_inv_mod_p,
+            lc_inv_mod_p,
+        )
+    }
+
+    /// If the polynomial is squarefree return a hensel factorization, otherwise return None
+    pub fn from_mod_field_factorization<
+        FieldModP: QuotientRingGetPrincipalIdealSignature<Ring> + FieldSignature,
+        RingModPB: BorrowedStructure<FieldModP>,
+        RingModPPolyB: BorrowedStructure<PolynomialStructure<FieldModP, RingModPB>>,
+        NatB: BorrowedStructure<NaturalCanonicalStructure>,
+    >(
+        make_ring_mod: impl Fn(&Ring::Elem) -> RingMod + Send + Sync + 'static,
+        fs_structure: &FactoringStructure<
+            PolynomialStructure<FieldModP, RingModPB>,
+            RingModPPolyB,
+            NaturalCanonicalStructure,
+            NatB,
+        >,
+        fs: NonZeroFactored<Polynomial<FieldModP::Elem>, Natural>,
+        h: Polynomial<Ring::Elem>,
+    ) -> Option<Self> {
+        let polys_mod_p = fs_structure.objects().clone();
+        let field_mod_p = polys_mod_p.coeff_ring().clone();
+        let mut fs_vec = vec![];
+        let (_unit, factors) = fs.into_unit_and_powers();
+        for (factor, power) in factors {
+            if power == Natural::ONE {
+                fs_vec.push(factor.apply_map_into(|c| field_mod_p.unproject(c)));
+            } else {
+                return None;
+            }
+        }
+        let hensel_factorization =
+            Self::new_unchecked_mod_field(make_ring_mod, field_mod_p, Natural::ONE, h, fs_vec);
+        #[cfg(debug_assertions)]
+        hensel_factorization.check().unwrap();
+        Some(hensel_factorization)
     }
 
     // lift the factorization from mod p^k to mod p^(k+1)
@@ -365,29 +435,35 @@ impl<
         #[cfg(debug_assertions)]
         self.check().unwrap();
 
-        let t_poly = &self.t;
+        // It might be possible to update some data each lift so that this is much cheaper to compute and update per lift
+        let err_poly_mod_p = Self::compute_err_poly_mod_p_poly(
+            self.ring(),
+            &self.ring_mod_p,
+            &self.p,
+            &self.k,
+            &self.h,
+            &self.fs,
+            self.lc(),
+        );
+        let t_poly = &err_poly_mod_p;
         let t_coeffs = (0..self.h_deg)
-            .map(|i| self.polys_mod_p.coeff(t_poly, i).as_ref().clone())
+            .map(|i| {
+                self.ring_mod_p
+                    .polynomials()
+                    .coeff(t_poly, i)
+                    .as_ref()
+                    .clone()
+            })
             .collect::<Vec<_>>();
 
         // solve the linear system for g1, g2, g3
         let delta_sol = self
-            .mats_mod_p
+            .ring_mod_p
+            .matrix_structure()
             .apply_col(&self.lifting_mat_inv_mod_p, &t_coeffs);
 
         // extract the coefficients of g1, g2, g3 from the single vector solution to the linear system and add them to self.fs to lift the factorization from mod p^k to mod p^(k+1)
         let mut offset = 0;
-
-        let mut sum_t_thing = self.polys_mod_p.zero();
-        let fs_mod_p = self
-            .fs
-            .iter()
-            .map(|f| f.apply_map(|c| self.ring_mod_p.project_ref(c)))
-            .collect::<Vec<_>>();
-        let fs_prod = self.polys_mod_p.product(&fs_mod_p);
-        let fs_prod_excluding_each_mod_p = (0..self.fs_count)
-            .map(|i| self.polys_mod_p.try_divide(&fs_prod, &fs_mod_p[i]).unwrap())
-            .collect::<Vec<_>>();
 
         for i in 0..self.fs.len() {
             let f_deg = self.fs_deg[i];
@@ -400,19 +476,8 @@ impl<
             }
             let delta = delta_mod_p
                 .iter()
-                .map(|d| {
-                    self.ring_mod_p
-                        .unproject_ref(d)
-                })
+                .map(|d| self.ring_mod_p.unproject_ref(d))
                 .collect::<Vec<_>>();
-
-            self.polys_mod_p.add_mut(
-                &mut sum_t_thing,
-                &self.polys_mod_p.mul(
-                    &Polynomial::from_coeffs(delta_mod_p),
-                    &fs_prod_excluding_each_mod_p[i],
-                ),
-            );
 
             self.polys.add_mut(
                 self.fs.get_mut(i).unwrap(),
@@ -426,32 +491,150 @@ impl<
         self.k += Natural::ONE;
         self.pk = self.ring().mul(&self.pk, &self.p);
 
-        let new_t = self.polys_mod_p.sub(
-            &self.t,
-            &self
-                .polys_mod_p
-                .scalar_mul(&sum_t_thing, &self.ring_mod_p.project_ref(self.lc())),
+        #[cfg(debug_assertions)]
+        self.check().unwrap();
+    }
+
+    pub fn quadratic_lift(&mut self) {
+        assert_eq!(self.k, Natural::ONE);
+        /*
+        Start with
+            h = lc * f1 * f2 * f3 mod p
+        and aim for
+            h = lc * f1 * f2 * f3 mod q
+        where q = p^2  and lift
+            lc_inv_mod_p -> lc_inv_mod_q
+            lifting_mat_inv_mod_p -> lifting_mat_inv_mod_q
+         */
+
+        self.linear_lift();
+        debug_assert_eq!(self.k, Natural::TWO);
+
+        let q = self.pk.clone();
+        let ring_mod_q = (self.make_ring_mod)(&q);
+
+        /*
+        For lifting the lifting matrix inverse:
+            `mat_mod_q * mat_inv_mod_p = I` mod p
+            `mat_mod_q * mat_inv_mod_p = I + p * error` mod q for some `error` mod p
+        want `correction` mod p such that
+            `mat_mod_q * correction = -error` mod p so that
+        i.e.
+            `correction := -mat_mod_p_inv * error` mod p
+        so that
+            `mat_mod_q * (mat_inv_mod_p + p * correction) = I + p * error - p * error = I` mod q
+         */
+        let lifting_mat_mod_q = compute_lifting_mat_mod(&ring_mod_q, &self.fs);
+        let lifting_mat_inv_mod_p = self
+            .lifting_mat_inv_mod_p
+            .apply_map(|x| ring_mod_q.project(self.ring_mod_p.unproject_ref(x)));
+
+        let error_times_p = ring_mod_q
+            .matrix_structure()
+            .add(
+                &ring_mod_q
+                    .matrix_structure()
+                    .mul(&lifting_mat_mod_q, &lifting_mat_inv_mod_p)
+                    .unwrap(),
+                &ring_mod_q
+                    .matrix_structure()
+                    .neg(ring_mod_q.matrix_structure().ident(self.h_deg)),
+            )
+            .unwrap();
+
+        debug_assert!(
+            self.ring_mod_p.matrix_structure().equal(
+                &error_times_p.apply_map(|x| self.ring_mod_p.project(ring_mod_q.unproject_ref(x))),
+                &self
+                    .ring_mod_p
+                    .matrix_structure()
+                    .zero(self.h_deg, self.h_deg)
+            )
+        ); // error = 0 mod p
+        let error_mod_p = error_times_p.apply_map(|x| {
+            self.ring_mod_p.project(
+                self.ring()
+                    .try_divide(&ring_mod_q.unproject_ref(x), &self.p)
+                    .unwrap(),
+            )
+        });
+        debug_assert!(
+            ring_mod_q.matrix_structure().equal(
+                &ring_mod_q
+                    .matrix_structure()
+                    .mul(&lifting_mat_mod_q, &lifting_mat_inv_mod_p)
+                    .unwrap(),
+                &ring_mod_q
+                    .matrix_structure()
+                    .add(
+                        &ring_mod_q.matrix_structure().ident(self.h_deg),
+                        &error_times_p
+                    )
+                    .unwrap()
+            )
+        );
+        let correction_mod_p = self.ring_mod_p.matrix_structure().neg(
+            self.ring_mod_p
+                .matrix_structure()
+                .mul(&self.lifting_mat_inv_mod_p, &error_mod_p)
+                .unwrap(),
+        );
+        let lifting_mat_inv_mod_q = ring_mod_q
+            .matrix_structure()
+            .add(
+                &lifting_mat_inv_mod_p,
+                &correction_mod_p.apply_map_into(|x| {
+                    ring_mod_q.project(self.ring().mul(&self.p, &self.ring_mod_p.unproject(x)))
+                }),
+            )
+            .unwrap();
+
+        /*
+        For lifting the lc inverse:
+            `lc * lc_inv_mod_p = 1` mod p
+            `lc * lc_inv_mod_p = 1 + p * error` mod q for some `error` mod p
+        want `correction` mod p such that
+            `lc * correction = -error` mod p so that
+        i.e.
+            `correction := -lc_inv_mod_p * error` mod p
+        so that
+            `lc * (lc_inv_mod_p + p * correction) = 1 + p * error - p * error = 1` mod q
+         */
+        let lc = self.lc();
+        let lc_mod_q = ring_mod_q.project_ref(lc);
+        let lc_inv_mod_p = ring_mod_q.project(self.ring_mod_p.unproject_ref(&self.lc_inv_mod_p));
+        let error_times_p =
+            ring_mod_q.sub(&ring_mod_q.mul(&lc_mod_q, &lc_inv_mod_p), &ring_mod_q.one());
+        debug_assert!(
+            self.ring_mod_p.is_zero(
+                &self
+                    .ring_mod_p
+                    .project(ring_mod_q.unproject_ref(&error_times_p))
+            )
+        ); // error = 0 mod p
+        let error_mod_p = self.ring_mod_p.project(
+            self.ring()
+                .try_divide(&ring_mod_q.unproject(error_times_p), &self.p)
+                .unwrap(),
+        );
+        let correction_mod_p = self
+            .ring_mod_p
+            .neg(&self.ring_mod_p.mul(&self.lc_inv_mod_p, &error_mod_p));
+        let lc_inv_mod_q = ring_mod_q.add(
+            &lc_inv_mod_p,
+            &ring_mod_q.project(
+                self.ring()
+                    .mul(&self.p, &self.ring_mod_p.unproject(correction_mod_p)),
+            ),
         );
 
-        self.t = Self::compute_t_poly(
-            self.ring(),
-            &self.ring_mod_p,
-            &self.polys_mod_p,
-            &self.p,
-            &self.k,
-            &self.h,
-            &self.fs,
-            self.lc(),
-            &self.lc_inv_mod_p,
-        );
-
-        println!(
-            "{} {:?} {:?} {:?}",
-            self.k,
-            self.t,
-            new_t,
-            self.polys_mod_p.equal(&self.t, &new_t)
-        );
+        self.pk = q.clone();
+        self.p = q;
+        self.k = Natural::ONE;
+        self.ring_mod_p = ring_mod_q;
+        self.lifting_mat_mod_p = lifting_mat_mod_q;
+        self.lifting_mat_inv_mod_p = lifting_mat_inv_mod_q;
+        self.lc_inv_mod_p = lc_inv_mod_q;
 
         #[cfg(debug_assertions)]
         self.check().unwrap();
@@ -460,66 +643,6 @@ impl<
     pub fn factors(&self) -> &Vec<Polynomial<Ring::Elem>> {
         &self.fs
     }
-
-    /// If the polynomial is squarefree return a hensel factorization, otherwise return None
-    pub fn from_mod_p_factorization<
-        RingModPB: BorrowedStructure<RingModP>,
-        RingModPPolyB: BorrowedStructure<PolynomialStructure<RingModP, RingModPB>>,
-        NatB: BorrowedStructure<NaturalCanonicalStructure>,
-    >(
-        fs_structure: &FactoringStructure<
-            PolynomialStructure<RingModP, RingModPB>,
-            RingModPPolyB,
-            NaturalCanonicalStructure,
-            NatB,
-        >,
-        fs: NonZeroFactored<Polynomial<RingModP::Elem>, Natural>,
-        h: Polynomial<Ring::Elem>,
-    ) -> Option<Self> {
-        let poly_ring_mod = fs_structure.objects().clone();
-        let ring_mod = poly_ring_mod.coeff_ring().clone();
-        let mut fs_vec = vec![];
-        let (_unit, factors) = fs.into_unit_and_powers();
-        for (factor, power) in factors {
-            if power == Natural::ONE {
-                fs_vec.push(factor.apply_map_into(|c| ring_mod.unproject(c)));
-            } else {
-                return None;
-            }
-        }
-        let hensel_factorization = Self::new_unchecked(ring_mod, Natural::ONE, h, fs_vec);
-        #[cfg(debug_assertions)]
-        hensel_factorization.check().unwrap();
-        Some(hensel_factorization)
-    }
-
-    pub fn from_mod_p_factorization_unchecked<
-        RingModPB: BorrowedStructure<RingModP>,
-        RingModPPolyB: BorrowedStructure<PolynomialStructure<RingModP, RingModPB>>,
-        NatB: BorrowedStructure<NaturalCanonicalStructure>,
-    >(
-        fs_structure: &FactoringStructure<
-            PolynomialStructure<RingModP, RingModPB>,
-            RingModPPolyB,
-            NaturalCanonicalStructure,
-            NatB,
-        >,
-        fs: NonZeroFactored<Polynomial<RingModP::Elem>, Natural>,
-        h: Polynomial<Ring::Elem>,
-    ) -> Self {
-        let poly_ring_mod = fs_structure.objects().clone();
-        let ring_mod = poly_ring_mod.coeff_ring().clone();
-        let mut fs_vec = vec![];
-        let (_unit, factors) = fs.into_unit_and_powers();
-        for (factor, power) in factors {
-            debug_assert_eq!(power, Natural::ONE);
-            fs_vec.push(factor.apply_map_into(|c| ring_mod.unproject(c)));
-        }
-        let hensel_factorization = Self::new_unchecked(ring_mod, Natural::ONE, h, fs_vec);
-        #[cfg(debug_assertions)]
-        hensel_factorization.check().unwrap();
-        hensel_factorization
-    }
 }
 
 #[cfg(test)]
@@ -527,7 +650,7 @@ mod tests {
     use super::*;
     use crate::structure::{
         MetaEuclideanDivisionSignature, MetaMultiplicationSignature,
-        MetaMultiplicativeMonoidSignature,
+        MetaMultiplicativeMonoidSignature, RingToQuotientFieldSignature,
     };
     use algebraeon_nzq::*;
     use algebraeon_sets::structure::MetaType;
@@ -556,13 +679,21 @@ mod tests {
         //h and fs are monic
 
         //set up bezout coefficients for hensel lifting the factorization modulo 25, 125, ...
-        let mut hensel_fact = HenselFactorization::new_unchecked(
-            Integer::structure()
-                .into_quotient_field(Integer::from(5))
-                .unwrap(),
+        let mod5 = Integer::structure()
+            .into_quotient_field(Integer::from(5))
+            .unwrap();
+
+        let fs = vec![f1, f2, f3];
+        let mut hensel_fact = HenselFactorization::new_unchecked_mod_field(
+            |x| {
+                Integer::structure()
+                    .into_euclidean_quotient_ring(x.clone())
+                    .unwrap()
+            },
+            mod5,
             Natural::from(1u8),
             h.clone(),
-            vec![f1, f2, f3],
+            fs,
         );
 
         hensel_fact.check().unwrap();
@@ -575,7 +706,7 @@ mod tests {
                 &Polynomial::constant(Polynomial::leading_coeff(&h).unwrap().clone()),
                 &Polynomial::product(hensel_fact.factors()),
             )
-            .apply_map(|c| Integer::rem(c, &hensel_fact.modulus()));
+            .apply_map(|c| Integer::rem(c, hensel_fact.modulus()));
             println!("{:?} {:?}", lifted_product, h);
             assert_eq!(lifted_product, h);
         }

@@ -17,4 +17,4 @@ algebraeon-macros = { version = "=0.0.17", path = "../macros", default-features 
 algebraeon-nzq = { version = "=0.0.17", path = "../nzq", default-features = false }
 algebraeon-sets = { version = "=0.0.17", path = "../sets", default-features = false }
 itertools = "0.14.0"
-rayon = "1.7.0"
+rayon = "1.11.0"

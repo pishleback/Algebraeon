@@ -1236,17 +1236,21 @@ mod structure_tests {
                 0.into()
             )
         );
-        println!("c*c = {}", ring.mul(&c, &c));
-        assert_eq!(
-            ring.mul(&c, &c).truncate(&6.into()).digits(),
-            (
-                vec![1, 2, 2, 0, 2, 0]
-                    .into_iter()
-                    .map(|d| Natural::from(d as u8))
-                    .collect(),
-                0.into()
-            )
-        );
+        // This one is a bit slow in debug due to lots of debug asserts in integer polynomial factoring
+        #[cfg(not(debug_assertions))]
+        {
+            println!("c*c = {}", ring.mul(&c, &c));
+            assert_eq!(
+                ring.mul(&c, &c).truncate(&6.into()).digits(),
+                (
+                    vec![1, 2, 2, 0, 2, 0]
+                        .into_iter()
+                        .map(|d| Natural::from(d as u8))
+                        .collect(),
+                    0.into()
+                )
+            );
+        }
         println!("a*e = {}", ring.mul(&a, &e));
         assert_eq!(
             ring.mul(&a, &e).truncate(&6.into()).digits(),

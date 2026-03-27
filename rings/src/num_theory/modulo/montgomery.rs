@@ -60,13 +60,18 @@ pub struct MontgomeryModuloOddStructure {
     r_pow: u32,
     n_inv_neg_mod_r: u64,
     r_squared_mod_n: u64,
+    r_cubed_mod_n: u64,
 }
 
 impl MontgomeryModuloOddStructure {
+    pub const fn max_modulus() -> u64 {
+        1u64 << 31
+    }
+
     pub fn new_unchecked(n: u64) -> Self {
         debug_assert_eq!(n % 2, 1);
         // Need a bound such that all operations remain in u64
-        debug_assert!(n < (1u64 << 31));
+        debug_assert!(n < Self::max_modulus());
         let r = n.next_power_of_two();
         let r_mod_n = r % n;
         let mod_r_mask = r - 1;
@@ -79,6 +84,8 @@ impl MontgomeryModuloOddStructure {
         debug_assert_eq!((n * n_inv_neg_mod_r) & (r - 1), r - 1); // n * n_inv_neg_mod_r == -1 mod r
         let r_squared_mod_n = (r_mod_n * r_mod_n) % n;
         debug_assert_eq!((r * r) % n, r_squared_mod_n);
+        let r_cubed_mod_n = (r_squared_mod_n * r_mod_n) % n;
+        debug_assert_eq!(((r * r) % n * r) % n, r_cubed_mod_n);
         Self {
             n,
             r,
@@ -87,6 +94,7 @@ impl MontgomeryModuloOddStructure {
             r_pow,
             n_inv_neg_mod_r,
             r_squared_mod_n,
+            r_cubed_mod_n,
         }
     }
 
@@ -240,6 +248,14 @@ impl LeftDistributiveMultiplicationOverAddition for MontgomeryModuloOddStructure
 
 impl MultiplicativeAbsorptionMonoidSignature for MontgomeryModuloOddStructure {}
 
+impl TryReciprocalSignature for MontgomeryModuloOddStructure {
+    fn try_reciprocal(&self, a: &Self::Elem) -> Option<Self::Elem> {
+        let b = self.montgomery_reduction(inv_mod_n_u64(*a, self.n)? * self.r_cubed_mod_n);
+        debug_assert!(self.equal(&self.mul(a, &b), &self.one()));
+        Some(b)
+    }
+}
+
 impl SemiRingSignature for MontgomeryModuloOddStructure {}
 
 impl RingSignature for MontgomeryModuloOddStructure {}
@@ -292,20 +308,20 @@ impl FiniteSetSignature for MontgomeryModuloOddStructure {
 #[derive(Debug, Clone)]
 pub struct MontgomeryModuloOddPrimeStructure {
     sup: MontgomeryModuloOddStructure,
-    r_cubed_mod_n: u64,
     inv_cache: Option<Vec<u64>>,
 }
 
 impl MontgomeryModuloOddPrimeStructure {
+    pub const fn max_modulus() -> u64 {
+        MontgomeryModuloOddStructure::max_modulus()
+    }
+
     pub fn new_unchecked(n: u64) -> Self {
         let sup = MontgomeryModuloOddStructure::new_unchecked(n);
         #[cfg(debug_assertions)]
         debug_assert!(is_prime_nat(&Natural::from(n)));
-        let r_cubed_mod_n = (sup.r_squared_mod_n * sup.r_mod_n) % n;
-        debug_assert_eq!((sup.r * sup.r * sup.r) % n, r_cubed_mod_n);
         Self {
             sup,
-            r_cubed_mod_n,
             inv_cache: None,
         }
     }
@@ -469,7 +485,8 @@ impl TryReciprocalSignature for MontgomeryModuloOddPrimeStructure {
                 Some(cache[*a as usize])
             }
         } else {
-            let b = self.montgomery_reduction(inv_mod_n_u64(*a, self.sup.n)? * self.r_cubed_mod_n);
+            let b =
+                self.montgomery_reduction(inv_mod_n_u64(*a, self.sup.n)? * self.sup.r_cubed_mod_n);
             debug_assert!(self.equal(&self.mul(a, &b), &self.one()));
             Some(b)
         }

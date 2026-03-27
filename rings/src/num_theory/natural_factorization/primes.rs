@@ -61,7 +61,9 @@ pub fn miller_rabin_primality_test(
     } else if n % Natural::TWO == Natural::ZERO {
         Ok(PrimalityTestResult::Composite)
     } else {
-        let mod_n = Integer::structure().into_quotient_ring(n.into()).unwrap();
+        let mod_n = Integer::structure()
+            .into_euclidean_quotient_ring(n.into())
+            .unwrap();
         debug_assert!(n % Natural::TWO == Natural::ONE); // n is odd
         for a in &a_list {
             debug_assert!(Natural::TWO <= *a);

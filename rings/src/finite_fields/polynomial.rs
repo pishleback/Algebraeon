@@ -358,7 +358,6 @@ where
             );
             //g is a possible non-trivial factor
             let g = self.gcd(&h, &f);
-            // println!("g = {}", g);
             let g_deg = self.degree(&g).unwrap();
             if g_deg != 0 && g_deg != f_deg {
                 let f_over_g = self.try_divide(&f, &g).unwrap();
@@ -419,7 +418,10 @@ where
             let n = self.poly_ring.degree(poly).unwrap();
             debug_assert!(n >= 1);
 
-            let mod_poly_ring = self.poly_ring.quotient_ring(poly.clone()).unwrap();
+            let mod_poly_ring = self
+                .poly_ring
+                .euclidean_quotient_ring(poly.clone())
+                .unwrap();
             let mat_structure = MatrixStructure::new(self.poly_ring.coeff_ring().clone());
             let xq = mod_poly_ring.nat_pow(&self.poly_ring.var(), &q);
             // column c is (x^c)^q mod poly as a length n column vector of coefficients
@@ -558,15 +560,6 @@ where
 
             let mut to_factor = vec![ddf.polynomial.clone()];
             loop {
-                println!(
-                    "{} {} {:?}",
-                    p,
-                    d,
-                    to_factor
-                        .iter()
-                        .map(|u| self.poly_ring.degree(u).unwrap())
-                        .collect::<Vec<_>>()
-                );
                 // Any polynomial in to_factor of degree d is irreducible.
                 to_factor = to_factor
                     .into_iter()
@@ -604,7 +597,7 @@ where
                 );
                 let poly_mod_f = self
                     .poly_ring
-                    .quotient_ring(ddf.polynomial.clone())
+                    .euclidean_quotient_ring(ddf.polynomial.clone())
                     .unwrap();
                 let g = if p == Natural::TWO {
                     // when char = 2 use h + h^2 + h^4 + ... + h^{2^{kd-1}}
