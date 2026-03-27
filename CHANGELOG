@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
  - Updated macro for generating metatypes to handle generics in trait definitions.
  - Added structure types for quotient sets.
  - Renamed `SetSignature::Set` -> `SetSignature::Elem`.
+ - Added Montgomery form for modular arithmetic modulo odd integers.
 
 ## [0.0.17] - 2026-03-06
 
