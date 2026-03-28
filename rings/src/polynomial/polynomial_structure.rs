@@ -239,7 +239,7 @@ impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS
             coeffs.push(b.coeffs[i].borrow().to_owned());
             i += 1;
         }
-        Polynomial::from_coeffs(coeffs)
+        self.reduce_poly(Polynomial::from_coeffs(coeffs))
     }
 
     pub fn mul_naive(

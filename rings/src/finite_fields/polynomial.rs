@@ -1,7 +1,6 @@
 use crate::{matrix::*, polynomial::*, structure::*};
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
-use itertools::Itertools;
 
 // Useful: https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields
 /*
@@ -309,62 +308,151 @@ impl<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> PolynomialStructure<F
 where
     PolynomialStructure<FS, FSB>: SetSignature<Elem = Polynomial<FS::Elem>>,
 {
-    fn find_factor_by_berlekamps_algorithm(
+    // fn find_factor_by_berlekamps_algorithm(
+    //     &self,
+    //     f: Polynomial<FS::Elem>,
+    // ) -> FindFactorResult<Polynomial<FS::Elem>> {
+    //     debug_assert!(self.is_squarefree(&f));
+
+    //     let f_deg = self.degree(&f).unwrap();
+    //     let all_elems = self.coeff_ring().list_all_elements();
+    //     let q = all_elems.len();
+
+    //     let row_polys = (0..f_deg)
+    //         .map(|i| {
+    //             self.rem(
+    //                 &self.add(&self.var_pow(i * q), &self.neg(&self.var_pow(i))),
+    //                 &f,
+    //             )
+    //         })
+    //         .collect::<Vec<_>>();
+    //     let mat = Matrix::construct(f_deg, f_deg, |i, j| {
+    //         self.coeff(&row_polys[i], j).into_owned()
+    //     });
+    //     // mat.pprint();
+    //     //the column kernel gives a basis of berlekamp subalgebra - all polynomials g such that g^q=g
+    //     let mat_struct = MatrixStructure::<FS, _>::new(self.coeff_ring());
+    //     let ker = mat_struct.row_kernel(mat);
+    //     // ker.pprint();
+    //     let ker_rank = ker.rank();
+    //     let ker_basis = ker
+    //         .basis()
+    //         .into_iter()
+    //         .map(|col| Polynomial::from_coeffs((0..f_deg).map(|c| col[c].clone()).collect()))
+    //         .collect::<Vec<_>>();
+
+    //     for berlekamp_subspace_coeffs in (0..ker_rank)
+    //         .map(|_i| all_elems.clone().into_iter())
+    //         .multi_cartesian_product()
+    //     {
+    //         let h = self.sum(
+    //             &(0..ker_rank)
+    //                 .map(|i| {
+    //                     self.mul(
+    //                         &Polynomial::constant(berlekamp_subspace_coeffs[i].clone()),
+    //                         &ker_basis[i],
+    //                     )
+    //                 })
+    //                 .collect::<Vec<_>>(),
+    //         );
+    //         //g is a possible non-trivial factor
+    //         let g = self.gcd(&h, &f);
+    //         let g_deg = self.degree(&g).unwrap();
+    //         if g_deg != 0 && g_deg != f_deg {
+    //             let f_over_g = self.try_divide(&f, &g).unwrap();
+    //             return FindFactorResult::Composite(g, f_over_g);
+    //         }
+    //     }
+    //     FindFactorResult::Irreducible
+    // }
+
+    fn factorize_monic_squarefree_by_berlekamps(
         &self,
-        f: Polynomial<FS::Elem>,
-    ) -> FindFactorResult<Polynomial<FS::Elem>> {
-        debug_assert!(self.is_squarefree(&f));
+        f: &Polynomial<FS::Elem>,
+    ) -> Factored<Polynomial<FS::Elem>, Natural> {
+        debug_assert!(self.is_monic(f));
+        debug_assert!(self.is_squarefree(f));
 
-        let f_deg = self.degree(&f).unwrap();
-        let all_elems = self.coeff_ring().list_all_elements();
-        let q = all_elems.len();
+        let n = self.degree(f).unwrap();
+        let q = self.coeff_ring().size();
 
-        let row_polys = (0..f_deg)
-            .map(|i| {
-                self.rem(
-                    &self.add(&self.var_pow(i * q), &self.neg(&self.var_pow(i))),
-                    &f,
-                )
-            })
-            .collect::<Vec<_>>();
-        let mat = Matrix::construct(f_deg, f_deg, |i, j| {
-            self.coeff(&row_polys[i], j).into_owned()
-        });
-        // mat.pprint();
-        //the column kernel gives a basis of berlekamp subalgebra - all polynomials g such that g^q=g
-        let mat_struct = MatrixStructure::<FS, _>::new(self.coeff_ring());
-        let ker = mat_struct.row_kernel(mat);
-        // ker.pprint();
-        let ker_rank = ker.rank();
-        let ker_basis = ker
-            .basis()
-            .into_iter()
-            .map(|col| Polynomial::from_coeffs((0..f_deg).map(|c| col[c].clone()).collect()))
-            .collect::<Vec<_>>();
-
-        for berlekamp_subspace_coeffs in (0..ker_rank)
-            .map(|_i| all_elems.clone().into_iter())
-            .multi_cartesian_product()
-        {
-            let h = self.sum(
-                &(0..ker_rank)
-                    .map(|i| {
-                        self.mul(
-                            &Polynomial::constant(berlekamp_subspace_coeffs[i].clone()),
-                            &ker_basis[i],
-                        )
-                    })
-                    .collect::<Vec<_>>(),
-            );
-            //g is a possible non-trivial factor
-            let g = self.gcd(&h, &f);
-            let g_deg = self.degree(&g).unwrap();
-            if g_deg != 0 && g_deg != f_deg {
-                let f_over_g = self.try_divide(&f, &g).unwrap();
-                return FindFactorResult::Composite(g, f_over_g);
+        // 1, x^q, x^2q, x^3q, ..., x^dq
+        let x_pows = {
+            let mut x_pow = self.one();
+            let mut row_polys = vec![x_pow.clone()];
+            for _ in 1..n {
+                x_pow = self.rem(&self.mul_var_pow(&x_pow, q), f);
+                row_polys.push(x_pow.clone());
             }
+            row_polys
+        };
+
+        // x^qi-x^i as a matrix of polynomial coeffs
+        let mat = Matrix::construct(n, n, |i, j| {
+            let mut x = self.coeff(&x_pows[i], j).into_owned();
+            let neg_one = self.coeff_ring().neg(&self.coeff_ring().one());
+            if i == j {
+                self.coeff_ring().add_mut(&mut x, &neg_one);
+            }
+            x
+        });
+
+        // loop over a basis for the kernel of mat
+        let (_, u_mat, _, pivots) = self
+            .coeff_ring()
+            .matrix_structure()
+            .row_reduced_hermite_algorithm(mat);
+
+        let num_factors = n - pivots.len(); // dim of kernel = num irreducible factors of f
+
+        let mut factored = self.factorizations().one();
+        let mut to_factor: Vec<Polynomial<FS::Elem>> = vec![f.clone()];
+        let mut to_factor_next: Vec<Polynomial<FS::Elem>> = vec![];
+        let mut linear_factor_count = 0;
+        for i in pivots.len()..n {
+            let ker_basis_vec = Polynomial::<FS::Elem>::from_coeffs(u_mat.get_row(i));
+            if num_factors == to_factor.len() + linear_factor_count {
+                // we've found all the irreducible factors
+                break;
+            }
+            for f in to_factor {
+                for x in self.coeff_ring().generate_all_elements() {
+                    let g = self
+                        .factorize_monic(&self.subresultant_gcd(
+                            self.add(&ker_basis_vec, &Polynomial::constant(x)),
+                            f.clone(),
+                        ))
+                        .unwrap()
+                        .monic;
+                    debug_assert!(self.divisible(&f, &g));
+                    debug_assert!(self.is_monic(&g));
+                    match self.degree(&g).unwrap() {
+                        0 => {}
+                        1 => {
+                            linear_factor_count += 1;
+                            self.factorizations().mul_mut(
+                                &mut factored,
+                                &self.factorizations().new_irreducible_unchecked(g),
+                            );
+                        }
+                        _ => {
+                            to_factor_next.push(g);
+                        }
+                    }
+                }
+            }
+            to_factor = to_factor_next;
+            to_factor_next = vec![];
         }
-        FindFactorResult::Irreducible
+        debug_assert_eq!(num_factors, to_factor.len() + linear_factor_count);
+        for f in to_factor {
+            self.factorizations().mul_mut(
+                &mut factored,
+                &self.factorizations().new_irreducible_unchecked(f),
+            );
+        }
+        debug_assert!(self.equal(&self.factorizations().expand(&factored), f));
+        factored
     }
 }
 
@@ -386,9 +474,9 @@ where
             self.poly_ring.factorizations().mul_mut(
                 &mut factors,
                 &self.poly_ring.factorizations().pow(
-                    &factorize_by_find_factor(&self.poly_ring, sqfree_poly.clone(), &|f| {
-                        self.poly_ring.find_factor_by_berlekamps_algorithm(f)
-                    }),
+                    &self
+                        .poly_ring
+                        .factorize_monic_squarefree_by_berlekamps(sqfree_poly),
                     power,
                 ),
             );
