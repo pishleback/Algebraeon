@@ -9,7 +9,7 @@ pub fn root_sum_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Polyno
     let p = p.apply_map(|c| MultiPolynomial::constant(c.clone()));
     let q = q.apply_map(|c| MultiPolynomial::constant(c.clone()));
     let r = Integer::structure()
-        .multivariable_polynomial_ring()
+        .multivariable_polynomials()
         .polynomials()
         .evaluate(
             &q,
@@ -21,7 +21,7 @@ pub fn root_sum_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Polyno
         .expand(&x);
 
     let root_sum_poly = Integer::structure()
-        .multivariable_polynomial_ring()
+        .multivariable_polynomials()
         .polynomials()
         .resultant(p.clone(), r.clone())
         .expand(&z)
@@ -35,7 +35,7 @@ pub fn root_product_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Po
 
     let p = p.apply_map(|c| MultiPolynomial::constant(c.clone()));
     let q = Integer::structure()
-        .multivariable_polynomial_ring()
+        .multivariable_polynomials()
         .polynomials()
         .evaluate(
             &q.apply_map(|c| MultiPolynomial::constant(c.clone())),
@@ -45,7 +45,7 @@ pub fn root_product_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Po
     //x ** q.degree() * q(t * x ** -1)
 
     let root_prod_poly = Integer::structure()
-        .multivariable_polynomial_ring()
+        .multivariable_polynomials()
         .polynomials()
         .resultant(p.clone(), r.clone())
         .expand(&x)
