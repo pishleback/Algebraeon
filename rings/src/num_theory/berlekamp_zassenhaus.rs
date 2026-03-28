@@ -110,10 +110,14 @@ impl<'a> StateAtGoodPrime<'a> {
             if !fs.is_squarefree() {
                 return None;
             }
-            let fs = fs
-                .factorize_distinct_degree()
-                .factorize_cantor_zassenhaus()
-                .unwrap_nonzero();
+
+            let fs = if p < 100 {
+                fs.factorize_berlekamps()
+            } else {
+                fs.factorize_distinct_degree().factorize_cantor_zassenhaus()
+            }
+            .unwrap_nonzero();
+
             let hensel_factorization = HenselFactorization::from_mod_field_factorization(
                 |q| {
                     MontgomeryModuloOddStructure::new_unchecked(q.try_into().expect(
