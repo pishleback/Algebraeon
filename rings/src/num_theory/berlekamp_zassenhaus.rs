@@ -111,7 +111,8 @@ impl<'a> StateAtGoodPrime<'a> {
                 return None;
             }
 
-            let fs = if p < 100 {
+            // not sure at what p it makes most sense to switch algorithm?
+            let fs = if p < 50 { 
                 fs.factorize_berlekamps()
             } else {
                 fs.factorize_distinct_degree().factorize_cantor_zassenhaus()
