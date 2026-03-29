@@ -36,11 +36,11 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> MultiPolynomialStructure<R
 }
 
 pub trait RingToMultiPolynomialRingSignature: RingEqSignature {
-    fn multivariable_polynomial_ring(&self) -> MultiPolynomialStructure<Self, &Self> {
+    fn multivariable_polynomials(&self) -> MultiPolynomialStructure<Self, &Self> {
         MultiPolynomialStructure::new(self)
     }
 
-    fn into_multivariable_polynomial_ring(self) -> MultiPolynomialStructure<Self, Self> {
+    fn into_multivariable_polynomials(self) -> MultiPolynomialStructure<Self, Self> {
         MultiPolynomialStructure::new(self)
     }
 }

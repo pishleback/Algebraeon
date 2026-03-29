@@ -145,8 +145,7 @@ pub fn as_poly_expr(
     let target_min_poly_factored = gen_anf_poly.factor(&target_min_poly);
     let mut generator = generator.clone();
     for (factor, _factor_mult) in target_min_poly_factored.into_powers().unwrap() {
-        //the factor should be monic
-        debug_assert!(gen_anf.equal(gen_anf_poly.leading_coeff(&factor).unwrap(), &gen_anf.one()));
+        debug_assert!(gen_anf_poly.is_monic(&factor));
         if gen_anf_poly.degree(&factor).unwrap() == 1 {
             let possible_embedded_target = gen_anf.neg(gen_anf_poly.coeff(&factor, 0).as_ref());
             if generator.apply_poly(&possible_embedded_target) == *target {

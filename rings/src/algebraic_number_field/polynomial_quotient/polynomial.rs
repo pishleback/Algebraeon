@@ -87,7 +87,10 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
                         + ( symmetric polynomial in σ₀(θ) σ₁(θ) σ₂(θ) ) x⁶
                 The elementary symmetric polynomials in σ₀(θ) σ₁(θ) σ₂(θ) are (up to sign flips) the (rational) coefficients of the minimal polynomial of θ
     */
-    pub fn polynomial_norm(&self, f: &Polynomial<Polynomial<Rational>>) -> Polynomial<Rational> {
+    pub fn polynomial_norm_by_symmetric_polynomials(
+        &self,
+        f: &Polynomial<Polynomial<Rational>>,
+    ) -> Polynomial<Rational> {
         // println!("f = {}", f);
         // panic!();
 
@@ -102,7 +105,7 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
         // println!("embeddings = {:?}", embedding_vars);
 
         let rational_poly_multipoly_structure = Rational::structure()
-            .into_multivariable_polynomial_ring()
+            .into_multivariable_polynomials()
             .into_polynomials();
 
         let norm_f_sym = rational_poly_multipoly_structure.product(
@@ -161,79 +164,96 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
         norm_f
     }
 
-    pub fn factor_primitive_sqfree_by_symmetric_root_polynomials(
+    pub fn factor_monic_sqfree_by_polynomial_norm(
         &self,
         p: &<Self as SetSignature>::Elem,
     ) -> Factored<<Self as SetSignature>::Elem, Natural> {
-        //https://www.cse.iitk.ac.in/users/nitin/courses/scribed2-WS2011-12.pdf
-
-        let rat_poly_poly_poly = Rational::structure()
-            .into_polynomials()
-            .into_polynomials()
-            .into_polynomials();
+        // See
+        // https://www.cse.iitk.ac.in/users/nitin/courses/scribed2-WS2011-12.pdf
+        // or
+        // Cohen H - A course in computational number theory, Algorithm 3.6.4
 
         debug_assert!(!self.is_zero(p));
-        //Let K = Q[θ] be the number field over which we are factoring
+        debug_assert!(self.is_monic(p));
+        debug_assert!(self.is_squarefree(p));
+
+        // Let K = Q[θ] be the number field over which we are factoring
         let anf = self.coeff_ring();
         let theta = anf.generator();
-
-        // println!("sqfree factor");
-        // println!("p = {}", p);
 
         let mut k: usize = 0;
         let mut t;
         loop {
-            // println!("k = {}", k);
-            //q(x) = p(x - kθ)
-            let q = rat_poly_poly_poly.evaluate(
-                &p.apply_map(|c| Polynomial::constant(c.clone())),
-                &Polynomial::from_coeffs(vec![
-                    anf.mul(&anf.from_int(-Integer::from(k)), &theta),
-                    anf.one(),
-                ]),
-            );
-            // println!("q = {}", q);
-            t = self.polynomial_norm(&q);
-            // println!("t = {}", t);
-
+            #[cfg(debug_assertions)]
+            let t_dbg = {
+                // q(x) = p(x - kθ)
+                let q = anf.polynomials().compose(
+                    p,
+                    &Polynomial::from_coeffs(vec![
+                        anf.mul(&anf.from_int(-Integer::from(k)), &theta),
+                        anf.one(),
+                    ]),
+                );
+                self.polynomial_norm_by_symmetric_polynomials(&q)
+            };
+            t = {
+                // q(x, y) = p(x - ky) in Q[y][x]
+                let q = Rational::structure().polynomials().polynomials().compose(
+                    p,
+                    &Polynomial::from_coeffs(vec![
+                        Polynomial::from_coeffs(vec![Rational::ZERO, Rational::ONE]),
+                        Polynomial::from_coeffs(vec![-Rational::from(k)]),
+                    ]),
+                );
+                // N(q(x)) = res_y(min_poly(theta)_y, q(x, y))
+                Rational::structure().polynomials().polynomials().resultant(
+                    anf.modulus()
+                        .as_ref()
+                        .apply_map(|c| Polynomial::constant(c.clone())),
+                    q,
+                )
+            };
+            #[cfg(debug_assertions)]
+            assert_eq!(t, t_dbg);
             if !Polynomial::resultant(&t, &t.clone().derivative()).is_zero() {
                 break;
             }
-
             k += 1;
         }
         // println!("t = {} k = {}", t, k);
-        // println!("t = {}", t.factor().unwrap());
+        // println!("t = {:?}", t.factor().unwrap_nonzero());
         // println!("{:?}", Polynomial::euclidean_gcd(t.clone(), t.clone().derivative()));
 
-        //found k such that t(x) = N(q(x)) = N(p(x - kθ)) is now squarefree
-        //the factors of p are gcd(p(x), t_i(x + kθ)) for each squarefree factor t_i of t
-
+        // We've found k such that t(x) = N(q(x)) = N(p(x - kθ)) is squarefree
+        // The factors of p are gcd(p(x), t_i(x + kθ)) for each squarefree factor t_i of t
         let mut p_factors = vec![];
         for (ti, ti_pow) in t.factor().into_powers().unwrap() {
-            // println!("ti = {}", ti);
             debug_assert_eq!(ti_pow, Natural::ONE);
-            p_factors.push(self.euclidean_gcd(
-                p.clone(),
-                rat_poly_poly_poly.evaluate(
-                    &ti.apply_map(|c| Polynomial::constant(Polynomial::constant(c.clone()))),
-                    &Polynomial::from_coeffs(vec![
-                        anf.mul(&anf.from_int(Integer::from(k)), &theta),
-                        anf.one(),
-                    ]),
-                ),
-            ));
+            p_factors.push(
+                self.factorize_monic(&self.subresultant_gcd(
+                    p.clone(),
+                    anf.polynomials().polynomials().evaluate(
+                        &ti.apply_map(|c| Polynomial::constant(Polynomial::constant(c.clone()))),
+                        &Polynomial::from_coeffs(vec![
+                            anf.mul(&anf.from_int(Integer::from(k)), &theta),
+                            anf.one(),
+                        ]),
+                    ),
+                ))
+                .unwrap()
+                .into_monic_part(),
+            );
         }
-
         // println!("p_factors = {:?}", p_factors);
-
-        self.factorizations().new_unit_and_powers_unchecked(
+        let factored = self.factorizations().new_unit_and_powers_unchecked(
             self.one(),
             p_factors
                 .into_iter()
                 .map(|p_factor| (p_factor, Natural::ONE))
                 .collect(),
-        )
+        );
+        debug_assert!(self.equal(p, &self.factorizations().expand(&factored)));
+        factored
     }
 
     pub fn factor_primitive_sqfree_by_reduced_ring(
@@ -601,10 +621,9 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>> Fact
                 &|f| {
                     self.factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(f, &|a| {
                         self.factorize_rational_factorize_first(&a, &|a| {
-                            // Unsure which is faster. One might be better in different cases.
-                            self.factor_primitive_sqfree_by_reduced_ring(a)
-                            // OR
-                            // self.factor_primitive_sqfree_by_symmetric_root_polynomials(a)
+                            self.factor_monic_sqfree_by_polynomial_norm(a)
+                            // This would also work but is slower
+                            // self.factor_primitive_sqfree_by_reduced_ring(a)
                         })
                     })
                 },
