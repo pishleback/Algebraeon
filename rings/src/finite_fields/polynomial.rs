@@ -79,6 +79,10 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MonicFactored<FS, FSB> {
         &self.monic
     }
 
+    pub fn into_monic_part(self) -> Polynomial<FS::Elem> {
+        self.monic
+    }
+
     pub fn into_polynomial(self) -> Polynomial<FS::Elem> {
         self.poly_ring
             .mul(&Polynomial::constant(self.unit), &self.monic)

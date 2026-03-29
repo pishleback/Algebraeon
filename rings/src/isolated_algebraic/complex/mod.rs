@@ -453,7 +453,6 @@ impl ComplexAlgebraicRoot {
                         }
                         ans = add_box_rat((&ans.0, &ans.1, &ans.2, &ans.3), c);
                     }
-
                     ans
                 }),
             )

@@ -69,7 +69,7 @@ for x in anf.all_roots(&f) {
         "{}",
         x.apply_map_into(MultiPolynomial::constant).evaluate(
             &Rational::structure()
-                .into_multivariable_polynomial_ring()
+                .into_multivariable_polynomials()
                 .var(Variable::new("i"))
         )
     );
