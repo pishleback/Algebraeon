@@ -1031,7 +1031,7 @@ where
         )
     }
 
-    /// given an ideal I and element a find an element b such that I = (a, b)
+    /// given an ideal I and element a in I, find an element b such that I = (a, b)
     pub fn ideal_other_generator(&self, g: &Vec<Integer>, ideal: &OrderIdeal) -> Vec<Integer> {
         debug_assert!(self.contains_element(ideal, g));
         debug_assert!(!self.order().is_zero(g));
@@ -1092,7 +1092,7 @@ where
                     .collect(),
             );
 
-        //need to filter out the b in some p^{e_i+1}
+        // need to filter out the b in some p^{e_i+1}
         let rm_b_set = self
             .ring()
             .free_integer_submodule_restructure()
@@ -1116,9 +1116,8 @@ where
                     .collect(),
             );
 
-        //if all basis elements of b_set were contain in rm_b_set then we'd have b_set contained in rm_b_set
-        //but this is not the case, so some basis of b_set is not in rm_b_set
-
+        // if all basis elements of b_set were contained in rm_b_set then we'd have b_set contained in rm_b_set
+        // but this is not the case (unless all e_i=0 i.e. the ideal is the unit ideal), so some basis of b_set is not in rm_b_set
         self.order()
             .free_integer_submodule_restructure()
             .affine_subsets()
@@ -1131,7 +1130,10 @@ where
                     .affine_subsets()
                     .contains_element(&rm_b_set, b)
             })
-            .unwrap()
+            .unwrap_or_else(|| {
+                debug_assert!(self.ring().ideals().is_unit(ideal));
+                g.clone()
+            })
     }
 
     /// return two elements which generate the ideal
@@ -1518,5 +1520,27 @@ mod tests {
         let sqrt_gaussian_square = roi_ideals.sqrt_if_square(&gaussian_prime_square).unwrap();
         assert!(roi_ideals.equal(&sqrt_gaussian_square, &gaussian_prime));
         assert!(!roi_ideals.is_squarefree(&gaussian_prime_square));
+    }
+
+    #[test]
+    fn test_two_generators_for_unit_ideal() {
+        // there was a bug in `ideal_two_generators` where it would panic if and only if the input ideal was the unit ideal
+        // so this test is for checking this case is handled properly
+
+        let anf = parse_rational_polynomial("x^5 - x - 1", "x")
+            .unwrap()
+            .algebraic_number_field()
+            .unwrap();
+        let roi = anf.ring_of_integers();
+
+        let unit_ideal = roi.ideals().principal_ideal(
+            &roi.try_from_anf(&parse_rational_polynomial("1", "a").unwrap())
+                .unwrap(),
+        );
+        let (a, b) = roi.ideals().ideal_two_generators(&unit_ideal);
+        debug_assert!(roi.ideals().equal(
+            &roi.ideals().one(),
+            &roi.ideals().generated_ideal(vec![a, b])
+        ));
     }
 }
