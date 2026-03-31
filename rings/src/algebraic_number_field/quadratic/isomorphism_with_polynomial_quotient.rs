@@ -168,11 +168,9 @@ impl<D: BorrowedSet<Integer>> QuadraticNumberFieldStructure<D> {}
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_sets::structure::EqSignature;
-
-    use crate::parsing::parse_rational_polynomial;
-
     use super::*;
+    use crate::parsing::parse_rational_polynomial;
+    use algebraeon_sets::structure::EqSignature;
 
     // ZZ[i]
     #[test]
