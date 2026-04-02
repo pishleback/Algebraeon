@@ -24,8 +24,8 @@ pub trait MetaType: Clone + Debug {
     fn structure() -> Self::Signature;
 }
 
-pub trait BorrowedSet<S>: Borrow<S> + Clone + Debug + Send + Sync {}
-impl<S, BS: Borrow<S> + Clone + Debug + Send + Sync> BorrowedSet<S> for BS {}
+pub trait BorrowedElem<S>: Borrow<S> + Clone + Debug + Send + Sync {}
+impl<S, BS: Borrow<S> + Clone + Debug + Send + Sync> BorrowedElem<S> for BS {}
 
 pub trait BorrowedStructure<S: Signature>: Borrow<S> + Clone + Debug + Eq + Send + Sync {}
 impl<S: Signature, BS: Borrow<S> + Clone + Debug + Eq + Send + Sync> BorrowedStructure<S> for BS {}

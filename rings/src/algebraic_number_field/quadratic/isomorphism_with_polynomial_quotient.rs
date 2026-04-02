@@ -12,7 +12,7 @@ use crate::{
 };
 use algebraeon_nzq::{Integer, Natural, Rational, traits::DivMod};
 use algebraeon_sets::structure::{
-    BijectiveFunction, BorrowedSet, BorrowedStructure, Function, InjectiveFunction, Morphism,
+    BijectiveFunction, BorrowedElem, BorrowedStructure, Function, InjectiveFunction, Morphism,
 };
 
 #[derive(Debug, Clone)]
@@ -164,7 +164,7 @@ impl AlgebraicNumberFieldPolynomialQuotientStructure {
     }
 }
 
-impl<D: BorrowedSet<Integer>> QuadraticNumberFieldStructure<D> {}
+impl<D: BorrowedElem<Integer>> QuadraticNumberFieldStructure<D> {}
 
 #[cfg(test)]
 mod tests {
