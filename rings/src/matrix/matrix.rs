@@ -1,6 +1,7 @@
 use crate::structure::*;
 use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::*;
+use std::hash::Hash;
 use std::{borrow::Borrow, marker::PhantomData};
 
 #[derive(Debug)]
@@ -12,7 +13,7 @@ pub enum MatOppErr {
 }
 
 #[derive(Debug, Clone)]
-pub struct Matrix<Set: Clone> {
+pub struct Matrix<Set> {
     dim1: usize,
     dim2: usize,
     transpose: bool,
@@ -21,7 +22,33 @@ pub struct Matrix<Set: Clone> {
     elems: Vec<Set>, //length self.rows * self.cols. row r and column c is index c + r * self.cols
 }
 
-impl<Set: Clone> Matrix<Set> {
+impl<Set> Matrix<Set> {
+    fn eq_repr(&self) -> Vec<&Set> {
+        let mut repr = vec![];
+        for r in 0..self.rows() {
+            for c in 0..self.cols() {
+                repr.push(self.at(r, c).unwrap());
+            }
+        }
+        repr
+    }
+}
+
+impl<Set: PartialEq> PartialEq for Matrix<Set> {
+    fn eq(&self, other: &Self) -> bool {
+        self.eq_repr() == other.eq_repr()
+    }
+}
+
+impl<Set: Eq> Eq for Matrix<Set> {}
+
+impl<Set: Hash> Hash for Matrix<Set> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.eq_repr().hash(state)
+    }
+}
+
+impl<Set> Matrix<Set> {
     #[allow(unused)]
     fn check_invariants(&self) -> Result<(), &'static str> {
         if self.elems.len() != self.dim1 * self.dim2 {
@@ -30,6 +57,50 @@ impl<Set: Clone> Matrix<Set> {
         Ok(())
     }
 
+    pub fn rows(&self) -> usize {
+        if self.transpose { self.dim2 } else { self.dim1 }
+    }
+
+    pub fn cols(&self) -> usize {
+        if self.transpose { self.dim1 } else { self.dim2 }
+    }
+
+    fn rc_to_idx(&self, mut r: usize, mut c: usize) -> usize {
+        if self.flip_rows {
+            r = self.rows() - r - 1;
+        }
+        if self.flip_cols {
+            c = self.cols() - c - 1;
+        }
+        if self.transpose {
+            r + c * self.dim2
+        } else {
+            c + r * self.dim2
+        }
+    }
+
+    /// Get a reference to the entry at row `r` and column `c`.
+    pub fn at(&self, r: usize, c: usize) -> Result<&Set, MatOppErr> {
+        if r >= self.rows() || c >= self.cols() {
+            Err(MatOppErr::InvalidIndex)
+        } else {
+            let idx = self.rc_to_idx(r, c);
+            Ok(&self.elems[idx])
+        }
+    }
+
+    /// Get a mutable reference to the entry at row `r` and column `c`.
+    pub fn at_mut(&mut self, r: usize, c: usize) -> Result<&mut Set, MatOppErr> {
+        if r >= self.rows() || c >= self.cols() {
+            Err(MatOppErr::InvalidIndex)
+        } else {
+            let idx = self.rc_to_idx(r, c);
+            Ok(&mut self.elems[idx])
+        }
+    }
+}
+
+impl<Set: Clone> Matrix<Set> {
     pub fn full(rows: usize, cols: usize, elem: &Set) -> Self {
         let mut elems = Vec::with_capacity(rows * cols);
         for _i in 0..rows * cols {
@@ -100,48 +171,6 @@ impl<Set: Clone> Matrix<Set> {
     /// Construct a matrix from a column.
     pub fn from_col(elems: Vec<impl Into<Set> + Clone>) -> Self {
         Self::from_rows(vec![elems]).transpose()
-    }
-
-    fn rc_to_idx(&self, mut r: usize, mut c: usize) -> usize {
-        if self.flip_rows {
-            r = self.rows() - r - 1;
-        }
-        if self.flip_cols {
-            c = self.cols() - c - 1;
-        }
-        if self.transpose {
-            r + c * self.dim2
-        } else {
-            c + r * self.dim2
-        }
-    }
-
-    /// Get a reference to the entry at row `r` and column `c`.
-    pub fn at(&self, r: usize, c: usize) -> Result<&Set, MatOppErr> {
-        if r >= self.rows() || c >= self.cols() {
-            Err(MatOppErr::InvalidIndex)
-        } else {
-            let idx = self.rc_to_idx(r, c);
-            Ok(&self.elems[idx])
-        }
-    }
-
-    /// Get a mutable reference to the entry at row `r` and column `c`.
-    pub fn at_mut(&mut self, r: usize, c: usize) -> Result<&mut Set, MatOppErr> {
-        if r >= self.rows() || c >= self.cols() {
-            Err(MatOppErr::InvalidIndex)
-        } else {
-            let idx = self.rc_to_idx(r, c);
-            Ok(&mut self.elems[idx])
-        }
-    }
-
-    pub fn rows(&self) -> usize {
-        if self.transpose { self.dim2 } else { self.dim1 }
-    }
-
-    pub fn cols(&self) -> usize {
-        if self.transpose { self.dim1 } else { self.dim2 }
     }
 
     /// Return the submatrix given by the intersection of the rows defined by `rows` and the columns defined by `cols`.
@@ -700,16 +729,16 @@ where
     }
 }
 
-impl<R: MetaType> PartialEq for Matrix<R>
-where
-    R::Signature: RingSignature + EqSignature,
-{
-    fn eq(&self, other: &Self) -> bool {
-        Self::structure().equal(self, other)
-    }
-}
+// impl<R: MetaType> PartialEq for Matrix<R>
+// where
+//     R::Signature: RingSignature + EqSignature,
+// {
+//     fn eq(&self, other: &Self) -> bool {
+//         Self::structure().equal(self, other)
+//     }
+// }
 
-impl<R: MetaType> Eq for Matrix<R> where R::Signature: RingSignature + EqSignature {}
+// impl<R: MetaType> Eq for Matrix<R> where R::Signature: RingSignature + EqSignature {}
 
 impl<R: MetaType> Matrix<R>
 where

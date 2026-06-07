@@ -47,9 +47,7 @@ pub trait RightCancellativeCompositionSignature: CompositionSignature {
 
 #[signature_meta_trait]
 pub trait CancellativeCompositionSignature:
-    CommutativeCompositionSignature
-    + LeftCancellativeCompositionSignature
-    + RightCancellativeCompositionSignature
+    CompositionSignature + LeftCancellativeCompositionSignature + RightCancellativeCompositionSignature
 {
     fn try_difference(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem>;
 }

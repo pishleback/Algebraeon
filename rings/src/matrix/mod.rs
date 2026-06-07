@@ -16,6 +16,7 @@ mod primitive;
 mod row_operations;
 mod smith_normal_form;
 mod symmetric_matrix;
+mod general_linear_group;
 
 pub use hermite_reduction::*;
 pub use inner_product::*;
@@ -23,6 +24,7 @@ pub use jordan_normal_form::*;
 pub use matrix::*;
 use row_operations::*;
 pub use symmetric_matrix::*;
+pub use general_linear_group::*;
 
 /*
 //for LLL testing from wikipeida
