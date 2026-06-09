@@ -22,9 +22,6 @@ use crate::{
     },
 };
 use algebraeon_nzq::{Integer, Natural};
-use algebraeon_sets::structure::{
-    EqSignature, Function, InjectiveFunction, ToStringSignature,
-};
 use algebraeon_structures::*;
 
 pub type RingOfIntegersWithIntegralBasis<K, KB> = OrderWithBasis<K, KB, true>;

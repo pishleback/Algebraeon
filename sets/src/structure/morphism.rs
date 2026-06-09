@@ -86,5 +86,3 @@ impl<X: FiniteSetSignature + EqSignature> CountableSetSignature for FiniteSetEnd
 }
 
 impl<X: FiniteSetSignature + EqSignature> FiniteSetSignature for FiniteSetEndofunctions<X> {}
-
-

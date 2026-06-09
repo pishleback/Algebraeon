@@ -40,7 +40,7 @@ impl<Vertices: SetSignature> UndirectedCycleGraph<Vertices> {
 }
 
 // Specialized implementation for EnumeratedFiniteSetStructure
-use algebraeon_sets::structure::{EnumeratedFiniteSetStructure, EqSignature};
+use algebraeon_sets::structure::EnumeratedFiniteSetStructure;
 
 impl GraphSignature for UndirectedCycleGraph<EnumeratedFiniteSetStructure> {
     type Vertices = EnumeratedFiniteSetStructure;

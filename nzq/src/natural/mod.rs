@@ -3,10 +3,7 @@
 use crate::Rational;
 use crate::integer::Integer;
 use crate::traits::{AbsDiff, DivMod, ModInv, ModPow};
-use algebraeon_sets::structure::{
-    CanonicalStructure, CountableSetSignature, EqSignature, OrdSignature, PartialOrdSignature,
-    ToStringSignature,
-};
+use algebraeon_sets::structure::CanonicalStructure;
 use algebraeon_structures::*;
 use malachite_base::num::arithmetic::traits::CheckedSub;
 use malachite_base::num::{

@@ -7,7 +7,6 @@ use crate::structure::{
 };
 use algebraeon_nzq::traits::ModPow;
 use algebraeon_nzq::{Natural, NaturalCanonicalStructure, gcd};
-use algebraeon_sets::structure::ToStringSignature;
 use algebraeon_structures::*;
 use itertools::Itertools;
 

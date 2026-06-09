@@ -12,7 +12,6 @@ use crate::{
 use algebraeon_nzq::{
     Integer, IntegerCanonicalStructure, Rational, RationalCanonicalStructure, traits::Fraction,
 };
-use algebraeon_sets::structure::{FiniteSetSignature, Function, InjectiveFunction, Morphism};
 use algebraeon_structures::*;
 use std::marker::PhantomData;
 
@@ -285,9 +284,8 @@ mod ring_of_integers_to_algebraic_number_field_inclusion {
 pub(crate) use ring_of_integers_to_algebraic_number_field_inclusion::RingOfIntegersToAlgebraicNumberFieldInclusion;
 
 mod order_to_ring_of_integers_inclusion {
-    use algebraeon_sets::structure::BijectiveFunction;
-
     use super::*;
+    use algebraeon_structures::*;
 
     #[derive(Debug, Clone)]
     pub struct OrderToRingOfIntegersInclusion<
@@ -628,8 +626,7 @@ mod anf_inclusion {
     }
 
     mod order_integral_extension {
-        use std::borrow::Cow;
-
+        use super::*;
         use crate::{
             algebraic_number_field::OrderIdealsStructure,
             num_theory::integer_ideal::IntegerIdealsStructure,
@@ -638,9 +635,7 @@ mod anf_inclusion {
                 RingToIdealsSignature,
             },
         };
-
-        use super::*;
-        use algebraeon_sets::structure::BorrowedMorphism;
+        use std::borrow::Cow;
 
         /// Q -> K
         /// ↑    ↑
@@ -970,7 +965,6 @@ mod integer_submodule_inclusion {
         linear::finitely_free_submodule::{FinitelyFreeSubmodule, FinitelyFreeSubmoduleStructure},
         structure::RingSignature,
     };
-    use algebraeon_sets::structure::BorrowedMorphism;
     use algebraeon_structures::*;
     use std::marker::PhantomData;
 

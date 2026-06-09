@@ -21,4 +21,3 @@ macro_rules! make_maybe_trait {
         }
     };
 }
-

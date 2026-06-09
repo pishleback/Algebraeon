@@ -10,7 +10,6 @@ use crate::{
     },
 };
 use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Rational};
-use algebraeon_sets::structure::{EqSignature, Function};
 use algebraeon_structures::*;
 use itertools::Itertools;
 

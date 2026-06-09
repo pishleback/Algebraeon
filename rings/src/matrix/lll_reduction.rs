@@ -16,7 +16,6 @@ use crate::{
 };
 use algebraeon_nzq::traits::Fraction;
 use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Rational};
-use algebraeon_sets::structure::ToStringSignature;
 use algebraeon_structures::*;
 
 impl<
@@ -70,8 +69,6 @@ impl<
             let true_mat_gs = self.gram_schmidt_row_orthogonalization(basis.clone(), inner_product);
             for (k, cache_entry) in cache.iter().enumerate() {
                 // check mu
-                use algebraeon_sets::structure::EqSignature;
-
                 assert_eq!(cache_entry.mu.len(), k);
                 for i in 0..k {
                     assert!(

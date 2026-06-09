@@ -16,9 +16,7 @@ use algebraeon_nzq::{
     Integer, Natural, Rational, RationalCanonicalStructure,
     traits::{Abs, Fraction},
 };
-use algebraeon_sets::structure::{
-    EnumeratedFiniteSetStructure, Function, Morphism,
-};
+use algebraeon_sets::structure::EnumeratedFiniteSetStructure;
 use algebraeon_structures::*;
 use itertools::Itertools;
 use std::borrow::{Borrow, Cow};
@@ -287,10 +285,9 @@ impl
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_sets::structure::EqSignature;
-
     use super::*;
     use crate::{polynomial::PolynomialFromStr, structure::IntoErgonomic};
+    use algebraeon_structures::*;
 
     #[test]
     fn test_anf_integral_multiple() {

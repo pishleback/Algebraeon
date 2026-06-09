@@ -69,13 +69,16 @@ impl<'s, X, O: OrdSignature + 's, K: Fn(&X) -> &O::Elem> Iterator for VecMerger<
 
 #[signature_meta_trait]
 pub trait PartialOrdSignature: EqSignature {
+    #[skip_meta]
     fn partial_cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Ordering>;
 }
 
 #[signature_meta_trait]
 pub trait OrdSignature: PartialOrdSignature {
+    #[skip_meta]
     fn cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Ordering;
 
+    #[skip_meta]
     fn max(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         let c = self.cmp(a, b);
         match c {
@@ -84,6 +87,7 @@ pub trait OrdSignature: PartialOrdSignature {
         }
     }
 
+    #[skip_meta]
     fn min(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         let c = self.cmp(a, b);
         match c {

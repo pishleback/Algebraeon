@@ -16,10 +16,7 @@ use crate::{
     },
 };
 use algebraeon_nzq::{Integer, Rational, RationalCanonicalStructure, traits::Floor};
-use algebraeon_sets::{
-    approximations::ApproximatePointsSignature,
-    structure::{CanonicalStructure},
-};
+use algebraeon_sets::{approximations::ApproximatePointsSignature, structure::CanonicalStructure};
 use algebraeon_structures::*;
 use std::{
     fmt::Debug,

@@ -46,7 +46,7 @@ pub trait FiniteSetSignature: CountableSetSignature {
     fn list_all_elements(&self) -> Vec<Self::Elem> {
         self.generate_all_elements().collect()
     }
-    
+
     fn size(&self) -> usize {
         self.list_all_elements().len()
     }

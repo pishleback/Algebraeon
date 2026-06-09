@@ -1,9 +1,7 @@
 use crate::structure::{
     GraphSignature, GraphWithEdgesSignature, LooplessGraphSignature, UndirectedGraphSignature,
 };
-use algebraeon_sets::structure::{
-    EnumeratedFiniteSetStructure, EqSignature, UnorderedPair, UnorderedPairs,
-};
+use algebraeon_sets::structure::{EnumeratedFiniteSetStructure, UnorderedPair, UnorderedPairs};
 use algebraeon_structures::*;
 
 /// A wheel graph `W_n` with vertices `{0, …, n-1}` where vertex `0` is the center

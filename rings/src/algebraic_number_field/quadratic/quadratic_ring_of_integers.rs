@@ -16,7 +16,6 @@ use crate::{
     },
 };
 use algebraeon_nzq::{Integer, Natural, Rational};
-use algebraeon_sets::structure::{EqSignature};
 use algebraeon_structures::*;
 
 #[derive(Debug, Clone)]

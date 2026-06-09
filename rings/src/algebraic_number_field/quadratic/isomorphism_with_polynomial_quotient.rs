@@ -11,7 +11,6 @@ use crate::{
     },
 };
 use algebraeon_nzq::{Integer, Natural, Rational, traits::DivMod};
-use algebraeon_sets::structure::{BijectiveFunction, Function, InjectiveFunction, Morphism};
 use algebraeon_structures::*;
 
 #[derive(Debug, Clone)]
@@ -169,7 +168,7 @@ impl<D: BorrowedElem<Integer>> QuadraticNumberFieldStructure<D> {}
 mod tests {
     use super::*;
     use crate::parsing::parse_rational_polynomial;
-    use algebraeon_sets::structure::EqSignature;
+    use algebraeon_structures::*;
 
     // ZZ[i]
     #[test]

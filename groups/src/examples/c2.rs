@@ -1,13 +1,11 @@
-use algebraeon_macros::CanonicalStructure;
-use algebraeon_sets::structure::EqSignature;
-use algebraeon_structures::*;
-
 use crate::structure::{
     AssociativeCompositionSignature, CompositionSignature, GroupSignature, IdentitySignature,
     LeftCancellativeCompositionSignature, MonoidSignature, RightCancellativeCompositionSignature,
     TryInverseSignature, TryLeftInverseSignature, TryRightInverseSignature,
 };
+use algebraeon_macros::CanonicalStructure;
 use algebraeon_structures::Signature;
+use algebraeon_structures::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, CanonicalStructure)]
 #[canonical_structure(eq)]

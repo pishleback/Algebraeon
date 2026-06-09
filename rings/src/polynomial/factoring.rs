@@ -45,7 +45,6 @@ where
         }
         #[cfg(debug_assertions)]
         {
-            use algebraeon_sets::structure::EqSignature;
             assert!(self.equal(&f_orig, &self.factorizations().expand(&factors)));
         }
         factors
@@ -483,7 +482,6 @@ where
 mod tests {
     use super::*;
     use crate::structure::IntoErgonomic;
-    use algebraeon_sets::structure::EqSignature;
     use algebraeon_structures::*;
 
     #[test]

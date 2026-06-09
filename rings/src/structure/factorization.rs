@@ -8,7 +8,6 @@ use crate::structure::{
 };
 use algebraeon_groups::structure::{CompositionSignature, GroupSignature};
 use algebraeon_nzq::{Natural, NaturalCanonicalStructure};
-use algebraeon_sets::structure::{EqSignature, OrdSignature};
 use algebraeon_structures::*;
 use std::fmt::{Debug, Display};
 use std::marker::PhantomData;

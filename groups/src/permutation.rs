@@ -6,8 +6,6 @@ use crate::structure::{
     TryInverseSignature, TryLeftInverseSignature, TryRightInverseSignature,
 };
 use algebraeon_macros::CanonicalStructure;
-use algebraeon_sets::structure::EqSignature;
-use algebraeon_structures::Signature;
 use algebraeon_structures::*;
 use itertools::Itertools;
 use std::collections::{HashMap, HashSet};

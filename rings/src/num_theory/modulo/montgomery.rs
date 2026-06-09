@@ -14,9 +14,6 @@ use crate::{
     },
 };
 use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Natural};
-use algebraeon_sets::structure::{
-    CountableSetSignature, EqSignature, FiniteSetSignature, QuotientSetSignature, ToStringSignature,
-};
 use algebraeon_structures::*;
 use rand::{RngExt, SeedableRng, rngs::StdRng};
 use std::{borrow::Cow, ops::Rem};

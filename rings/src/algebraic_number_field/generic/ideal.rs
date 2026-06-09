@@ -17,10 +17,7 @@ use crate::{
 };
 use algebraeon_nzq::NaturalCanonicalStructure;
 use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Natural, traits::Abs};
-use algebraeon_sets::{
-    combinatorics::num_partitions_part_pool,
-    structure::{BorrowedMorphism, EqSignature, Function, InjectiveFunction},
-};
+use algebraeon_sets::combinatorics::num_partitions_part_pool;
 use algebraeon_structures::*;
 use itertools::Itertools;
 use std::{borrow::Cow, marker::PhantomData};
@@ -171,7 +168,6 @@ impl<
 
 mod integer_submodules_to_ideals {
     use super::*;
-    use algebraeon_sets::structure::Morphism;
 
     #[derive(Debug, Clone)]
     pub struct SubmoduleToIdeals<

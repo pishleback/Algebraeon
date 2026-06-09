@@ -1,7 +1,7 @@
 use crate::structure::{
     GraphSignature, GraphWithEdgesSignature, LooplessGraphSignature, UndirectedGraphSignature,
 };
-use algebraeon_sets::structure::{EqSignature, UnorderedPair, UnorderedPairs};
+use algebraeon_sets::structure::{UnorderedPair, UnorderedPairs};
 use algebraeon_structures::*;
 
 #[allow(dead_code)]
@@ -68,12 +68,12 @@ impl<Vertices: SetSignature + EqSignature> GraphWithEdgesSignature
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_sets::structure::{EnumeratedFiniteSetStructure, EqSignature};
-
     use crate::{
         examples::CompleteUndirectedGraph,
         structure::{GraphSignature, GraphWithEdgesSignature},
     };
+    use algebraeon_sets::structure::EnumeratedFiniteSetStructure;
+    use algebraeon_structures::*;
 
     #[test]
     fn test_k5_undirected() {

@@ -1,5 +1,5 @@
 use crate::structure::*;
-use algebraeon_sets::structure::FiniteSetSignature;
+use algebraeon_structures::*;
 
 /// Algebras over `Ring`
 pub trait AlgebraSignature<Ring: RingSignature>: ModuleSignature<Ring> + RingSignature {}

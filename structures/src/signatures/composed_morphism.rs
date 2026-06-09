@@ -1,4 +1,5 @@
 use crate::*;
+use std::marker::PhantomData;
 
 /// The composition A -> B -> C of two morphisms A -> B and B -> C
 #[derive(Debug, Clone, PartialEq, Eq)]

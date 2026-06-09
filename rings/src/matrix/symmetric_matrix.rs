@@ -1,5 +1,4 @@
 use crate::matrix::{MatOppErr, Matrix};
-use algebraeon_sets::structure::EqSignature;
 use algebraeon_structures::*;
 use std::{fmt::Debug, marker::PhantomData};
 

@@ -16,11 +16,8 @@ use crate::structure::{
     FreeModuleSignature, MetaCharZeroRingSignature, PrincipalRationalMap,
     RingHomomorphismRangeModuleStructure, SemiModuleSignature, ZeroEqSignature,
 };
+use algebraeon_macros::CanonicalStructure;
 use algebraeon_nzq::{Integer, Natural, Rational, RationalCanonicalStructure};
-use algebraeon_sets::structure::{
-    CanonicalStructure, CountableSetSignature, EqSignature, FiniteSetSignature,
-};
-use algebraeon_sets::structure::{InjectiveFunction};
 use algebraeon_structures::*;
 use std::borrow::Cow;
 

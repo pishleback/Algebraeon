@@ -10,8 +10,7 @@ use crate::{
     },
 };
 use algebraeon_nzq::{Natural, NaturalCanonicalStructure};
-use algebraeon_sets::structure::EqSignature;
-use algebraeon_structures::BorrowedStructure;
+use algebraeon_structures::*;
 use std::sync::Arc;
 
 fn compute_lifting_mat_mod<

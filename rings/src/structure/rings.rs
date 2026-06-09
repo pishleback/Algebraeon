@@ -2,7 +2,6 @@ use super::*;
 use crate::polynomial::*;
 use algebraeon_macros::{signature_meta_trait, skip_meta};
 use algebraeon_nzq::{Integer, Natural, NaturalCanonicalStructure, Rational, traits::*};
-use algebraeon_sets::structure::*;
 use algebraeon_structures::*;
 use std::{borrow::Borrow, fmt::Debug};
 
@@ -16,7 +15,6 @@ mod unconstructable_universal_structure {
         RingSignature, RinglikeSpecializationSignature, SemiRingSignature, TryNegateSignature,
         TryReciprocalSignature, ZeroSignature,
     };
-    use algebraeon_sets::structure::EqSignature;
     use algebraeon_structures::*;
     use std::fmt::Debug;
     use std::marker::PhantomData;
