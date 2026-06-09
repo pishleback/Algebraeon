@@ -1,8 +1,7 @@
 use crate::structure::*;
 use algebraeon_nzq::{traits::Abs, *};
-use algebraeon_sets::structure::{
-    BorrowedStructure, EqSignature, MetaType, SetSignature, Signature,
-};
+use algebraeon_sets::structure::EqSignature;
+use algebraeon_structures::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct IntegerIdealsStructure<B: BorrowedStructure<IntegerCanonicalStructure>> {

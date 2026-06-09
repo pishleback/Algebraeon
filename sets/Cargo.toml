@@ -13,6 +13,7 @@ readme = "../README.md"
 name = "algebraeon_sets"
 
 [dependencies]
+algebraeon-structures = { version = "=0.0.17", path = "../structures", default-features = false }
 algebraeon-macros = { version = "=0.0.17", path = "../macros", default-features = false }
 indexmap = "2.8.0"
 itertools = "0.14.0"

@@ -10,9 +10,8 @@ use crate::{
     },
 };
 use algebraeon_nzq::Integer;
-use algebraeon_sets::structure::{
-    BorrowedStructure, EqSignature, Function, SetSignature, Signature, ToStringSignature,
-};
+use algebraeon_sets::structure::{EqSignature, Function, ToStringSignature};
+use algebraeon_structures::*;
 
 #[derive(Debug, Clone)]
 pub struct FullRankIntegerSubmoduleWithBasis<

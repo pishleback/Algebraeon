@@ -2,6 +2,7 @@ use super::{Polynomial, polynomial_structure::*};
 use crate::structure::*;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
+use algebraeon_structures::*;
 
 #[derive(Debug, Clone)]
 enum HenselFactorizationNodeCases<

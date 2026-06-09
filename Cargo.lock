@@ -51,6 +51,7 @@ dependencies = [
  "algebraeon-nzq",
  "algebraeon-rings",
  "algebraeon-sets",
+ "algebraeon-structures",
  "gungraun",
 ]
 
@@ -109,6 +110,7 @@ name = "algebraeon-graphs"
 version = "0.0.0"
 dependencies = [
  "algebraeon-sets",
+ "algebraeon-structures",
 ]
 
 [[package]]
@@ -118,6 +120,7 @@ dependencies = [
  "algebraeon-macros",
  "algebraeon-nzq",
  "algebraeon-sets",
+ "algebraeon-structures",
  "itertools 0.14.0",
  "rayon",
 ]
@@ -137,6 +140,7 @@ name = "algebraeon-nzq"
 version = "0.0.17"
 dependencies = [
  "algebraeon-sets",
+ "algebraeon-structures",
  "malachite-base 0.9.1",
  "malachite-nz",
  "malachite-q",
@@ -150,6 +154,7 @@ dependencies = [
  "algebraeon-macros",
  "algebraeon-nzq",
  "algebraeon-sets",
+ "algebraeon-structures",
  "impls",
  "itertools 0.14.0",
  "lalrpop 0.23.0",
@@ -164,8 +169,18 @@ name = "algebraeon-sets"
 version = "0.0.17"
 dependencies = [
  "algebraeon-macros",
+ "algebraeon-structures",
  "indexmap",
  "itertools 0.14.0",
+ "paste",
+ "rand 0.10.0",
+]
+
+[[package]]
+name = "algebraeon-structures"
+version = "0.0.17"
+dependencies = [
+ "algebraeon-macros",
  "paste",
  "rand 0.10.0",
 ]

@@ -1,4 +1,5 @@
-use algebraeon_sets::structure::{SetSignature, UnorderedPair};
+use algebraeon_sets::structure::UnorderedPair;
+use algebraeon_structures::*;
 
 /// A directed graph permitting loops.
 pub trait GraphSignature {

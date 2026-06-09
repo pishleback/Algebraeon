@@ -2,6 +2,7 @@ use super::{bisection_gen::RationalSimpleBetweenGenerator, poly_tools::*};
 use crate::{polynomial::*, structure::*};
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
+use algebraeon_structures::*;
 use bounds::*;
 use interval::*;
 use polynomial::*;

@@ -3,9 +3,10 @@ use crate::integer::Integer;
 use crate::natural::Natural;
 use crate::traits::{Abs, Ceil, Floor, Fraction};
 use algebraeon_sets::structure::{
-    CanonicalStructure, CountableSetSignature, EqSignature, MetaType, OrdSignature,
-    PartialOrdSignature, SetSignature, Signature, ToStringSignature,
+    CanonicalStructure, CountableSetSignature, EqSignature, OrdSignature, PartialOrdSignature,
+    ToStringSignature,
 };
+use algebraeon_structures::*;
 use malachite_base::num::arithmetic::traits::Pow;
 use malachite_base::num::basic::traits::{One, OneHalf, Two, Zero};
 use malachite_q::arithmetic::traits::{Approximate, SimplestRationalInInterval};

@@ -3,6 +3,7 @@ use crate::{
 };
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
+use algebraeon_structures::*;
 use itertools::Itertools;
 
 impl<

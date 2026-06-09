@@ -6,6 +6,7 @@ pub mod conway_polynomials;
 pub mod extension;
 pub mod polynomial;
 pub mod quaternary_field;
+use algebraeon_structures::*;
 
 impl<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> FactoringMonoidSignature
     for PolynomialStructure<FS, FSB>

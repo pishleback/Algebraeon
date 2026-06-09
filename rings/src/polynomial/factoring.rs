@@ -1,7 +1,8 @@
 use super::{Polynomial, polynomial_structure::*};
 use crate::structure::*;
 use algebraeon_nzq::*;
-use algebraeon_sets::structure::{BorrowedStructure, SetSignature};
+use algebraeon_structures::BorrowedStructure;
+use algebraeon_structures::*;
 
 impl<
     RS: UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
@@ -482,7 +483,8 @@ where
 mod tests {
     use super::*;
     use crate::structure::IntoErgonomic;
-    use algebraeon_sets::structure::{EqSignature, MetaType};
+    use algebraeon_sets::structure::EqSignature;
+    use algebraeon_structures::*;
 
     #[test]
     fn test_factor_by_kroneckers_method_over_integers() {

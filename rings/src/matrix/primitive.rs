@@ -1,4 +1,5 @@
 use super::*;
+use algebraeon_structures::*;
 
 impl<RS: GreatestCommonDivisorSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
     pub fn factor_primitive(

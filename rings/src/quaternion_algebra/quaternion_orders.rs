@@ -10,7 +10,8 @@ use crate::{
     },
 };
 use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Rational};
-use algebraeon_sets::structure::{EqSignature, Function, MetaType, SetSignature, Signature};
+use algebraeon_sets::structure::{EqSignature, Function};
+use algebraeon_structures::*;
 use itertools::Itertools;
 
 // an integer submodule and subring of a quaternion algebra over an algebraic number field

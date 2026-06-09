@@ -1,6 +1,6 @@
 use crate::{polynomial::*, structure::*};
 use algebraeon_nzq::{traits::Fraction, *};
-use algebraeon_sets::structure::MetaType;
+use algebraeon_structures::*;
 
 pub fn root_sum_poly(p: &Polynomial<Integer>, q: &Polynomial<Integer>) -> Polynomial<Integer> {
     let x = Variable::new(String::from("x"));

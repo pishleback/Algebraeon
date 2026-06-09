@@ -1,6 +1,4 @@
-use crate::structure::Signature;
-
-use super::{EqSignature, SetSignature};
+use algebraeon_structures::*;
 use std::fmt::Debug;
 
 /// The set of Pairs

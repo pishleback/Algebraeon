@@ -1,7 +1,6 @@
 use crate::structure::{GraphSignature, GraphWithEdgesSignature, LooplessGraphSignature};
-use algebraeon_sets::structure::{
-    EqSignature, PairsStructure, SetSignature, UnorderedPair, UnorderedPairs,
-};
+use algebraeon_sets::structure::{EqSignature, PairsStructure, UnorderedPair, UnorderedPairs};
+use algebraeon_structures::*;
 
 pub struct CompleteDirectedGraph<Vertices: SetSignature> {
     vertices: Vertices,

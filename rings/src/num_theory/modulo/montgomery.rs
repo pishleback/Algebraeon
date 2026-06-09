@@ -1,5 +1,3 @@
-use std::{borrow::Cow, ops::Rem};
-
 use crate::{
     num_theory::natural_factorization::primes::is_prime_nat,
     structure::{
@@ -17,10 +15,11 @@ use crate::{
 };
 use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Natural};
 use algebraeon_sets::structure::{
-    BorrowedStructure, CountableSetSignature, EqSignature, FiniteSetSignature,
-    QuotientSetSignature, SetSignature, Signature, ToStringSignature,
+    CountableSetSignature, EqSignature, FiniteSetSignature, QuotientSetSignature, ToStringSignature,
 };
+use algebraeon_structures::*;
 use rand::{RngExt, SeedableRng, rngs::StdRng};
+use std::{borrow::Cow, ops::Rem};
 
 fn xgcd_u64(mut x: u64, mut y: u64) -> (u64, i64, i64) {
     let mut pa = 1;

@@ -2,6 +2,7 @@ use super::*;
 use crate::matrix::{Matrix, MatrixStructure};
 use crate::polynomial::Polynomial;
 use algebraeon_sets::structure::*;
+use algebraeon_structures::*;
 use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;

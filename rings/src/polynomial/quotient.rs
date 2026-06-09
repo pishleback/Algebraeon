@@ -2,6 +2,7 @@ use super::{Polynomial, polynomial_structure::*};
 use crate::{matrix::*, structure::*};
 use algebraeon_nzq::{Integer, Natural};
 use algebraeon_sets::structure::*;
+use algebraeon_structures::*;
 use std::borrow::{Borrow, Cow};
 
 pub type PolynomialQuotientRingStructure<FS, FSB, FSPB, const IS_FIELD: bool> =

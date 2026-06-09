@@ -3,6 +3,7 @@ use crate::valuation::Valuation;
 use algebraeon_macros::{signature_meta_trait, skip_meta};
 use algebraeon_nzq::{Natural, NaturalCanonicalStructure};
 use algebraeon_sets::structure::*;
+use algebraeon_structures::*;
 
 pub trait DedekindDomainSignature: IntegralDomainSignature {}
 

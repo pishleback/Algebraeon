@@ -17,11 +17,11 @@ use crate::structure::{
     RingHomomorphismRangeModuleStructure, SemiModuleSignature, ZeroEqSignature,
 };
 use algebraeon_nzq::{Integer, Natural, Rational, RationalCanonicalStructure};
-use algebraeon_sets::structure::{BorrowedElem, BorrowedStructure, InjectiveFunction, MetaType};
 use algebraeon_sets::structure::{
-    CanonicalStructure, CountableSetSignature, EqSignature, FiniteSetSignature, SetSignature,
-    Signature,
+    CanonicalStructure, CountableSetSignature, EqSignature, FiniteSetSignature,
 };
+use algebraeon_sets::structure::{InjectiveFunction};
+use algebraeon_structures::*;
 use std::borrow::Cow;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, CanonicalStructure)]

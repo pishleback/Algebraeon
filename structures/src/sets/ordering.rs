@@ -1,4 +1,4 @@
-use super::EqSignature;
+use crate::*;
 use algebraeon_macros::{signature_meta_trait, skip_meta};
 use std::{borrow::Borrow, cmp::Ordering};
 
@@ -66,8 +66,6 @@ impl<'s, X, O: OrdSignature + 's, K: Fn(&X) -> &O::Elem> Iterator for VecMerger<
         }
     }
 }
-
-use super::MetaType;
 
 #[signature_meta_trait]
 pub trait PartialOrdSignature: EqSignature {
@@ -234,8 +232,6 @@ pub trait OrdSignature: PartialOrdSignature {
 
 #[cfg(test)]
 mod tests {
-    use crate::structure::*;
-
     use super::*;
 
     #[derive(Debug, Clone, PartialEq, Eq)]

@@ -23,9 +23,9 @@ use crate::{
 };
 use algebraeon_nzq::{Integer, Natural};
 use algebraeon_sets::structure::{
-    BorrowedStructure, EqSignature, Function, InjectiveFunction, MetaType, SetSignature, Signature,
-    ToStringSignature,
+    EqSignature, Function, InjectiveFunction, ToStringSignature,
 };
+use algebraeon_structures::*;
 
 pub type RingOfIntegersWithIntegralBasis<K, KB> = OrderWithBasis<K, KB, true>;
 

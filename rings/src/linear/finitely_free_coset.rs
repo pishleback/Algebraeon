@@ -4,6 +4,7 @@ use crate::{
     structure::*,
 };
 use algebraeon_sets::structure::*;
+use algebraeon_structures::*;
 use std::fmt::Debug;
 
 #[derive(Debug, Clone)]

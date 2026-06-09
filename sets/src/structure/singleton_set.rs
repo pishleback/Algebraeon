@@ -1,5 +1,4 @@
-use super::{EqSignature, OrdSignature, SetSignature, Signature};
-use crate::structure::{CountableSetSignature, FiniteSetSignature, orderings::PartialOrdSignature};
+use algebraeon_structures::*;
 use std::fmt::Debug;
 
 #[derive(Default, Debug, Clone, PartialEq, Eq)]

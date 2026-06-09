@@ -18,8 +18,9 @@ use crate::{
 use algebraeon_nzq::{Integer, Rational, RationalCanonicalStructure, traits::Floor};
 use algebraeon_sets::{
     approximations::ApproximatePointsSignature,
-    structure::{CanonicalStructure, MetaType, SetSignature, Signature},
+    structure::{CanonicalStructure},
 };
+use algebraeon_structures::*;
 use std::{
     fmt::Debug,
     sync::{Arc, Mutex, MutexGuard},

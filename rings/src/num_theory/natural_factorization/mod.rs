@@ -3,7 +3,7 @@ use crate::{
     structure::{Factored, OneSignature, UniqueFactorizationMonoidSignature},
 };
 use algebraeon_nzq::{Natural, gcd, traits::AbsDiff};
-use algebraeon_sets::structure::MetaType;
+use algebraeon_structures::*;
 use primes::is_prime_nat;
 
 pub mod ecm;

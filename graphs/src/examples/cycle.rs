@@ -1,8 +1,8 @@
-use algebraeon_sets::structure::{SetSignature, UnorderedPair, UnorderedPairs};
-
 use crate::structure::{
     GraphSignature, GraphWithEdgesSignature, LooplessGraphSignature, UndirectedGraphSignature,
 };
+use algebraeon_sets::structure::{UnorderedPair, UnorderedPairs};
+use algebraeon_structures::*;
 
 /// An undirected cycle graph with n vertices arranged in a cycle.
 /// Each vertex has exactly degree 2, forming a closed loop.

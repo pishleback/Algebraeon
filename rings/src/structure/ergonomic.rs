@@ -1,10 +1,10 @@
+use super::*;
+use algebraeon_sets::structure::*;
+use algebraeon_structures::*;
 use std::{
     borrow::Borrow,
     ops::{Add, Div, Mul, Neg, Sub},
 };
-
-use super::*;
-use algebraeon_sets::structure::*;
 
 use algebraeon_nzq::*;
 

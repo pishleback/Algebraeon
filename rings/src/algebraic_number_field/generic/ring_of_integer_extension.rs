@@ -6,6 +6,7 @@ use crate::num_theory::integer_ideal::IntegerIdealsStructure;
 use crate::structure::*;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
+use algebraeon_structures::*;
 use std::borrow::Cow;
 use std::marker::PhantomData;
 

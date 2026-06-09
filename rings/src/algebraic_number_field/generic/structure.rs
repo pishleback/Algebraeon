@@ -12,9 +12,8 @@ use crate::{
 use algebraeon_nzq::{
     Integer, IntegerCanonicalStructure, Rational, RationalCanonicalStructure, traits::Fraction,
 };
-use algebraeon_sets::structure::{
-    BorrowedStructure, FiniteSetSignature, Function, InjectiveFunction, Morphism, SetSignature,
-};
+use algebraeon_sets::structure::{FiniteSetSignature, Function, InjectiveFunction, Morphism};
+use algebraeon_structures::*;
 use std::marker::PhantomData;
 
 /// An algebraic number field is a field of characteristic zero such that
@@ -641,7 +640,7 @@ mod anf_inclusion {
         };
 
         use super::*;
-        use algebraeon_sets::structure::{BorrowedMorphism, MetaType};
+        use algebraeon_sets::structure::BorrowedMorphism;
 
         /// Q -> K
         /// ↑    ↑
@@ -971,7 +970,8 @@ mod integer_submodule_inclusion {
         linear::finitely_free_submodule::{FinitelyFreeSubmodule, FinitelyFreeSubmoduleStructure},
         structure::RingSignature,
     };
-    use algebraeon_sets::structure::{BorrowedMorphism, BorrowedStructure};
+    use algebraeon_sets::structure::BorrowedMorphism;
+    use algebraeon_structures::*;
     use std::marker::PhantomData;
 
     #[derive(Debug, Clone)]

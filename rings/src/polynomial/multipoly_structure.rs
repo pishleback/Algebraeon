@@ -9,6 +9,7 @@ use crate::polynomial::VariablePower;
 use crate::structure::*;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
+use algebraeon_structures::*;
 use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::collections::HashSet;

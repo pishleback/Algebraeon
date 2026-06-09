@@ -16,7 +16,8 @@ use crate::{
     },
 };
 use algebraeon_nzq::{Integer, Natural, Rational};
-use algebraeon_sets::structure::{BorrowedElem, EqSignature, SetSignature, Signature};
+use algebraeon_sets::structure::{EqSignature};
+use algebraeon_structures::*;
 
 #[derive(Debug, Clone)]
 pub struct QuadraticRingOfIntegersStructure<D: BorrowedElem<Integer>> {

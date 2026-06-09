@@ -7,7 +7,7 @@ use algebraeon_groups::structure::{
     LeftCancellativeCompositionSignature, MonoidSignature, RightCancellativeCompositionSignature,
     TryInverseSignature, TryLeftInverseSignature, TryRightInverseSignature,
 };
-use algebraeon_sets::structure::{BorrowedStructure, SetSignature, Signature};
+use algebraeon_structures::*;
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -1,6 +1,5 @@
-use crate::structure::orderings::PartialOrdSignature;
-
-use super::{EqSignature, OrdSignature, SetSignature, Signature};
+use algebraeon_structures::Signature;
+use algebraeon_structures::*;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 

@@ -1,7 +1,7 @@
 use algebraeon_macros::signature_meta_trait;
 use algebraeon_nzq::traits::Abs;
 use algebraeon_nzq::{Integer, Natural};
-use algebraeon_sets::structure::{MetaType, SetSignature};
+use algebraeon_structures::*;
 use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 

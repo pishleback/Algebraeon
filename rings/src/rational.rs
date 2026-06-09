@@ -4,6 +4,7 @@ use crate::structure::*;
 use algebraeon_nzq::traits::*;
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
+use algebraeon_structures::*;
 use static_assertions::const_assert;
 use std::borrow::Cow;
 

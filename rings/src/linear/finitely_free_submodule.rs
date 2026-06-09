@@ -1,6 +1,7 @@
 use super::{finitely_free_coset::*, finitely_free_module::*};
 use crate::{matrix::*, structure::*};
 use algebraeon_sets::structure::*;
+use algebraeon_structures::*;
 use std::{borrow::Borrow, fmt::Debug};
 
 #[derive(Debug, Clone)]

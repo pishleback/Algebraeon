@@ -4,6 +4,7 @@ use crate::{
     structure::*,
 };
 use algebraeon_sets::structure::*;
+use algebraeon_structures::*;
 use itertools::Itertools;
 use std::{borrow::Borrow, collections::HashSet};
 

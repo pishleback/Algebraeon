@@ -1,6 +1,7 @@
 use crate::structure::*;
 use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::*;
+use algebraeon_structures::*;
 use std::hash::Hash;
 use std::{borrow::Borrow, marker::PhantomData};
 

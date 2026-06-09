@@ -1,34 +1,8 @@
+use crate::*;
+
 use paste::paste;
 use rand::{Rng, RngExt, SeedableRng, rngs::StdRng};
-use std::{borrow::Borrow, fmt::Debug};
-
-macro_rules! make_maybe_trait {
-    ($name:ident) => {
-        paste! {
-            pub trait [<Maybe $name Signature>]: SetSignature {
-                type [<$name Structure>]: [<$name Signature>] <Elem = Self::Elem>;
-
-                #[allow(clippy::result_unit_err)]
-                fn [<$name:snake _structure>](
-                    &self
-                ) -> Result<Self::[<$name Structure>], ()>;
-            }
-        }
-    };
-}
-
-pub trait Signature: Clone + Debug + Eq + Send + Sync {}
-
-pub trait MetaType: Clone + Debug {
-    type Signature: SetSignature<Elem = Self>;
-    fn structure() -> Self::Signature;
-}
-
-pub trait BorrowedElem<S>: Borrow<S> + Clone + Debug + Send + Sync {}
-impl<S, BS: Borrow<S> + Clone + Debug + Send + Sync> BorrowedElem<S> for BS {}
-
-pub trait BorrowedStructure<S: Signature>: Borrow<S> + Clone + Debug + Eq + Send + Sync {}
-impl<S: Signature, BS: Borrow<S> + Clone + Debug + Eq + Send + Sync> BorrowedStructure<S> for BS {}
+use std::fmt::Debug;
 
 /// Instances of a type implementing this trait represent
 /// a set of elements of type `Self::Elem` with some
@@ -45,6 +19,11 @@ pub trait SetSignature: Signature {
     fn is_element(&self, x: &Self::Elem) -> bool {
         self.validate_element(x).is_ok()
     }
+}
+
+pub trait MetaType: Clone + Debug {
+    type Signature: SetSignature<Elem = Self>;
+    fn structure() -> Self::Signature;
 }
 
 pub trait ToStringSignature: SetSignature {
@@ -67,9 +46,11 @@ pub trait FiniteSetSignature: CountableSetSignature {
     fn list_all_elements(&self) -> Vec<Self::Elem> {
         self.generate_all_elements().collect()
     }
+    
     fn size(&self) -> usize {
         self.list_all_elements().len()
     }
+
     fn generate_random_elements(&self, seed: u64) -> impl Iterator<Item = Self::Elem> {
         let rng = StdRng::seed_from_u64(seed);
         FiniteSetRandomElementGenerator::<Self, StdRng> {

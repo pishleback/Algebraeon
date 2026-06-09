@@ -11,9 +11,8 @@ use crate::{
     },
 };
 use algebraeon_nzq::{Integer, Natural, Rational, traits::DivMod};
-use algebraeon_sets::structure::{
-    BijectiveFunction, BorrowedElem, BorrowedStructure, Function, InjectiveFunction, Morphism,
-};
+use algebraeon_sets::structure::{BijectiveFunction, Function, InjectiveFunction, Morphism};
+use algebraeon_structures::*;
 
 #[derive(Debug, Clone)]
 pub struct QuadraticNumberFieldIsomorphism<

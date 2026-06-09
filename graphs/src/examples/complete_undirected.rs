@@ -1,8 +1,8 @@
-use algebraeon_sets::structure::{EqSignature, SetSignature, UnorderedPair, UnorderedPairs};
-
 use crate::structure::{
     GraphSignature, GraphWithEdgesSignature, LooplessGraphSignature, UndirectedGraphSignature,
 };
+use algebraeon_sets::structure::{EqSignature, UnorderedPair, UnorderedPairs};
+use algebraeon_structures::*;
 
 #[allow(dead_code)]
 pub struct CompleteUndirectedGraph<Vertices: SetSignature> {

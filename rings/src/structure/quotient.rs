@@ -1,6 +1,8 @@
 use crate::structure::{IdealsSignature, RingSignature};
-use algebraeon_sets::structure::{BorrowedStructure, QuotientSetSignature};
+use algebraeon_sets::structure::QuotientSetSignature;
+use algebraeon_structures::Signature;
 use std::borrow::Cow;
+use algebraeon_structures::*;use algebraeon_structures::*;
 
 /// A quotient of a ring by an ideal with its ring structure
 pub trait QuotientRingSignature<PreQuoRing: RingSignature>:

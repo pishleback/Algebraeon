@@ -7,6 +7,7 @@ use crate::{
 use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 mod isolate;
+use algebraeon_structures::*;
 
 #[derive(Debug, Clone)]
 pub struct IsolatingBall {

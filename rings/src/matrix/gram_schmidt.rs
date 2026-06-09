@@ -1,4 +1,5 @@
 use super::*;
+use algebraeon_structures::*;
 
 impl<FS: ComplexConjugateSignature, FSB: BorrowedStructure<FS>> MatrixStructure<FS, FSB> {
     pub fn conjugate(&self, mat: &Matrix<FS::Elem>) -> Matrix<FS::Elem> {

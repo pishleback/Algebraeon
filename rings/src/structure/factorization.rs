@@ -8,9 +8,8 @@ use crate::structure::{
 };
 use algebraeon_groups::structure::{CompositionSignature, GroupSignature};
 use algebraeon_nzq::{Natural, NaturalCanonicalStructure};
-use algebraeon_sets::structure::{
-    BorrowedStructure, EqSignature, MetaType, OrdSignature, SetSignature, Signature,
-};
+use algebraeon_sets::structure::{EqSignature, OrdSignature};
+use algebraeon_structures::*;
 use std::fmt::{Debug, Display};
 use std::marker::PhantomData;
 
@@ -1008,7 +1007,7 @@ mod tests {
     use super::*;
     use crate::structure::FactoringMonoidSignature;
     use algebraeon_nzq::{Integer, Natural};
-    use algebraeon_sets::structure::MetaType;
+    use algebraeon_structures::*;
 
     #[test]
     fn factorization_invariants() {

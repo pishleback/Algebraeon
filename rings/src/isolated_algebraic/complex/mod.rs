@@ -9,6 +9,7 @@ use boxes::*;
 use std::{collections::HashSet, fmt::Display, str::FromStr};
 mod boxes;
 mod polynomial;
+use algebraeon_structures::*;
 
 fn bisect_box(
     poly: &Polynomial<Integer>,

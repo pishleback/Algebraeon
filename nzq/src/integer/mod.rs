@@ -4,9 +4,10 @@ use crate::Rational;
 use crate::natural::Natural;
 use crate::traits::{Abs, AbsDiff, DivMod};
 use algebraeon_sets::structure::{
-    CanonicalStructure, CountableSetSignature, EqSignature, MetaType, OrdSignature,
-    PartialOrdSignature, SetSignature, Signature, ToStringSignature,
+    CanonicalStructure, CountableSetSignature, EqSignature, OrdSignature, PartialOrdSignature,
+    ToStringSignature,
 };
+use algebraeon_structures::*;
 use malachite_base::num::basic::traits::{One, Two, Zero};
 use std::iter::{Product, Sum};
 use std::{

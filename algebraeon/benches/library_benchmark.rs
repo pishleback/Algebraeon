@@ -3,7 +3,7 @@ use algebraeon::rings::matrix::{Matrix, RealInnerProduct, StandardInnerProduct};
 use algebraeon::rings::parsing::{parse_integer_polynomial, parse_rational_polynomial};
 use algebraeon::rings::polynomial::Polynomial;
 use algebraeon::rings::structure::MetaFactoringMonoid;
-use algebraeon::sets::structure::MetaType;
+use algebraeon_structures::*;
 use gungraun::{library_benchmark, library_benchmark_group, main};
 use std::hint::black_box;
 use std::str::FromStr;

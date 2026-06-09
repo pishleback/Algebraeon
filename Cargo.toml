@@ -12,6 +12,7 @@ members = [
     "examples",
     "algebraeon",
     "macros",
+    "structures",
 ]
 
 [profile.bench]

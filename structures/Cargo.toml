@@ -1,0 +1,18 @@
+[package]
+name = "algebraeon-structures"
+version = "0.0.17"
+edition = "2024"
+license = "GPL-3.0-only"
+description = "Algorithms in combinatorics."
+repository = "https://github.com/pishleback/Algebraeon"
+keywords = ["maths"]
+categories = ["mathematics"]
+readme = "../README.md"
+
+[lib]
+name = "algebraeon_structures"
+
+[dependencies]
+algebraeon-macros = { version = "=0.0.17", path = "../macros", default-features = false }
+paste = "1.0.15"
+rand = "0.10.0"

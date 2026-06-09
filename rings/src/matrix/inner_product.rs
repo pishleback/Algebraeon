@@ -5,7 +5,7 @@ use crate::{
         RealSubsetSignature, RingSignature,
     },
 };
-use algebraeon_sets::structure::BorrowedStructure;
+use algebraeon_structures::*;
 use std::{borrow::Borrow, marker::PhantomData};
 
 pub trait ComplexInnerProduct<Ring: ComplexSubsetSignature> {

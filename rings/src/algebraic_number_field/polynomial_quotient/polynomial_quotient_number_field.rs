@@ -17,8 +17,9 @@ use algebraeon_nzq::{
     traits::{Abs, Fraction},
 };
 use algebraeon_sets::structure::{
-    BorrowedStructure, EnumeratedFiniteSetStructure, Function, MetaType, Morphism, SetSignature,
+    EnumeratedFiniteSetStructure, Function, Morphism,
 };
+use algebraeon_structures::*;
 use itertools::Itertools;
 use std::borrow::{Borrow, Cow};
 

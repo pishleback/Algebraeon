@@ -6,7 +6,7 @@ use crate::structure::{
     RightCancellativeCompositionSignature, TryInverseSignature, TryLeftInverseSignature,
     TryRightInverseSignature,
 };
-use algebraeon_sets::structure::{MetaType, SetSignature, Signature};
+use algebraeon_structures::*;
 use itertools::Itertools;
 use std::collections::HashMap;
 

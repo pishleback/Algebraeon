@@ -70,6 +70,7 @@ use algebraeon_nzq::primes;
 use algebraeon_nzq::*;
 use algebraeon_sets::combinatorics::LexicographicSubsetsWithRemovals;
 use algebraeon_sets::structure::*;
+use algebraeon_structures::*;
 use itertools::Itertools;
 use std::collections::BTreeSet;
 use std::ops::Rem;
