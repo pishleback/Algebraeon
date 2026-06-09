@@ -56,6 +56,7 @@ impl std::convert::From<Cycle> for Permutation {
     }
 }
 
+/// A permutation of the natural numbers
 #[derive(Debug, Clone, PartialEq, Eq, Hash, CanonicalStructure)]
 #[canonical_structure(eq)]
 pub struct Permutation {
