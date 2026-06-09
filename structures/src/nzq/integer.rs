@@ -1,10 +1,7 @@
 //! The Integer type and operations.
 
-use crate::Rational;
-use crate::natural::Natural;
-use crate::traits::{Abs, AbsDiff, DivMod};
-use algebraeon_sets::structure::CanonicalStructure;
-use algebraeon_structures::*;
+use crate::*;
+use algebraeon_macros::CanonicalStructure;
 use malachite_base::num::basic::traits::{One, Two, Zero};
 use std::iter::{Product, Sum};
 use std::{
@@ -38,7 +35,7 @@ impl ToStringSignature for IntegerCanonicalStructure {
 
 impl std::fmt::Display for Integer {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.0.fmt(f)
+        std::fmt::Display::fmt(&self.0, f)
     }
 }
 

@@ -1,4 +1,4 @@
-use algebraeon_nzq::*;
+use algebraeon_structures::*;
 use std::collections::HashSet;
 use std::fmt;
 

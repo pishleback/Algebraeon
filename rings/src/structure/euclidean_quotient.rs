@@ -396,7 +396,6 @@ impl<RS: EuclideanDomainSignature + FavoriteAssociateSignature, RSB: BorrowedStr
 #[cfg(test)]
 mod tests {
     use super::*;
-    use algebraeon_nzq::*;
 
     #[test]
     fn test() {

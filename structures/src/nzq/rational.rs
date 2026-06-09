@@ -1,9 +1,6 @@
 //! The Rational type and operations.
-use crate::integer::Integer;
-use crate::natural::Natural;
-use crate::traits::{Abs, Ceil, Floor, Fraction};
-use algebraeon_sets::structure::CanonicalStructure;
-use algebraeon_structures::*;
+use crate::*;
+use algebraeon_macros::CanonicalStructure;
 use malachite_base::num::arithmetic::traits::Pow;
 use malachite_base::num::basic::traits::{One, OneHalf, Two, Zero};
 use malachite_q::arithmetic::traits::{Approximate, SimplestRationalInInterval};
@@ -40,7 +37,7 @@ impl Rational {
 
 impl std::fmt::Display for Rational {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.0.fmt(f)
+        std::fmt::Display::fmt(&self.0, f)
     }
 }
 
@@ -238,7 +235,7 @@ impl Rational {
     pub const TWO: Self = Self(malachite_q::Rational::TWO);
     pub const ONE_HALF: Self = Self(malachite_q::Rational::ONE_HALF);
 
-    fn latex(&self) -> String {
+    pub fn latex(&self) -> String {
         let (num, den) = self.numerator_and_denominator();
         if den == Natural::ONE {
             format!("{}", num)
@@ -247,7 +244,7 @@ impl Rational {
         }
     }
 
-    fn typst(&self) -> String {
+    pub fn typst(&self) -> String {
         let (num, den) = self.numerator_and_denominator();
         if den == Natural::ONE {
             format!("{}", num)

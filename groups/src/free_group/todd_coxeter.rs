@@ -1,4 +1,5 @@
-use crate::{permutation::Permutation, structure::MetaGroupSignature};
+use crate::permutation::Permutation;
+use algebraeon_structures::*;
 use std::{
     collections::HashMap,
     ops::Mul,

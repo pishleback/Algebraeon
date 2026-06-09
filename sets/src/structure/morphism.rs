@@ -1,9 +1,7 @@
 use algebraeon_structures::Signature;
 use algebraeon_structures::*;
 use itertools::Itertools;
-use std::borrow::Borrow;
 use std::fmt::Debug;
-use std::marker::PhantomData;
 
 /// Represent all functions from `domain` to `range`
 #[derive(Debug, Clone, PartialEq, Eq)]

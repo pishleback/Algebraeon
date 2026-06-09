@@ -1,6 +1,5 @@
 use crate::structure::{FieldSignature, RealRoundingSignature, RingUnitsSignature};
 use algebraeon_macros::signature_meta_trait;
-use algebraeon_nzq::{Integer, Rational};
 use algebraeon_structures::*;
 use std::{
     borrow::Cow,

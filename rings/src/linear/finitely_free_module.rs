@@ -556,7 +556,6 @@ impl<
 #[cfg(test)]
 mod tests {
     use super::{FreeModuleFiniteNumberedBasisLinearTransformation, *};
-    use algebraeon_nzq::Integer;
 
     #[test]
     fn test_finite_rank_modules() {

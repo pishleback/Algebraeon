@@ -3,7 +3,6 @@ use crate::{
     matrix::*,
     parsing::{parse_integer_polynomial, parse_rational_polynomial},
 };
-use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 use algebraeon_structures::*;
 use itertools::Itertools;

@@ -1,8 +1,5 @@
 use crate::structure::MetaFactoringMonoid;
-use algebraeon_nzq::{
-    Integer, Natural, Rational,
-    traits::{Abs, DivMod},
-};
+use algebraeon_structures::*;
 use std::ops::{Add, Mul, Sub};
 
 #[derive(Debug, Clone, PartialEq, Eq)]

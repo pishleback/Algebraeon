@@ -9,8 +9,6 @@ The series converges quickly to \pi from below and the tail of the series is bou
 
 */
 
-use algebraeon_nzq::{Integer, Natural, Rational};
-
 use crate::{
     approximation::{
         rational_interval::RationalInterval,
@@ -18,6 +16,7 @@ use crate::{
     },
     structure::MetaMultiplicativeMonoidSignature,
 };
+use algebraeon_structures::*;
 
 fn r(k: Natural) -> Rational {
     let k8 = Integer::from(8) * Integer::from(k);

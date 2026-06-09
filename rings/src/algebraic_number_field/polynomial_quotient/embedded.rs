@@ -5,8 +5,6 @@ use crate::{
     isolated_algebraic::{ComplexAlgebraic, RealAlgebraic},
     polynomial::*,
 };
-use algebraeon_nzq::traits::Fraction;
-use algebraeon_nzq::*;
 use algebraeon_structures::*;
 use std::rc::Rc;
 

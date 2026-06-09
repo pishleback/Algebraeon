@@ -8,7 +8,6 @@ mod morphism;
 mod pairs;
 mod singleton_set;
 
-pub use algebraeon_macros::CanonicalStructure;
 pub use empty_set::EmptySetStructure;
 pub use finite_set::EnumeratedFiniteSetStructure;
 pub use morphism::{FiniteSetEndofunctions, Functions};

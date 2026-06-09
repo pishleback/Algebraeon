@@ -9,7 +9,6 @@ use crate::{
         RinglikeSpecializationSignature, TryNegateSignature, ZeroSignature,
     },
 };
-use algebraeon_nzq::Integer;
 use algebraeon_structures::*;
 
 #[derive(Debug, Clone)]

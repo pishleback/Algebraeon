@@ -9,7 +9,6 @@ use crate::{
         SemiModuleSignature, ZeroEqSignature,
     },
 };
-use algebraeon_nzq::{Natural, NaturalCanonicalStructure};
 use algebraeon_structures::*;
 use std::sync::Arc;
 
@@ -652,7 +651,6 @@ mod tests {
         MetaEuclideanDivisionSignature, MetaMultiplicationSignature,
         MetaMultiplicativeMonoidSignature, RingToQuotientFieldSignature,
     };
-    use algebraeon_nzq::*;
     use algebraeon_structures::*;
 
     #[test]

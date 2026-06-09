@@ -1,6 +1,6 @@
 //Given a pair of rational numbers a and b, how to iterator over possible simple middle rational numbers m?
 
-use algebraeon_nzq::*;
+use algebraeon_structures::*;
 use std::collections::BTreeMap;
 
 #[derive(Debug, Clone)]

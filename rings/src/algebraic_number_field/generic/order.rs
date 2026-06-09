@@ -21,7 +21,6 @@ use crate::{
         ZeroSignature,
     },
 };
-use algebraeon_nzq::{Integer, Natural};
 use algebraeon_structures::*;
 
 pub type RingOfIntegersWithIntegralBasis<K, KB> = OrderWithBasis<K, KB, true>;
@@ -558,7 +557,6 @@ mod tests {
         polynomial::Polynomial,
         structure::{IdealsArithmeticSignature, IntoErgonomic, RingToIdealsSignature},
     };
-    use algebraeon_nzq::Rational;
 
     #[test]
     fn ring_of_integer_arithmetic() {

@@ -1,6 +1,5 @@
 use crate::structure::*;
-use algebraeon_nzq::Natural;
-use algebraeon_sets::structure::*;
+use algebraeon_macros::CanonicalStructure;
 use algebraeon_structures::*;
 use std::{borrow::Cow, fmt};
 
@@ -350,7 +349,7 @@ impl<Field: FieldSignature + CharacteristicSignature> CharacteristicSignature
 }
 
 impl<Field: CharZeroFieldSignature> CharZeroRingSignature for QuaternionAlgebraStructure<Field> {
-    fn try_to_int(&self, a: &Self::Elem) -> Option<algebraeon_nzq::Integer> {
+    fn try_to_int(&self, a: &Self::Elem) -> Option<algebraeon_structures::Integer> {
         // The element must be of the form [a.x, 0, 0, 0]
         if self.base.is_zero(&a.y) && self.base.is_zero(&a.z) && self.base.is_zero(&a.w) {
             self.base.try_to_int(&a.x)
@@ -453,7 +452,6 @@ impl<Field: FieldSignature> QuaternionAlgebraStructure<Field> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use algebraeon_nzq::Rational;
 
     #[test]
     fn test_add_and_mul() {

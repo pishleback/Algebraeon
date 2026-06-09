@@ -264,10 +264,7 @@ where
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
-
-    use algebraeon_nzq::*;
 
     #[test]
     fn test_ffosp() {

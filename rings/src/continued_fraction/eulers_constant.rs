@@ -1,5 +1,5 @@
 use crate::continued_fraction::IrrationalSimpleContinuedFractionGenerator;
-use algebraeon_nzq::Integer;
+use algebraeon_structures::*;
 
 #[derive(Debug, Clone)]
 pub struct EulersConstantSimpleContinuedFractionGenerator {

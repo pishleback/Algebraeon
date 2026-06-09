@@ -308,7 +308,6 @@ impl<
 #[cfg(test)]
 mod tests {
     use super::FreeModuleOverOrderedSetStructure;
-    use algebraeon_nzq::{Integer, Natural};
     use algebraeon_structures::*;
 
     #[test]

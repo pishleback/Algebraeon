@@ -23,7 +23,7 @@ pub fn pi() -> RealApproximatePoint {
 mod tests {
     use super::*;
     use crate::structure::*;
-    use algebraeon_nzq::{Integer, Natural, Rational};
+    use algebraeon_structures::*;
     use std::str::FromStr;
 
     #[test]

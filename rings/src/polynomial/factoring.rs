@@ -1,6 +1,5 @@
 use super::{Polynomial, polynomial_structure::*};
 use crate::structure::*;
-use algebraeon_nzq::*;
 use algebraeon_structures::BorrowedStructure;
 use algebraeon_structures::*;
 

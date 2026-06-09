@@ -1,11 +1,11 @@
 #![allow(dead_code, warnings, unused)]
 
 use algebraeon_groups::examples::symmetric::*;
-use algebraeon_groups::structure::*;
 use algebraeon_rings::matrix::*;
 use algebraeon_rings::num_theory::modulo::const_naive::*;
 use algebraeon_rings::polynomial::*;
 use algebraeon_rings::structure::*;
+use algebraeon_structures::MetaGroupSignature;
 use std::marker::PhantomData;
 use std::str::FromStr;
 use std::task::Poll;

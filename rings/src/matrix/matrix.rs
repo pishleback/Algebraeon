@@ -1,5 +1,4 @@
 use crate::structure::*;
-use algebraeon_nzq::Natural;
 use algebraeon_sets::structure::*;
 use algebraeon_structures::*;
 use std::hash::Hash;
@@ -808,8 +807,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_nzq::Integer;
-
     use super::*;
 
     #[test]

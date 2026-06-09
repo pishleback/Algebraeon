@@ -1,5 +1,5 @@
 use crate::{parsing::parse_integer_polynomial, polynomial::*};
-use algebraeon_nzq::*;
+use algebraeon_structures::*;
 
 // polynomials and comments sourced from https://homepages.loria.fr/PZimmermann/mupad/ on 28/05/2025
 

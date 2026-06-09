@@ -1,10 +1,7 @@
 //! The Natural type and operations.
 
-use crate::Rational;
-use crate::integer::Integer;
-use crate::traits::{AbsDiff, DivMod, ModInv, ModPow};
-use algebraeon_sets::structure::CanonicalStructure;
-use algebraeon_structures::*;
+use crate::*;
+use algebraeon_macros::CanonicalStructure;
 use malachite_base::num::arithmetic::traits::CheckedSub;
 use malachite_base::num::{
     arithmetic::traits::PowerOf2,
@@ -19,12 +16,6 @@ use std::{
     },
     str::FromStr,
 };
-
-mod functions;
-pub use functions::choose;
-pub use functions::gcd;
-pub use functions::lcm;
-pub use functions::primes;
 
 /// Represents a natural number {0, 1, 2, ...}
 #[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, CanonicalStructure)]
@@ -52,7 +43,7 @@ impl ToStringSignature for NaturalCanonicalStructure {
 
 impl std::fmt::Display for Natural {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.0.fmt(f)
+        std::fmt::Display::fmt(&self.0, f)
     }
 }
 

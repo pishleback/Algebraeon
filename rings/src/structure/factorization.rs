@@ -6,8 +6,6 @@ use crate::structure::{
     MultiplicativeMonoidSquareOpsSignature, OneSignature, RinglikeSpecializationSignature,
     SemiRingSignature, TryReciprocalSignature, ZeroEqSignature, ZeroSignature,
 };
-use algebraeon_groups::structure::{CompositionSignature, GroupSignature};
-use algebraeon_nzq::{Natural, NaturalCanonicalStructure};
 use algebraeon_structures::*;
 use std::fmt::{Debug, Display};
 use std::marker::PhantomData;
@@ -1005,7 +1003,6 @@ pub fn factorize_by_find_factor<
 mod tests {
     use super::*;
     use crate::structure::FactoringMonoidSignature;
-    use algebraeon_nzq::{Integer, Natural};
     use algebraeon_structures::*;
 
     #[test]

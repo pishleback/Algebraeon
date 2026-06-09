@@ -1,7 +1,6 @@
 //! For generating pseudo-random numbers.
 
-use super::natural::Natural;
-use crate::Integer;
+use crate::*;
 use std::borrow::Borrow;
 
 /// For generating pseudo-random numbers.

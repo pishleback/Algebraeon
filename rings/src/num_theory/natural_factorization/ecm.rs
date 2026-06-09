@@ -33,8 +33,7 @@ DAMAGE.
 
 use crate::num_theory::natural_factorization::primes::is_prime_nat;
 use crate::structure::MetaMultiplicativeMonoidSignature;
-use algebraeon_nzq::primes;
-use algebraeon_nzq::{Natural, Rng, gcd, traits::ModInv};
+use algebraeon_structures::*;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use std::collections::HashSet;
 

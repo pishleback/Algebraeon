@@ -15,8 +15,7 @@ use algebraeon_geometry::simplex_collection::LabelledSimplexCollection;
 use algebraeon_geometry::simplicial_disjoint_union::LabelledSimplicialDisjointUnion;
 use algebraeon_geometry::vector::Vector;
 use algebraeon_geometry::*;
-use algebraeon_nzq::*;
-use algebraeon_sets::structure::*;
+use algebraeon_structures::*;use algebraeon_sets::structure::*;
 use rand::Rng;
 use std::rc::Rc;
 

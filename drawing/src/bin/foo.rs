@@ -3,11 +3,11 @@ use algebraeon_drawing::{
     canvas2d::{Canvas2D, MouseWheelZoomCamera, shapes::*},
     colour::Colour,
 };
-use algebraeon_nzq::Integer;
 use algebraeon_rings::{
     polynomial::{Polynomial, PolynomialFromStr},
     structure::MetaRealSubsetSignature,
 };
+use algebraeon_structures::*;
 
 fn main() {
     simplelog::CombinedLogger::init(vec![simplelog::TermLogger::new(

@@ -433,7 +433,6 @@ impl<Ring: UniqueReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring
 #[cfg(test)]
 mod tests {
     use super::*;
-    use algebraeon_nzq::{Integer, Rational};
 
     #[test]
     fn test_finitely_free_submodule_kernel() {

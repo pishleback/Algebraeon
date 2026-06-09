@@ -5,7 +5,6 @@ use crate::{
         Factored, FactoringMonoidSignature, GreatestCommonDivisorSignature, MetaFactoringMonoid,
     },
 };
-use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Natural, Rational, choose, traits::Abs};
 use algebraeon_structures::*;
 use std::rc::Rc;
 

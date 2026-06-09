@@ -1,4 +1,4 @@
-use crate::{Integer, Natural, traits::Abs};
+use algebraeon_structures::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {

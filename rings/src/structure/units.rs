@@ -1,9 +1,4 @@
 use crate::structure::TryReciprocalSignature;
-use algebraeon_groups::structure::{
-    AssociativeCompositionSignature, CommutativeCompositionSignature, CompositionSignature,
-    GroupSignature, IdentitySignature, LeftCancellativeCompositionSignature, MonoidSignature,
-    RightCancellativeCompositionSignature, TryInverseSignature,
-};
 use algebraeon_structures::*;
 use std::marker::PhantomData;
 

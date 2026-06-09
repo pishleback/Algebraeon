@@ -1,7 +1,6 @@
 use super::*;
 use crate::polynomial::*;
 use crate::valuation::Valuation;
-use algebraeon_nzq::Natural;
 use algebraeon_structures::*;
 use std::borrow::Cow;
 use std::fmt::Debug;

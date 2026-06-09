@@ -1,4 +1,4 @@
-use algebraeon_nzq::{Natural, primes};
+use algebraeon_structures::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum IsPowerTestResult {

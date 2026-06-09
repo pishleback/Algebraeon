@@ -8,10 +8,6 @@ use crate::{
         RingToQuotientRingSignature, UniqueFactorizationMonoidSignature,
     },
 };
-use algebraeon_nzq::{
-    Integer, Natural, Rational, choose, gcd, primes,
-    traits::{DivMod, ModPow},
-};
 use algebraeon_structures::*;
 use std::ops::Rem;
 

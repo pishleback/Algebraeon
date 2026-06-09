@@ -1,4 +1,4 @@
-use super::{Borrow, Natural};
+use crate::*;
 
 /// Return an iterator generating all prime numbers.
 pub fn primes() -> impl Iterator<Item = usize> {

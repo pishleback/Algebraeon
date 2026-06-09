@@ -1,4 +1,3 @@
-use algebraeon::nzq::{Integer, IntegerCanonicalStructure, Natural, Rational};
 use algebraeon::rings::matrix::{Matrix, RealInnerProduct, StandardInnerProduct};
 use algebraeon::rings::parsing::{parse_integer_polynomial, parse_rational_polynomial};
 use algebraeon::rings::polynomial::Polynomial;

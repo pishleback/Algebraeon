@@ -13,7 +13,6 @@ use crate::{
         TryReciprocalSignature, ZeroSignature,
     },
 };
-use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Natural};
 use algebraeon_structures::*;
 use rand::{RngExt, SeedableRng, rngs::StdRng};
 use std::{borrow::Cow, ops::Rem};

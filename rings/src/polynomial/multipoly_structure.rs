@@ -7,7 +7,6 @@ use crate::polynomial::Term;
 use crate::polynomial::Variable;
 use crate::polynomial::VariablePower;
 use crate::structure::*;
-use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 use algebraeon_structures::*;
 use std::borrow::Borrow;
@@ -834,11 +833,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::structure::IntoErgonomic;
-
-    use algebraeon_nzq::*;
-
     use super::*;
+    use crate::structure::IntoErgonomic;
 
     #[test]
     fn test_monomial_ordering() {

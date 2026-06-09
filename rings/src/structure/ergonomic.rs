@@ -6,8 +6,6 @@ use std::{
     ops::{Add, Div, Mul, Neg, Sub},
 };
 
-use algebraeon_nzq::*;
-
 pub trait IntoErgonomicSignature: SetSignature {
     fn into_ergonomic(&self, elem: Self::Elem) -> StructuredElement<Self> {
         StructuredElement::new(self.clone(), elem)

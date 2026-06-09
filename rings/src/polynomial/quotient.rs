@@ -1,6 +1,5 @@
 use super::{Polynomial, polynomial_structure::*};
 use crate::{matrix::*, structure::*};
-use algebraeon_nzq::{Integer, Natural};
 use algebraeon_sets::structure::*;
 use algebraeon_structures::*;
 use std::borrow::{Borrow, Cow};
@@ -296,7 +295,6 @@ impl<
 #[cfg(test)]
 mod tests {
     use super::*;
-    use algebraeon_nzq::Rational;
     use std::str::FromStr;
 
     #[test]

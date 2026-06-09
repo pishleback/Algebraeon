@@ -378,9 +378,8 @@ pub fn compose_affine_embeddings<'f, FS: OrderedRingSignature + FieldSignature>(
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_nzq::Rational;
-
     use super::*;
+    use algebraeon_structures::Rational;
 
     #[test]
     fn make_affine_subspace() {

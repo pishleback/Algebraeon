@@ -1,10 +1,5 @@
 use super::examples::c2::C2;
-use crate::structure::{
-    AssociativeCompositionSignature, CompositionSignature, GroupSignature, IdentitySignature,
-    LeftCancellativeCompositionSignature, MetaCompositionSignature, MetaGroupSignature,
-    MetaIdentitySignature, MonoidSignature, RightCancellativeCompositionSignature,
-    TryInverseSignature, TryLeftInverseSignature, TryRightInverseSignature,
-};
+use crate::composition_table::group::MetaGenerateFiniteSubgroupTableSignature;
 use algebraeon_macros::CanonicalStructure;
 use algebraeon_structures::*;
 use itertools::Itertools;
@@ -296,8 +291,6 @@ impl std::fmt::Display for Permutation {
 
 #[cfg(test)]
 mod tests {
-    use crate::structure::MetaCompositionSignature;
-
     use super::*;
 
     #[test]

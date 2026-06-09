@@ -12,10 +12,6 @@ use crate::{
         RingHomomorphismRangeModuleStructure, RingToQuotientFieldSignature, ZeroEqSignature,
     },
 };
-use algebraeon_nzq::{
-    Integer, Natural, Rational, RationalCanonicalStructure,
-    traits::{Abs, Fraction},
-};
 use algebraeon_sets::structure::EnumeratedFiniteSetStructure;
 use algebraeon_structures::*;
 use itertools::Itertools;

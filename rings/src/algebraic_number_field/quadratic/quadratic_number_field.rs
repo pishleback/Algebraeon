@@ -17,7 +17,6 @@ use crate::structure::{
     RingHomomorphismRangeModuleStructure, SemiModuleSignature, ZeroEqSignature,
 };
 use algebraeon_macros::CanonicalStructure;
-use algebraeon_nzq::{Integer, Natural, Rational, RationalCanonicalStructure};
 use algebraeon_structures::*;
 use std::borrow::Cow;
 

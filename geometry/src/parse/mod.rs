@@ -1,5 +1,5 @@
 use crate::partial_simplicial_complex::PartialSimplicialComplex;
-use algebraeon_nzq::RationalCanonicalStructure;
+use algebraeon_structures::RationalCanonicalStructure;
 use lalrpop_util::lalrpop_mod;
 
 lalrpop_mod!(shape_parser, "/parse/shape_grammar.rs");
@@ -14,9 +14,8 @@ pub fn parse_shape(string: &str) -> PartialSimplicialComplex<'static, RationalCa
 
 #[cfg(test)]
 mod tests {
-    use crate::parse::ast::{Point, SignedValue};
-
     use super::*;
+    use crate::parse::ast::{Point, SignedValue};
 
     #[test]
     fn test() {

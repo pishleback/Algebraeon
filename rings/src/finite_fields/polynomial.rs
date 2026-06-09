@@ -1,5 +1,4 @@
 use crate::{matrix::*, polynomial::*, structure::*};
-use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 use algebraeon_structures::*;
 

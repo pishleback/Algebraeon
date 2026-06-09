@@ -1,10 +1,4 @@
-use crate::structure::{
-    AssociativeCompositionSignature, CompositionSignature, GroupSignature, IdentitySignature,
-    LeftCancellativeCompositionSignature, MonoidSignature, RightCancellativeCompositionSignature,
-    TryInverseSignature, TryLeftInverseSignature, TryRightInverseSignature,
-};
 use algebraeon_macros::CanonicalStructure;
-use algebraeon_structures::Signature;
 use algebraeon_structures::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, CanonicalStructure)]
@@ -74,7 +68,6 @@ impl GroupSignature for C2CanonicalStructure {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::structure::{MetaCompositionSignature, MetaGroupSignature, MetaIdentitySignature};
 
     #[test]
     fn test_c2() {

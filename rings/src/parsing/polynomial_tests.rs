@@ -4,7 +4,7 @@ use crate::structure::{
     MetaAdditionSignature, MetaAdditiveGroupSignature, MetaMultiplicationSignature,
     MetaMultiplicativeMonoidSignature,
 };
-use algebraeon_nzq::*;
+use algebraeon_structures::*;
 use std::collections::HashMap;
 use std::str::FromStr;
 

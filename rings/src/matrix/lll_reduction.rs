@@ -14,8 +14,6 @@ use crate::{
     },
     structure::{FieldSignature, OrderedRingSignature, RealRoundingSignature, RealSubsetSignature},
 };
-use algebraeon_nzq::traits::Fraction;
-use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Rational};
 use algebraeon_structures::*;
 
 impl<
@@ -659,7 +657,6 @@ impl Matrix<Integer> {
 #[cfg(test)]
 mod tests {
     use crate::matrix::{Matrix, StandardInnerProduct};
-    use algebraeon_nzq::{Integer, Rational};
     use algebraeon_structures::*;
     use std::str::FromStr;
 

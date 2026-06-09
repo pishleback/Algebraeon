@@ -280,7 +280,6 @@ impl<Ring: UniqueReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring
 #[cfg(test)]
 mod tests {
     use super::*;
-    use algebraeon_nzq::Integer;
 
     #[test]
     fn test_cosets() {

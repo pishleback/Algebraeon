@@ -1,4 +1,4 @@
-use algebraeon_nzq::Rational;
+use algebraeon_structures::*;
 
 /// The open interval (a, b) in the real line.
 /// Must have a < b

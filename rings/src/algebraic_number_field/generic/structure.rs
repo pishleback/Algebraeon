@@ -9,9 +9,6 @@ use crate::{
         FiniteRankFreeRingExtension, MetaGreatestCommonDivisorSignature, RingHomomorphism,
     },
 };
-use algebraeon_nzq::{
-    Integer, IntegerCanonicalStructure, Rational, RationalCanonicalStructure, traits::Fraction,
-};
 use algebraeon_structures::*;
 use std::marker::PhantomData;
 

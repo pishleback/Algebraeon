@@ -1,6 +1,5 @@
-use algebraeon_nzq::traits::Fraction;
-
 use super::*;
+use algebraeon_structures::*;
 
 impl Polynomial<Integer> {
     fn at_fixed_re_or_im_impl<const RE_OR_IM: bool>(

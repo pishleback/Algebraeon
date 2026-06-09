@@ -1,8 +1,5 @@
 use crate::algebraic_number_field::AlgebraicIntegerRingSignature;
 use crate::structure::*;
-use algebraeon_nzq::traits::Abs;
-use algebraeon_nzq::traits::DivMod;
-use algebraeon_nzq::*;
 use algebraeon_structures::BorrowedStructure;
 use algebraeon_structures::*;
 use std::collections::HashSet;

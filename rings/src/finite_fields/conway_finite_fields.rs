@@ -4,7 +4,6 @@ use crate::{
     polynomial::*,
     structure::*,
 };
-use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Natural};
 use algebraeon_sets::structure::*;
 use algebraeon_structures::*;
 

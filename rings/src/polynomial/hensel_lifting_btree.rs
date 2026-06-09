@@ -1,6 +1,5 @@
 use super::{Polynomial, polynomial_structure::*};
 use crate::structure::*;
-use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 use algebraeon_structures::*;
 
@@ -678,8 +677,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_nzq::*;
-
     use super::*;
 
     #[test]

@@ -1,11 +1,5 @@
 use super::c2::C2;
-use crate::structure::{
-    AssociativeCompositionSignature, CompositionSignature, GroupSignature, IdentitySignature,
-    LeftCancellativeCompositionSignature, MetaCompositionSignature, MetaGroupSignature,
-    MetaIdentitySignature, MetaMonoidSignature, MonoidSignature,
-    RightCancellativeCompositionSignature, TryInverseSignature, TryLeftInverseSignature,
-    TryRightInverseSignature,
-};
+use crate::composition_table::group::MetaGenerateFiniteSubgroupTableSignature;
 use algebraeon_structures::*;
 use itertools::Itertools;
 use std::collections::HashMap;
