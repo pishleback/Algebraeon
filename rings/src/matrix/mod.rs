@@ -4,6 +4,7 @@ use algebraeon_nzq::*;
 use algebraeon_sets::structure::*;
 use itertools::Itertools;
 
+mod general_linear_group;
 mod gram_schmidt;
 mod hermite_reduction;
 mod inner_product;
@@ -16,15 +17,14 @@ mod primitive;
 mod row_operations;
 mod smith_normal_form;
 mod symmetric_matrix;
-mod general_linear_group;
 
+pub use general_linear_group::*;
 pub use hermite_reduction::*;
 pub use inner_product::*;
 pub use jordan_normal_form::*;
 pub use matrix::*;
 use row_operations::*;
 pub use symmetric_matrix::*;
-pub use general_linear_group::*;
 
 /*
 //for LLL testing from wikipeida
