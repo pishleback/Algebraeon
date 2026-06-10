@@ -1,7 +1,7 @@
 use crate::algebraic_number_field::{AlgebraicIntegerRingSignature, AlgebraicNumberFieldSignature};
 use crate::polynomial::{PolynomialStructure, factorize_by_factorize_primitive_part};
 use crate::structure::*;
-use algebraeon_sets::structure::*;
+use algebraeon_sets::sets::*;
 use algebraeon_structures::*;
 use static_assertions::const_assert;
 use std::borrow::Cow;

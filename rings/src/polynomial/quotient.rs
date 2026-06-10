@@ -1,6 +1,6 @@
 use super::{Polynomial, polynomial_structure::*};
 use crate::{matrix::*, structure::*};
-use algebraeon_sets::structure::*;
+use algebraeon_sets::{sets::EnumeratedFiniteSetStructure, sets::*};
 use algebraeon_structures::*;
 use std::borrow::{Borrow, Cow};
 

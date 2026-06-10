@@ -1,7 +1,7 @@
 use super::*;
 use crate::valuation::Valuation;
 use algebraeon_macros::{signature_meta_trait, skip_meta};
-use algebraeon_sets::structure::*;
+use algebraeon_sets::sets::*;
 use algebraeon_structures::*;
 
 pub trait DedekindDomainSignature: IntegralDomainSignature {}

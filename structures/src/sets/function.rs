@@ -26,8 +26,3 @@ pub trait BijectiveFunction<Domain: SetSignature, Range: SetSignature>:
         self.try_preimage(y).unwrap()
     }
 }
-
-/// A permutation is a bijective function from a set to itself
-pub trait Permutation<X: SetSignature>: BijectiveFunction<X, X> {}
-
-impl<X: SetSignature, T: BijectiveFunction<X, X>> Permutation<X> for T {}

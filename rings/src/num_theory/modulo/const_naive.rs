@@ -1,6 +1,6 @@
 use crate::structure::*;
 use algebraeon_macros::repeat_small_primes;
-use algebraeon_sets::structure::*;
+use algebraeon_sets::sets::*;
 use algebraeon_structures::*;
 use std::{borrow::Cow, fmt::Display, hash::Hash};
 

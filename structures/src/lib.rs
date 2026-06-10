@@ -1,10 +1,12 @@
 mod groups;
 mod nzq;
+mod primitives;
 mod sets;
 mod signatures;
 
 pub use groups::*;
 pub use nzq::*;
+pub use primitives::*;
 pub use sets::*;
 pub use signatures::*;
 

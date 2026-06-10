@@ -16,7 +16,7 @@ use algebraeon_geometry::*;
 use algebraeon_rings::isolated_algebraic::RealAlgebraic;
 use algebraeon_rings::structure::PositiveRealNthRootSignature;
 use algebraeon_rings::structure::RingSignature;
-use algebraeon_sets::structure::*;
+use algebraeon_sets::sets::*;
 use algebraeon_structures::*;
 use rand::Rng;
 

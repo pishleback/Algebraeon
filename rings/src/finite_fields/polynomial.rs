@@ -1,5 +1,5 @@
 use crate::{matrix::*, polynomial::*, structure::*};
-use algebraeon_sets::structure::*;
+use algebraeon_sets::sets::*;
 use algebraeon_structures::*;
 
 // Useful: https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields

@@ -12,7 +12,7 @@ use crate::{
         RingHomomorphismRangeModuleStructure, RingToQuotientFieldSignature, ZeroEqSignature,
     },
 };
-use algebraeon_sets::structure::EnumeratedFiniteSetStructure;
+use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 use algebraeon_structures::*;
 use itertools::Itertools;
 use std::borrow::{Borrow, Cow};

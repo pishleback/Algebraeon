@@ -1,5 +1,6 @@
 use crate::*;
 
+use algebraeon_macros::signature_meta_trait;
 use paste::paste;
 use rand::{Rng, RngExt, SeedableRng, rngs::StdRng};
 use std::fmt::Debug;
@@ -7,6 +8,7 @@ use std::fmt::Debug;
 /// Instances of a type implementing this trait represent
 /// a set of elements of type `Self::Elem` with some
 /// structure, for example, the structure of a ring.
+#[signature_meta_trait]
 pub trait SetSignature: Signature {
     type Elem: Clone + Debug + Send + Sync;
 

@@ -1,5 +1,5 @@
 use crate::structure::*;
-use algebraeon_sets::structure::*;
+use algebraeon_sets::sets::*;
 use algebraeon_structures::*;
 use std::{borrow::Cow, marker::PhantomData};
 

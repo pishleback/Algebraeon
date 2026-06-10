@@ -3,7 +3,7 @@ use crate::{
     matrix::*,
     parsing::{parse_integer_polynomial, parse_rational_polynomial},
 };
-use algebraeon_sets::structure::*;
+use algebraeon_sets::sets::*;
 use algebraeon_structures::*;
 use itertools::Itertools;
 use std::hash::Hash;

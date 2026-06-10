@@ -547,11 +547,19 @@ pub mod examples {
     }
 
     pub fn symmetric_group_structure(n: usize) -> FiniteGroupMultiplicationTable {
-        super::super::super::permutation::Permutation::symmetric_composition_table(n).0
+         Self::generated_finite_subgroup_table(
+            Self::all_permutations(n)
+                .filter(|p| p.cycle_shape() == vec![2])
+                .collect(),
+        )
     }
 
     pub fn alternating_group_structure(n: usize) -> FiniteGroupMultiplicationTable {
-        super::super::super::permutation::Permutation::alternating_composition_table(n).0
+        Self::generated_finite_subgroup_table(
+            Self::all_permutations(n)
+                .filter(|p| p.sign() == C2::Identity)
+                .collect(),
+        )
     }
 }
 

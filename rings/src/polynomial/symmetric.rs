@@ -3,7 +3,7 @@ use crate::{
     polynomial::{MultiPolynomial, Variable},
     structure::*,
 };
-use algebraeon_sets::structure::*;
+use algebraeon_sets::sets::*;
 use algebraeon_structures::*;
 use itertools::Itertools;
 use std::{borrow::Borrow, collections::HashSet};

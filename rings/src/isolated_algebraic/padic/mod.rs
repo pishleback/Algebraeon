@@ -4,7 +4,7 @@ use crate::{
     structure::*,
     valuation::*,
 };
-use algebraeon_sets::structure::*;
+use algebraeon_sets::sets::*;
 mod isolate;
 use algebraeon_structures::*;
 

@@ -4,7 +4,7 @@ use super::real::RealAlgebraic;
 use crate::polynomial::*;
 use crate::structure::*;
 use algebraeon_macros::CanonicalStructure;
-use algebraeon_sets::structure::*;
+use algebraeon_sets::sets::*;
 use boxes::*;
 use std::{collections::HashSet, fmt::Display, str::FromStr};
 mod boxes;

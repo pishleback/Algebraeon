@@ -1,4 +1,4 @@
-use algebraeon_sets::structure::UnorderedPair;
+use algebraeon_sets::sets::*;
 use algebraeon_structures::*;
 
 /// A directed graph permitting loops.

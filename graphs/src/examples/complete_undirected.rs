@@ -1,7 +1,7 @@
 use crate::structure::{
     GraphSignature, GraphWithEdgesSignature, LooplessGraphSignature, UndirectedGraphSignature,
 };
-use algebraeon_sets::structure::{UnorderedPair, UnorderedPairs};
+use algebraeon_sets::sets::*;
 use algebraeon_structures::*;
 
 #[allow(dead_code)]
@@ -72,7 +72,7 @@ mod tests {
         examples::CompleteUndirectedGraph,
         structure::{GraphSignature, GraphWithEdgesSignature},
     };
-    use algebraeon_sets::structure::EnumeratedFiniteSetStructure;
+    use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
     use algebraeon_structures::*;
 
     #[test]
