@@ -65,7 +65,6 @@ use crate::polynomial::hensel_lifting_linalg::HenselFactorization;
 use crate::polynomial::*;
 use crate::structure::*;
 use algebraeon_sets::combinatorics::LexicographicSubsetsWithRemovals;
-use algebraeon_sets::sets::*;
 use algebraeon_structures::*;
 use itertools::Itertools;
 use std::collections::BTreeSet;

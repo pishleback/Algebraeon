@@ -1,6 +1,5 @@
 use super::polynomial_quotient_number_field::AlgebraicNumberFieldPolynomialQuotientStructure;
 use crate::{matrix::Matrix, polynomial::*, structure::*};
-use algebraeon_sets::sets::*;
 use algebraeon_structures::*;
 
 //convert between nested polynomials with bounded degree and rational vectors

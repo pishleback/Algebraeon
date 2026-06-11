@@ -1003,7 +1003,6 @@ pub fn factorize_by_find_factor<
 mod tests {
     use super::*;
     use crate::structure::FactoringMonoidSignature;
-    use algebraeon_structures::*;
 
     #[test]
     fn factorization_invariants() {

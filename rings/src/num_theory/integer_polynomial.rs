@@ -80,7 +80,6 @@ mod tests {
         num_theory::berlekamp_zassenhaus::factorize_by_berlekamp_zassenhaus_algorithm_naive,
         structure::{IntoErgonomic, UniqueFactorizationMonoidSignature},
     };
-    use algebraeon_structures::*;
 
     #[test]
     fn test_zassenhaus_against_kroneckers() {

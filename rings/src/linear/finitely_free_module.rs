@@ -7,7 +7,7 @@ use crate::{
     matrix::{Matrix, MatrixStructure, ReducedHermiteAlgorithmSignature},
     structure::*,
 };
-use algebraeon_sets::{sets::EnumeratedFiniteSetStructure, sets::*};
+use algebraeon_sets::{sets::EnumeratedFiniteSetStructure};
 use algebraeon_structures::*;
 use std::{borrow::Cow, marker::PhantomData};
 

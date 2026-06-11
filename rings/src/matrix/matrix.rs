@@ -642,19 +642,20 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
         let n = a.rows();
         if n == a.cols() {
             let mut det = self.ring().zero();
-            for perm in algebraeon_groups::permutation::Permutation::all_permutations(n) {
+            for perm in FinitelySupportedPermutationsStructure::new(FiniteSubsetStructure::new(
+                usize::structure(),
+                (0..n).collect(),
+            ))
+            .generate_all_elements()
+            {
                 let mut prod = self.ring().one();
                 for k in 0..n {
                     self.ring()
-                        .mul_mut(&mut prod, a.at(k, perm.call(k)).unwrap());
+                        .mul_mut(&mut prod, a.at(k, perm.image(&k)).unwrap());
                 }
-                match perm.sign() {
-                    algebraeon_groups::examples::c2::C2::Identity => {}
-                    algebraeon_groups::examples::c2::C2::Flip => {
-                        prod = self.ring().neg(&prod);
-                    }
+                if perm.is_odd() {
+                    prod = self.ring().neg(&prod);
                 }
-
                 self.ring().add_mut(&mut det, &prod);
             }
             Ok(det)

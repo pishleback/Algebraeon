@@ -283,7 +283,6 @@ impl
 mod tests {
     use super::*;
     use crate::{polynomial::PolynomialFromStr, structure::IntoErgonomic};
-    use algebraeon_structures::*;
 
     #[test]
     fn test_anf_integral_multiple() {

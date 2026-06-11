@@ -154,18 +154,18 @@ mod tests {
         ] {
             println!();
             let rsp = root_sum_poly(&f, &g);
-            println!("f = {}", Polynomial::to_string(&f));
-            println!("g = {}", Polynomial::to_string(&g));
+            println!("f = {}", MetaToStringSignature::to_string(&f));
+            println!("g = {}", MetaToStringSignature::to_string(&g));
             println!(
                 "exp = {}    exp_factored = {:?}",
-                Polynomial::to_string(&exp),
+                MetaToStringSignature::to_string(&exp),
                 Integer::structure()
                     .polynomials()
                     .factorize_by_kroneckers_method(exp.clone(), Integer::factor)
             );
             println!(
                 "rsp = {}    rsp_factored = {:?}",
-                Polynomial::to_string(&rsp),
+                MetaToStringSignature::to_string(&rsp),
                 Integer::structure()
                     .polynomials()
                     .factorize_by_kroneckers_method(rsp.clone(), Integer::factor)
@@ -246,18 +246,18 @@ mod tests {
         ] {
             println!();
             let rpp = root_product_poly(&f, &g);
-            println!("f = {}", Polynomial::to_string(&f));
-            println!("g = {}", Polynomial::to_string(&g));
+            println!("f = {}", MetaToStringSignature::to_string(&f));
+            println!("g = {}", MetaToStringSignature::to_string(&g));
             println!(
                 "exp = {}    exp_factored = {:?}",
-                Polynomial::to_string(&exp),
+                MetaToStringSignature::to_string(&exp),
                 Integer::structure()
                     .polynomials()
                     .factorize_by_kroneckers_method(exp.clone(), Integer::factor)
             );
             println!(
                 "rpp = {}    rpp_factored = {:?}",
-                Polynomial::to_string(&rpp),
+                MetaToStringSignature::to_string(&rpp),
                 Integer::structure()
                     .polynomials()
                     .factorize_by_kroneckers_method(rpp.clone(), Integer::factor)

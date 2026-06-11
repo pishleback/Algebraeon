@@ -4,7 +4,6 @@ use super::{
 };
 use crate::matrix::{ReducedHermiteAlgorithmSignature, UniqueReducedHermiteAlgorithmSignature};
 use crate::structure::*;
-use algebraeon_sets::sets::*;
 use algebraeon_structures::*;
 use std::borrow::Borrow;
 use std::fmt::Debug;

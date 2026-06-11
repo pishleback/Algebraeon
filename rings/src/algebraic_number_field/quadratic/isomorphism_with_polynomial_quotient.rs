@@ -167,7 +167,6 @@ impl<D: BorrowedElem<Integer>> QuadraticNumberFieldStructure<D> {}
 mod tests {
     use super::*;
     use crate::parsing::parse_rational_polynomial;
-    use algebraeon_structures::*;
 
     // ZZ[i]
     #[test]

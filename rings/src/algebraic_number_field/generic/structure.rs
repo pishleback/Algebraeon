@@ -282,7 +282,6 @@ pub(crate) use ring_of_integers_to_algebraic_number_field_inclusion::RingOfInteg
 
 mod order_to_ring_of_integers_inclusion {
     use super::*;
-    use algebraeon_structures::*;
 
     #[derive(Debug, Clone)]
     pub struct OrderToRingOfIntegersInclusion<
@@ -962,7 +961,6 @@ mod integer_submodule_inclusion {
         linear::finitely_free_submodule::{FinitelyFreeSubmodule, FinitelyFreeSubmoduleStructure},
         structure::RingSignature,
     };
-    use algebraeon_structures::*;
     use std::marker::PhantomData;
 
     #[derive(Debug, Clone)]

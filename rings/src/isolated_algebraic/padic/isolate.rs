@@ -8,7 +8,6 @@ use std::collections::HashSet;
 
 mod balancable_pairs {
     use super::*;
-    use algebraeon_structures::*;
     use std::collections::HashSet;
 
     /// A balancable pair of a polynomial consists of two of the monomial terms satisfying some conditions.

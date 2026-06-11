@@ -1,7 +1,6 @@
 use super::{bisection_gen::RationalSimpleBetweenGenerator, poly_tools::*};
 use crate::{polynomial::*, structure::*};
 use algebraeon_macros::CanonicalStructure;
-use algebraeon_sets::sets::*;
 use algebraeon_structures::*;
 use bounds::*;
 use interval::*;

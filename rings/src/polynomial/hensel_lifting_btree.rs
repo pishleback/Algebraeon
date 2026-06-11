@@ -1,6 +1,5 @@
 use super::{Polynomial, polynomial_structure::*};
 use crate::structure::*;
-use algebraeon_sets::sets::*;
 use algebraeon_structures::*;
 
 #[derive(Debug, Clone)]

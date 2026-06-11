@@ -1,7 +1,6 @@
 use crate::{
     num_theory::modulo::const_naive::ModuloCanonicalStructure, polynomial::*, structure::*,
 };
-use algebraeon_sets::sets::*;
 use algebraeon_structures::*;
 use itertools::Itertools;
 

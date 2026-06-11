@@ -4,7 +4,6 @@ use crate::{
     polynomial::*,
     structure::*,
 };
-use algebraeon_sets::sets::*;
 use algebraeon_structures::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]

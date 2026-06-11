@@ -1,5 +1,4 @@
 use super::*;
-use algebraeon_sets::sets::*;
 use algebraeon_structures::*;
 use std::{
     borrow::Borrow,

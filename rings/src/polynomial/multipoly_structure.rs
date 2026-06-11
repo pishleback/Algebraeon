@@ -7,7 +7,6 @@ use crate::polynomial::Term;
 use crate::polynomial::Variable;
 use crate::polynomial::VariablePower;
 use crate::structure::*;
-use algebraeon_sets::sets::*;
 use algebraeon_structures::*;
 use std::borrow::Borrow;
 use std::collections::HashMap;

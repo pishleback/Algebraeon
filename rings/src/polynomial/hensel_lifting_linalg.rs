@@ -651,7 +651,6 @@ mod tests {
         MetaEuclideanDivisionSignature, MetaMultiplicationSignature,
         MetaMultiplicativeMonoidSignature, RingToQuotientFieldSignature,
     };
-    use algebraeon_structures::*;
 
     #[test]
     fn test_hensel_factorization_example1_mod5() {

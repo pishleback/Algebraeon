@@ -734,11 +734,11 @@ mod tests {
             Integer::from(1),
         ]);
 
-        println!("f = {}", Polynomial::to_string(&f));
+        println!("f = {}", MetaToStringSignature::to_string(&f));
 
         let (vert_re_f, vert_im_f) = Polynomial::at_fixed_re(&f, &Rational::TWO);
-        println!("re = {}", Polynomial::to_string(&vert_re_f));
-        println!("im = {}", Polynomial::to_string(&vert_im_f));
+        println!("re = {}", MetaToStringSignature::to_string(&vert_re_f));
+        println!("im = {}", MetaToStringSignature::to_string(&vert_im_f));
         // f(z) = z^3 + 3z - 1
         // f(2 + xi) = (2 + xi)^3 + 3(2 + xi) - 1
         //           = 8 + 12xi - 6x^2 - x^3i + 6 + 3xi - 1
@@ -758,8 +758,8 @@ mod tests {
         );
 
         let (vert_re_f, vert_im_f) = Polynomial::at_fixed_re(&f, &Rational::from_integers(1, 2));
-        println!("re = {}", Polynomial::to_string(&vert_re_f));
-        println!("im = {}", Polynomial::to_string(&vert_im_f));
+        println!("re = {}", MetaToStringSignature::to_string(&vert_re_f));
+        println!("im = {}", MetaToStringSignature::to_string(&vert_im_f));
         // f(z) = z^3 + 3z - 1
         // f(1/2 + xi) = 5 + 30ix - 12x^2 - 8ix^3
         debug_assert_eq!(
@@ -777,8 +777,8 @@ mod tests {
         );
 
         let (vert_re_f, vert_im_f) = Polynomial::at_fixed_im(&f, &Rational::TWO);
-        println!("re = {}", Polynomial::to_string(&vert_re_f));
-        println!("im = {}", Polynomial::to_string(&vert_im_f));
+        println!("re = {}", MetaToStringSignature::to_string(&vert_re_f));
+        println!("im = {}", MetaToStringSignature::to_string(&vert_im_f));
         // f(z) = z^3 + 3z - 1
         // f(x + 2i) = -1 -2i -9x + 6ix^2 + x^3
         debug_assert_eq!(
@@ -796,8 +796,8 @@ mod tests {
         );
 
         let (vert_re_f, vert_im_f) = Polynomial::at_fixed_im(&f, &Rational::from_integers(1, 2));
-        println!("re = {}", Polynomial::to_string(&vert_re_f));
-        println!("im = {}", Polynomial::to_string(&vert_im_f));
+        println!("re = {}", MetaToStringSignature::to_string(&vert_re_f));
+        println!("im = {}", MetaToStringSignature::to_string(&vert_im_f));
         // f(z) = z^3 + 3z - 1
         // f(x + 1/2i) = -8 +11i + 18x + 12ix^2 + 8x^3
         debug_assert_eq!(
