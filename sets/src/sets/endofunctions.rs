@@ -29,9 +29,7 @@ impl<X: FiniteSetSignature + EqSignature> SetSignature for FiniteSetEndofunction
     }
 }
 
-impl<X: FiniteSetSignature + EqSignature> CountableSetSignature
-    for FiniteSetEndofunctions<X>
-{
+impl<X: FiniteSetSignature + EqSignature> CountableSetSignature for FiniteSetEndofunctions<X> {
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
         (0..self.set.size())
             .map(|_| self.set.list_all_elements())
