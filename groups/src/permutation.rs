@@ -6,10 +6,6 @@ use itertools::Itertools;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 
-pub fn all_permutations(n: usize) -> impl Iterator<Item = Self> {
-    (0..n).permutations(n).map(Self::new_unchecked)
-}
-
 impl std::fmt::Display for Permutation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut cycles = self.disjoint_cycles();

@@ -487,9 +487,13 @@ pub trait GenerateFiniteSubgroupTableSignature: GroupSignature {
 impl<GS: GroupSignature> GenerateFiniteSubgroupTableSignature for GS {}
 
 pub mod examples {
-    use crate::free_group::todd_coxeter::FinitelyGeneratedGroupPresentation;
-
     use super::{FiniteGroupMultiplicationTable, direct_product_structure};
+    use crate::composition_table::group::MetaGenerateFiniteSubgroupTableSignature;
+    use crate::free_group::todd_coxeter::FinitelyGeneratedGroupPresentation;
+    use algebraeon_sets::sets::{
+        FiniteSubsetStructure, FinitelySupportedPermutation, FinitelySupportedPermutationsStructure,
+    };
+    use algebraeon_structures::*;
 
     pub fn trivial_group_structure() -> FiniteGroupMultiplicationTable {
         cyclic_group_structure(1)
@@ -547,19 +551,28 @@ pub mod examples {
     }
 
     pub fn symmetric_group_structure(n: usize) -> FiniteGroupMultiplicationTable {
-         Self::generated_finite_subgroup_table(
-            Self::all_permutations(n)
-                .filter(|p| p.cycle_shape() == vec![2])
-                .collect(),
+        FinitelySupportedPermutation::<usize>::generated_finite_subgroup_table(
+            FinitelySupportedPermutationsStructure::new(FiniteSubsetStructure::new(
+                usize::structure(),
+                (0..n).collect(),
+            ))
+            .list_all_elements(),
         )
+        .0
     }
 
     pub fn alternating_group_structure(n: usize) -> FiniteGroupMultiplicationTable {
-        Self::generated_finite_subgroup_table(
-            Self::all_permutations(n)
-                .filter(|p| p.sign() == C2::Identity)
-                .collect(),
+        FinitelySupportedPermutation::<usize>::generated_finite_subgroup_table(
+            FinitelySupportedPermutationsStructure::new(FiniteSubsetStructure::new(
+                usize::structure(),
+                (0..n).collect(),
+            ))
+            .list_all_elements()
+            .into_iter()
+            .filter(|perm| perm.is_even())
+            .collect(),
         )
+        .0
     }
 }
 

@@ -67,6 +67,83 @@ impl<'s, X, O: OrdSignature + 's, K: Fn(&X) -> &O::Elem> Iterator for VecMerger<
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MergedUniqueSource<T> {
+    First(T),
+    Second(T),
+    Both(T, T),
+}
+
+struct VecMergerUnique<'s, X, O: OrdSignature, K: Fn(&X) -> &O::Elem> {
+    ordering: &'s O,
+    i: usize,
+    a: Vec<Option<X>>,
+    j: usize,
+    b: Vec<Option<X>>,
+    key: K,
+}
+
+impl<'s, X, O: OrdSignature + 's, K: Fn(&X) -> &O::Elem> VecMergerUnique<'s, X, O, K> {
+    fn new(ordering: &'s O, a: Vec<X>, b: Vec<X>, key: K) -> Self {
+        Self {
+            ordering,
+            i: 0,
+            a: a.into_iter().map(|x| Some(x)).collect(),
+            j: 0,
+            b: b.into_iter().map(|x| Some(x)).collect(),
+            key,
+        }
+    }
+}
+
+impl<'s, X, O: OrdSignature + 's, K: Fn(&X) -> &O::Elem> Iterator for VecMergerUnique<'s, X, O, K> {
+    type Item = MergedUniqueSource<X>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match (self.i < self.a.len(), self.j < self.b.len()) {
+            (true, true) => {
+                match self.ordering.cmp(
+                    (self.key)(self.a[self.i].as_ref().unwrap()).borrow(),
+                    (self.key)(self.b[self.j].as_ref().unwrap()).borrow(),
+                ) {
+                    Ordering::Less => {
+                        let a_item = self.a[self.i].take().unwrap();
+                        self.i += 1;
+                        Some(MergedUniqueSource::First(a_item))
+                    }
+                    Ordering::Greater => {
+                        let b_item = self.b[self.j].take().unwrap();
+                        self.j += 1;
+                        Some(MergedUniqueSource::Second(b_item))
+                    }
+                    Ordering::Equal => {
+                        let a_item = self.a[self.i].take().unwrap();
+                        let b_item = self.b[self.j].take().unwrap();
+                        debug_assert!(
+                            self.ordering
+                                .equal((self.key)(&a_item), (self.key)(&b_item))
+                        );
+                        self.i += 1;
+                        self.j += 1;
+                        Some(MergedUniqueSource::Both(a_item, b_item))
+                    }
+                }
+            }
+            (true, false) => {
+                let a_item = self.a[self.i].take().unwrap();
+                self.i += 1;
+                Some(MergedUniqueSource::First(a_item))
+            }
+            (false, true) => {
+                let b_item = self.b[self.j].take().unwrap();
+                self.j += 1;
+                Some(MergedUniqueSource::Second(b_item))
+            }
+            (false, false) => None,
+        }
+    }
+}
+
 #[signature_meta_trait]
 pub trait PartialOrdSignature: EqSignature {
     #[skip_meta]
@@ -149,8 +226,6 @@ pub trait OrdSignature: PartialOrdSignature {
         }
 
         while b - a >= 2 {
-            println!("{:?} {:?}", a, b);
-
             let m = (a + b) / 2;
             let m_key = key(&v[m]);
             match self.cmp(target, m_key) {
@@ -163,6 +238,28 @@ pub trait OrdSignature: PartialOrdSignature {
         }
 
         None
+    }
+
+    fn binary_search_index(
+        &self,
+        v: &[impl Borrow<Self::Elem>],
+        target: &Self::Elem,
+    ) -> Option<usize> {
+        self.binary_search_index_by_key(v, target, |item| item.borrow())
+    }
+
+    fn binary_search_index_by_key<'x, X>(
+        &self,
+        v: &'x [X],
+        target: &Self::Elem,
+        key: impl Fn(&X) -> &Self::Elem,
+    ) -> Option<usize> {
+        self.binary_search_by_key(
+            &v.iter().enumerate().collect::<Vec<_>>(),
+            target,
+            |(_, item)| key(item),
+        )
+        .map(|s| s.0)
     }
 
     #[skip_meta]
@@ -184,6 +281,27 @@ pub trait OrdSignature: PartialOrdSignature {
         debug_assert!(self.is_sorted_by_key(&a.iter().collect::<Vec<_>>(), |x| key(x)));
         debug_assert!(self.is_sorted_by_key(&b.iter().collect::<Vec<_>>(), |x| key(x)));
         VecMerger::new(self, a, b, key)
+    }
+
+    #[skip_meta]
+    fn merge_sorted_and_unique<'s, S: Borrow<Self::Elem> + 's>(
+        &'s self,
+        a: Vec<S>,
+        b: Vec<S>,
+    ) -> impl Iterator<Item = MergedUniqueSource<S>> {
+        self.merge_sorted_and_unique_by_key(a, b, |x| (*x).borrow())
+    }
+
+    #[skip_meta]
+    fn merge_sorted_and_unique_by_key<X>(
+        &self,
+        a: Vec<X>,
+        b: Vec<X>,
+        key: impl Fn(&X) -> &Self::Elem,
+    ) -> impl Iterator<Item = MergedUniqueSource<X>> {
+        debug_assert!(self.is_sorted_and_unique_by_key(&a.iter().collect::<Vec<_>>(), |x| key(x)));
+        debug_assert!(self.is_sorted_and_unique_by_key(&b.iter().collect::<Vec<_>>(), |x| key(x)));
+        VecMergerUnique::new(self, a, b, key)
     }
 
     fn sort<S: Borrow<Self::Elem>>(&self, a: Vec<S>) -> Vec<S> {

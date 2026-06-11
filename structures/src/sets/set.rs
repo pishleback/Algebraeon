@@ -1,6 +1,6 @@
 use crate::*;
 
-use algebraeon_macros::signature_meta_trait;
+use algebraeon_macros::{signature_meta_trait, skip_meta};
 use paste::paste;
 use rand::{Rng, RngExt, SeedableRng, rngs::StdRng};
 use std::fmt::Debug;
@@ -28,10 +28,12 @@ pub trait MetaType: Clone + Debug {
     fn structure() -> Self::Signature;
 }
 
+#[signature_meta_trait]
 pub trait ToStringSignature: SetSignature {
     fn to_string(&self, elem: &Self::Elem) -> String;
 }
 
+#[signature_meta_trait]
 pub trait EqSignature: SetSignature {
     fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool;
 }
@@ -42,6 +44,7 @@ pub trait CountableSetSignature: SetSignature {
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone;
 }
 
+#[signature_meta_trait]
 pub trait FiniteSetSignature: CountableSetSignature {
     /// A list of all elements in the set.
     /// Always returns elements in the same order.
@@ -53,6 +56,7 @@ pub trait FiniteSetSignature: CountableSetSignature {
         self.list_all_elements().len()
     }
 
+    #[skip_meta]
     fn generate_random_elements(&self, seed: u64) -> impl Iterator<Item = Self::Elem> {
         let rng = StdRng::seed_from_u64(seed);
         FiniteSetRandomElementGenerator::<Self, StdRng> {
@@ -124,7 +128,7 @@ mod tests {
 
         impl ToStringSignature for ACanonicalStructure {
             fn to_string(&self, elem: &Self::Elem) -> String {
-                elem.to_string()
+                ToString::to_string(elem)
             }
         }
 

@@ -1,4 +1,4 @@
-use algebraeon_sets::combinatorics::FinitelySupportedPermutation;
+use algebraeon_sets::sets::FinitelySupportedPermutation;
 use algebraeon_structures::*;
 use std::{
     collections::HashMap,
@@ -165,7 +165,7 @@ fn enumerate_cosets_impl(
     #[allow(clippy::indexing_slicing)]
     for g in 0..num_gens {
         perms.push(
-            FinitelySupportedPermutation::new(
+            FinitelySupportedPermutation::new_perm(
                 cosets
                     .iter()
                     .map(|c| match coset_index_lookup[scg.follow(*c, 2 * g)] {
@@ -346,7 +346,6 @@ the list of generators for this finitely generated group"
     ) -> super::super::composition_table::group::FiniteGroupMultiplicationTable {
         let num_gens = self.generators.len();
         let (n, gen_perms) = self.enumerate_elements();
-        #[allow(clippy::redundant_closure_for_method_calls)]
         let inv_gen_perms = gen_perms
             .iter()
             .map(|perm| perm.clone().inverse())
@@ -366,7 +365,7 @@ the list of generators for this finitely generated group"
                 debug_assert!(b_done);
                 #[allow(clippy::needless_range_loop)]
                 for g in 0..num_gens {
-                    let c = *gen_perms[g].apply(&b_idx);
+                    let c = gen_perms[g].image(&b_idx);
                     if !paths[c].0 {
                         let mut c_path = b_path.clone();
                         c_path.push(g);
@@ -400,7 +399,7 @@ the list of generators for this finitely generated group"
                 .map(|x| {
                     let mut y = 0;
                     for g in paths[x].iter().rev() {
-                        y = *inv_gen_perms[*g].apply(&y);
+                        y = inv_gen_perms[*g].image(&y);
                     }
                     y
                 })
@@ -411,10 +410,10 @@ the list of generators for this finitely generated group"
                         .map(|y| {
                             let mut z = 0;
                             for g in &paths[x] {
-                                z = *gen_perms[*g].apply(&z);
+                                z = gen_perms[*g].image(&z);
                             }
                             for g in &paths[y] {
-                                z = *gen_perms[*g].apply(&z);
+                                z = gen_perms[*g].image(&z);
                             }
                             z
                         })

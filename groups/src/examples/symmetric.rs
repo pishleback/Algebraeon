@@ -1,6 +1,5 @@
 use super::c2::C2;
 use crate::composition_table::group::MetaGenerateFiniteSubgroupTableSignature;
-use algebraeon_sets::combinatorics::FinitelySupportedPermutation;
 use algebraeon_structures::*;
 use itertools::Itertools;
 use std::collections::HashMap;
