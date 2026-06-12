@@ -240,7 +240,7 @@ impl Rational {
     pub const TWO: Self = Self(malachite_q::Rational::TWO);
     pub const ONE_HALF: Self = Self(malachite_q::Rational::ONE_HALF);
 
-    fn latex(&self) -> String {
+    pub fn latex(&self) -> String {
         let (num, den) = self.numerator_and_denominator();
         if den == Natural::ONE {
             format!("{}", num)
@@ -249,7 +249,7 @@ impl Rational {
         }
     }
 
-    fn typst(&self) -> String {
+    pub fn typst(&self) -> String {
         let (num, den) = self.numerator_and_denominator();
         if den == Natural::ONE {
             format!("{}", num)
@@ -874,6 +874,11 @@ mod tests {
         let r4 = Rational::from_integers(-2, 4);
         assert_eq!(r4.latex(), "\\frac{-1}{2}");
         assert_eq!(r4.typst(), "-1/2");
+
+        // a negative denominator is normalised away
+        let r5 = Rational::from_integers(2, -3);
+        assert_eq!(r5.latex(), "\\frac{-2}{3}");
+        assert_eq!(r5.typst(), "-2/3");
     }
 
     #[test]

@@ -286,6 +286,14 @@ impl Integer {
     pub const ONE: Self = Self(malachite_nz::integer::Integer::ONE);
     pub const TWO: Self = Self(malachite_nz::integer::Integer::TWO);
 
+    pub fn latex(&self) -> String {
+        format!("{}", self)
+    }
+
+    pub fn typst(&self) -> String {
+        format!("{}", self)
+    }
+
     pub fn sqrt_if_square(&self) -> Option<Natural> {
         if self < &Integer::ZERO {
             None
@@ -670,6 +678,20 @@ impl CountableSetSignature for IntegerCanonicalStructure {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_latex_and_typst() {
+        assert_eq!(Integer::ZERO.latex(), "0");
+        assert_eq!(Integer::ZERO.typst(), "0");
+
+        let i = Integer::from(42);
+        assert_eq!(i.latex(), "42");
+        assert_eq!(i.typst(), "42");
+
+        let neg = Integer::from(-5);
+        assert_eq!(neg.latex(), "-5");
+        assert_eq!(neg.typst(), "-5");
+    }
 
     #[test]
     fn test_int_to_uint() {
