@@ -25,7 +25,9 @@ jobs:
           ref: main
 
       - name: Run benchmark on main
-        run: cargo bench --bench library_benchmark -- --tolerance=0.99
+        run: |
+          cargo bench --bench library_benchmark -- --tolerance=0.99
+          git restore . # reset e.g. Cargo.lock
 
       - name: Checkout PR branch
         run: |
