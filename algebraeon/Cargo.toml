@@ -24,7 +24,7 @@ algebraeon-macros = { version = "=0.0.17", path = "../macros", default-features 
 
 # Benchmarking stuff
 [dev-dependencies]
-gungraun = "0.17.2"
+gungraun = "0.19.2"
 
 [[bench]]
 name = "library_benchmark"
