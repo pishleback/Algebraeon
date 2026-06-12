@@ -869,6 +869,11 @@ mod tests {
         let r4 = Rational::from_integers(-2, 4);
         assert_eq!(r4.latex(), "\\frac{-1}{2}");
         assert_eq!(r4.typst(), "-1/2");
+
+        // a negative denominator is normalised away
+        let r5 = Rational::from_integers(2, -3);
+        assert_eq!(r5.latex(), "\\frac{-2}{3}");
+        assert_eq!(r5.typst(), "-2/3");
     }
 
     #[test]

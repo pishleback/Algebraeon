@@ -135,6 +135,14 @@ impl Natural {
     pub const ZERO: Self = Self(malachite_nz::natural::Natural::ZERO);
     pub const ONE: Self = Self(malachite_nz::natural::Natural::ONE);
     pub const TWO: Self = Self(malachite_nz::natural::Natural::TWO);
+
+    pub fn latex(&self) -> String {
+        format!("{}", self)
+    }
+
+    pub fn typst(&self) -> String {
+        format!("{}", self)
+    }
 }
 
 impl AddAssign<Natural> for Natural {
@@ -769,6 +777,16 @@ impl CountableSetSignature for NaturalCanonicalStructure {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_latex_and_typst() {
+        assert_eq!(Natural::ZERO.latex(), "0");
+        assert_eq!(Natural::ZERO.typst(), "0");
+
+        let n = Natural::from(42u32);
+        assert_eq!(n.latex(), "42");
+        assert_eq!(n.typst(), "42");
+    }
 
     #[test]
     fn test_nat_to_usize() {

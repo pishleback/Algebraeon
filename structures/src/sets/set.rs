@@ -44,10 +44,11 @@ pub trait CountableSetSignature: SetSignature {
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone;
 }
 
+/// A set with finitely many elements
 #[signature_meta_trait]
 pub trait FiniteSetSignature: CountableSetSignature {
     /// A list of all elements in the set.
-    /// Always returns elements in the same order.
+    /// Must always return elements in the same order.
     fn list_all_elements(&self) -> Vec<Self::Elem> {
         self.generate_all_elements().collect()
     }
@@ -66,6 +67,22 @@ pub trait FiniteSetSignature: CountableSetSignature {
     }
 }
 make_maybe_trait!(FiniteSet);
+
+/// A finite set where the elements are numbered 0, 1, ..., n-1
+/// self.list_all_elements is required to return elements in the correct order
+/// The ordering on the set must also agree with the ordering given by the enumeration
+#[signature_meta_trait]
+pub trait EnumeratedOrdFiniteSetSignature: FiniteSetSignature + OrdSignature {
+    /// List all elements in the order in which they are numbered
+    fn list_all_elements_ordered(&self) -> Vec<Self::Elem>;
+
+    /// Return the numbering of an element
+    fn element_to_enumeration(&self, elem: &Self::Elem) -> usize;
+
+    /// Return the numbering of an element
+    /// None iff number is too large
+    fn enumeration_to_element(&self, num: usize) -> Option<Self::Elem>;
+}
 
 #[derive(Debug, Clone)]
 pub struct FiniteSetRandomElementGenerator<S: FiniteSetSignature, R: Rng> {
@@ -120,6 +137,7 @@ mod tests {
             x: i32,
         }
 
+        #[allow(clippy::to_string_trait_impl)]
         impl ToString for A {
             fn to_string(&self) -> String {
                 self.x.to_string()
