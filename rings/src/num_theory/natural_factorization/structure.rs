@@ -5,9 +5,7 @@ use crate::structure::{
     MultiplicationSignature, MultiplicativeMonoidSignature, SemiRingSignature,
     UniqueFactorizationMonoidSignature,
 };
-use algebraeon_nzq::traits::ModPow;
-use algebraeon_nzq::{Natural, NaturalCanonicalStructure, gcd};
-use algebraeon_sets::structure::{BorrowedStructure, MetaType, SetSignature, ToStringSignature};
+use algebraeon_structures::*;
 use itertools::Itertools;
 
 impl UniqueFactorizationMonoidSignature for NaturalCanonicalStructure {

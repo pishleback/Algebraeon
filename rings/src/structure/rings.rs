@@ -1,15 +1,10 @@
 use super::*;
 use crate::polynomial::*;
 use algebraeon_macros::{signature_meta_trait, skip_meta};
-use algebraeon_nzq::{Integer, Natural, NaturalCanonicalStructure, Rational, traits::*};
-use algebraeon_sets::structure::*;
+use algebraeon_structures::*;
 use std::{borrow::Borrow, fmt::Debug};
 
 mod unconstructable_universal_structure {
-    use algebraeon_sets::structure::{EqSignature, SetSignature, Signature};
-    use std::fmt::Debug;
-    use std::marker::PhantomData;
-
     use crate::structure::{
         AdditionSignature, AdditiveGroupSignature, AdditiveMonoidSignature,
         CancellativeAdditionSignature, CharZeroRingSignature, CharacteristicSignature,
@@ -19,6 +14,9 @@ mod unconstructable_universal_structure {
         RingSignature, RinglikeSpecializationSignature, SemiRingSignature, TryNegateSignature,
         TryReciprocalSignature, ZeroSignature,
     };
+    use algebraeon_structures::*;
+    use std::fmt::Debug;
+    use std::marker::PhantomData;
 
     pub struct UnconstructableStructure<Set> {
         _set: PhantomData<Set>,
@@ -149,7 +147,7 @@ mod unconstructable_universal_structure {
     impl<Set: Debug + Clone + Send + Sync> SemiRingSignature for UnconstructableStructure<Set> {}
 
     impl<Set: Debug + Clone + Send + Sync> CharacteristicSignature for UnconstructableStructure<Set> {
-        fn characteristic(&self) -> algebraeon_nzq::Natural {
+        fn characteristic(&self) -> Natural {
             unreachable!()
         }
     }
@@ -157,7 +155,7 @@ mod unconstructable_universal_structure {
     impl<Set: Debug + Clone + Send + Sync> RingSignature for UnconstructableStructure<Set> {}
 
     impl<Set: Debug + Clone + Send + Sync> CharZeroRingSignature for UnconstructableStructure<Set> {
-        fn try_to_int(&self, _x: &Self::Elem) -> Option<algebraeon_nzq::Integer> {
+        fn try_to_int(&self, _x: &Self::Elem) -> Option<Integer> {
             unreachable!()
         }
     }

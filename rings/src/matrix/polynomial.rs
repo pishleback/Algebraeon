@@ -1,4 +1,5 @@
 use super::*;
+use algebraeon_structures::*;
 
 impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MatrixStructure<FS, FSB> {
     pub fn presentation_matrix(

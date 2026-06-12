@@ -1,5 +1,5 @@
 use crate::structure::*;
-use algebraeon_sets::structure::*;
+use algebraeon_structures::*;
 use std::{borrow::Cow, marker::PhantomData};
 
 #[derive(Debug, Clone)]
@@ -306,10 +306,8 @@ impl<
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_nzq::{Integer, Natural};
-    use algebraeon_sets::structure::MetaType;
-
     use super::FreeModuleOverOrderedSetStructure;
+    use algebraeon_structures::*;
 
     #[test]
     fn test_ordered_set_free_module() {

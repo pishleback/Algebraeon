@@ -1,5 +1,5 @@
 use super::*;
-use algebraeon_sets::structure::MetaType;
+use algebraeon_structures::*;
 use std::collections::HashSet;
 
 // Some algorithms here on p-adic root isolation can be found in
@@ -7,11 +7,8 @@ use std::collections::HashSet;
 // https://www.researchgate.net/profile/Thomas-Sturm-2/publication/2925550_P-adic_Root_Isolation/links/580b8c0708aeef1bfeeb5db8/P-adic-Root-Isolation.pdf?origin=scientificContributions
 
 mod balancable_pairs {
-    use std::collections::HashSet;
-
-    use algebraeon_nzq::traits::Abs;
-
     use super::*;
+    use std::collections::HashSet;
 
     /// A balancable pair of a polynomial consists of two of the monomial terms satisfying some conditions.
     ///

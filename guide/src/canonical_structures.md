@@ -3,7 +3,7 @@
 Sometimes the situation is simple and we only want to define one set with structure rather than a family of sets, for example, the set of all rational numbers. Since sets with structure are represented in Algebraeon objects of structure types we will need a structure type with exactly once instance. This can be done explicitly like so
 
 ```rust
-use algebraeon::{nzq::Rational, rings::structure::*, sets::structure::*};
+use algebraeon::{rings::structure::*, structures::*};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MyRational {
@@ -33,7 +33,7 @@ impl EqSignature for MyRationalCanonicalStructure {
 However, Algebraeon provides a derive macro `CanonicalStructure` which reduces the boilerplate above to
 
 ```rust
-use algebraeon::{nzq::Rational, rings::structure::*, sets::structure::*};
+use algebraeon::{macros::CanonicalStructure, rings::structure::*, structures::*};
 
 #[derive(Debug, Clone, PartialEq, Eq, CanonicalStructure)]
 pub struct MyRational {

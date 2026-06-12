@@ -1,5 +1,5 @@
 use crate::structure::*;
-use algebraeon_nzq::{traits::DivMod, *};
+use algebraeon_structures::*;
 
 impl RinglikeSpecializationSignature for NaturalCanonicalStructure {}
 

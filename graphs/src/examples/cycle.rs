@@ -1,8 +1,8 @@
-use algebraeon_sets::structure::{SetSignature, UnorderedPair, UnorderedPairs};
-
 use crate::structure::{
     GraphSignature, GraphWithEdgesSignature, LooplessGraphSignature, UndirectedGraphSignature,
 };
+use algebraeon_sets::sets::*;
+use algebraeon_structures::*;
 
 /// An undirected cycle graph with n vertices arranged in a cycle.
 /// Each vertex has exactly degree 2, forming a closed loop.
@@ -38,9 +38,6 @@ impl<Vertices: SetSignature> UndirectedCycleGraph<Vertices> {
         if self.n.is_multiple_of(2) { 2 } else { 3 }
     }
 }
-
-// Specialized implementation for EnumeratedFiniteSetStructure
-use algebraeon_sets::structure::{EnumeratedFiniteSetStructure, EqSignature};
 
 impl GraphSignature for UndirectedCycleGraph<EnumeratedFiniteSetStructure> {
     type Vertices = EnumeratedFiniteSetStructure;
@@ -168,12 +165,11 @@ impl LooplessGraphSignature for DirectedCycleGraph<EnumeratedFiniteSetStructure>
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_sets::structure::EnumeratedFiniteSetStructure;
-
     use crate::{
         examples::cycle::{DirectedCycleGraph, UndirectedCycleGraph},
         structure::GraphSignature,
     };
+    use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 
     #[test]
     fn test_undirected_cycle_creation() {

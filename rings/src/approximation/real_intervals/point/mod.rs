@@ -7,19 +7,17 @@ use crate::{
     structure::{
         AdditionSignature, AdditiveGroupSignature, AdditiveMonoidSignature,
         CancellativeAdditionSignature, CommutativeMultiplicationSignature, ComplexSubsetSignature,
-        LeftDistributiveMultiplicationOverAddition, MetaRealRoundingSignature,
-        MetaRealSubsetSignature, MetaTryReciprocalSignature, MultiplicationSignature,
+        LeftDistributiveMultiplicationOverAddition, MetaRealSubsetSignature,
+        MetaTryReciprocalSignature, MultiplicationSignature,
         MultiplicativeAbsorptionMonoidSignature, MultiplicativeMonoidSignature, OneSignature,
         RealRoundingSignature, RealSubsetSignature, RightDistributiveMultiplicationOverAddition,
         RingSignature, RinglikeSpecializationSignature, SemiRingSignature, TryNegateSignature,
         TryReciprocalSignature, ZeroSignature,
     },
 };
-use algebraeon_nzq::{Integer, Rational, RationalCanonicalStructure, traits::Floor};
-use algebraeon_sets::{
-    approximations::ApproximatePointsSignature,
-    structure::{CanonicalStructure, MetaType, SetSignature, Signature},
-};
+use algebraeon_macros::CanonicalStructure;
+use algebraeon_sets::approximations::ApproximatePointsSignature;
+use algebraeon_structures::*;
 use std::{
     fmt::Debug,
     sync::{Arc, Mutex, MutexGuard},
@@ -384,8 +382,8 @@ impl RealRoundingSignature for RealApproximatePointCanonicalStructure {
                     return rational.floor();
                 }
                 Subset::Interval(interval) => {
-                    let a = algebraeon_nzq::traits::Floor::floor(interval.a());
-                    let b = algebraeon_nzq::traits::Floor::floor(interval.b());
+                    let a = algebraeon_structures::Floor::floor(interval.a());
+                    let b = algebraeon_structures::Floor::floor(interval.b());
                     if a == b {
                         return a;
                     } else {
@@ -406,8 +404,8 @@ impl RealRoundingSignature for RealApproximatePointCanonicalStructure {
                     return rational.ceil();
                 }
                 Subset::Interval(interval) => {
-                    let a = algebraeon_nzq::traits::Ceil::ceil(interval.a());
-                    let b = algebraeon_nzq::traits::Ceil::ceil(interval.b());
+                    let a = algebraeon_structures::Ceil::ceil(interval.a());
+                    let b = algebraeon_structures::Ceil::ceil(interval.b());
                     if a == b {
                         return a;
                     } else {

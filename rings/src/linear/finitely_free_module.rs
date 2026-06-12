@@ -7,7 +7,8 @@ use crate::{
     matrix::{Matrix, MatrixStructure, ReducedHermiteAlgorithmSignature},
     structure::*,
 };
-use algebraeon_sets::structure::*;
+use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
+use algebraeon_structures::*;
 use std::{borrow::Cow, marker::PhantomData};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -555,7 +556,6 @@ impl<
 #[cfg(test)]
 mod tests {
     use super::{FreeModuleFiniteNumberedBasisLinearTransformation, *};
-    use algebraeon_nzq::Integer;
 
     #[test]
     fn test_finite_rank_modules() {

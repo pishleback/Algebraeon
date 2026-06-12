@@ -8,11 +8,7 @@ use crate::{
         RingToQuotientRingSignature, UniqueFactorizationMonoidSignature,
     },
 };
-use algebraeon_nzq::{
-    Integer, Natural, Rational, choose, gcd, primes,
-    traits::{DivMod, ModPow},
-};
-use algebraeon_sets::structure::MetaType;
+use algebraeon_structures::*;
 use std::ops::Rem;
 
 #[derive(Debug, Clone, PartialEq, Eq)]

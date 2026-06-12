@@ -12,13 +12,8 @@ use crate::{
         RingHomomorphismRangeModuleStructure, RingToQuotientFieldSignature, ZeroEqSignature,
     },
 };
-use algebraeon_nzq::{
-    Integer, Natural, Rational, RationalCanonicalStructure,
-    traits::{Abs, Fraction},
-};
-use algebraeon_sets::structure::{
-    BorrowedStructure, EnumeratedFiniteSetStructure, Function, MetaType, Morphism, SetSignature,
-};
+use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
+use algebraeon_structures::*;
 use itertools::Itertools;
 use std::borrow::{Borrow, Cow};
 
@@ -286,8 +281,6 @@ impl
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_sets::structure::EqSignature;
-
     use super::*;
     use crate::{polynomial::PolynomialFromStr, structure::IntoErgonomic};
 

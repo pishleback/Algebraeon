@@ -3,6 +3,7 @@ use crate::linear::{
     finitely_free_module::FinitelyFreeModuleStructure,
     finitely_free_submodule::FinitelyFreeSubmodule,
 };
+use algebraeon_structures::*;
 
 #[derive(Debug, Clone)]
 pub struct JordanBlock<FS: AlgebraicClosureSignature>

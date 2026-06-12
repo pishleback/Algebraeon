@@ -90,7 +90,7 @@ fn has_option(attrs: &[Attribute], option_name: &str) -> bool {
 ///     MyValue: Eq,
 /// {
 ///     fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
-///         a == b
+///         Eq::equal(a, b)
 ///     }
 /// }
 /// ```
@@ -102,7 +102,7 @@ fn has_option(attrs: &[Attribute], option_name: &str) -> bool {
 ///     MyValue: Ord,
 /// {
 ///     fn partial_cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Option<std::cmp::Ordering> {
-///         Some(a.cmp(b))
+///         Some(Ord::cmp(a, b))
 ///     }
 /// }
 /// ```
@@ -114,10 +114,10 @@ fn has_option(attrs: &[Attribute], option_name: &str) -> bool {
 ///     MyValue: Ord,
 /// {
 ///     fn cmp(&self, a: &Self::Elem, b: &Self::Elem) -> std::cmp::Ordering {
-///         a.cmp(b)
+///         Ord::cmp(a, b)
 ///     }
 ///     fn sort<S: std::borrow::Borrow<Self::Elem>>(&self, mut a: Vec<S>) -> Vec<S> {
-///         a.sort_unstable_by(|x, y| x.borrow().cmp(y.borrow()));
+///         a.sort_unstable_by(|x, y| Ord::cmp(x.borrow(), y.borrow()));
 ///         a
 ///     }
 /// }
@@ -154,7 +154,7 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
                 where #name: Ord
             {
                 fn partial_cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Option<std::cmp::Ordering> {
-                    Some(a.cmp(b))
+                    Some(Ord::cmp(a, b))
                 }
             }
         }
@@ -168,11 +168,11 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
                 where #name: Ord
             {
                 fn cmp(&self, a: &Self::Elem, b: &Self::Elem) -> std::cmp::Ordering {
-                    a.cmp(b)
+                    Ord::cmp(a, b)
                 }
 
                 fn sort<S: std::borrow::Borrow<Self::Elem>>(&self, mut a: Vec<S>) -> Vec<S> {
-                    a.sort_unstable_by(|x, y| x.borrow().cmp(y.borrow()));
+                    a.sort_unstable_by(|x, y| Ord::cmp(x.borrow(), y.borrow()));
                     a
                 }
             }

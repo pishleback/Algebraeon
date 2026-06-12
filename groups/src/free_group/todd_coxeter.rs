@@ -1,4 +1,5 @@
-use crate::{permutation::Permutation, structure::MetaGroupSignature};
+use algebraeon_sets::sets::FinitelySupportedPermutation;
+use algebraeon_structures::*;
 use std::{
     collections::HashMap,
     ops::Mul,
@@ -102,7 +103,7 @@ fn enumerate_cosets_impl(
     num_gens: usize,
     rels: Vec<Vec<usize>>,
     subgens: Vec<Vec<usize>>,
-) -> (usize, Vec<Permutation>) {
+) -> (usize, Vec<FinitelySupportedPermutation<usize>>) {
     //impose inverse relations
     let mut full_rels = rels.clone();
     for i in 0..num_gens {
@@ -164,7 +165,7 @@ fn enumerate_cosets_impl(
     #[allow(clippy::indexing_slicing)]
     for g in 0..num_gens {
         perms.push(
-            Permutation::new(
+            FinitelySupportedPermutation::new_perm(
                 cosets
                     .iter()
                     .map(|c| match coset_index_lookup[scg.follow(*c, 2 * g)] {
@@ -176,6 +177,7 @@ fn enumerate_cosets_impl(
                             i
                         }
                     })
+                    .enumerate()
                     .collect(),
             )
             .unwrap(),
@@ -328,7 +330,7 @@ the list of generators for this finitely generated group"
     /// and return a vector, in the order each generator was added, of the action of each generator on the elements
     /// If the number of elements is infinite, a call to this function will never halt.
     /// The identity element is always labelled by 0
-    pub fn enumerate_elements(&self) -> (usize, Vec<Permutation>) {
+    pub fn enumerate_elements(&self) -> (usize, Vec<FinitelySupportedPermutation<usize>>) {
         enumerate_cosets_impl(self.generators.len(), self.relations.clone(), vec![])
     }
 
@@ -344,11 +346,10 @@ the list of generators for this finitely generated group"
     ) -> super::super::composition_table::group::FiniteGroupMultiplicationTable {
         let num_gens = self.generators.len();
         let (n, gen_perms) = self.enumerate_elements();
-        #[allow(clippy::redundant_closure_for_method_calls)]
         let inv_gen_perms = gen_perms
             .iter()
-            .map(|perm| perm.inverse())
-            .collect::<Vec<Permutation>>();
+            .map(|perm| perm.clone().inverse())
+            .collect::<Vec<FinitelySupportedPermutation<usize>>>();
 
         //write each element as a word in the n generators
         let mut paths: Vec<(bool, Vec<usize>)> = vec![];
@@ -364,7 +365,7 @@ the list of generators for this finitely generated group"
                 debug_assert!(b_done);
                 #[allow(clippy::needless_range_loop)]
                 for g in 0..num_gens {
-                    let c = gen_perms[g].call(b_idx);
+                    let c = gen_perms[g].image(&b_idx);
                     if !paths[c].0 {
                         let mut c_path = b_path.clone();
                         c_path.push(g);
@@ -398,7 +399,7 @@ the list of generators for this finitely generated group"
                 .map(|x| {
                     let mut y = 0;
                     for g in paths[x].iter().rev() {
-                        y = inv_gen_perms[*g].call(y);
+                        y = inv_gen_perms[*g].image(&y);
                     }
                     y
                 })
@@ -409,10 +410,10 @@ the list of generators for this finitely generated group"
                         .map(|y| {
                             let mut z = 0;
                             for g in &paths[x] {
-                                z = gen_perms[*g].call(z);
+                                z = gen_perms[*g].image(&z);
                             }
                             for g in &paths[y] {
-                                z = gen_perms[*g].call(z);
+                                z = gen_perms[*g].image(&z);
                             }
                             z
                         })
@@ -444,7 +445,7 @@ impl FinitelyGeneratedGroupCosetEnumerator {
     /// If finite, return the number of cosets of the subgroup inside the finitely generated group
     /// and return a vector, in the order each generator was added, of the action of each generator on the set of enumerated cosets
     /// If the number of cosets is infinite, a call to this function will never halt.
-    pub fn enumerate_cosets(&self) -> (usize, Vec<Permutation>) {
+    pub fn enumerate_cosets(&self) -> (usize, Vec<FinitelySupportedPermutation<usize>>) {
         enumerate_cosets_impl(
             self.group.generators.len(),
             self.group.relations.clone(),

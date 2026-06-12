@@ -5,8 +5,7 @@ use crate::{
         Factored, FactoringMonoidSignature, GreatestCommonDivisorSignature, MetaFactoringMonoid,
     },
 };
-use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Natural, Rational, choose, traits::Abs};
-use algebraeon_sets::structure::BorrowedStructure;
+use algebraeon_structures::*;
 use std::rc::Rc;
 
 impl<B: BorrowedStructure<IntegerCanonicalStructure>> GreatestCommonDivisorSignature
@@ -81,7 +80,6 @@ mod tests {
         num_theory::berlekamp_zassenhaus::factorize_by_berlekamp_zassenhaus_algorithm_naive,
         structure::{IntoErgonomic, UniqueFactorizationMonoidSignature},
     };
-    use algebraeon_sets::structure::{EqSignature, MetaType};
 
     #[test]
     fn test_zassenhaus_against_kroneckers() {

@@ -1,10 +1,8 @@
-use algebraeon_sets::structure::{
-    EnumeratedFiniteSetStructure, EqSignature, SetSignature, UnorderedPair, UnorderedPairs,
-};
-
 use crate::structure::{
     GraphSignature, GraphWithEdgesSignature, LooplessGraphSignature, UndirectedGraphSignature,
 };
+use algebraeon_sets::sets::*;
+use algebraeon_structures::*;
 
 /// A wheel graph `W_n` with vertices `{0, …, n-1}` where vertex `0` is the center
 /// joined to every rim vertex `1..n-1`, which themselves form a cycle.

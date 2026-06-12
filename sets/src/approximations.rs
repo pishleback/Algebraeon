@@ -1,4 +1,4 @@
-use crate::structure::{OrdSignature, SetSignature};
+use algebraeon_structures::*;
 
 /// A set of subsets of some set.
 pub trait SubsetsSignature: SetSignature {}

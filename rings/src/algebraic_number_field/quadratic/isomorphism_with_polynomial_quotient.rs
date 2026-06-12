@@ -10,10 +10,7 @@ use crate::{
         RingHomomorphism, SemiModuleSignature,
     },
 };
-use algebraeon_nzq::{Integer, Natural, Rational, traits::DivMod};
-use algebraeon_sets::structure::{
-    BijectiveFunction, BorrowedElem, BorrowedStructure, Function, InjectiveFunction, Morphism,
-};
+use algebraeon_structures::*;
 
 #[derive(Debug, Clone)]
 pub struct QuadraticNumberFieldIsomorphism<
@@ -170,7 +167,6 @@ impl<D: BorrowedElem<Integer>> QuadraticNumberFieldStructure<D> {}
 mod tests {
     use super::*;
     use crate::parsing::parse_rational_polynomial;
-    use algebraeon_sets::structure::EqSignature;
 
     // ZZ[i]
     #[test]

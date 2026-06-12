@@ -1,12 +1,6 @@
 use super::c2::C2;
-use crate::structure::{
-    AssociativeCompositionSignature, CompositionSignature, GroupSignature, IdentitySignature,
-    LeftCancellativeCompositionSignature, MetaCompositionSignature, MetaGroupSignature,
-    MetaIdentitySignature, MetaMonoidSignature, MonoidSignature,
-    RightCancellativeCompositionSignature, TryInverseSignature, TryLeftInverseSignature,
-    TryRightInverseSignature,
-};
-use algebraeon_sets::structure::{MetaType, SetSignature, Signature};
+use crate::composition_table::group::MetaGenerateFiniteSubgroupTableSignature;
+use algebraeon_structures::*;
 use itertools::Itertools;
 use std::collections::HashMap;
 
@@ -55,22 +49,22 @@ pub struct Permutation<const N: usize> {
     perm: [usize; N],
 }
 
-impl<const N: usize> TryFrom<super::super::permutation::Permutation> for Permutation<N> {
-    type Error = ();
+// impl<const N: usize> TryFrom<FinitelySupportedPermutation<Natural>> for Permutation<N> {
+//     type Error = ();
 
-    fn try_from(value: super::super::permutation::Permutation) -> Result<Self, Self::Error> {
-        let n = value.n();
-        if N < n {
-            Err(())
-        } else {
-            let mut perm = [0; N];
-            for i in 0..N {
-                perm[i] = value.call(i);
-            }
-            Ok(Self { perm })
-        }
-    }
-}
+//     fn try_from(value: FinitelySupportedPermutation<Natural>) -> Result<Self, Self::Error> {
+//         let n = value.n();
+//         if N < n {
+//             Err(())
+//         } else {
+//             let mut perm = [0; N];
+//             for i in 0..N {
+//                 perm[i] = value.call(i);
+//             }
+//             Ok(Self { perm })
+//         }
+//     }
+// }
 
 impl<const N: usize> Permutation<N> {
     pub fn new(perm: [usize; N]) -> Result<Self, &'static str> {

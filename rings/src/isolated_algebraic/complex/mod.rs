@@ -3,12 +3,12 @@ use super::poly_tools::*;
 use super::real::RealAlgebraic;
 use crate::polynomial::*;
 use crate::structure::*;
-use algebraeon_nzq::*;
-use algebraeon_sets::structure::*;
+use algebraeon_macros::CanonicalStructure;
 use boxes::*;
 use std::{collections::HashSet, fmt::Display, str::FromStr};
 mod boxes;
 mod polynomial;
+use algebraeon_structures::*;
 
 fn bisect_box(
     poly: &Polynomial<Integer>,
@@ -186,7 +186,7 @@ impl Display for ComplexAlgebraicRoot {
                 if r == Integer::ONE {
                     String::from("i")
                 } else {
-                    String::from("i√") + &r.to_string()
+                    String::from("i√") + &format!("{r}")
                 }
             };
 

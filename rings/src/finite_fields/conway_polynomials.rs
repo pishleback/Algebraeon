@@ -1,5 +1,5 @@
 use crate::polynomial::Polynomial;
-use algebraeon_nzq::Integer;
+use algebraeon_structures::*;
 use std::{
     collections::HashMap,
     str::{Chars, FromStr},

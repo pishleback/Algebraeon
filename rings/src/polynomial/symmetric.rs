@@ -3,7 +3,7 @@ use crate::{
     polynomial::{MultiPolynomial, Variable},
     structure::*,
 };
-use algebraeon_sets::structure::*;
+use algebraeon_structures::*;
 use itertools::Itertools;
 use std::{borrow::Borrow, collections::HashSet};
 
@@ -263,10 +263,7 @@ where
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
-
-    use algebraeon_nzq::*;
 
     #[test]
     fn test_ffosp() {

@@ -5,7 +5,7 @@ use crate::{
     },
     continued_fraction::{RationalApproximations, SimpleContinuedFraction},
 };
-use algebraeon_nzq::Rational;
+use algebraeon_structures::*;
 use std::fmt::Debug;
 
 #[derive(Debug, Clone)]

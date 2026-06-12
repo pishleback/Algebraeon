@@ -7,7 +7,7 @@ Isolated algebraic numbers in the \\(p\\)-adic fields \\(\mathbb{Q}_p\\).
 It is possible to take square roots of \\(p\\)-adic algebraic numbers by calling `.square_roots`.
 
 ```rust
-use algebraeon::nzq::{Natural, Rational};
+use algebraeon::structures::{Natural, Rational};
 use algebraeon::rings::isolated_algebraic::PAdicAlgebraic;
 use algebraeon::rings::{polynomial::*, structure::*};
 

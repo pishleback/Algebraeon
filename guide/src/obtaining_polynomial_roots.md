@@ -5,12 +5,12 @@ This example finds all roots of a rational polynomial \\(f(x) \in \mathbb{Q}[x]\
 - Calling `.all_roots(&f)` on a field extension \\(\mathbb{Q} \to K\\) to obtain all roots of \\(f(x) \in \mathbb{Q}[x]\\) belonging to \\(K\\).
 
 ```rust
-use algebraeon::nzq::{Natural, Rational};
+use algebraeon::structures::{Natural, Rational};
 use algebraeon::rings::isolated_algebraic::ComplexAlgebraic;
 use algebraeon::rings::isolated_algebraic::PAdicAlgebraic;
 use algebraeon::rings::isolated_algebraic::RealAlgebraic;
 use algebraeon::rings::{polynomial::*, structure::*};
-use algebraeon::sets::structure::*;
+use algebraeon::structures::*;
 
 // Find all roots of f in some fields
 

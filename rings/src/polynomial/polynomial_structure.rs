@@ -3,8 +3,7 @@ use crate::{
     matrix::*,
     parsing::{parse_integer_polynomial, parse_rational_polynomial},
 };
-use algebraeon_nzq::*;
-use algebraeon_sets::structure::*;
+use algebraeon_structures::*;
 use itertools::Itertools;
 use std::hash::Hash;
 use std::{
@@ -173,7 +172,7 @@ impl<RS: SemiRingSignature + EqSignature + ToStringSignature, RSB: BorrowedStruc
                         } else if c == -Integer::ONE && !constant {
                             s += "-";
                         } else {
-                            s += &c.to_string();
+                            s += &format!("{c}");
                         }
                     } else {
                         if !first {

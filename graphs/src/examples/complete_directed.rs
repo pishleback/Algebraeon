@@ -1,7 +1,6 @@
 use crate::structure::{GraphSignature, GraphWithEdgesSignature, LooplessGraphSignature};
-use algebraeon_sets::structure::{
-    EqSignature, PairsStructure, SetSignature, UnorderedPair, UnorderedPairs,
-};
+use algebraeon_sets::sets::*;
+use algebraeon_structures::*;
 
 pub struct CompleteDirectedGraph<Vertices: SetSignature> {
     vertices: Vertices,
@@ -59,12 +58,12 @@ impl<Vertices: SetSignature + EqSignature> GraphWithEdgesSignature
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_sets::structure::{EnumeratedFiniteSetStructure, EqSignature, PairsStructure};
-
     use crate::{
         examples::CompleteDirectedGraph,
         structure::{GraphSignature, GraphWithEdgesSignature},
     };
+    use algebraeon_sets::sets::*;
+    use algebraeon_structures::*;
 
     #[test]
     fn test_k5_directed() {

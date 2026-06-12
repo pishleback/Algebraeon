@@ -1,5 +1,5 @@
 use crate::structure::*;
-use algebraeon_sets::structure::*;
+use algebraeon_structures::*;
 use std::{borrow::Cow, marker::PhantomData};
 
 /// A quotient of a Euclidean domain by a non-zero element.
@@ -395,7 +395,6 @@ impl<RS: EuclideanDomainSignature + FavoriteAssociateSignature, RSB: BorrowedStr
 #[cfg(test)]
 mod tests {
     use super::*;
-    use algebraeon_nzq::*;
 
     #[test]
     fn test() {

@@ -2,7 +2,6 @@
 resolver = "2"
 members = [
     "sets",
-    "nzq",
     "groups",
     "rings",
     "geometry",
@@ -12,6 +11,7 @@ members = [
     "examples",
     "algebraeon",
     "macros",
+    "structures",
 ]
 
 [profile.bench]

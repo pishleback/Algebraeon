@@ -8,12 +8,11 @@ This example shows how LLL can be used to find a polynomial with a real root who
 
 ```rust
 use algebraeon::{
-    nzq::{Integer, Rational},
     rings::{
         matrix::{Matrix, StandardInnerProduct},
         polynomial::Polynomial,
     },
-    sets::structure::MetaType,
+    structures::{Integer, MetaType, Rational},
 };
 use std::str::FromStr;
 

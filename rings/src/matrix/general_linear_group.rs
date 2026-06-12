@@ -2,12 +2,7 @@ use crate::{
     matrix::{Matrix, MatrixStructure},
     structure::FieldSignature,
 };
-use algebraeon_groups::structure::{
-    AssociativeCompositionSignature, CompositionSignature, GroupSignature, IdentitySignature,
-    LeftCancellativeCompositionSignature, MonoidSignature, RightCancellativeCompositionSignature,
-    TryInverseSignature, TryLeftInverseSignature, TryRightInverseSignature,
-};
-use algebraeon_sets::structure::{BorrowedStructure, SetSignature, Signature};
+use algebraeon_structures::*;
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone, PartialEq, Eq)]

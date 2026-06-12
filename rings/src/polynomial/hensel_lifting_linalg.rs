@@ -9,8 +9,7 @@ use crate::{
         SemiModuleSignature, ZeroEqSignature,
     },
 };
-use algebraeon_nzq::{Natural, NaturalCanonicalStructure};
-use algebraeon_sets::structure::{BorrowedStructure, EqSignature};
+use algebraeon_structures::*;
 use std::sync::Arc;
 
 fn compute_lifting_mat_mod<
@@ -652,8 +651,6 @@ mod tests {
         MetaEuclideanDivisionSignature, MetaMultiplicationSignature,
         MetaMultiplicativeMonoidSignature, RingToQuotientFieldSignature,
     };
-    use algebraeon_nzq::*;
-    use algebraeon_sets::structure::MetaType;
 
     #[test]
     fn test_hensel_factorization_example1_mod5() {

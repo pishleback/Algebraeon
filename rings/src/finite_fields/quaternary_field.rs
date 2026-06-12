@@ -1,6 +1,6 @@
 use crate::structure::*;
-use algebraeon_nzq::*;
-use algebraeon_sets::structure::*;
+use algebraeon_macros::CanonicalStructure;
+use algebraeon_structures::*;
 use std::fmt::Display;
 
 //the finite field of 4 elements

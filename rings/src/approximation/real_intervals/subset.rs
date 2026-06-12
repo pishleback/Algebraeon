@@ -1,9 +1,6 @@
 use crate::approximation::rational_interval::RationalInterval;
-use algebraeon_nzq::Rational;
-use algebraeon_sets::{
-    approximations::SubsetsSignature,
-    structure::{SetSignature, Signature},
-};
+use algebraeon_sets::approximations::SubsetsSignature;
+use algebraeon_structures::*;
 
 #[derive(Debug, Clone)]
 pub enum Subset {

@@ -3,6 +3,7 @@
 mod number_compositions;
 mod number_partitions;
 mod set_partitions;
+mod stirling_numbers;
 mod subsets;
 mod twelvefold_way;
 
@@ -22,6 +23,9 @@ pub use set_partitions::set_partitions_eq;
 pub use set_partitions::set_partitions_ge;
 pub use set_partitions::set_partitions_le;
 pub use set_partitions::set_partitions_range;
+pub use stirling_numbers::stirling_number1_signed;
+pub use stirling_numbers::stirling_number1_unsigned;
+pub use stirling_numbers::stirling_number2;
 pub use subsets::LexicographicSubsetsWithRemovals;
 pub use subsets::all_subsets;
 pub use subsets::subsets;

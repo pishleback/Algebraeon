@@ -1,7 +1,7 @@
 use super::*;
 use crate::matrix::{Matrix, MatrixStructure};
 use crate::polynomial::Polynomial;
-use algebraeon_sets::structure::*;
+use algebraeon_structures::*;
 use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
@@ -201,7 +201,6 @@ pub use range_module::*;
 
 mod principal_subring_inclusion {
     use super::*;
-    use algebraeon_nzq::*;
 
     /// The unique ring homomorphism Z -> R of the integers into any ring R
     #[derive(Debug, Clone, PartialEq, Eq)]

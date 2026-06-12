@@ -9,10 +9,7 @@ use crate::{
         RinglikeSpecializationSignature, TryNegateSignature, ZeroSignature,
     },
 };
-use algebraeon_nzq::Integer;
-use algebraeon_sets::structure::{
-    BorrowedStructure, EqSignature, Function, SetSignature, Signature, ToStringSignature,
-};
+use algebraeon_structures::*;
 
 #[derive(Debug, Clone)]
 pub struct FullRankIntegerSubmoduleWithBasis<
@@ -205,7 +202,6 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>>
 mod tests {
     use super::*;
     use crate::parsing::parse_rational_polynomial;
-    use algebraeon_sets::structure::InjectiveFunction;
 
     #[test]
     fn full_rank_abelian_group_to_algebraic_number_field_image_and_preimage() {

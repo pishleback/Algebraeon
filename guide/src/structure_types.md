@@ -21,9 +21,9 @@ The approach taken by Algebraeon to represent such sets with additional structur
   
 In practice this looks like
 ```rust
-use algebraeon::nzq::{Integer, Natural};
+use algebraeon::structures::{Integer, Natural};
 use algebraeon::rings::structure::*;
-use algebraeon::sets::structure::*;
+use algebraeon::structures::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct IntegersModuloN {

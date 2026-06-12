@@ -1,4 +1,4 @@
-use algebraeon_nzq::*;
+use algebraeon_structures::*;
 
 #[derive(Debug, Clone)]
 pub enum LowerBound {

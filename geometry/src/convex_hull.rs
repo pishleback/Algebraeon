@@ -769,7 +769,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use algebraeon_nzq::Rational;
+    use algebraeon_structures::Rational;
 
     #[test]
     fn construct_convex_hull() {

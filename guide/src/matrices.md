@@ -3,7 +3,7 @@
 ## Creating Matrices
 
 ```rust
-use algebraeon::nzq::Integer;
+use algebraeon::structures::Integer;
 use algebraeon::rings::matrix::Matrix;
 
 let a = Matrix::<Integer>::from_rows(vec![
@@ -33,7 +33,7 @@ assert_eq!(
 ## Basic Arithmetic
 
 ```rust
-use algebraeon::nzq::Integer;
+use algebraeon::structures::Integer;
 use algebraeon::rings::matrix::Matrix;
 
 let a = Matrix::<Integer>::from_rows(vec![
@@ -76,7 +76,7 @@ assert_eq!(
 ```
 
 ```rust
-# use algebraeon::nzq::Integer;
+# use algebraeon::structures::Integer;
 # use algebraeon::rings::matrix::Matrix;
 let v = Matrix::<Integer>::from_rows(vec![vec![
     Integer::from(1),
@@ -94,7 +94,7 @@ assert_eq!(Matrix::dot(&v, &w), Integer::from(32));
 ## Determinants, Rank, and Inverses
 
 ```rust
-use algebraeon::nzq::{Integer, Rational};
+use algebraeon::structures::{Integer, Rational};
 use algebraeon::rings::matrix::Matrix;
 
 let integer_matrix = Matrix::<Integer>::from_rows(vec![

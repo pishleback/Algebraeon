@@ -1,10 +1,10 @@
+use super::*;
 use crate::linear::{
     finitely_free_affine::FinitelyFreeSubmoduleAffineSubset,
     finitely_free_module::FinitelyFreeModuleStructure,
     finitely_free_submodule::FinitelyFreeSubmodule,
 };
-
-use super::*;
+use algebraeon_structures::*;
 
 /// Rings for which hermite normal forms can be computed
 pub trait HermiteAlgorithmSignature: BezoutDomainSignature {}

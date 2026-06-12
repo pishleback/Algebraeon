@@ -1,7 +1,5 @@
 use crate::polynomial::*;
 use crate::structure::*;
-use algebraeon_nzq::*;
-use algebraeon_sets::structure::*;
 use itertools::Itertools;
 
 mod general_linear_group;

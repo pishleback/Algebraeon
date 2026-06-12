@@ -1,6 +1,6 @@
 use super::{finitely_free_coset::*, finitely_free_module::*};
 use crate::{matrix::*, structure::*};
-use algebraeon_sets::structure::*;
+use algebraeon_structures::*;
 use std::{borrow::Borrow, fmt::Debug};
 
 #[derive(Debug, Clone)]
@@ -432,7 +432,6 @@ impl<Ring: UniqueReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring
 #[cfg(test)]
 mod tests {
     use super::*;
-    use algebraeon_nzq::{Integer, Rational};
 
     #[test]
     fn test_finitely_free_submodule_kernel() {

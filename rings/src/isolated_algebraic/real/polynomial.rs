@@ -1,5 +1,4 @@
 use super::*;
-use algebraeon_nzq::traits::{Abs, Fraction};
 
 fn unique_linear_root(poly: &Polynomial<Integer>) -> Rational {
     debug_assert_eq!(poly.degree().unwrap(), 1);

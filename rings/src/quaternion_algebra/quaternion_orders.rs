@@ -9,8 +9,7 @@ use crate::{
         SemiModuleSignature, TryNegateSignature, ZeroSignature,
     },
 };
-use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Rational};
-use algebraeon_sets::structure::{EqSignature, Function, MetaType, SetSignature, Signature};
+use algebraeon_structures::*;
 use itertools::Itertools;
 
 // an integer submodule and subring of a quaternion algebra over an algebraic number field
@@ -189,7 +188,6 @@ impl<ANF: AlgebraicNumberFieldSignature> QuaternionOrderZBasis<ANF> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use algebraeon_nzq::Rational;
 
     #[test]
     fn test_lipschitz_order() {

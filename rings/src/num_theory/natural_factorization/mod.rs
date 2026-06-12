@@ -2,8 +2,7 @@ use crate::{
     polynomial::{Polynomial, ToPolynomialSignature},
     structure::{Factored, OneSignature, UniqueFactorizationMonoidSignature},
 };
-use algebraeon_nzq::{Natural, gcd, traits::AbsDiff};
-use algebraeon_sets::structure::MetaType;
+use algebraeon_structures::*;
 use primes::is_prime_nat;
 
 pub mod ecm;
@@ -237,7 +236,7 @@ pub(super) fn factor_nat(n: Natural) -> Factored<Natural, Natural> {
         f.partially_factor_by_method(|n| {
             (
                 exclude_prime_inputs(n, |n| {
-                    let mut rng = algebraeon_nzq::Rng::new(0);
+                    let mut rng = algebraeon_structures::Rng::new(0);
                     for fith_target_factor_digits in vec![2, 3, 2, 4, 2, 3].into_iter().cycle() {
                         if let Ok(d) = ecm::ecm_one_factor_target_digits(
                             &n,

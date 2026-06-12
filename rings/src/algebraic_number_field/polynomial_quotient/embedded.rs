@@ -5,9 +5,7 @@ use crate::{
     isolated_algebraic::{ComplexAlgebraic, RealAlgebraic},
     polynomial::*,
 };
-use algebraeon_nzq::traits::Fraction;
-use algebraeon_nzq::*;
-use algebraeon_sets::structure::*;
+use algebraeon_structures::*;
 use std::rc::Rc;
 
 #[derive(Debug, Clone)]
@@ -87,7 +85,7 @@ impl ComplexAlgebraic {
 // use  real::*;
 
 impl AlgebraicClosureSignature for ComplexAlgebraicCanonicalStructure {
-    type BFS = <Rational as algebraeon_sets::structure::MetaType>::Signature;
+    type BFS = <Rational as MetaType>::Signature;
 
     fn base_field(&self) -> Self::BFS {
         Rational::structure()

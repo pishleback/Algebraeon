@@ -2,7 +2,7 @@ use crate::structure::{
     Factored, MetaFactoringMonoid, MultiplicativeMonoidSignature, RingToQuotientFieldSignature,
     RingToQuotientRingSignature,
 };
-use algebraeon_nzq::{Integer, Natural, traits::Abs};
+use algebraeon_structures::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum QuadraticSymbolValue {

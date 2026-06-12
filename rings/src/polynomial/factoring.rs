@@ -1,7 +1,7 @@
 use super::{Polynomial, polynomial_structure::*};
 use crate::structure::*;
-use algebraeon_nzq::*;
-use algebraeon_sets::structure::{BorrowedStructure, SetSignature};
+use algebraeon_structures::BorrowedStructure;
+use algebraeon_structures::*;
 
 impl<
     RS: UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
@@ -44,7 +44,6 @@ where
         }
         #[cfg(debug_assertions)]
         {
-            use algebraeon_sets::structure::EqSignature;
             assert!(self.equal(&f_orig, &self.factorizations().expand(&factors)));
         }
         factors
@@ -482,7 +481,6 @@ where
 mod tests {
     use super::*;
     use crate::structure::IntoErgonomic;
-    use algebraeon_sets::structure::{EqSignature, MetaType};
 
     #[test]
     fn test_factor_by_kroneckers_method_over_integers() {

@@ -1,13 +1,7 @@
 use crate::algebraic_number_field::AlgebraicIntegerRingSignature;
 use crate::structure::*;
-use algebraeon_nzq::traits::Abs;
-use algebraeon_nzq::traits::DivMod;
-use algebraeon_nzq::*;
-use algebraeon_sets::structure::BorrowedStructure;
-use algebraeon_sets::structure::CountableSetSignature;
-use algebraeon_sets::structure::EqSignature;
-use algebraeon_sets::structure::FiniteSetSignature;
-use algebraeon_sets::structure::MetaType;
+use algebraeon_structures::BorrowedStructure;
+use algebraeon_structures::*;
 use std::collections::HashSet;
 
 impl RinglikeSpecializationSignature for IntegerCanonicalStructure {

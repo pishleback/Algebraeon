@@ -1,5 +1,5 @@
 use crate::approximation::real_intervals::{RealApproximatePointInterface, Subset};
-use algebraeon_nzq::Rational;
+use algebraeon_structures::*;
 use std::fmt::Debug;
 
 #[derive(Debug, Clone)]

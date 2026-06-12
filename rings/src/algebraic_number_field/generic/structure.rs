@@ -9,12 +9,7 @@ use crate::{
         FiniteRankFreeRingExtension, MetaGreatestCommonDivisorSignature, RingHomomorphism,
     },
 };
-use algebraeon_nzq::{
-    Integer, IntegerCanonicalStructure, Rational, RationalCanonicalStructure, traits::Fraction,
-};
-use algebraeon_sets::structure::{
-    BorrowedStructure, FiniteSetSignature, Function, InjectiveFunction, Morphism, SetSignature,
-};
+use algebraeon_structures::*;
 use std::marker::PhantomData;
 
 /// An algebraic number field is a field of characteristic zero such that
@@ -286,8 +281,6 @@ mod ring_of_integers_to_algebraic_number_field_inclusion {
 pub(crate) use ring_of_integers_to_algebraic_number_field_inclusion::RingOfIntegersToAlgebraicNumberFieldInclusion;
 
 mod order_to_ring_of_integers_inclusion {
-    use algebraeon_sets::structure::BijectiveFunction;
-
     use super::*;
 
     #[derive(Debug, Clone)]
@@ -629,8 +622,7 @@ mod anf_inclusion {
     }
 
     mod order_integral_extension {
-        use std::borrow::Cow;
-
+        use super::*;
         use crate::{
             algebraic_number_field::OrderIdealsStructure,
             num_theory::integer_ideal::IntegerIdealsStructure,
@@ -639,9 +631,7 @@ mod anf_inclusion {
                 RingToIdealsSignature,
             },
         };
-
-        use super::*;
-        use algebraeon_sets::structure::{BorrowedMorphism, MetaType};
+        use std::borrow::Cow;
 
         /// Q -> K
         /// ↑    ↑
@@ -971,7 +961,6 @@ mod integer_submodule_inclusion {
         linear::finitely_free_submodule::{FinitelyFreeSubmodule, FinitelyFreeSubmoduleStructure},
         structure::RingSignature,
     };
-    use algebraeon_sets::structure::{BorrowedMorphism, BorrowedStructure};
     use std::marker::PhantomData;
 
     #[derive(Debug, Clone)]

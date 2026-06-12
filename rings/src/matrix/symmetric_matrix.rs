@@ -1,8 +1,6 @@
-use std::{fmt::Debug, marker::PhantomData};
-
-use algebraeon_sets::structure::{BorrowedStructure, EqSignature, SetSignature, Signature};
-
 use crate::matrix::{MatOppErr, Matrix};
+use algebraeon_structures::*;
+use std::{fmt::Debug, marker::PhantomData};
 
 #[derive(Debug, Clone)]
 pub struct SymmetricMatrix<Set: Clone> {

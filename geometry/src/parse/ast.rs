@@ -6,7 +6,7 @@ use crate::{
     simplex_collection::{InteriorOrBoundarySimplexCollection, LabelledSimplexCollection},
     vector::Vector,
 };
-use algebraeon_nzq::{Rational, RationalCanonicalStructure};
+use algebraeon_structures::{Rational, RationalCanonicalStructure};
 use std::str::FromStr;
 
 #[derive(Debug, Clone, PartialEq, Eq)]

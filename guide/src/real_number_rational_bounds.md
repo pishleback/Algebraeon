@@ -5,7 +5,7 @@ Compute the following rational bounds on \\(\pi + e\\), where the difference bet
 \\[\frac{163994429}{28005120} < \pi + e < \frac{492403663}{84015360}\\]
 
 ```rust
-use algebraeon::nzq::Rational;
+use algebraeon::structures::Rational;
 use algebraeon::rings::approximation::{RealApproximatePoint, e, pi};
 use algebraeon::rings::structure::MetaAdditionSignature;
 use std::str::FromStr;

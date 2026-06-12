@@ -4,9 +4,8 @@ use crate::{
     structure::*,
     valuation::*,
 };
-use algebraeon_nzq::*;
-use algebraeon_sets::structure::*;
 mod isolate;
+use algebraeon_structures::*;
 
 #[derive(Debug, Clone)]
 pub struct IsolatingBall {
@@ -155,8 +154,6 @@ impl std::fmt::Display for PAdicAlgebraic {
 }
 
 pub mod truncation {
-    use algebraeon_nzq::traits::{Abs, DivMod, Fraction};
-
     use super::*;
 
     // Represent value * p^shift with 0 <= value < p^digits

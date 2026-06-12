@@ -64,12 +64,8 @@ use crate::num_theory::natural_factorization::primes::is_prime_nat;
 use crate::polynomial::hensel_lifting_linalg::HenselFactorization;
 use crate::polynomial::*;
 use crate::structure::*;
-use algebraeon_groups::structure::AssociativeCompositionSignature;
-use algebraeon_groups::structure::CompositionSignature;
-use algebraeon_nzq::primes;
-use algebraeon_nzq::*;
 use algebraeon_sets::combinatorics::LexicographicSubsetsWithRemovals;
-use algebraeon_sets::structure::*;
+use algebraeon_structures::*;
 use itertools::Itertools;
 use std::collections::BTreeSet;
 use std::ops::Rem;
@@ -234,8 +230,6 @@ impl<SG: AssociativeCompositionSignature> MemoryStack<SG> {
 /// The (d-1)st coefficients of the modular factors can be quickly summed and checked whether they are in the possible range for true factors.
 /// Even better, this summing can be translated to machine arithmetic taking advantage of the wrapping behaviour of binary addition. This is at the cost of a slight lossening of the bound on the (d-1)st coefficient.
 mod dminusone_test {
-    use algebraeon_nzq::traits::Abs;
-
     use super::*;
 
     #[derive(Debug, Clone)]
@@ -292,7 +286,7 @@ mod dminusone_test {
             Here we compute M*B and leave the multiplication by deg(g) for later
             */
             let factor_dminusone_coeff_bound_divideby_gdeg =
-                Rational::from(algebraeon_nzq::traits::Abs::abs(f.leading_coeff().unwrap()))
+                Rational::from(algebraeon_structures::Abs::abs(f.leading_coeff().unwrap()))
                     * f.cauchys_root_bound().unwrap();
 
             Self {

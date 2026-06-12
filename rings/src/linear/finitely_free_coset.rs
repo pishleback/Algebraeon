@@ -3,7 +3,7 @@ use crate::{
     matrix::{Matrix, ReducedHermiteAlgorithmSignature, UniqueReducedHermiteAlgorithmSignature},
     structure::*,
 };
-use algebraeon_sets::structure::*;
+use algebraeon_structures::*;
 use std::fmt::Debug;
 
 #[derive(Debug, Clone)]
@@ -279,7 +279,6 @@ impl<Ring: UniqueReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring
 #[cfg(test)]
 mod tests {
     use super::*;
-    use algebraeon_nzq::Integer;
 
     #[test]
     fn test_cosets() {

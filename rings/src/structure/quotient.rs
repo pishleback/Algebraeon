@@ -1,5 +1,5 @@
 use crate::structure::{IdealsSignature, RingSignature};
-use algebraeon_sets::structure::{BorrowedStructure, QuotientSetSignature};
+use algebraeon_structures::*;
 use std::borrow::Cow;
 
 /// A quotient of a ring by an ideal with its ring structure

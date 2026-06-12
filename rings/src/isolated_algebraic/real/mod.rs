@@ -1,7 +1,7 @@
 use super::{bisection_gen::RationalSimpleBetweenGenerator, poly_tools::*};
 use crate::{polynomial::*, structure::*};
-use algebraeon_nzq::*;
-use algebraeon_sets::structure::*;
+use algebraeon_macros::CanonicalStructure;
+use algebraeon_structures::*;
 use bounds::*;
 use interval::*;
 use polynomial::*;
@@ -817,11 +817,11 @@ impl RealRoundingSignature for RealAlgebraicCanonicalStructure {
         loop {
             match x.isolate() {
                 RealIsolatingRegion::Rational(v) => {
-                    return v.floor();
+                    return algebraeon_structures::Floor::floor(v);
                 }
                 RealIsolatingRegion::Interval(a, b) => {
-                    let a_floor = a.floor();
-                    let b_floor = b.floor();
+                    let a_floor = algebraeon_structures::Floor::floor(a);
+                    let b_floor = algebraeon_structures::Floor::floor(b);
                     if a_floor == b_floor {
                         return a_floor;
                     } else {
@@ -836,11 +836,11 @@ impl RealRoundingSignature for RealAlgebraicCanonicalStructure {
         loop {
             match x.isolate() {
                 RealIsolatingRegion::Rational(v) => {
-                    return v.ceil();
+                    return algebraeon_structures::Ceil::ceil(v);
                 }
                 RealIsolatingRegion::Interval(a, b) => {
-                    let a_floor = a.ceil();
-                    let b_floor = b.ceil();
+                    let a_floor = algebraeon_structures::Ceil::ceil(a);
+                    let b_floor = algebraeon_structures::Ceil::ceil(b);
                     if a_floor == b_floor {
                         return a_floor;
                     } else {

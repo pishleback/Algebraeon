@@ -48,9 +48,9 @@ dependencies = [
  "algebraeon-geometry",
  "algebraeon-groups",
  "algebraeon-macros",
- "algebraeon-nzq",
  "algebraeon-rings",
  "algebraeon-sets",
+ "algebraeon-structures",
  "gungraun",
 ]
 
@@ -61,6 +61,7 @@ dependencies = [
  "algebraeon-groups",
  "algebraeon-rings",
  "algebraeon-sets",
+ "algebraeon-structures",
  "derivative",
  "itertools 0.11.0",
  "malachite-base 0.4.22",
@@ -72,9 +73,9 @@ name = "algebraeon-drawing"
 version = "0.0.17"
 dependencies = [
  "algebraeon-geometry",
- "algebraeon-nzq",
  "algebraeon-rings",
  "algebraeon-sets",
+ "algebraeon-structures",
  "bytemuck",
  "log",
  "pollster",
@@ -95,9 +96,9 @@ dependencies = [
 name = "algebraeon-geometry"
 version = "0.0.17"
 dependencies = [
- "algebraeon-nzq",
  "algebraeon-rings",
  "algebraeon-sets",
+ "algebraeon-structures",
  "itertools 0.11.0",
  "lalrpop 0.22.2",
  "lalrpop-util 0.22.2",
@@ -109,6 +110,7 @@ name = "algebraeon-graphs"
 version = "0.0.0"
 dependencies = [
  "algebraeon-sets",
+ "algebraeon-structures",
 ]
 
 [[package]]
@@ -116,8 +118,8 @@ name = "algebraeon-groups"
 version = "0.0.17"
 dependencies = [
  "algebraeon-macros",
- "algebraeon-nzq",
  "algebraeon-sets",
+ "algebraeon-structures",
  "itertools 0.14.0",
  "rayon",
 ]
@@ -133,23 +135,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "algebraeon-nzq"
-version = "0.0.17"
-dependencies = [
- "algebraeon-sets",
- "malachite-base 0.9.1",
- "malachite-nz",
- "malachite-q",
-]
-
-[[package]]
 name = "algebraeon-rings"
 version = "0.0.17"
 dependencies = [
  "algebraeon-groups",
  "algebraeon-macros",
- "algebraeon-nzq",
  "algebraeon-sets",
+ "algebraeon-structures",
  "impls",
  "itertools 0.14.0",
  "lalrpop 0.23.0",
@@ -164,8 +156,21 @@ name = "algebraeon-sets"
 version = "0.0.17"
 dependencies = [
  "algebraeon-macros",
+ "algebraeon-structures",
  "indexmap",
  "itertools 0.14.0",
+ "paste",
+ "rand 0.10.0",
+]
+
+[[package]]
+name = "algebraeon-structures"
+version = "0.0.17"
+dependencies = [
+ "algebraeon-macros",
+ "malachite-base 0.9.1",
+ "malachite-nz",
+ "malachite-q",
  "paste",
  "rand 0.10.0",
 ]

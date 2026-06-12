@@ -14,9 +14,7 @@ use crate::{
     },
     structure::{FieldSignature, OrderedRingSignature, RealRoundingSignature, RealSubsetSignature},
 };
-use algebraeon_nzq::traits::Fraction;
-use algebraeon_nzq::{Integer, IntegerCanonicalStructure, Rational};
-use algebraeon_sets::structure::{BorrowedStructure, MetaType, ToStringSignature};
+use algebraeon_structures::*;
 
 impl<
     FS: RealSubsetSignature
@@ -69,8 +67,6 @@ impl<
             let true_mat_gs = self.gram_schmidt_row_orthogonalization(basis.clone(), inner_product);
             for (k, cache_entry) in cache.iter().enumerate() {
                 // check mu
-
-                use algebraeon_sets::structure::{EqSignature, SetSignature};
                 assert_eq!(cache_entry.mu.len(), k);
                 for i in 0..k {
                     assert!(
@@ -661,8 +657,7 @@ impl Matrix<Integer> {
 #[cfg(test)]
 mod tests {
     use crate::matrix::{Matrix, StandardInnerProduct};
-    use algebraeon_nzq::{Integer, Rational};
-    use algebraeon_sets::structure::MetaType;
+    use algebraeon_structures::*;
     use std::str::FromStr;
 
     #[test]
