@@ -399,9 +399,9 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
                                             });
                                         }
                                     }
-                                    syn::Type::Path(type_path) => {
+                                    syn::Type::Path(type_path)
                                         // if the first argument is `a: Self::Elem` then replace it with `self` in the meta type (TODO)
-                                        if is_type_path_self_set(type_path) {
+                                        if is_type_path_self_set(type_path) => {
                                             meta_args[0] = PatIdent {
                                                 attrs: vec![],
                                                 by_ref: None,
@@ -426,7 +426,6 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
                                                 })),
                                             });
                                         }
-                                    }
                                     _ => {}
                                 },
                             }
