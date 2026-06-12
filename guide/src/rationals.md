@@ -42,7 +42,7 @@ The following methods are available on `Rational`:
 
 ```rust
 use std::str::FromStr;
-use algebraeon::nzq::{Rational, Integer, Natural};
+use algebraeon::structures::{Rational, Integer, Natural};
 
 let zero = Rational::ZERO;
 let one = Rational::ONE;
@@ -69,19 +69,19 @@ let negated = -&a;        // -2/3
 let r = Rational::from_str("-2/5").unwrap();
 
 // abs
-use algebraeon::nzq::traits::Abs;
+use algebraeon::structures::Abs;
 assert_eq!(r.clone().abs(), Rational::from_str("2/5").unwrap());
 
 // ceil
-use algebraeon::nzq::traits::Ceil;
+use algebraeon::structures::Ceil;
 assert_eq!(r.clone().ceil(), Integer::from(0));
 
 // floor
-use algebraeon::nzq::traits::Floor;
+use algebraeon::structures::Floor;
 assert_eq!(r.clone().floor(), Integer::from(-1));
 
 // into_abs_numerator_and_denominator
-use algebraeon::nzq::traits::Fraction;
+use algebraeon::structures::Fraction;
 let (n, d) = r.into_abs_numerator_and_denominator();
 assert_eq!(n, Natural::from(2u32));
 assert_eq!(d, Natural::from(5u32));

@@ -31,6 +31,8 @@ jobs:
 
       - name: Checkout PR branch
         run: |
+          # Discard any Cargo.lock changes made while benchmarking main so the checkout doesn't fail
+          git checkout -- Cargo.lock
           # Detect if this is a PR from a fork
           if [ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]; then
             # PR from a fork: add fork as a temporary remote

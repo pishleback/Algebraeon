@@ -44,9 +44,9 @@
 use algebraeon::rings::algebraic_number_field::AlgebraicNumberFieldSignature;
 use algebraeon::rings::algebraic_number_field::FullRankIntegerSubmoduleWithBasisSignature;
 use algebraeon::rings::polynomial::PolynomialFromStr;
-use algebraeon::sets::structure::InjectiveFunction;
+use algebraeon::structures::InjectiveFunction;
 use algebraeon::{
-    nzq::*,
+    structures::*,
     rings::{polynomial::Polynomial, structure::*},
 };
 

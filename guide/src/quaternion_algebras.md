@@ -5,10 +5,10 @@ Quaternion algebras can be created over any field: the rationals, number fields,
 The main constructor for the quaternion algebra over F, such that \\(i^2 = a\\) and \\(j^2 = b\\) is `QuaternionAlgebraStructure::new(F, a, b)`.
 
 ```rust
-use algebraeon::nzq::Rational;
+use algebraeon::structures::Rational;
 use algebraeon::rings::quaternion_algebra::QuaternionAlgebraStructure;
 use algebraeon::rings::structure::*;
-use algebraeon::sets::structure::{EqSignature, MetaType};
+use algebraeon::structures::{EqSignature, MetaType};
 
 let h = QuaternionAlgebraStructure::new(
     Rational::structure(),

@@ -5,9 +5,9 @@
 Factor an integer with large prime factors
 
 ```rust
-use algebraeon::nzq::Natural;
+use algebraeon::structures::Natural;
 use algebraeon::rings::structure::{MetaFactoringMonoid, UniqueFactorizationMonoidSignature};
-use algebraeon::sets::structure::ToStringSignature;
+use algebraeon::structures::ToStringSignature;
 use std::str::FromStr;
 
 let n = Natural::from_str("706000565581575429997696139445280900").unwrap();
@@ -64,10 +64,10 @@ Find the general solution to the linear system
 for integers \\(a\\), \\(b\\) and \\(c\\).
 
 ```rust
-use algebraeon::nzq::Integer;
+use algebraeon::structures::Integer;
 use algebraeon::rings::linear::finitely_free_module::RingToFinitelyFreeModuleSignature;
 use algebraeon::rings::matrix::Matrix;
-use algebraeon::sets::structure::MetaType;
+use algebraeon::structures::MetaType;
 let m = Matrix::<Integer>::from_rows(
     vec![
         vec![3, 4, 1], 
@@ -129,7 +129,7 @@ Factor the following multivariable polynomial with integer coefficients
 \\[f(x, y) = 6x^4 - 6x^3y^2 + 6xy - 6x - 6y^3 + 6y^2\\]
 
 ```rust
-use algebraeon::{nzq::Integer, rings::{polynomial::*, structure::*}};
+use algebraeon::{structures::Integer, rings::{polynomial::*, structure::*}};
 
 let x = &MultiPolynomial::<Integer>::var(Variable::new("x")).into_ergonomic();
 let y = &MultiPolynomial::<Integer>::var(Variable::new("y")).into_ergonomic();
@@ -152,7 +152,7 @@ so the factorization of \\(f(x, y)\\) is
 Find the \\(2\\)-adic square roots of \\(17\\).
 
 ```rust
-use algebraeon::nzq::Natural;
+use algebraeon::structures::Natural;
 use algebraeon::rings::parsing::parse_integer_polynomial;
 
 let f = parse_integer_polynomial("x^2-17", "x").unwrap();
@@ -205,9 +205,9 @@ assert_eq!(n, 120);
 ## Jordan Normal Form of a Matrix
 
 ```rust
-use algebraeon::nzq::{Rational};
+use algebraeon::structures::{Rational};
 use algebraeon::rings::{matrix::*, isolated_algebraic::*};
-use algebraeon::sets::structure::*;
+use algebraeon::structures::*;
 // Construct a matrix
 let a = Matrix::<Rational>::from_rows(vec![
     vec![5, 4, 2, 1],
@@ -233,7 +233,7 @@ Algebraeon can find an expression for the discriminant of a polynomial in terms 
 
 ```rust
 use algebraeon::rings::polynomial::*;
-use algebraeon::nzq::Integer;
+use algebraeon::structures::Integer;
 
 let a_var = Variable::new("a");
 let b_var = Variable::new("b");

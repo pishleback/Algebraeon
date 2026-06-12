@@ -9,7 +9,7 @@ pub fn primes() -> impl Iterator<Item = usize> {
 impl Natural {
     /// Factorial
     /// ```
-    /// use algebraeon_nzq::Natural;
+    /// use algebraeon_structures::Natural;
     /// assert_eq!(
     ///     Natural::from(0u32).factorial(),
     ///     Natural::from(1u32),

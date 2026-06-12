@@ -633,7 +633,7 @@ impl Product for Natural {
 impl Natural {
     /// 2 raised to the power of `pow`.
     /// ```
-    /// use algebraeon_nzq::Natural;
+    /// use algebraeon_structures::Natural;
     /// assert_eq!(
     ///     Natural::from(32u32),
     ///     Natural::power_of_2(5)
@@ -645,7 +645,7 @@ impl Natural {
 
     /// An iterator over the bits in the binary expansion.
     /// ```
-    /// use algebraeon_nzq::Natural;
+    /// use algebraeon_structures::Natural;
     /// assert_eq!(
     ///     Natural::from(11u32).bits().collect::<Vec<_>>(),
     ///     vec![true, true, false, true],

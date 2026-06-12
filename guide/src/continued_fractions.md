@@ -5,7 +5,7 @@
 This example computes the first \\(10\\) continued fraction coefficients of \\(\pi\\), \\(e\\), and \\(\sqrt[3]{2}\\).
 
 ```rust
-use algebraeon::nzq::Integer;
+use algebraeon::structures::Integer;
 use algebraeon::rings::approximation::{e, pi};
 use algebraeon::rings::continued_fraction::{
     MetaToSimpleContinuedFractionSignature, SimpleContinuedFraction,
@@ -54,7 +54,7 @@ We can also compute continued fractions for rational numbers, for example
 
 ```rust
 use algebraeon::{
-    nzq::{Integer, Rational},
+    structures::{Integer, Rational},
     rings::continued_fraction::{MetaToSimpleContinuedFractionSignature, SimpleContinuedFraction},
 };
 use std::str::FromStr;
@@ -85,7 +85,7 @@ Defining the real number
 \\[1 + \cfrac{1}{2 + \cfrac{1}{3 + \cfrac{1}{4 + \ddots}}} = 1.433127...\\]
 
 ```rust
-use algebraeon::nzq::Integer;
+use algebraeon::structures::Integer;
 use algebraeon::rings::approximation::RealApproximatePoint;
 use algebraeon::rings::continued_fraction::IrrationalSimpleContinuedFractionGenerator;
 use algebraeon::rings::structure::MetaRealSubsetSignature;
@@ -118,7 +118,7 @@ Defining the Golden Ratio
 \\[\varphi = 1 + \cfrac{1}{1 + \cfrac{1}{1 + \cfrac{1}{1 + \ddots}}}\\]
 
 ```rust
-use algebraeon::nzq::Integer;
+use algebraeon::structures::Integer;
 use algebraeon::rings::approximation::RealApproximatePoint;
 use algebraeon::rings::continued_fraction::PeriodicSimpleContinuedFraction;
 use algebraeon::rings::structure::MetaRealSubsetSignature;
@@ -141,7 +141,7 @@ Defining \\(\sqrt{2}\\)
 \\[\sqrt{2} = 1 + \cfrac{1}{2 + \cfrac{1}{2 + \cfrac{1}{2 + \ddots}}}\\]
 
 ```rust
-use algebraeon::nzq::Integer;
+use algebraeon::structures::Integer;
 use algebraeon::rings::approximation::RealApproximatePoint;
 use algebraeon::rings::continued_fraction::PeriodicSimpleContinuedFraction;
 use algebraeon::rings::structure::MetaRealSubsetSignature;

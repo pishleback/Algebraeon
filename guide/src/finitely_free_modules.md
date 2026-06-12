@@ -23,9 +23,9 @@ The free module \\(R^n\\) is represented by objects of type `FinitelyFreeModuleS
 For example, to obtain \\(\mathbb{Z}^3\\)
 
 ```rust
-# use algebraeon::nzq::Integer;
+# use algebraeon::structures::Integer;
 # use algebraeon::rings::linear::finitely_free_module::RingToFinitelyFreeModuleSignature;
-# use algebraeon::sets::structure::MetaType;
+# use algebraeon::structures::MetaType;
 #
 let module = Integer::structure().into_free_module(3);
 ```
@@ -33,10 +33,10 @@ let module = Integer::structure().into_free_module(3);
 Elements of \\(\mathbb{Z}^3\\) are represented by objects of type `Vec<Integer>` and basic operations with the elements are provided by the module structure.
 
 ```rust
-# use algebraeon::nzq::Integer;
+# use algebraeon::structures::Integer;
 # use algebraeon::rings::linear::finitely_free_module::*;
 # use algebraeon::rings::structure::*;
-# use algebraeon::sets::structure::*;
+# use algebraeon::structures::*;
 # 
 # let module = Integer::structure().into_free_module(3);
 # 
@@ -67,9 +67,9 @@ assert!(module.equal(
 The scalar ring structure can be obtained from a module by calling `.ring()`.
 
 ```rust
-# use algebraeon::nzq::Integer;
+# use algebraeon::structures::Integer;
 # use algebraeon::rings::linear::finitely_free_module::*;
-# use algebraeon::sets::structure::*;
+# use algebraeon::structures::*;
 # 
 # let module = Integer::structure().into_free_module(3);
 # 
@@ -84,9 +84,9 @@ The set of submodules of the free module \\(R^n\\) is represented by objects of 
 For example, to obtain the set of all submodules of \\(\mathbb{Z}^3\\)
 
 ```rust
-# use algebraeon::nzq::Integer;
+# use algebraeon::structures::Integer;
 # use algebraeon::rings::linear::finitely_free_module::*;
-# use algebraeon::sets::structure::*;
+# use algebraeon::structures::*;
 # 
 let submodules = Integer::structure().into_free_module(3).into_submodules();
 ```
@@ -98,9 +98,9 @@ Submodules of \\(R^n\\) are represented by objects of type `FinitelyFreeSubmodul
 The zero submodule \\(\{0\} \subseteq R^n\\) can be constructed using `.zero_submodule()` and the full submodule \\(R^n \subseteq R^n\\) can be constructed using `.full_submodule()`.
 
 ```rust
-# use algebraeon::nzq::Integer;
+# use algebraeon::structures::Integer;
 # use algebraeon::rings::linear::finitely_free_module::*;
-# use algebraeon::sets::structure::*;
+# use algebraeon::structures::*;
 # 
 # let submodules = Integer::structure().into_free_module(3).into_submodules();
 # 
@@ -111,9 +111,9 @@ assert_eq!(submodules.full_submodule().rank(), 3);
 The submodule given by the span of some elements of the module can be constructed using `.span(..)`.
 
 ```rust
-# use algebraeon::nzq::Integer;
+# use algebraeon::structures::Integer;
 # use algebraeon::rings::linear::finitely_free_module::*;
-# use algebraeon::sets::structure::*;
+# use algebraeon::structures::*;
 # 
 # let submodules = Integer::structure().into_free_module(3).into_submodules();
 # 
@@ -132,9 +132,9 @@ assert_eq!(
 The submodule given by the kernel of some elements can be constructed using `.kernel(..)`.
 
 ```rust
-# use algebraeon::nzq::Integer;
+# use algebraeon::structures::Integer;
 # use algebraeon::rings::linear::finitely_free_module::*;
-# use algebraeon::sets::structure::*;
+# use algebraeon::structures::*;
 # 
 # let submodules = Integer::structure().into_free_module(3).into_submodules();
 # 
@@ -153,9 +153,9 @@ assert!(submodules.equal(
 Test submodules for equality using `.equal(..)`.
 
 ```rust
-# use algebraeon::nzq::Integer;
+# use algebraeon::structures::Integer;
 # use algebraeon::rings::linear::finitely_free_module::*;
-# use algebraeon::sets::structure::*;
+# use algebraeon::structures::*;
 # 
 # let submodules = Integer::structure().into_free_module(3).into_submodules();
 # 
@@ -186,9 +186,9 @@ assert!(!submodules.equal(
 Check whether a submodule contains an element using `.contains_element(..)`.
 
 ```rust
-# use algebraeon::nzq::Integer;
+# use algebraeon::structures::Integer;
 # use algebraeon::rings::linear::finitely_free_module::*;
-# use algebraeon::sets::structure::*;
+# use algebraeon::structures::*;
 # 
 # let submodules = Integer::structure().into_free_module(3).into_submodules();
 # 
@@ -205,9 +205,9 @@ assert!(!submodules.contains_element(&a, &vec![4.into(), 4.into(), 1.into()]));
 Check whether a submodule is a subset of another submodule using `.contains(..)`.
 
 ```rust
-# use algebraeon::nzq::Integer;
+# use algebraeon::structures::Integer;
 # use algebraeon::rings::linear::finitely_free_module::*;
-# use algebraeon::sets::structure::*;
+# use algebraeon::structures::*;
 # 
 # let submodules = Integer::structure().into_free_module(3).into_submodules();
 # 
@@ -221,9 +221,9 @@ assert!(!submodules.contains(&b, &a));
 Compute the sum of two submodules using `.sum(..)` and compute the intersection of two submodules using `.intersection(..)`.
 
 ```rust
-# use algebraeon::nzq::Integer;
+# use algebraeon::structures::Integer;
 # use algebraeon::rings::linear::finitely_free_module::*;
-# use algebraeon::sets::structure::*;
+# use algebraeon::structures::*;
 # 
 # let submodules = Integer::structure().into_free_module(3).into_submodules();
 # 
