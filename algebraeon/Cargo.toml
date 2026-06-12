@@ -15,7 +15,6 @@ name = "algebraeon"
 [dependencies]
 algebraeon-structures = { version = "=0.0.17", path = "../structures", default-features = false }
 algebraeon-sets = { version = "=0.0.17", path = "../sets", default-features = false }
-algebraeon-nzq = { version = "=0.0.17", path = "../nzq", default-features = false }
 algebraeon-groups = { version = "=0.0.17", path = "../groups", default-features = false }
 algebraeon-rings = { version = "=0.0.17", path = "../rings", default-features = false }
 algebraeon-geometry = { version = "=0.0.17", path = "../geometry", default-features = false }

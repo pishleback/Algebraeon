@@ -48,7 +48,6 @@ dependencies = [
  "algebraeon-geometry",
  "algebraeon-groups",
  "algebraeon-macros",
- "algebraeon-nzq",
  "algebraeon-rings",
  "algebraeon-sets",
  "algebraeon-structures",
@@ -119,7 +118,6 @@ name = "algebraeon-groups"
 version = "0.0.17"
 dependencies = [
  "algebraeon-macros",
- "algebraeon-nzq",
  "algebraeon-sets",
  "algebraeon-structures",
  "itertools 0.14.0",
