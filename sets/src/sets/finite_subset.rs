@@ -22,7 +22,7 @@ where
         Self {
             _set: PhantomData,
             set,
-            elems: elems,
+            elems,
         }
     }
 
@@ -45,7 +45,7 @@ where
 
     fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
         if !self.elems.contains(x) {
-            return Err(format!("element not in finite subset"));
+            return Err("element not in finite subset".to_string());
         }
         Ok(())
     }

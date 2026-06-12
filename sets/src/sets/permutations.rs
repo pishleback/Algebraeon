@@ -112,12 +112,12 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> SetSignature
 
     fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
         if !self.set().is_sorted_and_unique_by_key(&x.perm, |(a, _)| a) {
-            return Err(format!("Permutation first items are not sorted and unique"));
+            return Err("Permutation first items are not sorted and unique".to_string());
         }
         if (0..x.perm.len()).collect::<HashSet<_>>()
             != x.perm.iter().map(|item| item.1.to).collect::<HashSet<_>>()
         {
-            return Err(format!("Permutation images are not valid"));
+            return Err("Permutation images are not valid".to_string());
         }
         if (0..x.perm.len()).collect::<HashSet<_>>()
             != x.perm
@@ -125,30 +125,26 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> SetSignature
                 .map(|item| item.1.from)
                 .collect::<HashSet<_>>()
         {
-            return Err(format!("Permutation preimages are not valid"));
+            return Err("Permutation preimages are not valid".to_string());
         }
         for item_1 in &x.perm {
             let item_2 = &x.perm[item_1.1.to];
             if self.set().equal(&item_1.0, &item_2.0) {
-                return Err(format!("Permutation includes a redundant fixed point"));
+                return Err("Permutation includes a redundant fixed point".to_string());
             }
             let item_3 = &x.perm[item_2.1.from];
             if !self.set().equal(&item_1.0, &item_3.0) {
-                return Err(format!(
-                    "Permutation image followed by preimage is not identity"
-                ));
+                return Err("Permutation image followed by preimage is not identity".to_string());
             }
         }
         for item_1 in &x.perm {
             let item_2 = &x.perm[item_1.1.from];
             if self.set().equal(&item_1.0, &item_2.0) {
-                return Err(format!("Permutation includes a redundant fixed point"));
+                return Err("Permutation includes a redundant fixed point".to_string());
             }
             let item_3 = &x.perm[item_2.1.to];
             if !self.set().equal(&item_1.0, &item_3.0) {
-                return Err(format!(
-                    "Permutation preimage followed by image is not identity"
-                ));
+                return Err("Permutation preimage followed by image is not identity".to_string());
             }
         }
         Ok(())
@@ -224,10 +220,10 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> PermutationsSignature<Set>
     fn new_cycle(&self, cycle: Vec<Set::Elem>) -> Result<Self::Elem, ()> {
         let sorted_enumerated_cycle = self
             .set()
-            .sort_by_key(cycle.iter().enumerate().collect(), &|item| &item.1);
+            .sort_by_key(cycle.iter().enumerate().collect(), &|item| item.1);
         if !self
             .set()
-            .is_sorted_and_unique_by_key(&sorted_enumerated_cycle, |item| &item.1)
+            .is_sorted_and_unique_by_key(&sorted_enumerated_cycle, |item| item.1)
         {
             return Err(());
         }
@@ -248,7 +244,7 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> PermutationsSignature<Set>
                             .binary_search_by_key(
                                 &enumerated_sorted_enumerated_cycle,
                                 &cycle[elem_idx_from],
-                                |item| &item.1.1,
+                                |item| item.1.1,
                             )
                             .unwrap()
                             .0,
@@ -257,7 +253,7 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> PermutationsSignature<Set>
                             .binary_search_by_key(
                                 &enumerated_sorted_enumerated_cycle,
                                 &cycle[elem_idx_to],
-                                |item| &item.1.1,
+                                |item| item.1.1,
                             )
                             .unwrap()
                             .0,
@@ -329,12 +325,11 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> PermutationsSignature<Set>
                                 .set()
                                 .binary_search_index(
                                     &elems_sorted,
-                                    &self
-                                        .set()
+                                    self.set()
                                         .binary_search_by_key(
                                             &cycle_sorted_tos,
                                             elem.borrow(),
-                                            |item| &item.1.borrow(),
+                                            |item| item.1.borrow(),
                                         )
                                         .unwrap()
                                         .0
@@ -345,12 +340,11 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> PermutationsSignature<Set>
                                 .set()
                                 .binary_search_index(
                                     &elems_sorted,
-                                    &self
-                                        .set()
+                                    self.set()
                                         .binary_search_by_key(
                                             &cycle_sorted_froms,
                                             elem.borrow(),
-                                            |item| &item.0.borrow(),
+                                            |item| item.0.borrow(),
                                         )
                                         .unwrap()
                                         .1
@@ -468,8 +462,8 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> CompositionSignature
             perm: unfixed_elems
                 .iter()
                 .map(|elem| {
-                    let elem_image = self.image_ref(a, &self.image_ref(b, &elem));
-                    let elem_preimage = self.preimage_ref(b, &self.preimage_ref(a, &elem));
+                    let elem_image = self.image_ref(a, self.image_ref(b, elem));
+                    let elem_preimage = self.preimage_ref(b, self.preimage_ref(a, elem));
                     (
                         elem.clone(),
                         FromAndTo {

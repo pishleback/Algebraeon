@@ -120,6 +120,7 @@ mod tests {
             x: i32,
         }
 
+        #[allow(clippy::to_string_trait_impl)]
         impl ToString for A {
             fn to_string(&self) -> String {
                 self.x.to_string()

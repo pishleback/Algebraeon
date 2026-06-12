@@ -643,9 +643,7 @@ impl Natural {
     ///     vec![true, true, false, true],
     /// );
     /// ```
-    pub fn bits<'a>(
-        &'a self,
-    ) -> impl Iterator<Item = bool> + ExactSizeIterator + DoubleEndedIterator + 'a {
+    pub fn bits<'a>(&'a self) -> impl ExactSizeIterator<Item = bool> + DoubleEndedIterator + 'a {
         use malachite_base::num::logic::traits::BitIterable;
         self.0.bits()
     }
