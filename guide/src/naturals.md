@@ -10,7 +10,7 @@ There are several ways to construct naturals. Some of them are:
 
 ```rust
 use std::str::FromStr;
-use algebraeon::nzq::Natural;
+use algebraeon::structures::Natural;
 
 let one = Natural::ONE;
 let two = Natural::TWO;
@@ -47,7 +47,7 @@ For exponentiation, use the method `.pow(&exp)` instead of `^` (which is xor).
 - [`sqrt_if_square`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Natural.html#method.sqrt_if_square)
 
 ```rust
-use algebraeon::nzq::*;
+use algebraeon::structures::*;
 use algebraeon::rings::structure::*;
 
 let a = Natural::from(12u32);
@@ -114,9 +114,9 @@ assert_eq!(
 Algebraeon implements [Lenstra elliptic-curve factorization](https://en.wikipedia.org/wiki/Lenstra_elliptic-curve_factorization) for quickly finding prime factors up to around 20 digits.
 
 ```rust
-use algebraeon::nzq::Natural;
+use algebraeon::structures::Natural;
 use algebraeon::rings::structure::{MetaFactoringMonoid, UniqueFactorizationMonoidSignature};
-use algebraeon::sets::structure::ToStringSignature;
+use algebraeon::structures::ToStringSignature;
 use std::str::FromStr;
 
 let n = Natural::from_str("706000565581575429997696139445280900").unwrap();

@@ -248,9 +248,9 @@ pub trait OrdSignature: PartialOrdSignature {
         self.binary_search_index_by_key(v, target, |item| item.borrow())
     }
 
-    fn binary_search_index_by_key<'x, X>(
+    fn binary_search_index_by_key<X>(
         &self,
-        v: &'x [X],
+        v: &[X],
         target: &Self::Elem,
         key: impl Fn(&X) -> &Self::Elem,
     ) -> Option<usize> {

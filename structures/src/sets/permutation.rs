@@ -4,14 +4,17 @@ use algebraeon_macros::signature_meta_trait;
 #[signature_meta_trait]
 pub trait PermutationsSignature<Set: SetSignature>: SetSignature {
     /// Error if a == b
+    #[allow(clippy::result_unit_err)]
     fn new_swap(&self, a: Set::Elem, b: Set::Elem) -> Result<Self::Elem, ()> {
         self.new_cycle(vec![a, b])
     }
 
     /// Error if any two elements of cycle are equal
+    #[allow(clippy::result_unit_err)]
     fn new_cycle(&self, cycle: Vec<Set::Elem>) -> Result<Self::Elem, ()>;
 
     /// Error if not valid permutation
+    #[allow(clippy::result_unit_err)]
     fn new_perm(
         &self,
         pairs: Vec<(impl Borrow<Set::Elem>, impl Borrow<Set::Elem>)>,

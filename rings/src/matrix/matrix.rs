@@ -119,7 +119,7 @@ impl<Set: Clone> Matrix<Set> {
     /// Construct a matrix from a closure.
     ///
     /// ```rust
-    /// use algebraeon_nzq::Integer;
+    /// use algebraeon_structures::Integer;
     /// use algebraeon_rings::matrix::Matrix;
     /// let a = Matrix::<Integer>::construct(2, 3, |r, c| if (r + c) % 2 == 0 { Integer::ZERO } else { Integer::ONE });
     /// let b = Matrix::<Integer>::from_rows(

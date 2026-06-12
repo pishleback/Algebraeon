@@ -399,33 +399,33 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
                                             });
                                         }
                                     }
-                                    syn::Type::Path(type_path) => {
-                                        // if the first argument is `a: Self::Elem` then replace it with `self` in the meta type (TODO)
-                                        if is_type_path_self_set(type_path) {
-                                            meta_args[0] = PatIdent {
-                                                attrs: vec![],
-                                                by_ref: None,
-                                                mutability: None,
-                                                ident: Ident::new("self", Span::call_site()),
-                                                subpat: None,
-                                            };
-                                            meta_sig.inputs[0] = FnArg::Receiver(Receiver {
-                                                attrs: vec![],
-                                                reference: None,
-                                                mutability: None,
-                                                self_token: syn::token::SelfValue {
-                                                    span: Span::call_site(),
-                                                },
-                                                colon_token: None,
-                                                ty: Box::new(syn::Type::Path(syn::TypePath {
-                                                    qself: None,
-                                                    path: syn::Path::from(Ident::new(
-                                                        "Self",
-                                                        Span::call_site(),
-                                                    )),
-                                                })),
-                                            });
-                                        }
+                                    // if the first argument is `a: Self::Elem` then replace it with `self` in the meta type (TODO)
+                                    syn::Type::Path(type_path)
+                                        if is_type_path_self_set(type_path) =>
+                                    {
+                                        meta_args[0] = PatIdent {
+                                            attrs: vec![],
+                                            by_ref: None,
+                                            mutability: None,
+                                            ident: Ident::new("self", Span::call_site()),
+                                            subpat: None,
+                                        };
+                                        meta_sig.inputs[0] = FnArg::Receiver(Receiver {
+                                            attrs: vec![],
+                                            reference: None,
+                                            mutability: None,
+                                            self_token: syn::token::SelfValue {
+                                                span: Span::call_site(),
+                                            },
+                                            colon_token: None,
+                                            ty: Box::new(syn::Type::Path(syn::TypePath {
+                                                qself: None,
+                                                path: syn::Path::from(Ident::new(
+                                                    "Self",
+                                                    Span::call_site(),
+                                                )),
+                                            })),
+                                        });
                                     }
                                     _ => {}
                                 },

@@ -14,7 +14,7 @@ pub trait DivMod<T> {
     ///
     /// # Examples
     /// ```
-    /// use algebraeon_nzq::{Integer, traits::DivMod};
+    /// use algebraeon_structures::{DivMod, Integer};
     ///
     /// let a = Integer::from(13);
     /// let b = Integer::from(5);
@@ -85,7 +85,7 @@ pub trait ModPow<Exponent, Modulus> {
 
     /// Raise `self` the power of `exp` and reduce modulo `m`.
     /// ```
-    /// use algebraeon_nzq::{Natural, traits::ModPow};
+    /// use algebraeon_structures::{ModPow, Natural};
     /// assert_eq!(
     ///     Natural::from(4u32),
     ///     Natural::from(3u32).mod_pow(Natural::from(100u32), Natural::from(7u32))
@@ -99,7 +99,7 @@ pub trait ModInv<Modulus> {
 
     /// The modular inverse of `self` modulo `m`.
     /// ```
-    /// use algebraeon_nzq::{Natural, traits::ModInv};
+    /// use algebraeon_structures::{ModInv, Natural};
     /// assert_eq!(
     ///     Natural::from(4u32),
     ///     Natural::from(3u32).mod_inv(Natural::from(11u32)).unwrap(),

@@ -3,7 +3,7 @@
 ## Example
 
 ```rust 
-use algebraeon::nzq::Integer;
+use algebraeon::structures::Integer;
 use algebraeon::rings::polynomial::*;
 use algebraeon::rings::structure::*;
 use std::collections::HashMap;

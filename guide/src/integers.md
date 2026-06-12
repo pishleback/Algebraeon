@@ -11,7 +11,7 @@ There are several ways to construct integers. Some of them are:
 
 ```rust
 use std::str::FromStr;
-use algebraeon::nzq::{Integer, Natural};
+use algebraeon::structures::{Integer, Natural};
 
 let one = Integer::ONE;
 let two = Integer::TWO;
@@ -43,7 +43,7 @@ For exponentiation, use the methods `.nat_pow(&exp)` or `.int_pow(&exp)`.
 
 
 ```rust
-use algebraeon::nzq::{Integer, Natural};
+use algebraeon::structures::{Integer, Natural};
 use algebraeon::rings::structure::*;
 
 let a = Integer::from(-12);
@@ -65,7 +65,7 @@ assert_eq!(power, Integer::from(-248832));
 assert_eq!(modulo, Integer::from(3));
 
 // abs
-use algebraeon::nzq::traits::Abs;
+use algebraeon::structures::Abs;
 let abs_a = a.abs();
 assert_eq!(abs_a, Natural::from(12u32));
 ```
