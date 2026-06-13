@@ -464,10 +464,11 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
         })
     }
 
-    pub fn diag(&self, diag: &[RS::Elem]) -> Matrix<RS::Elem> {
-        Matrix::construct(diag.len(), diag.len(), |r, c| {
+    pub fn diag(&self, diag: &[impl Clone + Into<RS::Elem>]) -> Matrix<RS::Elem> {
+        let n = diag.len();
+        Matrix::construct(n, n, |r, c| {
             if r == c {
-                diag[r].clone()
+                diag[r].clone().into()
             } else {
                 self.ring().zero()
             }
@@ -749,16 +750,8 @@ where
     }
 
     /// Construct a diagonal matrix from a list of diagonal entries.
-    pub fn diag(diag: Vec<impl Into<R> + Clone>) -> Self {
-        let n = diag.len();
-        let structure = R::structure();
-        Self::construct(n, n, |r, c| {
-            if r == c {
-                diag[r].clone().into()
-            } else {
-                structure.zero()
-            }
-        })
+    pub fn diag(diag: &[impl Into<R> + Clone]) -> Self {
+        Self::structure().diag(diag)
     }
 
     pub fn dot(a: &Self, b: &Self) -> R {
