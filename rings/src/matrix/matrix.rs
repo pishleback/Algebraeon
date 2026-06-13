@@ -748,8 +748,8 @@ where
         Self::structure().ident(n)
     }
 
-    pub fn diag(diag: &[R]) -> Self {
-        Self::structure().diag(diag)
+    pub fn diag(diag: Vec<impl Into<R>>) -> Self {
+        Self::structure().diag(&diag.into_iter().map(Into::into).collect::<Vec<_>>())
     }
 
     pub fn dot(a: &Self, b: &Self) -> R {
