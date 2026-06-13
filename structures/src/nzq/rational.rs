@@ -7,7 +7,7 @@ use malachite_q::arithmetic::traits::{Approximate, SimplestRationalInInterval};
 use std::f64;
 use std::iter::{Product, Sum};
 use std::{
-    ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub, SubAssign},
+    ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Rem, Sub, SubAssign},
     str::FromStr,
 };
 
@@ -490,6 +490,39 @@ impl Div<&Rational> for &Rational {
     }
 }
 
+impl Rem<Rational> for Rational {
+    type Output = Rational;
+
+    fn rem(self, rhs: Rational) -> Self::Output {
+        use malachite_base::num::arithmetic::traits::Mod;
+        Rational(self.0.mod_op(rhs.0))
+    }
+}
+impl Rem<&Rational> for Rational {
+    type Output = Rational;
+
+    fn rem(self, rhs: &Rational) -> Self::Output {
+        use malachite_base::num::arithmetic::traits::Mod;
+        Rational(self.0.mod_op(&rhs.0))
+    }
+}
+impl Rem<Rational> for &Rational {
+    type Output = Rational;
+
+    fn rem(self, rhs: Rational) -> Self::Output {
+        use malachite_base::num::arithmetic::traits::Mod;
+        Rational((&self.0).mod_op(rhs.0))
+    }
+}
+impl Rem<&Rational> for &Rational {
+    type Output = Rational;
+
+    fn rem(self, rhs: &Rational) -> Self::Output {
+        use malachite_base::num::arithmetic::traits::Mod;
+        Rational((&self.0).mod_op(&rhs.0))
+    }
+}
+
 impl Abs for Rational {
     type Output = Rational;
 
@@ -680,6 +713,29 @@ mod tests {
         let (n, d) = ((&x).numerator(), (&x).denominator());
         assert_eq!(n, Integer::from(-2));
         assert_eq!(d, Natural::from(3u32));
+    }
+
+    #[test]
+    fn rational_rem() {
+        // Non-negative result, matching malachite's `Mod` for `Rational`
+        // where the remainder takes the sign of the divisor.
+        let a = Rational::from_str("7/2").unwrap();
+        let b = Rational::from_str("1").unwrap();
+        assert_eq!(&a % &b, Rational::from_str("1/2").unwrap());
+
+        let a = Rational::from_str("7/3").unwrap();
+        let b = Rational::from_str("2/3").unwrap();
+        assert_eq!(a % b, Rational::from_str("1/3").unwrap());
+
+        // Negative dividend
+        let a = Rational::from_str("-7/2").unwrap();
+        let b = Rational::from_str("1").unwrap();
+        assert_eq!(a % b, Rational::from_str("1/2").unwrap());
+
+        // Exact division gives zero remainder
+        let a = Rational::from_str("6/2").unwrap();
+        let b = Rational::from_str("3/2").unwrap();
+        assert_eq!(a % b, Rational::ZERO);
     }
 
     #[test]
