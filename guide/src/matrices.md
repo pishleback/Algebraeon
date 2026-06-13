@@ -7,8 +7,8 @@ use algebraeon::structures::Integer;
 use algebraeon::rings::matrix::Matrix;
 
 let a = Matrix::<Integer>::from_rows(vec![
-    vec![Integer::from(1), Integer::from(2), Integer::from(3)],
-    vec![Integer::from(0), Integer::from(-1), Integer::from(4)],
+    vec![1, 2, 3],
+    vec![0, -1, 4],
 ]);
 
 assert_eq!(a.rows(), 2);
@@ -16,11 +16,7 @@ assert_eq!(a.cols(), 3);
 
 let zero = Matrix::<Integer>::zero(2, 3);
 let ident = Matrix::<Integer>::ident(3);
-let diag = Matrix::<Integer>::diag(&vec![
-    Integer::from(1),
-    Integer::from(5),
-    Integer::from(9),
-]);
+let diag = Matrix::<Integer>::diag(&[1, 5, 9].map(Integer::from));
 
 assert_eq!(zero.rows(), 2);
 assert_eq!(ident.cols(), 3);
@@ -37,13 +33,13 @@ use algebraeon::structures::Integer;
 use algebraeon::rings::matrix::Matrix;
 
 let a = Matrix::<Integer>::from_rows(vec![
-    vec![Integer::from(1), Integer::from(2), Integer::from(3)],
-    vec![Integer::from(0), Integer::from(1), Integer::from(4)],
+    vec![1, 2, 3],
+    vec![0, 1, 4],
 ]);
 let b = Matrix::<Integer>::from_rows(vec![
-    vec![Integer::from(1), Integer::from(0)],
-    vec![Integer::from(0), Integer::from(1)],
-    vec![Integer::from(2), Integer::from(3)],
+    vec![1, 0],
+    vec![0, 1],
+    vec![2, 3],
 ]);
 
 let sum = Matrix::add(&a, &a).unwrap();
@@ -78,16 +74,8 @@ assert_eq!(
 ```rust
 # use algebraeon::structures::Integer;
 # use algebraeon::rings::matrix::Matrix;
-let v = Matrix::<Integer>::from_rows(vec![vec![
-    Integer::from(1),
-    Integer::from(2),
-    Integer::from(3),
-]]);
-let w = Matrix::<Integer>::from_rows(vec![vec![
-    Integer::from(4),
-    Integer::from(5),
-    Integer::from(6),
-]]);
+let v = Matrix::<Integer>::from_rows(vec![vec![1, 2, 3]]);
+let w = Matrix::<Integer>::from_rows(vec![vec![4, 5, 6]]);
 assert_eq!(Matrix::dot(&v, &w), Integer::from(32));
 ```
 
@@ -98,8 +86,8 @@ use algebraeon::structures::{Integer, Rational};
 use algebraeon::rings::matrix::Matrix;
 
 let integer_matrix = Matrix::<Integer>::from_rows(vec![
-    vec![Integer::from(1), Integer::from(2)],
-    vec![Integer::from(3), Integer::from(5)],
+    vec![1, 2],
+    vec![3, 5],
 ]);
 assert_eq!(
     integer_matrix.clone().det().unwrap(),
@@ -108,9 +96,9 @@ assert_eq!(
 assert_eq!(integer_matrix.rank(), 2);
 
 let rational_matrix = Matrix::<Rational>::from_rows(vec![
-    vec![Rational::from(2), Rational::from(4), Rational::from(4)],
-    vec![Rational::from(-6), Rational::from(6), Rational::from(12)],
-    vec![Rational::from(10), Rational::from(7), Rational::from(17)],
+    vec![2, 4, 4],
+    vec![-6, 6, 12],
+    vec![10, 7, 17],
 ]);
 let inverse = Matrix::inv(&rational_matrix).unwrap();
 assert_eq!(Matrix::mul(&rational_matrix, &inverse).unwrap(), Matrix::ident(3));
