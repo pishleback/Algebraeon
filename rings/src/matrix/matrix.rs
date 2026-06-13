@@ -748,8 +748,17 @@ where
         Self::structure().ident(n)
     }
 
-    pub fn diag(diag: Vec<impl Into<R>>) -> Self {
-        Self::structure().diag(&diag.into_iter().map(Into::into).collect::<Vec<_>>())
+    /// Construct a diagonal matrix from a list of diagonal entries.
+    pub fn diag(diag: Vec<impl Into<R> + Clone>) -> Self {
+        let n = diag.len();
+        let structure = R::structure();
+        Self::construct(n, n, |r, c| {
+            if r == c {
+                diag[r].clone().into()
+            } else {
+                structure.zero()
+            }
+        })
     }
 
     pub fn dot(a: &Self, b: &Self) -> R {
