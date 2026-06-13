@@ -32,19 +32,19 @@ For exponentiation, use the method `.pow(&exp)` instead of `^` (which is xor).
 
 ## Available functions
 
-- [`choose`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/fn.choose.html)
-- [`euler_totient`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/natural/factorization/factored/struct.NaturalFactorizationStructure.html#method.euler_totient)
-- [`factor`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/natural/trait.NaturalFns.html#tymethod.factor)
-- [`factorial`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Natural.html#method.factorial)
-- [`gcd`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/fn.gcd.html)
-- [`is_prime`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/natural/trait.NaturalFns.html#tymethod.is_prime)
-- [`is_square`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Natural.html#method.is_square)
-- [`lcm`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/fn.lcm.html)
-- [`nth_root_floor`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Natural.html#method.nth_root_floor)
-- [`nth_root_ceil`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Natural.html#method.nth_root_ceil)
-- [`sqrt_ceil`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Natural.html#method.sqrt_ceil)
-- [`sqrt_floor`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Natural.html#method.sqrt_floor)
-- [`sqrt_if_square`](https://docs.rs/algebraeon-nzq/latest/algebraeon_nzq/struct.Natural.html#method.sqrt_if_square)
+- [`choose`](https://docs.rs/algebraeon-structures/latest/algebraeon_structures/fn.choose.html)
+- [`euler_totient`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/struct.FactoringStructure.html#method.euler_totient)
+- [`factor`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.MetaFactoringMonoid.html#method.factor)
+- [`factorial`](https://docs.rs/algebraeon-structures/latest/algebraeon_structures/struct.Natural.html#method.factorial)
+- [`gcd`](https://docs.rs/algebraeon-structures/latest/algebraeon_structures/fn.gcd.html)
+- [`is_irreducible`](https://docs.rs/algebraeon-rings/latest/algebraeon_rings/structure/trait.MetaFactoringMonoid.html#method.is_irreducible)
+- [`is_square`](https://docs.rs/algebraeon-structures/latest/algebraeon_structures/struct.Natural.html#method.is_square)
+- [`lcm`](https://docs.rs/algebraeon-structures/latest/algebraeon_structures/fn.lcm.html)
+- [`nth_root_floor`](https://docs.rs/algebraeon-structures/latest/algebraeon_structures/struct.Natural.html#method.nth_root_floor)
+- [`nth_root_ceil`](https://docs.rs/algebraeon-structures/latest/algebraeon_structures/struct.Natural.html#method.nth_root_ceil)
+- [`sqrt_ceil`](https://docs.rs/algebraeon-structures/latest/algebraeon_structures/struct.Natural.html#method.sqrt_ceil)
+- [`sqrt_floor`](https://docs.rs/algebraeon-structures/latest/algebraeon_structures/struct.Natural.html#method.sqrt_floor)
+- [`sqrt_if_square`](https://docs.rs/algebraeon-structures/latest/algebraeon_structures/struct.Natural.html#method.sqrt_if_square)
 
 ```rust
 use algebraeon::structures::*;
