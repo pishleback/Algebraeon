@@ -122,12 +122,7 @@ impl<Set: Clone> Matrix<Set> {
     /// use algebraeon_structures::Integer;
     /// use algebraeon_rings::matrix::Matrix;
     /// let a = Matrix::<Integer>::construct(2, 3, |r, c| if (r + c) % 2 == 0 { Integer::ZERO } else { Integer::ONE });
-    /// let b = Matrix::<Integer>::from_rows(
-    ///     vec![
-    ///         vec![Integer::ZERO, Integer::ONE, Integer::ZERO],
-    ///         vec![Integer::ONE, Integer::ZERO, Integer::ONE]
-    ///     ]
-    /// );
+    /// let b = Matrix::<Integer>::from_rows(vec![vec![0, 1, 0], vec![1, 0, 1]]);
     /// assert_eq!(a, b);
     /// ```
     pub fn construct(rows: usize, cols: usize, make_entry: impl Fn(usize, usize) -> Set) -> Self {
