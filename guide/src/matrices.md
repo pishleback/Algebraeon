@@ -16,7 +16,7 @@ assert_eq!(a.cols(), 3);
 
 let zero = Matrix::<Integer>::zero(2, 3);
 let ident = Matrix::<Integer>::ident(3);
-let diag = Matrix::<Integer>::diag(vec![1, 5, 9]);
+let diag = Matrix::<Integer>::diag(&vec![1, 5, 9]);
 
 assert_eq!(zero.rows(), 2);
 assert_eq!(ident.cols(), 3);
