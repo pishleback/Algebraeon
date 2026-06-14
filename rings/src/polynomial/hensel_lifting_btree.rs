@@ -179,6 +179,16 @@ impl<
         }
     }
 
+    /// Build a branch node from two coprime lists of modular factors when the base
+    /// factorization is known only modulo the prime `p` (i.e. as elements of the
+    /// field `F_p`).
+    ///
+    /// Forms the two subproducts `first_h ≡ ∏ first_fs` and `second_h ≡ ∏ second_fs`
+    /// modulo `p^n`, computes Bézout cofactors `a, b` with `a·first_h + b·second_h
+    /// ≡ 1 (mod p)` in `F_p[x]`, lifts those cofactors back to ring elements, and
+    /// recurses on each half. This mirrors [`new_split`](Self::new_split) but takes
+    /// an explicit field `F_p` instead of assuming the ring carries a field-quotient
+    /// view, so it works with backends such as Montgomery form.
     fn new_split_mod_field<
         FieldModP: QuotientRingGetPrincipalIdealSignature<RS> + FieldSignature,
     >(
@@ -538,6 +548,11 @@ impl<
         }
     }
 
+    /// Recursively build a product-tree node for the factors `fs`, each known
+    /// modulo the prime field `F_p`, by splitting the list in half at every level.
+    /// A single factor becomes a leaf; otherwise the two halves are combined by
+    /// [`new_split_mod_field`](HenselFactorizationNodeCases::new_split_mod_field).
+    /// This is the field-quotient counterpart of [`new`](Self::new).
     fn new_mod_field<FieldModP: QuotientRingGetPrincipalIdealSignature<RS> + FieldSignature>(
         ring: &RS,
         field_mod_p: &FieldModP,
@@ -668,6 +683,14 @@ impl<
 impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature>
     HenselFactorization<true, RS>
 {
+    /// Build a Hensel factorization of `h` from its monic irreducible factors `fs`
+    /// taken modulo the prime field `F_p`, so the initial modulus is `p^1`.
+    ///
+    /// The factors must satisfy `h ≡ lc(h) · ∏ fs (mod p)` and be pairwise coprime
+    /// in `F_p[x]`; the Bézout cofactors of the product tree are computed in `F_p`.
+    /// The result can then be quadratically (or linearly) lifted to any `p^k`. This
+    /// is the product-tree counterpart of [`new`](Self::new), which instead takes a
+    /// base factorization already given modulo `p^n`.
     pub fn new_from_mod_field_factors<
         FieldModP: QuotientRingGetPrincipalIdealSignature<RS> + FieldSignature,
     >(
@@ -856,6 +879,76 @@ mod tests {
             )
             .apply_map(|c| Integer::rem(c, &hensel_fact.modulus()));
             println!("{:?} {:?}", lifted_product, h);
+            assert_eq!(lifted_product, h);
+        }
+    }
+
+    #[test]
+    fn rem_by_monic_mod_matches_exact_division() {
+        let ring = Integer::structure();
+        // x^3 + 2x + 5 = x * (x^2 + 1) + (x + 5), so the remainder is x + 5.
+        let dividend = Polynomial::from_coeffs(vec![
+            Integer::from(5),
+            Integer::from(2),
+            Integer::from(0),
+            Integer::from(1),
+        ]);
+        let monic_divisor =
+            Polynomial::from_coeffs(vec![Integer::from(1), Integer::from(0), Integer::from(1)]);
+        let modulus = Integer::from(1000);
+        let rem = rem_by_monic_mod(&ring, &dividend, &monic_divisor, &modulus);
+        assert_eq!(
+            rem,
+            Polynomial::from_coeffs(vec![Integer::from(5), Integer::from(1)])
+        );
+
+        // x^2 mod (x - 1) = 1, with coefficients reduced mod 7.
+        let rem2 = rem_by_monic_mod(
+            &ring,
+            &Polynomial::from_coeffs(vec![Integer::from(0), Integer::from(0), Integer::from(1)]),
+            &Polynomial::from_coeffs(vec![Integer::from(-1), Integer::from(1)]),
+            &Integer::from(7),
+        );
+        assert_eq!(rem2, Polynomial::constant(Integer::from(1)));
+
+        // A dividend of smaller degree is returned unchanged (mod the modulus).
+        let small = Polynomial::from_coeffs(vec![Integer::from(3), Integer::from(2)]);
+        let rem3 = rem_by_monic_mod(&ring, &small, &monic_divisor, &modulus);
+        assert_eq!(rem3, small);
+    }
+
+    #[test]
+    fn new_from_mod_field_factors_lifts_to_higher_powers() {
+        // h = (x^2 + 2)(x + 1)(x + 4) = x^4 + x^2 + 3 modulo 5, with three pairwise
+        // coprime monic factors over F_5.
+        let field_mod_5 = Integer::structure().into_quotient_field_unchecked(Integer::from(5));
+        let f1 =
+            Polynomial::from_coeffs(vec![Integer::from(2), Integer::from(0), Integer::from(1)]);
+        let f2 = Polynomial::from_coeffs(vec![Integer::from(1), Integer::from(1)]);
+        let f3 = Polynomial::from_coeffs(vec![Integer::from(4), Integer::from(1)]);
+        let h = Polynomial::from_coeffs(vec![
+            Integer::from(3),
+            Integer::from(0),
+            Integer::from(1),
+            Integer::from(0),
+            Integer::from(1),
+        ]);
+
+        let mut hensel_fact = HenselFactorization::<true, _>::new_from_mod_field_factors(
+            Integer::structure(),
+            field_mod_5,
+            h.clone(),
+            vec![f1, f2, f3],
+        );
+        assert_eq!(hensel_fact.factors().len(), 3);
+        assert_eq!(hensel_fact.modulus(), Integer::from(5));
+
+        // Each quadratic lift keeps the product congruent to h modulo the new power.
+        for _ in 0..4 {
+            hensel_fact.quadratic_lift();
+            hensel_fact.check().unwrap();
+            let lifted_product = Polynomial::product(&hensel_fact.factors())
+                .apply_map(|c| Integer::rem(c, &hensel_fact.modulus()));
             assert_eq!(lifted_product, h);
         }
     }
