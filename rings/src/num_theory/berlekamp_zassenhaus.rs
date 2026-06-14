@@ -59,11 +59,17 @@ some improvements
 */
 
 use crate::num_theory::modulo::montgomery::MontgomeryModuloOddPrimeStructure;
-use crate::num_theory::modulo::montgomery::MontgomeryModuloOddStructure;
 use crate::num_theory::natural_factorization::primes::is_prime_nat;
-use crate::polynomial::hensel_lifting_linalg::HenselFactorization;
 use crate::polynomial::*;
+use crate::polynomial::{
+    hensel_lifting_btree::HenselFactorization as ProductTreeHenselFactorization,
+    hensel_lifting_linalg::HenselFactorization as LinearAlgebraHenselFactorization,
+};
 use crate::structure::*;
+use crate::{
+    matrix::{Matrix, StandardInnerProduct},
+    structure::EuclideanRemainderQuotientStructure,
+};
 use algebraeon_sets::combinatorics::LexicographicSubsetsWithRemovals;
 use algebraeon_structures::*;
 use itertools::Itertools;
@@ -74,19 +80,39 @@ fn compute_polynomial_factor_bound(poly: &Polynomial<Integer>) -> Natural {
     poly.mignotte_factor_coefficient_bound().unwrap()
 }
 
-#[derive(Debug, Clone)]
-struct StateAtGoodPrime<'a> {
-    #[allow(unused)]
-    p: usize,
-    sqfree_prim_poly: &'a Polynomial<Integer>,
-    hensel_factorization:
-        HenselFactorization<IntegerCanonicalStructure, MontgomeryModuloOddStructure>,
-    num_modular_factors: usize,
+// Only ever one backend is held at a time (one per factorization), so the size of
+// the larger variant is not worth an extra heap indirection on every access.
+#[allow(clippy::large_enum_variant)]
+enum HenselBackend {
+    LinearAlgebra(
+        LinearAlgebraHenselFactorization<
+            IntegerCanonicalStructure,
+            EuclideanRemainderQuotientStructure<
+                IntegerCanonicalStructure,
+                IntegerCanonicalStructure,
+                false,
+            >,
+        >,
+    ),
+    ProductTree(ProductTreeHenselFactorization<true, IntegerCanonicalStructure>),
 }
 
-impl<'a> StateAtGoodPrime<'a> {
-    // Some(..) if p is a good prime otherwise None if p is a bad prime
-    fn try_new_at_prime(p: usize, sqfree_prim_poly: &'a Polynomial<Integer>) -> Option<Self> {
+struct StateAtGoodPrime<'a> {
+    p: usize,
+    sqfree_prim_poly: &'a Polynomial<Integer>,
+    hensel_factorization: HenselBackend,
+    num_modular_factors: usize,
+    can_quadratic_lift: bool,
+}
+
+struct FactorizationAtGoodPrime {
+    p: usize,
+    mod_p: MontgomeryModuloOddPrimeStructure,
+    factors: NonZeroFactored<Polynomial<u64>, Natural>,
+}
+
+impl FactorizationAtGoodPrime {
+    fn try_new(p: usize, sqfree_prim_poly: &Polynomial<Integer>) -> Option<Self> {
         if p == 2 {
             // Montgomery form can only handle odd primes
             // mod p=2 is efficient to implement so shouldn't just skip it here though... future optimization
@@ -115,37 +141,519 @@ impl<'a> StateAtGoodPrime<'a> {
             }
             .unwrap_nonzero();
 
-            let hensel_factorization = HenselFactorization::from_mod_field_factorization(
-                |q| {
-                    MontgomeryModuloOddStructure::new_unchecked(q.try_into().expect(
-                        "Modulus lifted too far for this implementation of Montgomery form",
-                    ))
-                },
-                &poly_mod_p.factorizations(),
-                fs,
-                sqfree_prim_poly.clone(),
-            )
-            .unwrap();
-            return Some(StateAtGoodPrime {
+            Some(Self {
                 p,
-                sqfree_prim_poly,
-                num_modular_factors: hensel_factorization.factors().len(),
-                hensel_factorization,
-            });
+                mod_p,
+                factors: fs,
+            })
+        } else {
+            None
         }
-        None
     }
 
+    fn factor_degrees(&self) -> Vec<usize> {
+        let polynomial_ring = self.mod_p.polynomials();
+        self.factors
+            .powers()
+            .iter()
+            .map(|(factor, _)| polynomial_ring.degree(factor).unwrap())
+            .collect()
+    }
+
+    fn into_hensel_state<'a>(
+        self,
+        sqfree_prim_poly: &'a Polynomial<Integer>,
+    ) -> StateAtGoodPrime<'a> {
+        let FactorizationAtGoodPrime { p, mod_p, factors } = self;
+        let num_modular_factors = factors.powers().len();
+        let hensel_factorization = if sqfree_prim_poly.degree().unwrap() >= 600 {
+            let integer_factors = factors
+                .into_powers()
+                .into_iter()
+                .map(|(factor, exponent)| {
+                    debug_assert_eq!(exponent, Natural::ONE);
+                    factor.apply_map(|c| mod_p.unproject_ref(c))
+                })
+                .collect::<Vec<_>>();
+            HenselBackend::ProductTree(ProductTreeHenselFactorization::new_from_mod_field_factors(
+                Integer::structure(),
+                mod_p,
+                sqfree_prim_poly.clone(),
+                integer_factors,
+            ))
+        } else {
+            let polynomial_ring_mod_p = mod_p.polynomials();
+            HenselBackend::LinearAlgebra(
+                LinearAlgebraHenselFactorization::from_mod_field_factorization(
+                    |q| {
+                        Integer::structure()
+                            .into_euclidean_quotient_ring(q.clone())
+                            .unwrap()
+                    },
+                    &polynomial_ring_mod_p.factorizations(),
+                    factors,
+                    sqfree_prim_poly.clone(),
+                )
+                .unwrap(),
+            )
+        };
+        StateAtGoodPrime {
+            p,
+            sqfree_prim_poly,
+            num_modular_factors,
+            hensel_factorization,
+            can_quadratic_lift: true,
+        }
+    }
+}
+
+impl<'a> StateAtGoodPrime<'a> {
     fn lift_to_modulus(&mut self, target_modulus: &Natural) {
-        while self.hensel_factorization.modulus() < target_modulus
-            && self.hensel_factorization.modulus() * self.hensel_factorization.base_modulus()
-                < Integer::from(MontgomeryModuloOddStructure::max_modulus())
-        {
-            self.hensel_factorization.quadratic_lift();
+        match &mut self.hensel_factorization {
+            HenselBackend::LinearAlgebra(factorization) => {
+                while self.can_quadratic_lift
+                    && factorization.modulus() < target_modulus
+                    && factorization.modulus() * factorization.modulus() < target_modulus
+                {
+                    factorization.quadratic_lift();
+                }
+                while factorization.modulus() < target_modulus {
+                    factorization.linear_lift();
+                    self.can_quadratic_lift = false;
+                }
+            }
+            HenselBackend::ProductTree(factorization) => {
+                while factorization.modulus() < target_modulus {
+                    factorization.quadratic_lift();
+                }
+            }
         }
-        while self.hensel_factorization.modulus() < target_modulus {
-            self.hensel_factorization.linear_lift();
+    }
+
+    fn modulus(&self) -> Integer {
+        match &self.hensel_factorization {
+            HenselBackend::LinearAlgebra(factorization) => factorization.modulus().clone(),
+            HenselBackend::ProductTree(factorization) => factorization.modulus(),
         }
+    }
+
+    fn modular_factors(&self) -> Vec<Polynomial<Integer>> {
+        match &self.hensel_factorization {
+            HenselBackend::LinearAlgebra(factorization) => factorization.factors().clone(),
+            HenselBackend::ProductTree(factorization) => {
+                factorization.factors().into_iter().cloned().collect()
+            }
+        }
+    }
+}
+
+fn symmetric_remainder(x: &Integer, modulus: &Integer) -> Integer {
+    let r = Rem::rem(x, modulus);
+    if r > Integer::quo(modulus, &Integer::TWO).unwrap() {
+        r - modulus
+    } else {
+        r
+    }
+}
+
+fn prime_power(p: usize, exponent: usize) -> Natural {
+    Natural::from(p).pow(&Natural::from(exponent))
+}
+
+fn scaled_newton_traces_mod(
+    factor: &Polynomial<Integer>,
+    max_trace: usize,
+    leading_coeff: &Integer,
+    modulus: &Integer,
+) -> Vec<Integer> {
+    let degree = factor.degree().unwrap();
+    let mut raw_traces = vec![Integer::ZERO; max_trace + 1];
+    let mut scaled_traces = vec![Integer::ZERO; max_trace + 1];
+    let mut leading_coeff_power = Integer::ONE;
+
+    for i in 1..=max_trace {
+        let mut sum = Integer::ZERO;
+        if i <= degree {
+            sum += Integer::from(i) * factor.coeff(degree - i).as_ref();
+        }
+        for k in 1..=std::cmp::min(i - 1, degree) {
+            sum += factor.coeff(degree - k).as_ref() * &raw_traces[i - k];
+        }
+        raw_traces[i] = Rem::rem(&(-sum), modulus);
+        leading_coeff_power = Rem::rem(&(leading_coeff_power * leading_coeff), modulus);
+        scaled_traces[i] = Rem::rem(&(&raw_traces[i] * &leading_coeff_power), modulus);
+    }
+
+    scaled_traces
+}
+
+fn scaled_trace_bound(poly: &Polynomial<Integer>, trace_index: usize) -> Natural {
+    let degree = poly.degree().unwrap();
+    let leading_coeff_abs = Abs::abs(poly.leading_coeff().unwrap());
+    // Fujiwara's root bound, scaled by the leading coefficient:
+    // |lc(f) * alpha| <= 2 max_i (|a_i| |lc(f)|^(n-i-1))^(1/(n-i)).
+    // A power-of-two overestimate avoids computing hundreds of large integer roots.
+    let leading_coeff_bits = leading_coeff_abs.bits().count();
+    let scaled_root_bound_exponent = (0..degree)
+        .map(|i| {
+            let codimension = degree - i;
+            let coeff_bits = Abs::abs(poly.coeff(i).as_ref()).bits().count();
+            let radicand_bits = coeff_bits + (codimension - 1) * leading_coeff_bits;
+            radicand_bits.div_ceil(codimension)
+        })
+        .max()
+        .unwrap_or(0)
+        + 1;
+    let scaled_root_bound = Natural::TWO.pow(&Natural::from(scaled_root_bound_exponent));
+    Natural::from(degree) * scaled_root_bound.pow(&Natural::from(trace_index))
+}
+
+fn trace_bound_exponent(poly: &Polynomial<Integer>, p: usize, trace_index: usize) -> usize {
+    let twice_bound = Natural::TWO * scaled_trace_bound(poly, trace_index);
+    let mut exponent = 0;
+    let mut power = Natural::ONE;
+    let p = Natural::from(p);
+    while power <= twice_bound {
+        power *= &p;
+        exponent += 1;
+    }
+    exponent
+}
+
+fn trace_cut(
+    trace_mod_pk: &Integer,
+    p: usize,
+    bound_exponent: usize,
+    accuracy_exponent: usize,
+) -> Integer {
+    debug_assert!(accuracy_exponent > bound_exponent);
+    let low_modulus = Integer::from(prime_power(p, bound_exponent));
+    let high_modulus = Integer::from(prime_power(p, accuracy_exponent - bound_exponent));
+    let low = symmetric_remainder(trace_mod_pk, &low_modulus);
+    let high_digits = (trace_mod_pk - low) / low_modulus;
+    symmetric_remainder(&high_digits, &high_modulus)
+}
+
+fn rational_rref(matrix: &Matrix<Integer>) -> Vec<Vec<Rational>> {
+    let mut rows = (0..matrix.rows())
+        .map(|r| {
+            (0..matrix.cols())
+                .map(|c| Rational::from(matrix.at(r, c).unwrap()))
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>();
+
+    let mut pivot_row = 0;
+    for pivot_col in 0..matrix.cols() {
+        let Some(nonzero_row) =
+            (pivot_row..rows.len()).find(|r| rows[*r][pivot_col] != Rational::ZERO)
+        else {
+            continue;
+        };
+        rows.swap(pivot_row, nonzero_row);
+
+        let pivot = rows[pivot_row][pivot_col].clone();
+        for entry in &mut rows[pivot_row] {
+            *entry = &*entry / &pivot;
+        }
+
+        let pivot_row_data = rows[pivot_row].clone();
+        for (r, row) in rows.iter_mut().enumerate() {
+            if r == pivot_row || row[pivot_col] == Rational::ZERO {
+                continue;
+            }
+            let multiplier = row[pivot_col].clone();
+            for (entry, pivot_entry) in row.iter_mut().zip(pivot_row_data.iter()).skip(pivot_col) {
+                *entry = &*entry - &multiplier * pivot_entry;
+            }
+        }
+
+        pivot_row += 1;
+        if pivot_row == rows.len() {
+            break;
+        }
+    }
+
+    rows.truncate(pivot_row);
+    rows
+}
+
+fn partition_from_lattice_basis(lattice_basis: &Matrix<Integer>) -> Option<Vec<Vec<usize>>> {
+    let rref = rational_rref(lattice_basis);
+    let mut partition = vec![vec![]; rref.len()];
+
+    for col in 0..lattice_basis.cols() {
+        let mut one_row = None;
+        for (row_index, row) in rref.iter().enumerate() {
+            if row[col] == Rational::ONE {
+                if one_row.is_some() {
+                    return None;
+                }
+                one_row = Some(row_index);
+            } else if row[col] != Rational::ZERO {
+                return None;
+            }
+        }
+        partition[one_row?].push(col);
+    }
+
+    if partition.iter().any(Vec::is_empty) {
+        None
+    } else {
+        Some(partition)
+    }
+}
+
+fn refine_factor_lattice(
+    lattice_basis: Matrix<Integer>,
+    trace_cuts: &[Vec<Integer>],
+    trace_moduli: &[Integer],
+) -> Matrix<Integer> {
+    let modular_factor_count = lattice_basis.cols();
+    let trace_count = trace_moduli.len();
+    debug_assert_eq!(trace_cuts.len(), modular_factor_count);
+    debug_assert!(trace_cuts.iter().all(|cuts| cuts.len() == trace_count));
+
+    let scale = Integer::from(std::cmp::max(1, modular_factor_count / 2));
+    let knapsack_basis = Matrix::construct(
+        lattice_basis.rows() + trace_count,
+        modular_factor_count + trace_count,
+        |r, c| {
+            if r < lattice_basis.rows() {
+                if c < modular_factor_count {
+                    &scale * lattice_basis.at(r, c).unwrap()
+                } else {
+                    let trace_index = c - modular_factor_count;
+                    let mut value = Integer::ZERO;
+                    for (factor_index, factor_cuts) in trace_cuts.iter().enumerate() {
+                        value +=
+                            lattice_basis.at(r, factor_index).unwrap() * &factor_cuts[trace_index];
+                    }
+                    value
+                }
+            } else if c == modular_factor_count + r - lattice_basis.rows() {
+                trace_moduli[r - lattice_basis.rows()].clone()
+            } else {
+                Integer::ZERO
+            }
+        },
+    );
+
+    let (_, reduced_basis) = knapsack_basis.lll_integral_row_reduction_algorithm(
+        &StandardInnerProduct::new(Integer::structure()),
+        &Rational::from_integers(3, 4),
+    );
+
+    let gram_schmidt = reduced_basis
+        .clone()
+        .apply_map(|x| Rational::from(x))
+        .gram_schmidt_row_orthogonalization(&StandardInnerProduct::new(Rational::structure()));
+    let four_m_squared = Integer::from(4) * &scale * &scale * Integer::from(modular_factor_count)
+        + Integer::from(trace_count * modular_factor_count * modular_factor_count);
+    let four_m_squared = Rational::from(four_m_squared);
+
+    let keep_count = (0..gram_schmidt.rows())
+        .filter(|r| {
+            let norm_squared = gram_schmidt
+                .get_row(*r)
+                .into_iter()
+                .map(|x| &x * &x)
+                .sum::<Rational>();
+            Rational::from(4) * norm_squared <= four_m_squared
+        })
+        .max()
+        .map(|r| r + 1)
+        .expect("the full polynomial always gives a short knapsack vector");
+
+    let projected_rows = (0..keep_count)
+        .filter_map(|r| {
+            let row = (0..modular_factor_count)
+                .map(|c| {
+                    let x = reduced_basis.at(r, c).unwrap();
+                    debug_assert!(x.divisible(&scale));
+                    x / &scale
+                })
+                .collect::<Vec<_>>();
+            if row.iter().all(|x| x == &Integer::ZERO) {
+                None
+            } else {
+                Some(row)
+            }
+        })
+        .collect::<Vec<_>>();
+
+    Matrix::from_rows(projected_rows)
+        .row_span()
+        .into_row_basis_matrix()
+}
+
+impl<'a> StateAtGoodPrime<'a> {
+    fn try_recombine_lattice_basis(
+        &self,
+        lattice_basis: &Matrix<Integer>,
+    ) -> Option<Vec<Polynomial<Integer>>> {
+        let partition = partition_from_lattice_basis(lattice_basis)?;
+        let modulus = self.modulus();
+        let modular_factors = self.modular_factors();
+        let leading_coeff = self.sqfree_prim_poly.leading_coeff().unwrap();
+        let mut remaining = self.sqfree_prim_poly.clone();
+        let mut factors = vec![];
+
+        for subset in partition {
+            let modular_product = Polynomial::product(
+                &subset
+                    .iter()
+                    .map(|i| &modular_factors[*i])
+                    .collect::<Vec<_>>(),
+            );
+            let candidate = Polynomial::mul(
+                &Polynomial::constant(leading_coeff.clone()),
+                &modular_product,
+            )
+            .apply_map(|c| symmetric_remainder(c, &modulus))
+            .primitive_part()
+            .unwrap();
+            let quotient = Polynomial::try_divide(&remaining, &candidate)?;
+            factors.push(candidate);
+            remaining = quotient;
+        }
+
+        if remaining.is_unit() {
+            factors[0].mul_mut(&remaining);
+            Some(factors)
+        } else {
+            None
+        }
+    }
+
+    fn factor_by_van_hoeij_knapsack(
+        &mut self,
+        minimum_modulus: &Natural,
+    ) -> Vec<Polynomial<Integer>> {
+        let modular_factor_count = self.num_modular_factors;
+        let max_trace = self.sqfree_prim_poly.degree().unwrap() / 2;
+        let leading_coeff = self.sqfree_prim_poly.leading_coeff().unwrap().clone();
+        let mut lattice_basis = Matrix::<Integer>::ident(modular_factor_count);
+        let mut trace_index = 1;
+        let diagnostics = std::env::var_os("ALGEBRAEON_FACTOR_TRACE").is_some();
+        // Two traces per round matches the precision schedule that reliably collapses
+        // the recombination lattice (e.g. for the degree-384 case p7). The lift is now
+        // fast enough that the extra p-adic precision this requires is affordable, even
+        // for the high-degree product-tree backend.
+        let trace_batch_size = 2;
+
+        while trace_index <= max_trace {
+            let trace_indices = (trace_index
+                ..=std::cmp::min(trace_index + trace_batch_size - 1, max_trace))
+                .collect::<Vec<_>>();
+            let extra_accuracy = std::cmp::max(8, lattice_basis.rows() / trace_batch_size);
+            let bound_exponents = trace_indices
+                .iter()
+                .map(|i| trace_bound_exponent(self.sqfree_prim_poly, self.p, *i))
+                .collect::<Vec<_>>();
+            let accuracy_exponents = bound_exponents
+                .iter()
+                .map(|b| b + extra_accuracy + 1)
+                .collect::<Vec<_>>();
+            let target_exponent = *accuracy_exponents.iter().max().unwrap();
+            if diagnostics {
+                eprintln!(
+                    "van Hoeij: lifting traces {:?} to p-adic exponent {}",
+                    trace_indices, target_exponent
+                );
+            }
+            self.lift_to_modulus(&prime_power(self.p, target_exponent));
+            if diagnostics {
+                eprintln!("van Hoeij: lift complete");
+            }
+
+            let modulus = self.modulus();
+            let traces = self
+                .modular_factors()
+                .iter()
+                .map(|factor| {
+                    scaled_newton_traces_mod(
+                        factor,
+                        *trace_indices.iter().max().unwrap(),
+                        &leading_coeff,
+                        &modulus,
+                    )
+                })
+                .collect::<Vec<_>>();
+            let trace_cuts = traces
+                .iter()
+                .map(|factor_traces| {
+                    trace_indices
+                        .iter()
+                        .enumerate()
+                        .map(|(j, trace_index)| {
+                            trace_cut(
+                                &factor_traces[*trace_index],
+                                self.p,
+                                bound_exponents[j],
+                                accuracy_exponents[j],
+                            )
+                        })
+                        .collect::<Vec<_>>()
+                })
+                .collect::<Vec<_>>();
+            let trace_moduli = bound_exponents
+                .iter()
+                .zip(&accuracy_exponents)
+                .map(|(b, a)| Integer::from(prime_power(self.p, a - b)))
+                .collect::<Vec<_>>();
+
+            let old_rank = lattice_basis.rows();
+            if diagnostics {
+                eprintln!("van Hoeij: starting LLL at rank {}", old_rank);
+            }
+            lattice_basis = refine_factor_lattice(lattice_basis, &trace_cuts, &trace_moduli);
+            if diagnostics {
+                eprintln!(
+                    "van Hoeij: traces {:?}, extra accuracy {}, rank {} -> {}",
+                    trace_indices,
+                    extra_accuracy,
+                    old_rank,
+                    lattice_basis.rows()
+                );
+            }
+
+            if let Some(partition) = partition_from_lattice_basis(&lattice_basis) {
+                if partition.len() == 1 {
+                    // The lattice collapsed to a single block: every modular factor
+                    // belongs to the same true factor, so f is irreducible. This is
+                    // van Hoeij's irreducibility certificate, and crucially it needs
+                    // no further lifting - we already have f, so there is no need to
+                    // reconstruct it from the modular factors (which would require
+                    // lifting to ~2 * Mignotte, astronomically large for high-degree
+                    // inputs with large coefficients such as the degree-972 case).
+                    return vec![self.sqfree_prim_poly.clone()];
+                }
+                // A recombined candidate is accepted only when it divides f exactly
+                // over the integers, so attempting recombination at the precision
+                // already reached is always sound: a successful trial division is a
+                // genuine factor regardless of the modulus. Try this first.
+                if let Some(factors) = self.try_recombine_lattice_basis(&lattice_basis) {
+                    return factors;
+                }
+                // Fallback: lift all the way to 2 * Mignotte bound and retry. This is
+                // the textbook guarantee but the bound is ~p^(deg / log2 p), which is
+                // astronomically large for the high-degree inputs handled by the
+                // product-tree backend (lifting there is infeasible). Restrict the
+                // exhaustive lift to the linear-algebra backend, where the degree is
+                // small enough for it to be cheap; the product-tree backend instead
+                // relies on the precision accumulated from successive trace lifts.
+                if matches!(&self.hensel_factorization, HenselBackend::LinearAlgebra(_)) {
+                    self.lift_to_modulus(minimum_modulus);
+                    if let Some(factors) = self.try_recombine_lattice_basis(&lattice_basis) {
+                        return factors;
+                    }
+                }
+            }
+            trace_index += trace_indices.len();
+        }
+
+        panic!("van Hoeij knapsack recombination did not converge")
     }
 }
 
@@ -391,14 +899,14 @@ impl<'a> StateAtGoodPrime<'a> {
         max_subset_size: usize,
         possible_proper_factor_degrees: &BTreeSet<usize>,
     ) -> Vec<Polynomial<Integer>> {
-        let modulus = self.hensel_factorization.modulus();
-        let modular_factors = self.hensel_factorization.factors();
+        let modulus = self.modulus();
+        let modular_factors = self.modular_factors();
         let leading_coeff = self.sqfree_prim_poly.leading_coeff().unwrap();
 
         let n = modular_factors.len();
 
         let mut dminusone_test =
-            dminusone_test::DMinusOneTest::new(modulus, self.sqfree_prim_poly, modular_factors);
+            dminusone_test::DMinusOneTest::new(&modulus, self.sqfree_prim_poly, &modular_factors);
         let mut modular_factor_product_memory_stack = MemoryStack::new(
             Integer::structure()
                 .into_euclidean_quotient_ring(modulus.clone())
@@ -459,9 +967,9 @@ impl<'a> StateAtGoodPrime<'a> {
                             modular_factor_product_memory_stack.get_product(&subset),
                         )
                         .apply_map(|c| {
-                            let c = Rem::rem(c, modulus);
-                            if c > Integer::quo(modulus, &Integer::TWO).unwrap() {
-                                c - modulus
+                            let c = Rem::rem(c, &modulus);
+                            if c > Integer::quo(&modulus, &Integer::TWO).unwrap() {
+                                c - &modulus
                             } else {
                                 c.clone()
                             }
@@ -517,14 +1025,21 @@ fn factorize_primitive_squarefree_by_berlekamp_zassenhaus_algorithm(
     let factor_coeff_bound = compute_polynomial_factor_bound(f);
     let minimum_modulus = Natural::TWO * &factor_coeff_bound;
 
-    let mut p_states = vec![];
+    let mut best_prime_factorization = None;
+    let mut good_primes_checked = 0;
+    let max_good_primes = 5;
+    let diagnostics = std::env::var_os("ALGEBRAEON_FACTOR_TRACE").is_some();
     let mut possible_proper_factor_degrees = (1..f.degree().unwrap()).collect::<BTreeSet<_>>();
     for p in primes() {
-        if let Some(mut p_state) = StateAtGoodPrime::try_new_at_prime(p, f) {
-            let n = p_state.num_modular_factors;
+        if let Some(prime_factorization) = FactorizationAtGoodPrime::try_new(p, f) {
+            good_primes_checked += 1;
+            let factor_degrees = prime_factorization.factor_degrees();
+            let n = factor_degrees.len();
+            if diagnostics {
+                eprintln!("prime {p}: {n} modular factors");
+            }
             let mut possible_proper_factor_degrees_at_p = BTreeSet::new();
-            for mf in p_state.hensel_factorization.factors() {
-                let d = mf.degree().unwrap();
+            for d in factor_degrees {
                 for e in possible_proper_factor_degrees_at_p.clone() {
                     possible_proper_factor_degrees_at_p.insert(d + e);
                 }
@@ -541,48 +1056,62 @@ fn factorize_primitive_squarefree_by_berlekamp_zassenhaus_algorithm(
                     .new_irreducible_unchecked(f.clone());
             }
 
-            p_state.lift_to_modulus(&Natural::from(u64::MAX));
-            let partially_factored = p_state.partial_factor_by_test_modular_subsets(
-                {
-                    if n < 10 {
-                        4
-                    } else if n < 15 {
-                        3
-                    } else if n < 20 {
-                        2
-                    } else {
-                        1
-                    }
-                },
-                &possible_proper_factor_degrees,
-            );
-            debug_assert!(!partially_factored.is_empty());
-            if partially_factored.len() >= 2 {
-                // recursively call using the found partial factorization
-                let mut factored = Integer::structure().polynomials().factorizations().one();
-                for f in partially_factored {
-                    Integer::structure().polynomials().factorizations().mul_mut(
-                        &mut factored,
-                        &factorize_primitive_squarefree_by_berlekamp_zassenhaus_algorithm(&f),
-                    );
-                }
-                return factored;
+            if best_prime_factorization
+                .as_ref()
+                .is_none_or(|best: &FactorizationAtGoodPrime| n < best.factors.powers().len())
+            {
+                best_prime_factorization = Some(prime_factorization);
             }
 
-            p_states.push(p_state);
-            if n <= 18 || p_states.len() >= 5 {
+            if n <= 18 || good_primes_checked >= max_good_primes {
                 break;
             }
         }
     }
-    let mut best_p_state = p_states
-        .into_iter()
-        .min_by_key(|p_state| p_state.num_modular_factors)
-        .unwrap();
-    best_p_state.lift_to_modulus(&minimum_modulus);
-    Integer::structure().polynomials().factorizations().product(
-        &best_p_state
+    let mut best_p_state = best_prime_factorization.unwrap().into_hensel_state(f);
+    let n = best_p_state.num_modular_factors;
+    if diagnostics {
+        eprintln!("selected prime {} with {n} modular factors", best_p_state.p);
+    }
+    if matches!(
+        &best_p_state.hensel_factorization,
+        HenselBackend::LinearAlgebra(_)
+    ) {
+        best_p_state.lift_to_modulus(&Natural::from(u64::MAX));
+    }
+    let factors = if best_p_state.num_modular_factors <= 18 {
+        let partially_factored = best_p_state.partial_factor_by_test_modular_subsets(
+            {
+                if n < 10 {
+                    4
+                } else if n < 15 {
+                    3
+                } else {
+                    2
+                }
+            },
+            &possible_proper_factor_degrees,
+        );
+        debug_assert!(!partially_factored.is_empty());
+        if partially_factored.len() >= 2 {
+            let mut factored = Integer::structure().polynomials().factorizations().one();
+            for f in partially_factored {
+                Integer::structure().polynomials().factorizations().mul_mut(
+                    &mut factored,
+                    &factorize_primitive_squarefree_by_berlekamp_zassenhaus_algorithm(&f),
+                );
+            }
+            return factored;
+        }
+
+        best_p_state.lift_to_modulus(&minimum_modulus);
+        best_p_state
             .partial_factor_by_test_modular_subsets(usize::MAX, &possible_proper_factor_degrees)
+    } else {
+        best_p_state.factor_by_van_hoeij_knapsack(&minimum_modulus)
+    };
+    Integer::structure().polynomials().factorizations().product(
+        &factors
             .into_iter()
             .map(|g| {
                 Integer::structure()
