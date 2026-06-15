@@ -1410,17 +1410,41 @@ mod van_hoeij_tests {
     #[test]
     fn symmetric_remainder_recentres_into_balanced_range() {
         // [0, m) representatives in the upper half are shifted down by m.
-        assert_eq!(symmetric_remainder(&Integer::from(3), &Integer::from(10)), Integer::from(3));
-        assert_eq!(symmetric_remainder(&Integer::from(7), &Integer::from(10)), Integer::from(-3));
+        assert_eq!(
+            symmetric_remainder(&Integer::from(3), &Integer::from(10)),
+            Integer::from(3)
+        );
+        assert_eq!(
+            symmetric_remainder(&Integer::from(7), &Integer::from(10)),
+            Integer::from(-3)
+        );
         // m/2 itself is the largest value kept positive.
-        assert_eq!(symmetric_remainder(&Integer::from(5), &Integer::from(10)), Integer::from(5));
-        assert_eq!(symmetric_remainder(&Integer::from(10), &Integer::from(10)), Integer::from(0));
+        assert_eq!(
+            symmetric_remainder(&Integer::from(5), &Integer::from(10)),
+            Integer::from(5)
+        );
+        assert_eq!(
+            symmetric_remainder(&Integer::from(10), &Integer::from(10)),
+            Integer::from(0)
+        );
         // Negative inputs reduce into [0, m) first, then re-centre.
-        assert_eq!(symmetric_remainder(&Integer::from(-7), &Integer::from(10)), Integer::from(3));
-        assert_eq!(symmetric_remainder(&Integer::from(13), &Integer::from(10)), Integer::from(3));
+        assert_eq!(
+            symmetric_remainder(&Integer::from(-7), &Integer::from(10)),
+            Integer::from(3)
+        );
+        assert_eq!(
+            symmetric_remainder(&Integer::from(13), &Integer::from(10)),
+            Integer::from(3)
+        );
         // Odd modulus: balanced range is [-(m-1)/2, (m-1)/2].
-        assert_eq!(symmetric_remainder(&Integer::from(4), &Integer::from(7)), Integer::from(-3));
-        assert_eq!(symmetric_remainder(&Integer::from(-1), &Integer::from(7)), Integer::from(-1));
+        assert_eq!(
+            symmetric_remainder(&Integer::from(4), &Integer::from(7)),
+            Integer::from(-3)
+        );
+        assert_eq!(
+            symmetric_remainder(&Integer::from(-1), &Integer::from(7)),
+            Integer::from(-1)
+        );
     }
 
     #[test]
@@ -1607,7 +1631,10 @@ mod van_hoeij_tests {
             .into_hensel_state(&f);
         let factors = state.factor_by_van_hoeij_knapsack(&minimum_modulus);
 
-        let mut degrees = factors.iter().map(|g| g.degree().unwrap()).collect::<Vec<_>>();
+        let mut degrees = factors
+            .iter()
+            .map(|g| g.degree().unwrap())
+            .collect::<Vec<_>>();
         degrees.sort_unstable();
         assert_eq!(degrees, vec![2, 2]);
 
