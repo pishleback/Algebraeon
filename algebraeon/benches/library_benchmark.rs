@@ -27,8 +27,14 @@ library_benchmark_group!(
 #[bench::many_factors_4(parse_integer_polynomial("(x-2)*(x-3)*(x-5)*(x-7)*(x-11)*(x-13)*(x-17)", "x").unwrap())]
 #[bench::irreducible_1(parse_integer_polynomial("x^6 + x^5 + x^4 + x^3 + x^2 + x + 1", "x").unwrap())]
 #[bench::two_irreducibles_1(parse_integer_polynomial("(x^6 + 2*x^5 - x^4 + x^2 - x + 3) * (x^5 - x^4 + 3*x^3 - 2*x + 1)", "x").unwrap())]
-// #[bench::zimmermann_p1(algebraeon_rings::integer::zimmermann_polys::p1())]
-// #[bench::zimmermann_p2(algebraeon_rings::integer::zimmermann_polys::p2())]
+#[bench::zimmermann_p1(algebraeon_rings::num_theory::zimmermann_polys::p1())]
+#[bench::zimmermann_p2(algebraeon_rings::num_theory::zimmermann_polys::p2())]
+#[bench::zimmermann_p3(algebraeon_rings::num_theory::zimmermann_polys::p3())]
+#[bench::zimmermann_p4(algebraeon_rings::num_theory::zimmermann_polys::p4())]
+#[bench::zimmermann_p5(algebraeon_rings::num_theory::zimmermann_polys::p5())]
+#[bench::zimmermann_p6(algebraeon_rings::num_theory::zimmermann_polys::p6())]
+#[bench::zimmermann_p7(algebraeon_rings::num_theory::zimmermann_polys::p7())]
+#[bench::zimmermann_p8(algebraeon_rings::num_theory::zimmermann_polys::p8())]
 fn bench_factor_integer_polynomial(polynomial: Polynomial<Integer>) {
     black_box(polynomial.factor());
 }
