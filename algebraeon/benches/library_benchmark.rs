@@ -30,11 +30,11 @@ library_benchmark_group!(
 #[bench::zimmermann_p1(algebraeon_rings::num_theory::zimmermann_polys::p1())]
 #[bench::zimmermann_p2(algebraeon_rings::num_theory::zimmermann_polys::p2())]
 #[bench::zimmermann_p3(algebraeon_rings::num_theory::zimmermann_polys::p3())]
-#[bench::zimmermann_p4(algebraeon_rings::num_theory::zimmermann_polys::p4())]
+// #[bench::zimmermann_p4(algebraeon_rings::num_theory::zimmermann_polys::p4())]
 #[bench::zimmermann_p5(algebraeon_rings::num_theory::zimmermann_polys::p5())]
 #[bench::zimmermann_p6(algebraeon_rings::num_theory::zimmermann_polys::p6())]
-#[bench::zimmermann_p7(algebraeon_rings::num_theory::zimmermann_polys::p7())]
-#[bench::zimmermann_p8(algebraeon_rings::num_theory::zimmermann_polys::p8())]
+// #[bench::zimmermann_p7(algebraeon_rings::num_theory::zimmermann_polys::p7())]
+// #[bench::zimmermann_p8(algebraeon_rings::num_theory::zimmermann_polys::p8())]
 fn bench_factor_integer_polynomial(polynomial: Polynomial<Integer>) {
     black_box(polynomial.factor());
 }
