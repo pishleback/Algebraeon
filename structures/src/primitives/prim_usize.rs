@@ -10,6 +10,12 @@ impl MetaType for usize {
     fn structure() -> Self::Signature {
         PrimitiveUsizeCanonicalStructure {}
     }
+
+    fn structure_ref() -> &'static Self::Signature {
+        static CELL: std::sync::OnceLock<PrimitiveUsizeCanonicalStructure> =
+            std::sync::OnceLock::new();
+        CELL.get_or_init(|| PrimitiveUsizeCanonicalStructure {})
+    }
 }
 
 impl Signature for PrimitiveUsizeCanonicalStructure {}

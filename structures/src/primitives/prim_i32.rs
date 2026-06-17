@@ -10,6 +10,12 @@ impl MetaType for i32 {
     fn structure() -> Self::Signature {
         PrimitiveI32CanonicalStructure {}
     }
+
+    fn structure_ref() -> &'static Self::Signature {
+        static CELL: std::sync::OnceLock<PrimitiveI32CanonicalStructure> =
+            std::sync::OnceLock::new();
+        CELL.get_or_init(|| PrimitiveI32CanonicalStructure {})
+    }
 }
 
 impl Signature for PrimitiveI32CanonicalStructure {}

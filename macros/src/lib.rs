@@ -73,12 +73,15 @@ fn has_option(attrs: &[Attribute], option_name: &str) -> bool {
 ///     fn structure() -> Self::Signature {
 ///         MyValueCanonicalStructure::new()
 ///     }
+///     fn structure_ref() -> &'static Self::Signature {
+///         static CELL: std::sync::OnceLock<MyValueCanonicalStructure> = std::sync::OnceLock::new();
+///         CELL.get_or_init(|| MyValueCanonicalStructure::new())
+///     }
 /// }
 ///
 /// impl MyValue {
 ///     pub fn structure_ref() -> &'static MyValueCanonicalStructure {
-///         static CELL: std::sync::OnceLock<MyValueCanonicalStructure> = std::sync::OnceLock::new();
-///         CELL.get_or_init(|| MyValueCanonicalStructure::new())
+///         <MyValue as MetaType>::structure_ref()
 ///     }
 /// }
 /// ```
@@ -211,12 +214,16 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
             fn structure() -> Self::Signature {
                 #newtype_name::new()
             }
+
+            fn structure_ref() -> &'static Self::Signature {
+                static CELL: std::sync::OnceLock<#newtype_name> = std::sync::OnceLock::new();
+                CELL.get_or_init(|| #newtype_name::new())
+            }
         }
 
         impl #name {
-            pub fn structure_ref() -> &'static #newtype_name{
-                static CELL: std::sync::OnceLock<#newtype_name> = std::sync::OnceLock::new();
-                CELL.get_or_init(|| #newtype_name::new())
+            pub fn structure_ref() -> &'static #newtype_name {
+                <#name as MetaType>::structure_ref()
             }
         }
     };
@@ -254,6 +261,14 @@ pub fn skip_meta(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
 /// Decorate a structure trait with this to auto-generate a meta structure trait.
 ///
+/// # Forwarding lifetimes
+/// Generics (including lifetime parameters) on a trait method are preserved on
+/// the generated meta method. For methods whose return value borrows from
+/// `&self` (e.g. `fn iter<'s>(&'s self) -> impl Iterator<Item = &'s Self::Elem> + 's`),
+/// the meta method body calls `Self::structure_ref()` instead of
+/// `Self::structure()` so the borrow originates from a `'static` reference and
+/// is free to outlive the meta-method call.
+///
 /// # Example
 /// The decorated structure trait
 /// ```rust,ignore
@@ -267,13 +282,13 @@ pub fn skip_meta(_attr: TokenStream, item: TokenStream) -> TokenStream {
 /// ```rust,ignore
 /// pub trait MetaMySignature: MetaType
 /// where
-///     Self::Signature: MySignature,
+///     Self::Signature: MySignature + 'static,
 /// {
 ///     fn special_element() -> Self {
-///         Self::structure().special_element()
+///         Self::structure_ref().special_element()
 ///     }
 ///     fn binary_operation(&self, b: &Self) -> Self {
-///         Self::structure().binary_operation(self, b)
+///         Self::structure_ref().binary_operation(self, b)
 ///     }
 /// }
 /// ```
@@ -282,7 +297,7 @@ pub fn skip_meta(_attr: TokenStream, item: TokenStream) -> TokenStream {
 /// impl<T> MetaMySignature for T
 /// where
 ///     T: MetaType,
-///     T::Signature: MySignature,
+///     T::Signature: MySignature + 'static,
 /// {
 /// }
 /// ```
@@ -315,7 +330,18 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
             // Check if the first argument is self, &self, or &mut self as only these can be forwarded to the meta type
             if let Some(first_arg) = meta_sig.inputs.first() {
                 match first_arg {
-                    FnArg::Receiver(_) => {
+                    FnArg::Receiver(receiver) => {
+                        // Use `structure_ref()` for `&self` so that values borrowed from `self`
+                        // (e.g. iterators returned by `&'s self` methods) outlive the call.
+                        // For `&mut self` or owned `self`, fall back to `structure()`.
+                        let use_structure_ref =
+                            receiver.reference.is_some() && receiver.mutability.is_none();
+                        let structure_call = if use_structure_ref {
+                            quote! { Self::structure_ref() }
+                        } else {
+                            quote! { Self::structure() }
+                        };
+
                         meta_sig.inputs = meta_sig.inputs.into_iter().skip(1).collect();
                         ReplaceSelfSetSignature {
                             sig_trait_ident: sig_trait_ident.clone(),
@@ -434,7 +460,7 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
                         meta_methods.push(quote! {
                             #(#attrs)*
                             #meta_sig {
-                                Self::structure().#ident(#(#meta_args),*)
+                                #structure_call.#ident(#(#meta_args),*)
                             }
                         });
                     }
@@ -487,7 +513,7 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
     quote! {
         pub trait #meta_trait_ident<#generic_params>: MetaType
         where
-            Self::Signature: #sig_trait_ident<#generic_arguments>,
+            Self::Signature: #sig_trait_ident<#generic_arguments> + 'static,
             #where_clauses
         {
             #(#meta_methods)*
@@ -496,7 +522,7 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
         impl<T, #generic_params> #meta_trait_ident<#generic_arguments> for T
         where
             T: MetaType,
-            T::Signature: #sig_trait_ident<#generic_arguments>,
+            T::Signature: #sig_trait_ident<#generic_arguments> + 'static,
              #where_clauses
         {
         }

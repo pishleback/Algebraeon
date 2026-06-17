@@ -1,6 +1,6 @@
 use crate::*;
 
-use algebraeon_macros::{signature_meta_trait, skip_meta};
+use algebraeon_macros::signature_meta_trait;
 use paste::paste;
 use rand::{Rng, RngExt, SeedableRng, rngs::StdRng};
 use std::fmt::Debug;
@@ -24,8 +24,17 @@ pub trait SetSignature: Signature {
 }
 
 pub trait MetaType: Clone + Debug {
-    type Signature: SetSignature<Elem = Self>;
+    type Signature: SetSignature<Elem = Self> + 'static;
     fn structure() -> Self::Signature;
+    /// Return a reference to a `'static` instance of the signature.
+    ///
+    /// The default implementation leaks a fresh signature value on every call.
+    /// Implementors with a unique canonical signature should override this
+    /// with a cached `OnceLock` (the `CanonicalStructure` derive macro does
+    /// this automatically).
+    fn structure_ref() -> &'static Self::Signature {
+        Box::leak(Box::new(Self::structure()))
+    }
 }
 
 #[signature_meta_trait]
