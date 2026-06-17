@@ -57,7 +57,6 @@ pub trait FiniteSetSignature: CountableSetSignature {
         self.list_all_elements().len()
     }
 
-    #[skip_meta]
     fn generate_random_elements(&self, seed: u64) -> impl Iterator<Item = Self::Elem> {
         let rng = StdRng::seed_from_u64(seed);
         FiniteSetRandomElementGenerator::<Self, StdRng> {
