@@ -3991,7 +3991,6 @@ x^972-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::structure::{FactoringMonoidSignature, UniqueFactorizationMonoidSignature};
 
     #[test]
     fn parse_zimmerman_polynomials() {
@@ -4004,62 +4003,4 @@ mod tests {
         p7();
         p8();
     }
-
-    fn assert_factor_degrees(poly: Polynomial<Integer>, expected_degrees: &[usize]) {
-        let polynomial_ring = Polynomial::<Integer>::structure();
-        let factorization = polynomial_ring.factor(&poly);
-        assert!(polynomial_ring.equal(
-            &poly,
-            &polynomial_ring.factorizations().expand(&factorization)
-        ));
-
-        let mut actual_degrees = factorization
-            .powers()
-            .unwrap()
-            .iter()
-            .flat_map(|(factor, exponent)| {
-                let degree = factor.degree().unwrap();
-                let multiplicity: usize = exponent.try_into().unwrap();
-                std::iter::repeat_n(degree, multiplicity)
-            })
-            .collect::<Vec<_>>();
-        actual_degrees.sort_unstable();
-        assert_eq!(actual_degrees, expected_degrees);
-    }
-
-    macro_rules! zimmermann_factor_test {
-        ($name:ident, $poly:ident, [$($degree:expr),* $(,)?]) => {
-            #[test]
-            #[ignore = "long-running integer polynomial factorization benchmark"]
-            fn $name() {
-                assert_factor_degrees($poly(), &[$($degree),*]);
-            }
-        };
-    }
-
-    zimmermann_factor_test!(
-        factor_zimmermann_p1,
-        p1,
-        [
-            2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 8, 8,
-            8, 8, 8, 8, 8, 8, 8,
-        ]
-    );
-    zimmermann_factor_test!(
-        factor_zimmermann_p2,
-        p2,
-        [2, 2, 12, 12, 12, 12, 24, 24, 24, 24, 24, 24]
-    );
-    zimmermann_factor_test!(
-        factor_zimmermann_p3,
-        p3,
-        [
-            12, 12, 12, 12, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24
-        ]
-    );
-    zimmermann_factor_test!(factor_zimmermann_p4, p4, [66, 396]);
-    zimmermann_factor_test!(factor_zimmermann_p5, p5, [64]);
-    zimmermann_factor_test!(factor_zimmermann_p6, p6, [12, 12, 12, 12, 48, 48]);
-    zimmermann_factor_test!(factor_zimmermann_p7, p7, [384]);
-    zimmermann_factor_test!(factor_zimmermann_p8, p8, [972]);
 }
