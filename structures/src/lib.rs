@@ -30,7 +30,5 @@ macro_rules! make_maybe_trait {
 
 #[algebraeon_macros::signature_meta_trait]
 pub trait MacroLifetimeTestSignature: SetSignature {
-    fn foo<'a>(&self, a: &'a Self::Elem, b: &'a Self::Elem) -> &'a Self::Elem {
-        todo!()
-    }
+    fn foo<'a>(&self, a: &'a Self::Elem, b: &'a Self::Elem) -> &'a Self::Elem;
 }

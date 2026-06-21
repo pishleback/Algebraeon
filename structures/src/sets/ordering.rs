@@ -271,6 +271,7 @@ pub trait OrdSignature: PartialOrdSignature {
         self.merge_sorted_by_key(a, b, |x| (*x).borrow())
     }
 
+    #[skip_meta]
     fn merge_sorted_by_key<X>(
         &self,
         a: Vec<X>,
@@ -291,6 +292,7 @@ pub trait OrdSignature: PartialOrdSignature {
         self.merge_sorted_and_unique_by_key(a, b, |x| (*x).borrow())
     }
 
+    #[skip_meta]
     fn merge_sorted_and_unique_by_key<X>(
         &self,
         a: Vec<X>,
