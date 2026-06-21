@@ -262,6 +262,7 @@ pub trait OrdSignature: PartialOrdSignature {
         .map(|s| s.0)
     }
 
+    #[skip_meta]
     fn merge_sorted<'s, S: Borrow<Self::Elem> + 's>(
         &'s self,
         a: Vec<S>,
@@ -281,6 +282,7 @@ pub trait OrdSignature: PartialOrdSignature {
         VecMerger::new(self, a, b, key)
     }
 
+    #[skip_meta]
     fn merge_sorted_and_unique<'s, S: Borrow<Self::Elem> + 's>(
         &'s self,
         a: Vec<S>,
