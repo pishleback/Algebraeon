@@ -308,7 +308,6 @@ pub trait OrdSignature: PartialOrdSignature {
         self.sort_by_key(a, &|x| x.borrow())
     }
 
-    #[skip_meta]
     fn sort_by_key<X>(&self, mut a: Vec<X>, key: &impl Fn(&X) -> &Self::Elem) -> Vec<X> {
         match a.len() {
             0 | 1 => a,
