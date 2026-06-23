@@ -231,6 +231,64 @@ impl Monomial {
             Self::lexicographic_order(a, b)
         }
     }
+
+    /// Returns `true` when `self` divides `other` as monomials, i.e. when the
+    /// exponent of every variable in `self` is less than or equal to the
+    /// corresponding exponent in `other`. Divisibility of monomials is the
+    /// fundamental relation underlying multivariate polynomial division and
+    /// Buchberger's algorithm.
+    pub fn divides(&self, other: &Self) -> bool {
+        self.prod
+            .iter()
+            .all(|VariablePower { var, pow }| other.get_var_pow(var) >= *pow)
+    }
+
+    /// If `divisor` divides `self`, returns the monomial quotient
+    /// `self / divisor`, whose exponent vector is the component-wise difference
+    /// of the two exponent vectors. Returns `None` when `divisor` does not
+    /// divide `self`.
+    pub fn try_div(&self, divisor: &Self) -> Option<Self> {
+        if divisor.divides(self) {
+            Some(Self::new(
+                self.prod
+                    .iter()
+                    .map(|VariablePower { var, pow }| VariablePower {
+                        var: var.clone(),
+                        pow: pow - divisor.get_var_pow(var),
+                    })
+                    .collect(),
+            ))
+        } else {
+            None
+        }
+    }
+
+    /// The least common multiple of two monomials: the monomial whose exponent
+    /// for each variable is the maximum of the two exponents. `lcm(a, b)` is the
+    /// smallest monomial that is divisible by both `a` and `b`; it is the
+    /// monomial that aligns the leading terms when forming an S-polynomial.
+    pub fn lcm(a: &Self, b: &Self) -> Self {
+        let mut vars = a.free_vars();
+        vars.extend(b.free_vars());
+        Self::new(
+            vars.into_iter()
+                .map(|var| {
+                    let pow = std::cmp::max(a.get_var_pow(&var), b.get_var_pow(&var));
+                    VariablePower { var, pow }
+                })
+                .collect(),
+        )
+    }
+
+    /// Two monomials are coprime when they share no variable, equivalently when
+    /// `lcm(a, b) = a * b`. Buchberger's first criterion guarantees that the
+    /// S-polynomial of two polynomials with coprime leading monomials always
+    /// reduces to zero, so such pairs can be discarded.
+    pub fn is_coprime(a: &Self, b: &Self) -> bool {
+        a.prod
+            .iter()
+            .all(|VariablePower { var, .. }| b.get_var_pow(var) == 0)
+    }
 }
 
 #[derive(Debug, Clone)]
