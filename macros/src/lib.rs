@@ -254,6 +254,26 @@ pub fn skip_meta(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
 /// Decorate a structure trait with this to auto-generate a meta structure trait.
 ///
+/// # Receiver handling
+/// How each method is forwarded depends on the type of its first argument:
+/// * `self` or `&self` — the receiver is dropped and the body calls `Self::structure()`.
+/// * `&mut self` — a compile error is emitted suggesting the method be excluded
+///   with `#[skip_meta]`.
+/// * any other first argument (or none) — the method is forwarded to the meta
+///   type unchanged, with no special treatment of a receiver.
+///
+/// Methods whose return value borrows from `&self` (e.g. an iterator that holds a
+/// `&'s self` reference) cannot be forwarded through the temporary returned by
+/// `Self::structure()` and must be excluded with `#[skip_meta]`.
+///
+/// # Forwarding lifetimes
+/// Generics (including lifetime parameters) on a trait method are preserved on
+/// the generated meta method. When the first non-self argument is `&'a Self::Elem`
+/// it is promoted to the meta method's receiver `&'a self`, forwarding the
+/// lifetime so the return type may borrow from it. For example
+/// `fn foo<'a>(&self, x: &'a Self::Elem, y: &'a Self::Elem) -> &'a Self::Elem`
+/// becomes `fn foo<'a>(&'a self, y: &'a Self) -> &'a Self`.
+///
 /// # Example
 /// The decorated structure trait
 /// ```rust,ignore
@@ -304,7 +324,33 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
     let sig_trait_ident = &trait_item.ident;
     let meta_trait_ident = Ident::new(&format!("Meta{}", sig_trait_ident), Span::call_site());
 
+    let generic_params = trait_item.generics.params.clone();
+
+    let mut generic_arguments = Punctuated::<_, syn::token::Comma>::new();
+    for param in generic_params.clone() {
+        let arg = match param {
+            GenericParam::Type(type_param) => {
+                GenericArgument::Type(syn::Type::Path(syn::TypePath {
+                    qself: None,
+                    path: type_param.ident.into(),
+                }))
+            }
+            GenericParam::Lifetime(lifetime_def) => {
+                GenericArgument::Lifetime(lifetime_def.lifetime)
+            }
+            GenericParam::Const(const_param) => {
+                GenericArgument::Const(syn::Expr::Path(syn::ExprPath {
+                    attrs: Vec::new(),
+                    qself: None,
+                    path: const_param.ident.into(),
+                }))
+            }
+        };
+        generic_arguments.push(arg);
+    }
+
     let mut meta_methods = Vec::new();
+    let mut errors = Vec::new();
     for item in &trait_item.items {
         if let TraitItem::Fn(TraitItemFn { attrs, sig, .. }) = item {
             if attrs.iter().any(|attr| attr.path().is_ident("skip_meta")) {
@@ -315,6 +361,19 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
             // Check if the first argument is self, &self, or &mut self as only these can be forwarded to the meta type
             if let Some(first_arg) = meta_sig.inputs.first() {
                 match first_arg {
+                    // `&mut self` cannot be forwarded: there is no mutable owner to borrow from.
+                    FnArg::Receiver(receiver)
+                        if receiver.reference.is_some() && receiver.mutability.is_some() =>
+                    {
+                        errors.push(
+                            Error::new_spanned(
+                                receiver,
+                                "signature_meta_trait cannot forward a method taking `&mut self`; \
+                                 annotate it with #[skip_meta] to exclude it from the meta trait",
+                            )
+                            .to_compile_error(),
+                        );
+                    }
                     FnArg::Receiver(_) => {
                         meta_sig.inputs = meta_sig.inputs.into_iter().skip(1).collect();
                         ReplaceSelfSetSignature {
@@ -356,8 +415,10 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
                                             type_reference.elem.as_ref()
                                             && is_type_path_self_set(type_path)
                                         {
-                                            // if the first argument is `a: &Self::Elem` then replace it with `&self` in the meta type
+                                            // if the first argument is `a: &'x Self::Elem` then replace it with `&'x self` in the meta type
                                             // if the first argument is `a: &mut Self::Elem` then replace it with `&mut self` in the meta type
+                                            // The argument's lifetime is forwarded onto the receiver so the return type may borrow from it.
+                                            let lifetime = type_reference.lifetime.clone();
                                             meta_args[0] = PatIdent {
                                                 attrs: vec![],
                                                 by_ref: None,
@@ -371,7 +432,7 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
                                                     syn::token::And {
                                                         spans: [Span::call_site()],
                                                     },
-                                                    None,
+                                                    lifetime.clone(),
                                                 )),
                                                 mutability: type_reference.mutability,
                                                 self_token: syn::token::SelfValue {
@@ -383,7 +444,7 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
                                                         and_token: syn::token::And {
                                                             spans: [Span::call_site()],
                                                         },
-                                                        lifetime: None,
+                                                        lifetime,
                                                         mutability: type_reference.mutability,
                                                         elem: Box::new(syn::Type::Path(
                                                             syn::TypePath {
@@ -439,36 +500,45 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
                         });
                     }
                     FnArg::Typed(_) => {
-                        // Not a method receiver
+                        // No self receiver: forward to the structure as an associated
+                        // function with no special treatment of a receiver.
+                        ReplaceSelfSetSignature {
+                            sig_trait_ident: sig_trait_ident.clone(),
+                        }
+                        .visit_signature_mut(&mut meta_sig);
+
+                        let ident = meta_sig.ident.clone();
+
+                        let mut meta_args = Vec::new();
+                        for arg in &mut meta_sig.inputs {
+                            match arg {
+                                FnArg::Typed(pat_type) => match pat_type.pat.as_mut() {
+                                    syn::Pat::Ident(pat_ident) => {
+                                        pat_ident.mutability = None;
+                                        meta_args.push(pat_ident.clone());
+                                    }
+                                    _ => {
+                                        return Error::new_spanned(
+                                        trait_item,
+                                        "Invalid pattern in argument list. Must be a plain Ident.",
+                                    )
+                                    .to_compile_error();
+                                    }
+                                },
+                                FnArg::Receiver(_) => unreachable!(),
+                            }
+                        }
+
+                        meta_methods.push(quote! {
+                            #(#attrs)*
+                            #meta_sig {
+                                <<Self as MetaType>::Signature as #sig_trait_ident<#generic_arguments>>::#ident(#(#meta_args),*)
+                            }
+                        });
                     }
                 }
             }
         }
-    }
-
-    let generic_params = trait_item.generics.params.clone();
-
-    let mut generic_arguments = Punctuated::<_, syn::token::Comma>::new();
-    for param in generic_params.clone() {
-        let arg = match param {
-            GenericParam::Type(type_param) => {
-                GenericArgument::Type(syn::Type::Path(syn::TypePath {
-                    qself: None,
-                    path: type_param.ident.into(),
-                }))
-            }
-            GenericParam::Lifetime(lifetime_def) => {
-                GenericArgument::Lifetime(lifetime_def.lifetime)
-            }
-            GenericParam::Const(const_param) => {
-                GenericArgument::Const(syn::Expr::Path(syn::ExprPath {
-                    attrs: Vec::new(),
-                    qself: None,
-                    path: const_param.ident.into(),
-                }))
-            }
-        };
-        generic_arguments.push(arg);
     }
 
     let where_clauses = if let Some(where_clause) = &trait_item.generics.where_clause {
@@ -500,6 +570,8 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
              #where_clauses
         {
         }
+
+        #(#errors)*
     }
 }
 
