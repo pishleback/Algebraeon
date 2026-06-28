@@ -152,12 +152,16 @@ impl<
 where
     PolynomialStructure<FS, FSB>: SetSignature<Elem = Polynomial<FS::Elem>>,
 {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
         self.coefficient_ring_inclusion()
             .range_module_structure()
             .generate_all_elements()
             .collect::<Vec<_>>()
             .into_iter()
+    }
+
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+        self.clone().into_generate_all_elements()
     }
 }
 

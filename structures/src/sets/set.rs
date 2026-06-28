@@ -41,6 +41,7 @@ pub trait EqSignature: SetSignature {
 pub trait CountableSetSignature: SetSignature {
     /// Yield distinct elements of the set such that every element eventually appears.
     /// Always yields elements in the same order.
+    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem>;
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem>;
 }
 

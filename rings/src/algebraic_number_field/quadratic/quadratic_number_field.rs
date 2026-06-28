@@ -28,12 +28,16 @@ pub enum QuadraticNumberFieldBasis {
 }
 
 impl CountableSetSignature for QuadraticNumberFieldBasisCanonicalStructure {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
         vec![
             QuadraticNumberFieldBasis::Rational,
             QuadraticNumberFieldBasis::Algebraic,
         ]
         .into_iter()
+    }
+
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+        self.clone().into_generate_all_elements()
     }
 }
 

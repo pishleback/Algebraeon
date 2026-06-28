@@ -554,7 +554,7 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> GroupSignature
 impl<Set: OrdSignature + FiniteSetSignature, SetB: BorrowedStructure<Set>> CountableSetSignature
     for FinitelySupportedPermutationsStructure<Set, SetB>
 {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
         let all_elems = self.set().list_all_elements();
         let n = all_elems.len();
 
@@ -571,6 +571,10 @@ impl<Set: OrdSignature + FiniteSetSignature, SetB: BorrowedStructure<Set>> Count
             })
             .collect::<Vec<_>>()
             .into_iter()
+    }
+
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+        self.clone().into_generate_all_elements()
     }
 }
 

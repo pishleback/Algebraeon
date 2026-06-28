@@ -1,8 +1,19 @@
+use crate::sets::SetToFiniteSubsetsByOrdSignature;
 use algebraeon_structures::*;
 use std::cmp::Ordering;
 use std::marker::PhantomData;
 
-use crate::sets::{FiniteSubsetByOrd, SetToFiniteSubsetsByOrdSignature};
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FiniteSubsetByOrd<Set: SetSignature> {
+    // ordered
+    pub elems: Vec<Set::Elem>,
+}
+
+impl<Set: OrdSignature> FiniteSubsetByOrd<Set> {
+    pub fn size(&self) -> usize {
+        self.elems.len()
+    }
+}
 
 // A finite subset of a set
 #[derive(Debug, Clone)]
@@ -10,7 +21,7 @@ pub struct FiniteSubsetByOrdStructure<Set: OrdSignature, SetB: BorrowedStructure
     _set: PhantomData<Set>,
     set: SetB,
     // ordered
-    elems: Vec<Set::Elem>,
+    subset: FiniteSubsetByOrd<Set>,
 }
 
 pub trait SetToFiniteSubsetByOrdSignature: OrdSignature {
@@ -32,14 +43,7 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> PartialEq
         if set != other.set() {
             return false;
         }
-        set.finite_subsets().equal(
-            &FiniteSubsetByOrd {
-                elems: self.elems.clone(),
-            },
-            &FiniteSubsetByOrd {
-                elems: other.elems.clone(),
-            },
-        )
+        set.finite_subsets().equal(&self.subset, &other.subset)
     }
 }
 
@@ -51,7 +55,7 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> FiniteSubsetByOrdStructure
         Self {
             _set: PhantomData,
             set,
-            elems,
+            subset: FiniteSubsetByOrd { elems },
         }
     }
 
@@ -71,7 +75,7 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> SetSignature
     type Elem = Set::Elem;
 
     fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
-        if !self.set().binary_search(&self.elems, x) {
+        if !self.set().binary_search(&self.subset.elems, x) {
             return Err("element not in finite subset".to_string());
         }
         Ok(())
@@ -111,8 +115,12 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> OrdSignature
 impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> CountableSetSignature
     for FiniteSubsetByOrdStructure<Set, SetB>
 {
+    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
+        self.subset.elems.into_iter()
+    }
+
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
-        self.elems.iter().cloned()
+        self.clone().into_generate_all_elements()
     }
 }
 
@@ -120,7 +128,7 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> FiniteSetSignature
     for FiniteSubsetByOrdStructure<Set, SetB>
 {
     fn size(&self) -> Natural {
-        Natural::from(self.elems.len())
+        Natural::from(self.subset.size())
     }
 }
 
@@ -134,13 +142,17 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
     fn element_to_enumeration(&self, elem: &Self::Elem) -> Natural {
         #[cfg(debug_assertions)]
         self.validate_element(elem).unwrap();
-        Natural::from(self.set().binary_search_index(&self.elems, elem).unwrap())
+        Natural::from(
+            self.set()
+                .binary_search_index(&self.subset.elems, elem)
+                .unwrap(),
+        )
     }
 
     fn enumeration_to_element(&self, num: &Natural) -> Option<Self::Elem> {
         let num: Result<usize, ()> = num.try_into();
         if let Ok(num) = num {
-            self.elems.get(num).cloned()
+            self.subset.elems.get(num).cloned()
         } else {
             None
         }

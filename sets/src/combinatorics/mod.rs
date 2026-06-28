@@ -29,5 +29,7 @@ pub use stirling_numbers::stirling_number2;
 pub use subsets::LexicographicSubsetsWithRemovals;
 pub use subsets::all_subsets;
 pub use subsets::subsets;
+pub use subsets::subsets_colex;
+pub use subsets::subsets_lex;
 pub use subsets::subsets_of_vec;
 // pub use twelvefold_way::{FunctionType, TwelvefoldWay};

@@ -62,7 +62,7 @@ pub enum QuaternionAlgebraBasis {
 }
 
 impl CountableSetSignature for QuaternionAlgebraBasisCanonicalStructure {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
         vec![
             QuaternionAlgebraBasis::R,
             QuaternionAlgebraBasis::I,
@@ -70,6 +70,10 @@ impl CountableSetSignature for QuaternionAlgebraBasisCanonicalStructure {
             QuaternionAlgebraBasis::K,
         ]
         .into_iter()
+    }
+
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+        self.clone().into_generate_all_elements()
     }
 }
 

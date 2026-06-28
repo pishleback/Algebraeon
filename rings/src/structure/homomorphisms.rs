@@ -153,12 +153,18 @@ mod range_module {
         Hom: FiniteRankFreeRingExtension<Domain, Range>,
     > CountableSetSignature for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
     {
-        fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+        fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
             let n = self.homomorphism().degree();
+            let ring_elements = self.ring().list_all_elements();
+            let hom = self.homomorphism().clone();
             (0..n)
-                .map(|_| self.ring().list_all_elements())
+                .map(move |_| ring_elements.clone())
                 .multi_cartesian_product()
-                .map(|v| self.homomorphism().from_vec(v))
+                .map(move |v| hom.from_vec(v))
+        }
+
+        fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+            self.clone().into_generate_all_elements()
         }
     }
 

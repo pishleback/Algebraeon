@@ -1,14 +1,8 @@
-use crate::combinatorics::all_subsets;
+use crate::{combinatorics::all_subsets, sets::FiniteSubsetByOrd};
 use algebraeon_structures::*;
 use std::{cmp::Ordering, marker::PhantomData};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FiniteSubsetByOrd<Set: SetSignature> {
-    // ordered
-    pub elems: Vec<Set::Elem>,
-}
-
-// The set of finite subsets of a set
+/// The set of all finite subsets of a set
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FiniteSubsetsByOrdStructure<Set: OrdSignature, SetB: BorrowedStructure<Set>> {
     _set: PhantomData<Set>,
@@ -104,7 +98,7 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> OrdSignature
 impl<Set: OrdSignature + CountableSetSignature, SetB: BorrowedStructure<Set>> CountableSetSignature
     for FiniteSubsetsByOrdStructure<Set, SetB>
 {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
         // if the set has more than 64 elements then we'll never generate subsets including anything beyond the 64th element, so this is fine
         let elems = self
             .set()
@@ -117,6 +111,10 @@ impl<Set: OrdSignature + CountableSetSignature, SetB: BorrowedStructure<Set>> Co
                 .map(|idx| elems[idx].clone())
                 .collect(),
         })
+    }
+
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+        self.clone().into_generate_all_elements()
     }
 }
 

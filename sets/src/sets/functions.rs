@@ -34,11 +34,15 @@ impl<Domain: FiniteSetSignature, Range: EqSignature> SetSignature for Functions<
 impl<Domain: FiniteSetSignature, Range: EqSignature + FiniteSetSignature> CountableSetSignature
     for Functions<Domain, Range>
 {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
         let n: usize = self.domain.size().try_into().unwrap_or(usize::MAX);
         (0..n)
             .map(|_| self.range.list_all_elements())
             .multi_cartesian_product()
+    }
+
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+        self.clone().into_generate_all_elements()
     }
 }
 

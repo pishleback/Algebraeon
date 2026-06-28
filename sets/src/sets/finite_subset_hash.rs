@@ -95,8 +95,12 @@ impl<Set: SetSignature, SetB: BorrowedStructure<Set>> CountableSetSignature
 where
     Set::Elem: MetaType + Eq + Hash,
 {
+    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
+        self.elems.into_iter()
+    }
+
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
-        self.elems.iter().cloned()
+        self.clone().into_generate_all_elements()
     }
 }
 

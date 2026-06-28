@@ -33,8 +33,11 @@ impl OrdSignature for SingletonSetStructure {
 }
 
 impl CountableSetSignature for SingletonSetStructure {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
         [()].into_iter()
+    }
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+        self.clone().into_generate_all_elements()
     }
 }
 

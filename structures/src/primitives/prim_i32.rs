@@ -42,6 +42,10 @@ impl OrdSignature for PrimitiveI32CanonicalStructure {
 
 impl CountableSetSignature for PrimitiveI32CanonicalStructure {
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+        self.clone().into_generate_all_elements()
+    }
+
+    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
         i32::MIN..=i32::MAX
     }
 }

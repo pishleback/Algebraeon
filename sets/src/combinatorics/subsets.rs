@@ -102,6 +102,61 @@ impl Iterator for LexicographicSubsetsWithRemovals {
     }
 }
 
+#[derive(Debug)]
+pub struct ColexicographicSubsets {
+    n: usize,
+    subset: Vec<usize>,
+    finished: bool,
+}
+
+impl ColexicographicSubsets {
+    /// Constructor
+    pub fn new(n: usize, k: usize) -> Self {
+        Self {
+            n,
+            subset: (0..k).collect(),
+            finished: k > n,
+        }
+    }
+}
+
+impl Iterator for ColexicographicSubsets {
+    type Item = Vec<usize>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let next = if self.finished {
+            return None;
+        } else {
+            Some(self.subset.clone())
+        };
+        if self.subset.is_empty() {
+            self.finished = true;
+        } else {
+            'LOOP: {
+                for i in 0..(self.subset.len() - 1) {
+                    if self.subset[i] + 1 != self.subset[i + 1] {
+                        self.subset[i] += 1;
+                        for j in 0..i {
+                            self.subset[j] = j;
+                        }
+                        break 'LOOP;
+                    }
+                }
+                let last = self.subset.last_mut().unwrap();
+                if *last + 1 < self.n {
+                    *last += 1;
+                    for j in 0..(self.subset.len() - 1) {
+                        self.subset[j] = j;
+                    }
+                } else {
+                    self.finished = true;
+                }
+            }
+        }
+        next
+    }
+}
+
 /// Returns all size k subsets of {0, 1, ..., n-1}.
 /// ```
 /// use algebraeon_sets::combinatorics::subsets;
@@ -119,7 +174,47 @@ impl Iterator for LexicographicSubsetsWithRemovals {
 /// ]);
 /// ```
 pub fn subsets(n: usize, k: usize) -> impl Iterator<Item = Vec<usize>> {
+    subsets_lex(n, k)
+}
+
+/// Returns all size k subsets of {0, 1, ..., n-1} in lexicographic order
+/// ```
+/// use algebraeon_sets::combinatorics::subsets_lex;
+/// assert_eq!(subsets_lex(5, 3).collect::<Vec<_>>(), vec![
+///     vec![0, 1, 2],
+///     vec![0, 1, 3],
+///     vec![0, 1, 4],
+///     vec![0, 2, 3],
+///     vec![0, 2, 4],
+///     vec![0, 3, 4],
+///     vec![1, 2, 3],
+///     vec![1, 2, 4],
+///     vec![1, 3, 4],
+///     vec![2, 3, 4],
+/// ]);
+/// ```
+pub fn subsets_lex(n: usize, k: usize) -> impl Iterator<Item = Vec<usize>> {
     LexicographicSubsetsWithRemovals::new(n, k)
+}
+
+/// Returns all size k subsets of {0, 1, ..., n-1} in colexicographic order
+/// ```
+/// use algebraeon_sets::combinatorics::subsets_colex;
+/// assert_eq!(subsets_colex(5, 3).collect::<Vec<_>>(), vec![
+///     vec![0, 1, 2],
+///     vec![0, 1, 3],
+///     vec![0, 2, 3],
+///     vec![1, 2, 3],
+///     vec![0, 1, 4],
+///     vec![0, 2, 4],
+///     vec![1, 2, 4],
+///     vec![0, 3, 4],
+///     vec![1, 3, 4],
+///     vec![2, 3, 4],
+/// ]);
+/// ```
+pub fn subsets_colex(n: usize, k: usize) -> impl Iterator<Item = Vec<usize>> {
+    ColexicographicSubsets::new(n, k)
 }
 
 /// Returns all subsets of {0, 1, ..., n-1}.
@@ -216,5 +311,10 @@ mod tests {
     pub fn run() {
         println!("{:?}", subsets(5, 3).collect::<Vec<_>>());
         assert_eq!(subsets(5, 3).collect::<Vec<_>>().len(), 10);
+    }
+
+    #[test]
+    pub fn lexicographic_subsets() {
+        println!("{:?}", subsets(5, 3).collect::<Vec<_>>());
     }
 }

@@ -279,8 +279,12 @@ impl<const N: usize> QuotientRingGetPrincipalIdealSignature<IntegerCanonicalStru
 }
 
 impl<const N: usize> CountableSetSignature for ModuloCanonicalStructure<N> {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
         (0..N).map(Modulo::new)
+    }
+
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+        self.clone().into_generate_all_elements()
     }
 }
 
@@ -307,8 +311,12 @@ macro_rules! impl_field {
         impl<B: BorrowedStructure<ModuloCanonicalStructure<$N>>> CountableSetSignature
             for MultiplicativeMonoidUnitsStructure<ModuloCanonicalStructure<$N>, B>
         {
-            fn generate_all_elements(&self) -> impl std::iter::Iterator<Item = Modulo<$N>> {
+            fn into_generate_all_elements(self) -> impl std::iter::Iterator<Item = Modulo<$N>> {
                 (1..$N).map(|i| Modulo { x: i })
+            }
+
+            fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+                self.clone().into_generate_all_elements()
             }
         }
 
@@ -338,8 +346,12 @@ impl<
         BE,
     >
 {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
         self.list_all_elements().into_iter()
+    }
+
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+        self.clone().into_generate_all_elements()
     }
 }
 
@@ -374,10 +386,15 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>> FiniteFieldSignature
 impl<B: BorrowedStructure<IntegerCanonicalStructure>, const IS_FIELD: bool> CountableSetSignature
     for EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, B, IS_FIELD>
 {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
+        let modulus = self.modulus().as_ref().clone();
         (0usize..)
             .map(Integer::from)
-            .take_while(|n| n < self.modulus().as_ref())
+            .take_while(move |n| n < &modulus)
+    }
+
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+        self.clone().into_generate_all_elements()
     }
 }
 
