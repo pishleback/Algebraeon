@@ -38,7 +38,7 @@ impl CountableSetSignature for QuadraticNumberFieldBasisCanonicalStructure {
 }
 
 impl FiniteSetSignature for QuadraticNumberFieldBasisCanonicalStructure {
-    fn nat_size(&self) -> Natural {
+    fn size(&self) -> Natural {
         Natural::TWO
     }
 }

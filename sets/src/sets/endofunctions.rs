@@ -19,7 +19,7 @@ impl<X: FiniteSetSignature + EqSignature> SetSignature for FiniteSetEndofunction
     type Elem = Vec<X::Elem>;
 
     fn validate_element(&self, f: &Self::Elem) -> Result<(), String> {
-        if Natural::from(f.len()) != self.set.nat_size() {
+        if Natural::from(f.len()) != self.set.size() {
             return Err("Function must have one value per element in the domain.".to_string());
         }
         for y in f {
@@ -31,7 +31,7 @@ impl<X: FiniteSetSignature + EqSignature> SetSignature for FiniteSetEndofunction
 
 impl<X: FiniteSetSignature + EqSignature> CountableSetSignature for FiniteSetEndofunctions<X> {
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
-        let n: usize = self.set.nat_size().try_into().unwrap_or(usize::MAX);
+        let n: usize = self.set.size().try_into().unwrap_or(usize::MAX);
         (0..n)
             .map(|_| self.set.list_all_elements())
             .multi_cartesian_product()

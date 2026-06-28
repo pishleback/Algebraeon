@@ -58,7 +58,7 @@ where
     fn rank(&self) -> usize {
         self.basis_set()
             .borrow()
-            .nat_size()
+            .size()
             .try_into()
             .expect("too large")
     }

@@ -123,8 +123,8 @@ impl<Set: OrdSignature + CountableSetSignature, SetB: BorrowedStructure<Set>> Co
 impl<Set: OrdSignature + FiniteSetSignature, SetB: BorrowedStructure<Set>> FiniteSetSignature
     for FiniteSubsetsByOrdStructure<Set, SetB>
 {
-    fn nat_size(&self) -> Natural {
-        Natural::TWO.pow(&self.set().nat_size())
+    fn size(&self) -> Natural {
+        Natural::TWO.pow(&self.set().size())
     }
 }
 
@@ -150,7 +150,7 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
 
     fn enumeration_to_element(&self, num: &Natural) -> Option<Self::Elem> {
         let len = num.bitcount();
-        if Natural::from(len) > self.set().nat_size() {
+        if Natural::from(len) > self.set().size() {
             return None;
         }
         Some(FiniteSubsetByOrd {

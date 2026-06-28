@@ -50,7 +50,7 @@ impl CountableSetSignature for EnumeratedFiniteSetStructure {
 }
 
 impl FiniteSetSignature for EnumeratedFiniteSetStructure {
-    fn nat_size(&self) -> Natural {
+    fn size(&self) -> Natural {
         Natural::from(self.n)
     }
 }

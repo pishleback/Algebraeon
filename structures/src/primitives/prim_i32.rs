@@ -47,7 +47,7 @@ impl CountableSetSignature for PrimitiveI32CanonicalStructure {
 }
 
 impl FiniteSetSignature for PrimitiveI32CanonicalStructure {
-    fn nat_size(&self) -> Natural {
+    fn size(&self) -> Natural {
         Natural::from(u32::MAX) + Natural::ONE
     }
 }
@@ -62,7 +62,7 @@ impl EnumeratedOrdFiniteSetSignature for PrimitiveI32CanonicalStructure {
     }
 
     fn enumeration_to_element(&self, num: &Natural) -> Option<Self::Elem> {
-        if *num >= self.nat_size() {
+        if *num >= self.size() {
             None
         } else {
             Some(((u32::try_from(num).unwrap()) as i32).wrapping_add(i32::MIN))
@@ -81,11 +81,11 @@ mod tests {
         assert_eq!((i32::MIN + 1).element_to_enumeration(), Natural::from(1u32));
         assert_eq!(
             (i32::MAX - 1).element_to_enumeration(),
-            i32::structure().nat_size() - Natural::from(2usize)
+            i32::structure().size() - Natural::from(2usize)
         );
         assert_eq!(
             (i32::MAX).element_to_enumeration(),
-            i32::structure().nat_size() - Natural::from(1usize)
+            i32::structure().size() - Natural::from(1usize)
         );
 
         assert_eq!(
@@ -99,21 +99,21 @@ mod tests {
         assert_eq!(
             Some(i32::MAX - 1),
             i32::structure()
-                .enumeration_to_element(&(i32::structure().nat_size() - Natural::from(2usize)))
+                .enumeration_to_element(&(i32::structure().size() - Natural::from(2usize)))
         );
         assert_eq!(
             Some(i32::MAX),
             i32::structure()
-                .enumeration_to_element(&(i32::structure().nat_size() - Natural::from(1usize)))
+                .enumeration_to_element(&(i32::structure().size() - Natural::from(1usize)))
         );
         assert_eq!(
             None,
-            i32::structure().enumeration_to_element(&i32::structure().nat_size())
+            i32::structure().enumeration_to_element(&i32::structure().size())
         );
         assert_eq!(
             None,
             i32::structure()
-                .enumeration_to_element(&(i32::structure().nat_size() + Natural::from(1usize)))
+                .enumeration_to_element(&(i32::structure().size() + Natural::from(1usize)))
         );
     }
 }

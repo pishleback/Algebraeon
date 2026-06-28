@@ -119,7 +119,7 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> CountableSetSignature
 impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> FiniteSetSignature
     for FiniteSubsetByOrdStructure<Set, SetB>
 {
-    fn nat_size(&self) -> Natural {
+    fn size(&self) -> Natural {
         Natural::from(self.elems.len())
     }
 }
@@ -155,6 +155,6 @@ mod tests {
     #[test]
     fn test() {
         let set = i32::structure().into_finite_subset(vec![1, 2, 3, 4, 5, 6]);
-        assert_eq!(set.nat_size(), Natural::from(6usize));
+        assert_eq!(set.size(), Natural::from(6usize));
     }
 }

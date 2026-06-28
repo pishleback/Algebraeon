@@ -39,7 +39,7 @@ impl CountableSetSignature for SingletonSetStructure {
 }
 
 impl FiniteSetSignature for SingletonSetStructure {
-    fn nat_size(&self) -> Natural {
+    fn size(&self) -> Natural {
         Natural::ONE
     }
 }

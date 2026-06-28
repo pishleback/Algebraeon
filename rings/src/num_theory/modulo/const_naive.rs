@@ -285,7 +285,7 @@ impl<const N: usize> CountableSetSignature for ModuloCanonicalStructure<N> {
 }
 
 impl<const N: usize> FiniteSetSignature for ModuloCanonicalStructure<N> {
-    fn nat_size(&self) -> Natural {
+    fn size(&self) -> Natural {
         Natural::from(N)
     }
 }
@@ -384,7 +384,7 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>, const IS_FIELD: bool> Coun
 impl<B: BorrowedStructure<IntegerCanonicalStructure>, const IS_FIELD: bool> FiniteSetSignature
     for EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, B, IS_FIELD>
 {
-    fn nat_size(&self) -> Natural {
+    fn size(&self) -> Natural {
         Abs::abs(self.modulus().as_ref())
     }
 }

@@ -53,7 +53,7 @@ pub trait FiniteSetSignature: CountableSetSignature {
         self.generate_all_elements().collect()
     }
 
-    fn nat_size(&self) -> Natural {
+    fn size(&self) -> Natural {
         Natural::from(self.list_all_elements().len())
     }
 

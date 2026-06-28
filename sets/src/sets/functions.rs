@@ -21,7 +21,7 @@ impl<Domain: FiniteSetSignature, Range: EqSignature> SetSignature for Functions<
     type Elem = Vec<Range::Elem>;
 
     fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
-        if Natural::from(x.len()) != self.domain.nat_size() {
+        if Natural::from(x.len()) != self.domain.size() {
             return Err("Incorrect vector length".to_string());
         }
         for y in x {
@@ -35,7 +35,7 @@ impl<Domain: FiniteSetSignature, Range: EqSignature + FiniteSetSignature> Counta
     for Functions<Domain, Range>
 {
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
-        let n: usize = self.domain.nat_size().try_into().unwrap_or(usize::MAX);
+        let n: usize = self.domain.size().try_into().unwrap_or(usize::MAX);
         (0..n)
             .map(|_| self.range.list_all_elements())
             .multi_cartesian_product()

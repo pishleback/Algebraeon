@@ -74,7 +74,7 @@ impl CountableSetSignature for QuaternionAlgebraBasisCanonicalStructure {
 }
 
 impl FiniteSetSignature for QuaternionAlgebraBasisCanonicalStructure {
-    fn nat_size(&self) -> Natural {
+    fn size(&self) -> Natural {
         Natural::from(4usize)
     }
 }
