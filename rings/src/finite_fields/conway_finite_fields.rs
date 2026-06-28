@@ -160,7 +160,7 @@ impl RingSignature for ConwayFiniteFieldStructure {
 }
 
 impl CountableSetSignature for ConwayFiniteFieldStructure {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
         self.all_units_and_zero().into_iter()
     }
 }
@@ -194,7 +194,7 @@ impl FieldSignature for ConwayFiniteFieldStructure {}
 impl<B: BorrowedStructure<ConwayFiniteFieldStructure>> CountableSetSignature
     for MultiplicativeMonoidUnitsStructure<ConwayFiniteFieldStructure, B>
 {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
         self.list_all_elements().into_iter()
     }
 }

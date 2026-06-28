@@ -373,7 +373,7 @@ impl<
 > CountableSetSignature
     for MultiplicativeMonoidUnitsStructure<MultiPolynomialStructure<RS, RSB>, B>
 {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
         self.list_all_elements().into_iter()
     }
 }

@@ -12,7 +12,7 @@ impl<
 > CountableSetSignature
     for MultiplicativeMonoidUnitsStructure<PolynomialQuotientRingStructure<FS, FSB, FSPB, true>, B>
 {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
         self.list_all_elements().into_iter()
     }
 }

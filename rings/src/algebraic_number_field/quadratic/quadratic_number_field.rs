@@ -28,7 +28,7 @@ pub enum QuadraticNumberFieldBasis {
 }
 
 impl CountableSetSignature for QuadraticNumberFieldBasisCanonicalStructure {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
         vec![
             QuadraticNumberFieldBasis::Rational,
             QuadraticNumberFieldBasis::Algebraic,
@@ -38,8 +38,8 @@ impl CountableSetSignature for QuadraticNumberFieldBasisCanonicalStructure {
 }
 
 impl FiniteSetSignature for QuadraticNumberFieldBasisCanonicalStructure {
-    fn size(&self) -> usize {
-        2
+    fn nat_size(&self) -> Natural {
+        Natural::TWO
     }
 }
 

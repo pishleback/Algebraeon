@@ -155,7 +155,7 @@ impl FieldSignature for QuaternaryFieldCanonicalStructure {}
 impl<B: BorrowedStructure<QuaternaryFieldCanonicalStructure>> CountableSetSignature
     for MultiplicativeMonoidUnitsStructure<QuaternaryFieldCanonicalStructure, B>
 {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
         self.list_all_elements().into_iter()
     }
 }
@@ -173,7 +173,7 @@ impl<B: BorrowedStructure<QuaternaryFieldCanonicalStructure>> FiniteSetSignature
 }
 
 impl CountableSetSignature for QuaternaryFieldCanonicalStructure {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
         self.all_units_and_zero().into_iter()
     }
 }

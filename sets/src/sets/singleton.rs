@@ -33,13 +33,13 @@ impl OrdSignature for SingletonSetStructure {
 }
 
 impl CountableSetSignature for SingletonSetStructure {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
         [()].into_iter()
     }
 }
 
 impl FiniteSetSignature for SingletonSetStructure {
-    fn size(&self) -> usize {
-        1
+    fn nat_size(&self) -> Natural {
+        Natural::ONE
     }
 }

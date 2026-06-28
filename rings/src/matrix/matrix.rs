@@ -638,10 +638,9 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
         let n = a.rows();
         if n == a.cols() {
             let mut det = self.ring().zero();
-            for perm in FinitelySupportedPermutationsStructure::new(FiniteSubsetStructure::new(
-                usize::structure(),
-                (0..n).collect(),
-            ))
+            for perm in FinitelySupportedPermutationsStructure::new(
+                FiniteSubsetByHashStructure::new(usize::structure(), (0..n).collect()),
+            )
             .generate_all_elements()
             {
                 let mut prod = self.ring().one();

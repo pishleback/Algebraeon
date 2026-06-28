@@ -44,13 +44,13 @@ impl OrdSignature for EnumeratedFiniteSetStructure {
 }
 
 impl CountableSetSignature for EnumeratedFiniteSetStructure {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
         0..self.n
     }
 }
 
 impl FiniteSetSignature for EnumeratedFiniteSetStructure {
-    fn size(&self) -> usize {
-        self.n
+    fn nat_size(&self) -> Natural {
+        Natural::from(self.n)
     }
 }

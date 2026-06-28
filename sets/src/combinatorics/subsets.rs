@@ -136,7 +136,11 @@ pub fn subsets(n: usize, k: usize) -> impl Iterator<Item = Vec<usize>> {
 ///     vec![0, 1, 2],
 /// ]);
 /// ```
-pub fn all_subsets(n: usize) -> impl Iterator<Item = Vec<usize>> {
+pub fn all_subsets(mut n: usize) -> impl Iterator<Item = Vec<usize>> {
+    if n >= usize::BITS as usize {
+        // assuming its intractable to count past usize::MAX, this is OK since we'll never reach subsets containing elements past the 63rd one
+        n = (usize::BITS as usize) - 1;
+    }
     (0usize..(1 << n)).map(move |i| (0..n).filter(|j| i & (1 << j) != 0).collect())
 }
 

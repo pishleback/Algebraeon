@@ -41,7 +41,7 @@ pub trait EqSignature: SetSignature {
 pub trait CountableSetSignature: SetSignature {
     /// Yield distinct elements of the set such that every element eventually appears.
     /// Always yields elements in the same order.
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone;
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem>;
 }
 
 /// A set with finitely many elements
@@ -53,8 +53,8 @@ pub trait FiniteSetSignature: CountableSetSignature {
         self.generate_all_elements().collect()
     }
 
-    fn size(&self) -> usize {
-        self.list_all_elements().len()
+    fn nat_size(&self) -> Natural {
+        Natural::from(self.list_all_elements().len())
     }
 
     #[skip_meta]
@@ -77,11 +77,11 @@ pub trait EnumeratedOrdFiniteSetSignature: FiniteSetSignature + OrdSignature {
     fn list_all_elements_ordered(&self) -> Vec<Self::Elem>;
 
     /// Return the numbering of an element
-    fn element_to_enumeration(&self, elem: &Self::Elem) -> usize;
+    fn element_to_enumeration(&self, elem: &Self::Elem) -> Natural;
 
     /// Return the numbering of an element
     /// None iff number is too large
-    fn enumeration_to_element(&self, num: usize) -> Option<Self::Elem>;
+    fn enumeration_to_element(&self, num: &Natural) -> Option<Self::Elem>;
 }
 
 #[derive(Debug, Clone)]

@@ -2,11 +2,8 @@
 
 use crate::*;
 use algebraeon_macros::CanonicalStructure;
-use malachite_base::num::arithmetic::traits::CheckedSub;
-use malachite_base::num::{
-    arithmetic::traits::PowerOf2,
-    basic::traits::{One, Two, Zero},
-};
+use malachite::base::num::basic::traits::{One, Two, Zero};
+use malachite::base::num::conversion::traits::ExactFrom;
 use std::iter::{Product, Sum};
 use std::{
     borrow::Borrow,
@@ -20,17 +17,17 @@ use std::{
 /// Represents a natural number {0, 1, 2, ...}
 #[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, CanonicalStructure)]
 #[canonical_structure(eq, partial_ord, ord)]
-pub struct Natural(malachite_nz::natural::Natural);
+pub struct Natural(malachite::natural::Natural);
 
 #[allow(clippy::wrong_self_convention)]
 impl Natural {
-    pub(crate) fn from_malachite(value: malachite_nz::natural::Natural) -> Self {
+    pub(crate) fn from_malachite(value: malachite::natural::Natural) -> Self {
         Self(value)
     }
-    pub(crate) fn to_malachite(self) -> malachite_nz::natural::Natural {
+    pub(crate) fn to_malachite(self) -> malachite::natural::Natural {
         self.0
     }
-    pub(crate) fn to_malachite_ref(&self) -> &malachite_nz::natural::Natural {
+    pub(crate) fn to_malachite_ref(&self) -> &malachite::natural::Natural {
         &self.0
     }
 }
@@ -49,32 +46,32 @@ impl std::fmt::Display for Natural {
 
 impl From<u8> for Natural {
     fn from(value: u8) -> Self {
-        Self(malachite_nz::natural::Natural::from(value))
+        Self(malachite::natural::Natural::from(value))
     }
 }
 impl From<u16> for Natural {
     fn from(value: u16) -> Self {
-        Self(malachite_nz::natural::Natural::from(value))
+        Self(malachite::natural::Natural::from(value))
     }
 }
 impl From<u32> for Natural {
     fn from(value: u32) -> Self {
-        Self(malachite_nz::natural::Natural::from(value))
+        Self(malachite::natural::Natural::from(value))
     }
 }
 impl From<u64> for Natural {
     fn from(value: u64) -> Self {
-        Self(malachite_nz::natural::Natural::from(value))
+        Self(malachite::natural::Natural::from(value))
     }
 }
 impl From<u128> for Natural {
     fn from(value: u128) -> Self {
-        Self(malachite_nz::natural::Natural::from(value))
+        Self(malachite::natural::Natural::from(value))
     }
 }
 impl From<usize> for Natural {
     fn from(value: usize) -> Self {
-        Self(malachite_nz::natural::Natural::from(value))
+        Self(malachite::natural::Natural::from(value))
     }
 }
 impl From<&Natural> for Natural {
@@ -83,11 +80,231 @@ impl From<&Natural> for Natural {
     }
 }
 
+impl TryFrom<Natural> for u8 {
+    type Error = ();
+    fn try_from(value: Natural) -> Result<Self, Self::Error> {
+        if value > Natural::from(u8::MAX) {
+            return Err(());
+        }
+        Ok(u8::exact_from(&value.0))
+    }
+}
+impl TryFrom<Natural> for u16 {
+    type Error = ();
+    fn try_from(value: Natural) -> Result<Self, Self::Error> {
+        if value > Natural::from(u16::MAX) {
+            return Err(());
+        }
+        Ok(u16::exact_from(&value.0))
+    }
+}
+impl TryFrom<Natural> for u32 {
+    type Error = ();
+    fn try_from(value: Natural) -> Result<Self, Self::Error> {
+        if value > Natural::from(u32::MAX) {
+            return Err(());
+        }
+        Ok(u32::exact_from(&value.0))
+    }
+}
+impl TryFrom<Natural> for u64 {
+    type Error = ();
+    fn try_from(value: Natural) -> Result<Self, Self::Error> {
+        if value > Natural::from(u64::MAX) {
+            return Err(());
+        }
+        Ok(u64::exact_from(&value.0))
+    }
+}
+impl TryFrom<Natural> for u128 {
+    type Error = ();
+    fn try_from(value: Natural) -> Result<Self, Self::Error> {
+        if value > Natural::from(u128::MAX) {
+            return Err(());
+        }
+        Ok(u128::exact_from(&value.0))
+    }
+}
+impl TryFrom<Natural> for usize {
+    type Error = ();
+    fn try_from(value: Natural) -> Result<Self, Self::Error> {
+        if value > Natural::from(usize::MAX) {
+            return Err(());
+        }
+        Ok(usize::exact_from(&value.0))
+    }
+}
+
+impl TryFrom<Natural> for i8 {
+    type Error = ();
+    fn try_from(value: Natural) -> Result<Self, Self::Error> {
+        if value > Natural::from(i8::MAX as u8) {
+            return Err(());
+        }
+        Ok(i8::exact_from(&value.0))
+    }
+}
+impl TryFrom<Natural> for i16 {
+    type Error = ();
+    fn try_from(value: Natural) -> Result<Self, Self::Error> {
+        if value > Natural::from(i16::MAX as u16) {
+            return Err(());
+        }
+        Ok(i16::exact_from(&value.0))
+    }
+}
+impl TryFrom<Natural> for i32 {
+    type Error = ();
+    fn try_from(value: Natural) -> Result<Self, Self::Error> {
+        if value > Natural::from(i32::MAX as u32) {
+            return Err(());
+        }
+        Ok(i32::exact_from(&value.0))
+    }
+}
+impl TryFrom<Natural> for i64 {
+    type Error = ();
+    fn try_from(value: Natural) -> Result<Self, Self::Error> {
+        if value > Natural::from(i64::MAX as u64) {
+            return Err(());
+        }
+        Ok(i64::exact_from(&value.0))
+    }
+}
+impl TryFrom<Natural> for i128 {
+    type Error = ();
+    fn try_from(value: Natural) -> Result<Self, Self::Error> {
+        if value > Natural::from(i128::MAX as u128) {
+            return Err(());
+        }
+        Ok(i128::exact_from(&value.0))
+    }
+}
+impl TryFrom<Natural> for isize {
+    type Error = ();
+    fn try_from(value: Natural) -> Result<Self, Self::Error> {
+        if value > Natural::from(isize::MAX as usize) {
+            return Err(());
+        }
+        Ok(isize::exact_from(&value.0))
+    }
+}
+
+impl TryFrom<&Natural> for u8 {
+    type Error = ();
+    fn try_from(value: &Natural) -> Result<Self, Self::Error> {
+        if value > &Natural::from(u8::MAX) {
+            return Err(());
+        }
+        Ok(u8::exact_from(&value.0))
+    }
+}
+impl TryFrom<&Natural> for u16 {
+    type Error = ();
+    fn try_from(value: &Natural) -> Result<Self, Self::Error> {
+        if value > &Natural::from(u16::MAX) {
+            return Err(());
+        }
+        Ok(u16::exact_from(&value.0))
+    }
+}
+impl TryFrom<&Natural> for u32 {
+    type Error = ();
+    fn try_from(value: &Natural) -> Result<Self, Self::Error> {
+        if value > &Natural::from(u32::MAX) {
+            return Err(());
+        }
+        Ok(u32::exact_from(&value.0))
+    }
+}
+impl TryFrom<&Natural> for u64 {
+    type Error = ();
+    fn try_from(value: &Natural) -> Result<Self, Self::Error> {
+        if value > &Natural::from(u64::MAX) {
+            return Err(());
+        }
+        Ok(u64::exact_from(&value.0))
+    }
+}
+impl TryFrom<&Natural> for u128 {
+    type Error = ();
+    fn try_from(value: &Natural) -> Result<Self, Self::Error> {
+        if value > &Natural::from(u128::MAX) {
+            return Err(());
+        }
+        Ok(u128::exact_from(&value.0))
+    }
+}
+impl TryFrom<&Natural> for usize {
+    type Error = ();
+    fn try_from(value: &Natural) -> Result<Self, Self::Error> {
+        if value > &Natural::from(usize::MAX) {
+            return Err(());
+        }
+        Ok(usize::exact_from(&value.0))
+    }
+}
+
+impl TryFrom<&Natural> for i8 {
+    type Error = ();
+    fn try_from(value: &Natural) -> Result<Self, Self::Error> {
+        if value > &Natural::from(i8::MAX as u8) {
+            return Err(());
+        }
+        Ok(i8::exact_from(&value.0))
+    }
+}
+impl TryFrom<&Natural> for i16 {
+    type Error = ();
+    fn try_from(value: &Natural) -> Result<Self, Self::Error> {
+        if value > &Natural::from(i16::MAX as u16) {
+            return Err(());
+        }
+        Ok(i16::exact_from(&value.0))
+    }
+}
+impl TryFrom<&Natural> for i32 {
+    type Error = ();
+    fn try_from(value: &Natural) -> Result<Self, Self::Error> {
+        if value > &Natural::from(i32::MAX as u32) {
+            return Err(());
+        }
+        Ok(i32::exact_from(&value.0))
+    }
+}
+impl TryFrom<&Natural> for i64 {
+    type Error = ();
+    fn try_from(value: &Natural) -> Result<Self, Self::Error> {
+        if value > &Natural::from(i64::MAX as u64) {
+            return Err(());
+        }
+        Ok(i64::exact_from(&value.0))
+    }
+}
+impl TryFrom<&Natural> for i128 {
+    type Error = ();
+    fn try_from(value: &Natural) -> Result<Self, Self::Error> {
+        if value > &Natural::from(i128::MAX as u128) {
+            return Err(());
+        }
+        Ok(i128::exact_from(&value.0))
+    }
+}
+impl TryFrom<&Natural> for isize {
+    type Error = ();
+    fn try_from(value: &Natural) -> Result<Self, Self::Error> {
+        if value > &Natural::from(isize::MAX as usize) {
+            return Err(());
+        }
+        Ok(isize::exact_from(&value.0))
+    }
+}
+
 impl FromStr for Natural {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self(malachite_nz::natural::Natural::from_str(s)?))
+        Ok(Self(malachite::natural::Natural::from_str(s)?))
     }
 }
 
@@ -96,7 +313,7 @@ impl TryFrom<Integer> for Natural {
 
     fn try_from(value: Integer) -> Result<Self, Self::Error> {
         Ok(Self::from_malachite(
-            malachite_nz::natural::Natural::try_from(value.to_malachite()).map_err(|_| ())?,
+            malachite::natural::Natural::try_from(value.to_malachite()).map_err(|_| ())?,
         ))
     }
 }
@@ -106,7 +323,7 @@ impl TryFrom<&Integer> for Natural {
 
     fn try_from(value: &Integer) -> Result<Self, Self::Error> {
         Ok(Self::from_malachite(
-            malachite_nz::natural::Natural::try_from(value.to_malachite_ref()).map_err(|_| ())?,
+            malachite::natural::Natural::try_from(value.to_malachite_ref()).map_err(|_| ())?,
         ))
     }
 }
@@ -116,7 +333,7 @@ impl TryFrom<Rational> for Natural {
 
     fn try_from(value: Rational) -> Result<Self, Self::Error> {
         Ok(Self::from_malachite(
-            malachite_nz::natural::Natural::try_from(value.to_malachite()).map_err(|_| ())?,
+            malachite::natural::Natural::try_from(value.to_malachite()).map_err(|_| ())?,
         ))
     }
 }
@@ -126,15 +343,15 @@ impl TryFrom<&Rational> for Natural {
 
     fn try_from(value: &Rational) -> Result<Self, Self::Error> {
         Ok(Self::from_malachite(
-            malachite_nz::natural::Natural::try_from(value.to_malachite_ref()).map_err(|_| ())?,
+            malachite::natural::Natural::try_from(value.to_malachite_ref()).map_err(|_| ())?,
         ))
     }
 }
 
 impl Natural {
-    pub const ZERO: Self = Self(malachite_nz::natural::Natural::ZERO);
-    pub const ONE: Self = Self(malachite_nz::natural::Natural::ONE);
-    pub const TWO: Self = Self(malachite_nz::natural::Natural::TWO);
+    pub const ZERO: Self = Self(malachite::natural::Natural::ZERO);
+    pub const ONE: Self = Self(malachite::natural::Natural::ONE);
+    pub const TWO: Self = Self(malachite::natural::Natural::TWO);
 
     pub fn latex(&self) -> String {
         format!("{}", self)
@@ -377,7 +594,7 @@ impl DivMod<Natural> for Natural {
     type ModOutput = Natural;
 
     fn div_mod(self, other: Natural) -> (Self::DivOutput, Self::ModOutput) {
-        use malachite_base::num::arithmetic::traits::DivMod;
+        use malachite::base::num::arithmetic::traits::DivMod;
         let (q, r) = self.0.div_mod(other.0);
         (Natural(q), Natural(r))
     }
@@ -388,7 +605,7 @@ impl DivMod<&Natural> for Natural {
     type ModOutput = Natural;
 
     fn div_mod(self, other: &Natural) -> (Self::DivOutput, Self::ModOutput) {
-        use malachite_base::num::arithmetic::traits::DivMod;
+        use malachite::base::num::arithmetic::traits::DivMod;
         let (q, r) = self.0.div_mod(&other.0);
         (Natural(q), Natural(r))
     }
@@ -399,7 +616,7 @@ impl DivMod<Natural> for &Natural {
     type ModOutput = Natural;
 
     fn div_mod(self, other: Natural) -> (Self::DivOutput, Self::ModOutput) {
-        use malachite_base::num::arithmetic::traits::DivMod;
+        use malachite::base::num::arithmetic::traits::DivMod;
         let (q, r) = (&self.0).div_mod(other.0);
         (Natural(q), Natural(r))
     }
@@ -410,7 +627,7 @@ impl DivMod<&Natural> for &Natural {
     type ModOutput = Natural;
 
     fn div_mod(self, other: &Natural) -> (Self::DivOutput, Self::ModOutput) {
-        use malachite_base::num::arithmetic::traits::DivMod;
+        use malachite::base::num::arithmetic::traits::DivMod;
         let (q, r) = (&self.0).div_mod(&other.0);
         (Natural(q), Natural(r))
     }
@@ -505,7 +722,7 @@ impl BitXor<&Natural> for &Natural {
 
 impl<T> Shl<T> for Natural
 where
-    malachite_nz::natural::Natural: Shl<T, Output = malachite_nz::natural::Natural>,
+    malachite::natural::Natural: Shl<T, Output = malachite::natural::Natural>,
 {
     type Output = Natural;
 
@@ -515,7 +732,7 @@ where
 }
 impl<T> Shl<T> for &Natural
 where
-    for<'a> &'a malachite_nz::natural::Natural: Shl<T, Output = malachite_nz::natural::Natural>,
+    for<'a> &'a malachite::natural::Natural: Shl<T, Output = malachite::natural::Natural>,
 {
     type Output = Natural;
 
@@ -526,7 +743,7 @@ where
 
 impl<T> Shr<T> for Natural
 where
-    malachite_nz::natural::Natural: Shr<T, Output = malachite_nz::natural::Natural>,
+    malachite::natural::Natural: Shr<T, Output = malachite::natural::Natural>,
 {
     type Output = Natural;
 
@@ -536,7 +753,7 @@ where
 }
 impl<T> Shr<T> for &Natural
 where
-    for<'a> &'a malachite_nz::natural::Natural: Shr<T, Output = malachite_nz::natural::Natural>,
+    for<'a> &'a malachite::natural::Natural: Shr<T, Output = malachite::natural::Natural>,
 {
     type Output = Natural;
 
@@ -549,7 +766,7 @@ impl AbsDiff<Natural> for Natural {
     type Output = Natural;
 
     fn abs_diff(self, rhs: Natural) -> Self::Output {
-        use malachite_base::num::arithmetic::traits::AbsDiff;
+        use malachite::base::num::arithmetic::traits::AbsDiff;
         Natural(self.0.abs_diff(rhs.0))
     }
 }
@@ -557,7 +774,7 @@ impl AbsDiff<&Natural> for Natural {
     type Output = Natural;
 
     fn abs_diff(self, rhs: &Natural) -> Self::Output {
-        use malachite_base::num::arithmetic::traits::AbsDiff;
+        use malachite::base::num::arithmetic::traits::AbsDiff;
         Natural(self.0.abs_diff(&rhs.0))
     }
 }
@@ -565,7 +782,7 @@ impl AbsDiff<Natural> for &Natural {
     type Output = Natural;
 
     fn abs_diff(self, rhs: Natural) -> Self::Output {
-        use malachite_base::num::arithmetic::traits::AbsDiff;
+        use malachite::base::num::arithmetic::traits::AbsDiff;
         Natural((&self.0).abs_diff(rhs.0))
     }
 }
@@ -573,7 +790,7 @@ impl AbsDiff<&Natural> for &Natural {
     type Output = Natural;
 
     fn abs_diff(self, rhs: &Natural) -> Self::Output {
-        use malachite_base::num::arithmetic::traits::AbsDiff;
+        use malachite::base::num::arithmetic::traits::AbsDiff;
         Natural((&self.0).abs_diff(&rhs.0))
     }
 }
@@ -581,7 +798,7 @@ impl AbsDiff<&Natural> for &Natural {
 impl<Exponent: Borrow<Natural>, Modulus: Borrow<Natural>> ModPow<Exponent, Modulus> for Natural {
     type Output = Natural;
     fn mod_pow(self, exp: Exponent, m: Modulus) -> Self::Output {
-        use malachite_base::num::arithmetic::traits::ModPow;
+        use malachite::base::num::arithmetic::traits::ModPow;
         Natural((self.0 % &m.borrow().0).mod_pow(&exp.borrow().0, &m.borrow().0))
     }
 }
@@ -589,7 +806,7 @@ impl<Exponent: Borrow<Natural>, Modulus: Borrow<Natural>> ModPow<Exponent, Modul
 impl<Exponent: Borrow<Natural>, Modulus: Borrow<Natural>> ModPow<Exponent, Modulus> for &Natural {
     type Output = Natural;
     fn mod_pow(self, exp: Exponent, m: Modulus) -> Self::Output {
-        use malachite_base::num::arithmetic::traits::ModPow;
+        use malachite::base::num::arithmetic::traits::ModPow;
         Natural((&self.0 % &m.borrow().0).mod_pow(&exp.borrow().0, &m.borrow().0))
     }
 }
@@ -597,7 +814,7 @@ impl<Exponent: Borrow<Natural>, Modulus: Borrow<Natural>> ModPow<Exponent, Modul
 impl<Modulus: Borrow<Natural>> ModInv<Modulus> for Natural {
     type Output = Option<Natural>;
     fn mod_inv(self, m: Modulus) -> Self::Output {
-        use malachite_base::num::arithmetic::traits::ModInverse;
+        use malachite::base::num::arithmetic::traits::ModInverse;
         Some(Natural(
             (self.0 % &m.borrow().0).mod_inverse(&m.borrow().0)?,
         ))
@@ -607,7 +824,7 @@ impl<Modulus: Borrow<Natural>> ModInv<Modulus> for Natural {
 impl<Modulus: Borrow<Natural>> ModInv<Modulus> for &Natural {
     type Output = Option<Natural>;
     fn mod_inv(self, m: Modulus) -> Self::Output {
-        use malachite_base::num::arithmetic::traits::ModInverse;
+        use malachite::base::num::arithmetic::traits::ModInverse;
         Some(Natural(
             (&self.0 % &m.borrow().0).mod_inverse(&m.borrow().0)?,
         ))
@@ -616,7 +833,7 @@ impl<Modulus: Borrow<Natural>> ModInv<Modulus> for &Natural {
 
 impl Sum for Natural {
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
-        Self::from_malachite(malachite_nz::natural::Natural::sum(
+        Self::from_malachite(malachite::natural::Natural::sum(
             iter.map(|x| x.to_malachite()),
         ))
     }
@@ -624,7 +841,7 @@ impl Sum for Natural {
 
 impl Product for Natural {
     fn product<I: Iterator<Item = Self>>(iter: I) -> Self {
-        Self::from_malachite(malachite_nz::natural::Natural::product(
+        Self::from_malachite(malachite::natural::Natural::product(
             iter.map(|x| x.to_malachite()),
         ))
     }
@@ -640,7 +857,8 @@ impl Natural {
     /// );
     /// ```
     pub fn power_of_2(pow: u64) -> Self {
-        Self(malachite_nz::natural::Natural::power_of_2(pow))
+        use malachite::base::num::arithmetic::traits::PowerOf2;
+        Self(malachite::natural::Natural::power_of_2(pow))
     }
 
     /// An iterator over the bits in the binary expansion.
@@ -652,7 +870,7 @@ impl Natural {
     /// );
     /// ```
     pub fn bits<'a>(&'a self) -> impl ExactSizeIterator<Item = bool> + DoubleEndedIterator + 'a {
-        use malachite_base::num::logic::traits::BitIterable;
+        use malachite::base::num::logic::traits::BitIterable;
         self.0.bits()
     }
 
@@ -663,6 +881,7 @@ impl Natural {
 
     /// Return `self-other` if the result is a natural number
     pub fn try_sub(&self, other: &Self) -> Option<Self> {
+        use malachite::base::num::arithmetic::traits::CheckedSub;
         Some(Self::from_malachite(
             self.to_malachite_ref()
                 .checked_sub(other.to_malachite_ref())?,
@@ -670,106 +889,9 @@ impl Natural {
     }
 }
 
-macro_rules! impl_try_into_unsigned {
-    ($($t:ty),*) => {
-        $(
-            impl TryInto<$t> for Natural {
-                type Error = ();
-
-                fn try_into(self) -> Result<$t, Self::Error> {
-                    (&self).try_into()
-                }
-            }
-            impl TryInto<$t> for &Natural {
-                type Error = ();
-
-                fn try_into(self) -> Result<$t, Self::Error> {
-                    let limbs = self.0.to_limbs_asc();
-                    match limbs.len() {
-                        0 => Ok(0),
-                        1 => {
-                            let n = limbs[0];
-                            if Natural::from(n) > Natural::from(<$t>::MAX) {
-                                Err(())
-                            } else {
-                                Ok(n as $t)
-                            }
-                        },
-                        2 => {
-                            if std::mem::size_of::<$t>() >= 16 {
-                                let low = limbs[0] as u128;
-                                let high = limbs[1] as u128;
-                                let value = (high << 64) | low;
-                                if value > <$t>::MAX as u128 {
-                                    Err(())
-                                } else {
-                                    Ok(value as $t)
-                                }
-                            } else {
-                                Err(())
-                            }
-                        },
-                        _ => Err(()),
-                    }
-                }
-            }
-        )*
-    };
-}
-
-macro_rules! impl_try_into_signed {
-    ($($t:ty),*) => {
-        $(
-            impl TryInto<$t> for Natural {
-                type Error = ();
-
-                fn try_into(self) -> Result<$t, Self::Error> {
-                    (&self).try_into()
-                }
-            }
-            impl TryInto<$t> for &Natural {
-                type Error = ();
-
-                fn try_into(self) -> Result<$t, Self::Error> {
-                    let limbs = self.0.to_limbs_asc();
-                    match limbs.len() {
-                        0 => Ok(0),
-                        1 => {
-                            let n = limbs[0] as i128;
-                            if n > <$t>::MAX as i128 {
-                                Err(())
-                            } else {
-                                Ok(n as $t)
-                            }
-                        },
-                        2 => {
-                            if std::mem::size_of::<$t>() >= 16 {
-                                let low = limbs[0] as u128;
-                                let high = limbs[1] as u128;
-                                let value = (high << 64) | low;
-                                if value > <$t>::MAX as u128 {
-                                    Err(())
-                                } else {
-                                    Ok(value as $t)
-                                }
-                            } else {
-                                Err(())
-                            }
-                        },
-                        _ => Err(()),
-                    }
-                }
-            }
-        )*
-    };
-}
-
-impl_try_into_unsigned!(u8, u16, u32, u64, u128, usize);
-impl_try_into_signed!(i8, i16, i32, i64, i128, isize);
-
 impl CountableSetSignature for NaturalCanonicalStructure {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
-        use malachite_nz::natural::exhaustive::exhaustive_naturals;
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+        use malachite::natural::exhaustive::exhaustive_naturals;
         exhaustive_naturals().map(Natural::from_malachite)
     }
 }

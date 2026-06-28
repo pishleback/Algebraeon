@@ -56,7 +56,11 @@ where
     }
 
     fn rank(&self) -> usize {
-        self.basis_set().borrow().size()
+        self.basis_set()
+            .borrow()
+            .nat_size()
+            .try_into()
+            .expect("too large")
     }
 
     /// The elementary basis vectors

@@ -118,7 +118,7 @@ impl OrderedRingSignature for IntegerCanonicalStructure {}
 impl<B: BorrowedStructure<IntegerCanonicalStructure>> CountableSetSignature
     for MultiplicativeMonoidUnitsStructure<IntegerCanonicalStructure, B>
 {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
         self.list_all_elements().into_iter()
     }
 }

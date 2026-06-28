@@ -1,9 +1,8 @@
 //! The Rational type and operations.
 use crate::*;
 use algebraeon_macros::CanonicalStructure;
-use malachite_base::num::arithmetic::traits::Pow;
-use malachite_base::num::basic::traits::{One, OneHalf, Two, Zero};
-use malachite_q::arithmetic::traits::{Approximate, SimplestRationalInInterval};
+use malachite::base::num::arithmetic::traits::Pow;
+use malachite::base::num::basic::traits::{One, OneHalf, Two, Zero};
 use std::f64;
 use std::iter::{Product, Sum};
 use std::{
@@ -14,7 +13,7 @@ use std::{
 /// Represent a rational number - a number of the form `a`/`b` where `a` is an integer and `b` is a non-zero integer.
 #[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, CanonicalStructure)]
 #[canonical_structure(eq, partial_ord, ord)]
-pub struct Rational(malachite_q::Rational);
+pub struct Rational(malachite::Rational);
 
 impl ToStringSignature for RationalCanonicalStructure {
     fn to_string(&self, elem: &Self::Elem) -> String {
@@ -24,13 +23,13 @@ impl ToStringSignature for RationalCanonicalStructure {
 
 #[allow(clippy::wrong_self_convention)]
 impl Rational {
-    pub(crate) fn from_malachite(value: malachite_q::Rational) -> Self {
+    pub(crate) fn from_malachite(value: malachite::Rational) -> Self {
         Self(value)
     }
-    pub(crate) fn to_malachite(self) -> malachite_q::Rational {
+    pub(crate) fn to_malachite(self) -> malachite::Rational {
         self.0
     }
-    pub(crate) fn to_malachite_ref(&self) -> &malachite_q::Rational {
+    pub(crate) fn to_malachite_ref(&self) -> &malachite::Rational {
         &self.0
     }
 }
@@ -43,82 +42,82 @@ impl std::fmt::Display for Rational {
 
 impl From<u8> for Rational {
     fn from(value: u8) -> Self {
-        Self(malachite_q::Rational::from(value))
+        Self(malachite::Rational::from(value))
     }
 }
 impl From<u16> for Rational {
     fn from(value: u16) -> Self {
-        Self(malachite_q::Rational::from(value))
+        Self(malachite::Rational::from(value))
     }
 }
 impl From<u32> for Rational {
     fn from(value: u32) -> Self {
-        Self(malachite_q::Rational::from(value))
+        Self(malachite::Rational::from(value))
     }
 }
 impl From<u64> for Rational {
     fn from(value: u64) -> Self {
-        Self(malachite_q::Rational::from(value))
+        Self(malachite::Rational::from(value))
     }
 }
 impl From<u128> for Rational {
     fn from(value: u128) -> Self {
-        Self(malachite_q::Rational::from(value))
+        Self(malachite::Rational::from(value))
     }
 }
 impl From<usize> for Rational {
     fn from(value: usize) -> Self {
-        Self(malachite_q::Rational::from(value))
+        Self(malachite::Rational::from(value))
     }
 }
 impl From<i8> for Rational {
     fn from(value: i8) -> Self {
-        Self(malachite_q::Rational::from(value))
+        Self(malachite::Rational::from(value))
     }
 }
 impl From<i16> for Rational {
     fn from(value: i16) -> Self {
-        Self(malachite_q::Rational::from(value))
+        Self(malachite::Rational::from(value))
     }
 }
 impl From<i32> for Rational {
     fn from(value: i32) -> Self {
-        Self(malachite_q::Rational::from(value))
+        Self(malachite::Rational::from(value))
     }
 }
 impl From<i64> for Rational {
     fn from(value: i64) -> Self {
-        Self(malachite_q::Rational::from(value))
+        Self(malachite::Rational::from(value))
     }
 }
 impl From<i128> for Rational {
     fn from(value: i128) -> Self {
-        Self(malachite_q::Rational::from(value))
+        Self(malachite::Rational::from(value))
     }
 }
 impl From<isize> for Rational {
     fn from(value: isize) -> Self {
-        Self(malachite_q::Rational::from(value))
+        Self(malachite::Rational::from(value))
     }
 }
 impl From<Natural> for Rational {
     fn from(value: Natural) -> Self {
-        Self(malachite_q::Rational::from(value.to_malachite()))
+        Self(malachite::Rational::from(value.to_malachite()))
     }
 }
 impl From<&Natural> for Rational {
     fn from(value: &Natural) -> Self {
-        Self(malachite_q::Rational::from(value.to_malachite_ref()))
+        Self(malachite::Rational::from(value.to_malachite_ref()))
     }
 }
 impl From<Integer> for Rational {
     fn from(value: Integer) -> Self {
-        Self(malachite_q::Rational::from(value.to_malachite()))
+        Self(malachite::Rational::from(value.to_malachite()))
     }
 }
 impl From<&Integer> for Rational {
     fn from(value: &Integer) -> Self {
-        Self(malachite_q::Rational::from(value.to_malachite_ref()))
+        Self(malachite::Rational::from(value.to_malachite_ref()))
     }
 }
 impl From<&Rational> for Rational {
@@ -160,7 +159,7 @@ impl TryFrom<f64> for Rational {
 
     fn try_from(value: f64) -> Result<Self, Self::Error> {
         Ok(Self::from_malachite(
-            malachite_q::Rational::try_from(value).map_err(|_| ())?,
+            malachite::Rational::try_from(value).map_err(|_| ())?,
         ))
     }
 }
@@ -170,7 +169,7 @@ impl TryFrom<f32> for Rational {
 
     fn try_from(value: f32) -> Result<Self, Self::Error> {
         Ok(Self::from_malachite(
-            malachite_q::Rational::try_from(value).map_err(|_| ())?,
+            malachite::Rational::try_from(value).map_err(|_| ())?,
         ))
     }
 }
@@ -184,7 +183,7 @@ impl From<&Rational> for f64 {
         let (m, e, _) = val
             .to_malachite_ref()
             .sci_mantissa_and_exponent_round_ref::<f64>(
-                malachite_base::rounding_modes::RoundingMode::Nearest,
+                malachite::base::rounding_modes::RoundingMode::Nearest,
             )
             .unwrap();
         let f: f64 = m * 2.0.pow(e);
@@ -207,7 +206,7 @@ impl From<&Rational> for f32 {
         let (m, e, _) = val
             .to_malachite_ref()
             .sci_mantissa_and_exponent_round_ref::<f32>(
-                malachite_base::rounding_modes::RoundingMode::Nearest,
+                malachite::base::rounding_modes::RoundingMode::Nearest,
             )
             .unwrap();
         let f: f32 = m * 2.0f32.pow(e);
@@ -225,15 +224,15 @@ impl FromStr for Rational {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self(malachite_q::Rational::from_str(s)?))
+        Ok(Self(malachite::Rational::from_str(s)?))
     }
 }
 
 impl Rational {
-    pub const ZERO: Self = Self(malachite_q::Rational::ZERO);
-    pub const ONE: Self = Self(malachite_q::Rational::ONE);
-    pub const TWO: Self = Self(malachite_q::Rational::TWO);
-    pub const ONE_HALF: Self = Self(malachite_q::Rational::ONE_HALF);
+    pub const ZERO: Self = Self(malachite::Rational::ZERO);
+    pub const ONE: Self = Self(malachite::Rational::ONE);
+    pub const TWO: Self = Self(malachite::Rational::TWO);
+    pub const ONE_HALF: Self = Self(malachite::Rational::ONE_HALF);
 
     pub fn latex(&self) -> String {
         let (num, den) = self.numerator_and_denominator();
@@ -494,7 +493,7 @@ impl Rem<Rational> for Rational {
     type Output = Rational;
 
     fn rem(self, rhs: Rational) -> Self::Output {
-        use malachite_base::num::arithmetic::traits::Mod;
+        use malachite::base::num::arithmetic::traits::Mod;
         Rational(self.0.mod_op(rhs.0))
     }
 }
@@ -502,7 +501,7 @@ impl Rem<&Rational> for Rational {
     type Output = Rational;
 
     fn rem(self, rhs: &Rational) -> Self::Output {
-        use malachite_base::num::arithmetic::traits::Mod;
+        use malachite::base::num::arithmetic::traits::Mod;
         Rational(self.0.mod_op(&rhs.0))
     }
 }
@@ -510,7 +509,7 @@ impl Rem<Rational> for &Rational {
     type Output = Rational;
 
     fn rem(self, rhs: Rational) -> Self::Output {
-        use malachite_base::num::arithmetic::traits::Mod;
+        use malachite::base::num::arithmetic::traits::Mod;
         Rational((&self.0).mod_op(rhs.0))
     }
 }
@@ -518,7 +517,7 @@ impl Rem<&Rational> for &Rational {
     type Output = Rational;
 
     fn rem(self, rhs: &Rational) -> Self::Output {
-        use malachite_base::num::arithmetic::traits::Mod;
+        use malachite::base::num::arithmetic::traits::Mod;
         Rational((&self.0).mod_op(&rhs.0))
     }
 }
@@ -527,7 +526,7 @@ impl Abs for Rational {
     type Output = Rational;
 
     fn abs(self) -> Self::Output {
-        use malachite_base::num::arithmetic::traits::Abs;
+        use malachite::base::num::arithmetic::traits::Abs;
         Rational(self.0.abs())
     }
 }
@@ -536,22 +535,20 @@ impl Abs for &Rational {
     type Output = Rational;
 
     fn abs(self) -> Self::Output {
-        use malachite_base::num::arithmetic::traits::Abs;
+        use malachite::base::num::arithmetic::traits::Abs;
         Rational((&self.0).abs())
     }
 }
 
 impl Sum for Rational {
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
-        Self::from_malachite(malachite_q::Rational::sum(iter.map(|x| x.to_malachite())))
+        Self::from_malachite(malachite::Rational::sum(iter.map(|x| x.to_malachite())))
     }
 }
 
 impl Product for Rational {
     fn product<I: Iterator<Item = Self>>(iter: I) -> Self {
-        Self::from_malachite(malachite_q::Rational::product(
-            iter.map(|x| x.to_malachite()),
-        ))
+        Self::from_malachite(malachite::Rational::product(iter.map(|x| x.to_malachite())))
     }
 }
 
@@ -594,7 +591,7 @@ impl Floor for Rational {
     type Output = Integer;
 
     fn floor(self) -> Self::Output {
-        use malachite_base::num::arithmetic::traits::Floor;
+        use malachite::base::num::arithmetic::traits::Floor;
         Integer::from_malachite(self.0.floor())
     }
 }
@@ -603,7 +600,7 @@ impl Floor for &Rational {
     type Output = Integer;
 
     fn floor(self) -> Self::Output {
-        use malachite_base::num::arithmetic::traits::Floor;
+        use malachite::base::num::arithmetic::traits::Floor;
         Integer::from_malachite((&self.0).floor())
     }
 }
@@ -612,7 +609,7 @@ impl Ceil for Rational {
     type Output = Integer;
 
     fn ceil(self) -> Self::Output {
-        use malachite_base::num::arithmetic::traits::Ceiling;
+        use malachite::base::num::arithmetic::traits::Ceiling;
         Integer::from_malachite(self.0.ceiling())
     }
 }
@@ -621,7 +618,7 @@ impl Ceil for &Rational {
     type Output = Integer;
 
     fn ceil(self) -> Self::Output {
-        use malachite_base::num::arithmetic::traits::Ceiling;
+        use malachite::base::num::arithmetic::traits::Ceiling;
         Integer::from_malachite((&self.0).ceiling())
     }
 }
@@ -632,7 +629,7 @@ impl Rational {
     /// # Panics
     /// When `d` = 0
     pub fn from_integers(n: impl Into<Integer>, d: impl Into<Integer>) -> Self {
-        Self(malachite_q::Rational::from_integers(
+        Self(malachite::Rational::from_integers(
             n.into().to_malachite(),
             d.into().to_malachite(),
         ))
@@ -645,30 +642,33 @@ impl Rational {
     }
 
     pub fn simplest_rational_in_closed_interval(a: &Rational, b: &Rational) -> Self {
-        Self(malachite_q::Rational::simplest_rational_in_closed_interval(
+        use malachite::rational::arithmetic::traits::SimplestRationalInInterval;
+        Self(malachite::Rational::simplest_rational_in_closed_interval(
             &a.0, &b.0,
         ))
     }
 
     pub fn simplest_rational_in_open_interval(a: &Rational, b: &Rational) -> Self {
-        Self(malachite_q::Rational::simplest_rational_in_open_interval(
+        use malachite::rational::arithmetic::traits::SimplestRationalInInterval;
+        Self(malachite::Rational::simplest_rational_in_open_interval(
             &a.0, &b.0,
         ))
     }
 
     #[allow(clippy::return_self_not_must_use)]
     pub fn approximate(self, max_denominator: &Natural) -> Self {
+        use malachite::rational::arithmetic::traits::Approximate;
         Self(self.0.approximate(max_denominator.to_malachite_ref()))
     }
 
     /// An iterator over all rational numbers.
     pub fn exhaustive_rationals() -> impl Iterator<Item = Rational> {
-        malachite_q::exhaustive::exhaustive_rationals().map(Rational)
+        malachite::rational::exhaustive::exhaustive_rationals().map(Rational)
     }
 
     #[allow(clippy::result_unit_err, clippy::missing_errors_doc)]
     pub fn try_from_float_simplest(x: f64) -> Result<Self, ()> {
-        match malachite_q::Rational::try_from_float_simplest(x) {
+        match malachite::Rational::try_from_float_simplest(x) {
             Ok(x) => Ok(Self(x)),
             Err(_) => Err(()),
         }
@@ -683,7 +683,7 @@ impl Rational {
         let (mant, exp, _): (f64, _, _) = self
             .to_malachite_ref()
             .sci_mantissa_and_exponent_round_ref(
-                malachite_base::rounding_modes::RoundingMode::Nearest,
+                malachite::base::rounding_modes::RoundingMode::Nearest,
             )
             .unwrap();
         #[allow(clippy::unnecessary_cast, clippy::cast_precision_loss)]
@@ -697,8 +697,8 @@ impl Rational {
 }
 
 impl CountableSetSignature for RationalCanonicalStructure {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
-        use malachite_q::exhaustive::exhaustive_rationals;
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+        use malachite::rational::exhaustive::exhaustive_rationals;
         exhaustive_rationals().map(Rational::from_malachite)
     }
 }

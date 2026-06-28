@@ -308,6 +308,21 @@ pub trait OrdSignature: PartialOrdSignature {
         self.sort_by_key(a, &|x| x.borrow())
     }
 
+    fn unique<S: Borrow<Self::Elem>>(&self, a: Vec<S>) -> Vec<S> {
+        debug_assert!(self.is_sorted(&a));
+        let mut unique: Vec<S> = vec![];
+        for x in a {
+            if let Some(last) = unique.last() {
+                if !self.equal(x.borrow(), last.borrow()) {
+                    unique.push(x);
+                }
+            } else {
+                unique.push(x);
+            }
+        }
+        unique
+    }
+
     fn sort_by_key<X>(&self, mut a: Vec<X>, key: &impl Fn(&X) -> &Self::Elem) -> Vec<X> {
         match a.len() {
             0 | 1 => a,

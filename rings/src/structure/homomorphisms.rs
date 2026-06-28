@@ -153,7 +153,7 @@ mod range_module {
         Hom: FiniteRankFreeRingExtension<Domain, Range>,
     > CountableSetSignature for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
     {
-        fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
+        fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
             let n = self.homomorphism().degree();
             (0..n)
                 .map(|_| self.ring().list_all_elements())

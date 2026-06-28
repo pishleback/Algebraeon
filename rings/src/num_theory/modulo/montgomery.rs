@@ -288,7 +288,7 @@ impl QuotientRingGetPrincipalIdealSignature<IntegerCanonicalStructure>
 }
 
 impl CountableSetSignature for MontgomeryModuloOddStructure {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
         0..self.n
     }
 }
@@ -501,7 +501,7 @@ impl IntegralDomainSignature for MontgomeryModuloOddPrimeStructure {}
 impl FieldSignature for MontgomeryModuloOddPrimeStructure {}
 
 impl CountableSetSignature for MontgomeryModuloOddPrimeStructure {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
         self.sup.generate_all_elements()
     }
 }
@@ -515,7 +515,7 @@ impl FiniteSetSignature for MontgomeryModuloOddPrimeStructure {
 impl<B: BorrowedStructure<MontgomeryModuloOddPrimeStructure>> CountableSetSignature
     for MultiplicativeMonoidUnitsStructure<MontgomeryModuloOddPrimeStructure, B>
 {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
         1..self.monoid().sup.n
     }
 }

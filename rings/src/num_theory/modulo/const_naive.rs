@@ -279,14 +279,14 @@ impl<const N: usize> QuotientRingGetPrincipalIdealSignature<IntegerCanonicalStru
 }
 
 impl<const N: usize> CountableSetSignature for ModuloCanonicalStructure<N> {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
         (0..N).map(Modulo::new)
     }
 }
 
 impl<const N: usize> FiniteSetSignature for ModuloCanonicalStructure<N> {
-    fn size(&self) -> usize {
-        N
+    fn nat_size(&self) -> Natural {
+        Natural::from(N)
     }
 }
 
@@ -307,9 +307,7 @@ macro_rules! impl_field {
         impl<B: BorrowedStructure<ModuloCanonicalStructure<$N>>> CountableSetSignature
             for MultiplicativeMonoidUnitsStructure<ModuloCanonicalStructure<$N>, B>
         {
-            fn generate_all_elements(
-                &self,
-            ) -> impl std::iter::Iterator<Item = Modulo<$N>> + std::clone::Clone {
+            fn generate_all_elements(&self) -> impl std::iter::Iterator<Item = Modulo<$N>> {
                 (1..$N).map(|i| Modulo { x: i })
             }
         }
@@ -340,7 +338,7 @@ impl<
         BE,
     >
 {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
         self.list_all_elements().into_iter()
     }
 }
@@ -376,7 +374,7 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>> FiniteFieldSignature
 impl<B: BorrowedStructure<IntegerCanonicalStructure>, const IS_FIELD: bool> CountableSetSignature
     for EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, B, IS_FIELD>
 {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
         (0usize..)
             .map(Integer::from)
             .take_while(|n| n < self.modulus().as_ref())
@@ -386,8 +384,8 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>, const IS_FIELD: bool> Coun
 impl<B: BorrowedStructure<IntegerCanonicalStructure>, const IS_FIELD: bool> FiniteSetSignature
     for EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, B, IS_FIELD>
 {
-    fn size(&self) -> usize {
-        Abs::abs(self.modulus().as_ref()).try_into().unwrap()
+    fn nat_size(&self) -> Natural {
+        Abs::abs(self.modulus().as_ref())
     }
 }
 
