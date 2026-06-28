@@ -15,8 +15,8 @@ use std::{cmp::Ordering, marker::PhantomData};
 #[derive(Debug, Clone)]
 pub struct Duad<Set: EnumeratedOrdFiniteSetSignature> {
     // must have p1 < p2
-    p1: Set::Elem,
-    p2: Set::Elem,
+    pub p1: Set::Elem,
+    pub p2: Set::Elem,
 }
 
 impl<Set: EnumeratedOrdFiniteSetSignature> TryFrom<FiniteSubsetByOrd<Set>> for Duad<Set> {
@@ -186,22 +186,15 @@ mod tests {
     use algebraeon_structures::MetaType;
 
     #[test]
-    fn test() {
+    fn test_enumeration() {
         let set = i32::structure().into_finite_subset(vec![1, 2, 3, 4, 5, 6]);
-
         for p in set.generate_all_elements() {
             println!("{:?}", p);
         }
 
         let duads = set.duads().unwrap();
-
         for d in duads.generate_all_elements() {
             println!("{:?}", d);
         }
-
-        println!(
-            "{:?}",
-            duads.enumeration_to_element(&Natural::from(15usize))
-        );
     }
 }

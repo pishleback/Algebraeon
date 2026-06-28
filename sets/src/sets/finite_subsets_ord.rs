@@ -179,6 +179,27 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> FiniteSubsetsByOrdStructur
             elems: self.set().unique(self.set().sort(elems)),
         }
     }
+
+    pub fn is_disjoint(
+        &self,
+        subset_1: &<Self as SetSignature>::Elem,
+        subset_2: &<Self as SetSignature>::Elem,
+    ) -> bool {
+        debug_assert!(self.validate_element(subset_1).is_ok());
+        debug_assert!(self.validate_element(subset_2).is_ok());
+        for item in self
+            .set()
+            .merge_sorted_and_unique(subset_1.elems.clone(), subset_2.elems.clone())
+        {
+            match item {
+                MergedUniqueSource::First(_) | MergedUniqueSource::Second(_) => {}
+                MergedUniqueSource::Both(_, _) => {
+                    return false;
+                }
+            }
+        }
+        true
+    }
 }
 
 #[cfg(test)]

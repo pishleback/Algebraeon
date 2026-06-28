@@ -90,6 +90,7 @@ name = "algebraeon-examples"
 version = "0.0.0"
 dependencies = [
  "algebraeon",
+ "algebraeon-combinatorics",
 ]
 
 [[package]]
