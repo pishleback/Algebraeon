@@ -77,7 +77,27 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> OrdSignature
     for FiniteSubsetsByOrdStructure<Set, SetB>
 {
     fn cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Ordering {
-        todo!()
+        // needs to be such that a < b iff self.element_to_enumeration(a) < self.element_to_enumeration(b)
+        // element_to_enumeration assigns a binary number with bits set based on the enumeration on the underlying set
+        // so here we need to implement a generalized binary number comparission
+        for item in self
+            .set()
+            .merge_sorted_and_unique(a.elems.iter().collect(), b.elems.iter().collect())
+            .collect::<Vec<_>>()
+            .into_iter()
+            .rev()
+        {
+            match item {
+                MergedUniqueSource::First(_) => {
+                    return Ordering::Greater;
+                }
+                MergedUniqueSource::Second(_) => {
+                    return Ordering::Less;
+                }
+                MergedUniqueSource::Both(_, _) => {}
+            }
+        }
+        Ordering::Equal
     }
 }
 
@@ -153,6 +173,10 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
 
 impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> FiniteSubsetsByOrdStructure<Set, SetB> {
     pub fn subset(&self, elems: Vec<Set::Elem>) -> <Self as SetSignature>::Elem {
+        for elem in &elems {
+            #[cfg(debug_assertions)]
+            self.set().validate_element(elem).unwrap();
+        }
         FiniteSubsetByOrd {
             elems: self.set().unique(self.set().sort(elems)),
         }
@@ -214,10 +238,34 @@ mod tests {
         let set = i32::structure().into_finite_subset(vec![1, 2, 3, 4]);
         let subsets = set.finite_subsets();
 
-        let x = subsets.subset(vec![3, 3, 3, 2, 2, 1]);
-        let y = subsets.subset(vec![1, 2, 3]);
+        // eq
+        assert!(subsets.equal(
+            &subsets.subset(vec![3, 3, 3, 2, 2, 1]),
+            &subsets.subset(vec![1, 2, 3])
+        ));
+        assert!(subsets.equal(&subsets.subset(vec![4]), &subsets.subset(vec![4])));
+        assert!(subsets.equal(&subsets.subset(vec![]), &subsets.subset(vec![])));
 
-        println!("{:?}", x);
-        println!("{:?}", y);
+        // lt
+        assert!(
+            subsets
+                .cmp(&subsets.subset(vec![]), &subsets.subset(vec![1]))
+                .is_lt()
+        );
+        assert!(
+            subsets
+                .cmp(&subsets.subset(vec![]), &subsets.subset(vec![1, 2, 3, 4]))
+                .is_lt()
+        );
+        assert!(
+            subsets
+                .cmp(&subsets.subset(vec![2, 3]), &subsets.subset(vec![3, 4]))
+                .is_lt()
+        );
+        assert!(
+            subsets
+                .cmp(&subsets.subset(vec![2, 3]), &subsets.subset(vec![1, 2]))
+                .is_gt()
+        );
     }
 }
