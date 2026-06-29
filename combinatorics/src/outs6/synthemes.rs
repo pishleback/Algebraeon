@@ -1,14 +1,17 @@
 use crate::outs6::*;
-use algebraeon_sets::sets::SetToFiniteSubsetsByOrdSignature;
+use algebraeon_sets::sets::{
+    FiniteSetToFinitelySupportedPermutationsStructure, FinitelySupportedPermutation,
+    SetToFiniteSubsetsByOrdSignature,
+};
 use algebraeon_structures::*;
 use std::{cmp::Ordering, marker::PhantomData};
 
 #[derive(Debug, Clone)]
-pub struct Syntheme<Set: EnumeratedOrdFiniteSetSignature> {
+pub struct Syntheme<Elem> {
     // must have duad_1 < duad_2 < duad_3 and all disjoint
-    pub duad_1: Duad<Set::Elem>,
-    pub duad_2: Duad<Set::Elem>,
-    pub duad_3: Duad<Set::Elem>,
+    pub duad_1: Duad<Elem>,
+    pub duad_2: Duad<Elem>,
+    pub duad_3: Duad<Elem>,
 }
 
 /// The 15-element set of duads on a 6-element set
@@ -56,7 +59,7 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> Signatu
 impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> SetSignature
     for SynthemesStructure<Set, SetB>
 {
-    type Elem = Syntheme<Set>;
+    type Elem = Syntheme<Set::Elem>;
 
     fn validate_element(&self, s: &Self::Elem) -> Result<(), String> {
         let duads = self.set().duads().unwrap();
@@ -297,7 +300,10 @@ impl<Set: EnumeratedOrdFiniteSetSignature> SynthemeOverlapResult<Set> {
 impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
     SynthemesStructure<Set, SetB>
 {
-    pub fn syntheme(&self, duads: [Duad<Set::Elem>; 3]) -> Result<Syntheme<Set>, &'static str> {
+    pub fn syntheme(
+        &self,
+        duads: [Duad<Set::Elem>; 3],
+    ) -> Result<Syntheme<Set::Elem>, &'static str> {
         let duads_set = self.set().duads().unwrap();
         let sorted_duads: [_; 3] = duads_set.sort(duads.into()).try_into().unwrap();
         if duads_set
@@ -323,7 +329,11 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
         }
     }
 
-    pub fn overlap(&self, s1: &Syntheme<Set>, s2: &Syntheme<Set>) -> SynthemeOverlapResult<Set> {
+    pub fn overlap(
+        &self,
+        s1: &Syntheme<Set::Elem>,
+        s2: &Syntheme<Set::Elem>,
+    ) -> SynthemeOverlapResult<Set> {
         let duads_set = self.set().duads().unwrap();
         let mut common = vec![];
         for item in duads_set.merge_sorted_and_unique(
@@ -349,6 +359,48 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
             }
         }
     }
+}
+
+pub trait SetPermutationAsSynthemePermutation<Set: EnumeratedOrdFiniteSetSignature>:
+    PermutationsSignature<Set>
+{
+    fn syntheme_image(&self, set_perm: &Self::Elem, duad: &Duad<Set::Elem>) -> Duad<Set::Elem> {
+        let set = self.set();
+        debug_assert_eq!(set.size(), Natural::from(6usize));
+        let synthemes = set.synthemes().unwrap();
+        synthemes
+            .syntheme(
+                self.image(set_perm, &duad.p1),
+                self.image(set_perm, &duad.p2),
+            )
+            .unwrap()
+    }
+
+    fn syntheme_action(
+        &self,
+        set_perm: &Self::Elem,
+    ) -> FinitelySupportedPermutation<Syntheme<Set::Elem>> {
+        let set = self.set();
+        debug_assert_eq!(set.size(), Natural::from(6usize));
+        let synthemes = set.synthemes().unwrap();
+        let syntheme_perms = synthemes.permutations();
+        syntheme_perms
+            .new_perm(
+                synthemes
+                    .list_all_elements_ordered()
+                    .into_iter()
+                    .map(|from| {
+                        let to = self.syntheme_image(set_perm, &from);
+                        (from, to)
+                    })
+                    .collect(),
+            )
+            .unwrap()
+    }
+}
+impl<Set: EnumeratedOrdFiniteSetSignature, SetPerms: PermutationsSignature<Set>>
+    SetPermutationAsSynthemePermutation<Set> for SetPerms
+{
 }
 
 #[cfg(test)]

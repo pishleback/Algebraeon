@@ -1,8 +1,7 @@
-use algebraeon_macros::signature_meta_trait;
 use algebraeon_sets::sets::{
     FiniteSetToFinitelySupportedPermutationsStructure, FiniteSubsetByOrd,
-    FinitelySupportedPermutation, FinitelySupportedPermutationsStructure,
-    SetToFiniteSubsetsByOrdSignature, SetToFixedSizeFiniteSubsetsByOrdSignature,
+    FinitelySupportedPermutation, SetToFiniteSubsetsByOrdSignature,
+    SetToFixedSizeFiniteSubsetsByOrdSignature,
 };
 use algebraeon_structures::*;
 use std::{cmp::Ordering, marker::PhantomData};
@@ -15,17 +14,17 @@ pub struct Duad<Point> {
     pub p2: Point,
 }
 
-impl<Point: MetaType> MetaType for Duad<Point>
-where
-    Point::Signature: EnumeratedOrdFiniteSetSignature,
-{
-    type Signature = DuadsStructure<Point::Signature, Point::Signature>;
+// impl<Point: MetaType> MetaType for Duad<Point>
+// where
+//     Point::Signature: EnumeratedOrdFiniteSetSignature,
+// {
+//     type Signature = DuadsStructure<Point::Signature, Point::Signature>;
 
-    fn structure() -> Self::Signature {
-        debug_assert_eq!(Point::structure().size(), Natural::from(6usize));
-        DuadsStructure::try_new(Point::structure()).unwrap()
-    }
-}
+//     fn structure() -> Self::Signature {
+//         debug_assert_eq!(Point::structure().size(), Natural::from(6usize));
+//         DuadsStructure::try_new(Point::structure()).unwrap()
+//     }
+// }
 
 impl<Set: EnumeratedOrdFiniteSetSignature> TryFrom<FiniteSubsetByOrd<Set>> for Duad<Set::Elem> {
     type Error = &'static str;
@@ -276,7 +275,6 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> DuadsSt
     }
 }
 
-#[signature_meta_trait]
 pub trait SetPermutationAsDuadPermutation<Set: EnumeratedOrdFiniteSetSignature>:
     PermutationsSignature<Set>
 {
