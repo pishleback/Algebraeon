@@ -364,15 +364,20 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
 pub trait SetPermutationAsSynthemePermutation<Set: EnumeratedOrdFiniteSetSignature>:
     PermutationsSignature<Set>
 {
-    fn syntheme_image(&self, set_perm: &Self::Elem, duad: &Duad<Set::Elem>) -> Duad<Set::Elem> {
+    fn syntheme_image(
+        &self,
+        set_perm: &Self::Elem,
+        syntheme: &Syntheme<Set::Elem>,
+    ) -> Syntheme<Set::Elem> {
         let set = self.set();
         debug_assert_eq!(set.size(), Natural::from(6usize));
         let synthemes = set.synthemes().unwrap();
         synthemes
-            .syntheme(
-                self.image(set_perm, &duad.p1),
-                self.image(set_perm, &duad.p2),
-            )
+            .syntheme([
+                self.duad_image(set_perm, &syntheme.duad_1),
+                self.duad_image(set_perm, &syntheme.duad_2),
+                self.duad_image(set_perm, &syntheme.duad_3),
+            ])
             .unwrap()
     }
 
@@ -405,6 +410,8 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetPerms: PermutationsSignature<Set>>
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+
     use super::*;
     use algebraeon_sets::sets::SetToFiniteSubsetByOrdSignature;
     use algebraeon_structures::MetaType;
@@ -476,6 +483,20 @@ mod tests {
                         .unwrap()
                 )
                 .is_equal()
+        );
+    }
+
+    #[test]
+    fn test_permutation() {
+        let set = i32::structure().into_finite_subset(vec![1, 2, 3, 4, 5, 6]);
+        let set_perms = set.permutations();
+        let synthemes = set.synthemes().unwrap();
+        let syntheme_perms = synthemes.permutations();
+        assert_eq!(
+            syntheme_perms.cycle_shape(
+                &set_perms.syntheme_action(&set_perms.new_cycle(vec![1, 2, 3]).unwrap())
+            ),
+            HashMap::from([(3, 5)])
         );
     }
 }

@@ -3,13 +3,13 @@ use algebraeon_structures::*;
 use std::{cmp::Ordering, marker::PhantomData};
 
 #[derive(Debug, Clone)]
-pub struct Pentad<Set: EnumeratedOrdFiniteSetSignature> {
+pub struct Pentad<Elem> {
     // must have syntheme_1 < syntheme_2 < syntheme_3 < syntheme_4 < syntheme_5 and all disjoint
-    syntheme_1: Syntheme<Set>,
-    syntheme_2: Syntheme<Set>,
-    syntheme_3: Syntheme<Set>,
-    syntheme_4: Syntheme<Set>,
-    syntheme_5: Syntheme<Set>,
+    syntheme_1: Syntheme<Elem>,
+    syntheme_2: Syntheme<Elem>,
+    syntheme_3: Syntheme<Elem>,
+    syntheme_4: Syntheme<Elem>,
+    syntheme_5: Syntheme<Elem>,
 }
 
 /// The 15-element set of duads on a 6-element set
@@ -57,7 +57,7 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> Signatu
 impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> SetSignature
     for PentadsStructure<Set, SetB>
 {
-    type Elem = Pentad<Set>;
+    type Elem = Pentad<Set::Elem>;
 
     fn validate_element(&self, p: &Self::Elem) -> Result<(), String> {
         let synthemes = self.set().synthemes().unwrap();
