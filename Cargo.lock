@@ -59,6 +59,7 @@ name = "algebraeon-combinatorics"
 version = "0.0.0"
 dependencies = [
  "algebraeon-groups",
+ "algebraeon-macros",
  "algebraeon-rings",
  "algebraeon-sets",
  "algebraeon-structures",

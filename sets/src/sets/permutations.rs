@@ -94,11 +94,33 @@ impl<Set: SetSignature, SetB: BorrowedStructure<Set>>
             set,
         }
     }
+}
 
-    pub fn set(&self) -> &Set {
-        self.set.borrow()
+pub trait SetToFinitelySupportedPermutationsStructure: SetSignature {
+    fn finitely_supported_permutations(
+        &self,
+    ) -> FinitelySupportedPermutationsStructure<Self, &Self> {
+        FinitelySupportedPermutationsStructure::new(self)
+    }
+
+    fn into_finitely_supported_permutations(
+        self,
+    ) -> FinitelySupportedPermutationsStructure<Self, Self> {
+        FinitelySupportedPermutationsStructure::new(self)
     }
 }
+impl<Set: SetSignature> SetToFinitelySupportedPermutationsStructure for Set {}
+
+pub trait FiniteSetToFinitelySupportedPermutationsStructure: FiniteSetSignature {
+    fn permutations(&self) -> FinitelySupportedPermutationsStructure<Self, &Self> {
+        FinitelySupportedPermutationsStructure::new(self)
+    }
+
+    fn into_permutations(self) -> FinitelySupportedPermutationsStructure<Self, Self> {
+        FinitelySupportedPermutationsStructure::new(self)
+    }
+}
+impl<Set: FiniteSetSignature> FiniteSetToFinitelySupportedPermutationsStructure for Set {}
 
 impl<Set: SetSignature, SetB: BorrowedStructure<Set>> Signature
     for FinitelySupportedPermutationsStructure<Set, SetB>
@@ -217,6 +239,10 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>>
 impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> PermutationsSignature<Set>
     for FinitelySupportedPermutationsStructure<Set, SetB>
 {
+    fn set(&self) -> &Set {
+        self.set.borrow()
+    }
+
     fn new_cycle(&self, cycle: Vec<Set::Elem>) -> Result<Self::Elem, ()> {
         let sorted_enumerated_cycle = self
             .set()
@@ -557,7 +583,6 @@ impl<Set: OrdSignature + FiniteSetSignature, SetB: BorrowedStructure<Set>> Count
     fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
         let all_elems = self.set().list_all_elements();
         let n = all_elems.len();
-
         (0..n)
             .permutations(n)
             .map(|perm| {

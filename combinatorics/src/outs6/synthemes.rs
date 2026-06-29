@@ -6,9 +6,9 @@ use std::{cmp::Ordering, marker::PhantomData};
 #[derive(Debug, Clone)]
 pub struct Syntheme<Set: EnumeratedOrdFiniteSetSignature> {
     // must have duad_1 < duad_2 < duad_3 and all disjoint
-    pub duad_1: Duad<Set>,
-    pub duad_2: Duad<Set>,
-    pub duad_3: Duad<Set>,
+    pub duad_1: Duad<Set::Elem>,
+    pub duad_2: Duad<Set::Elem>,
+    pub duad_3: Duad<Set::Elem>,
 }
 
 /// The 15-element set of duads on a 6-element set
@@ -258,6 +258,99 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
     }
 }
 
+pub enum SynthemeOverlapResult<Set: EnumeratedOrdFiniteSetSignature> {
+    Equal,
+    Disjoint,
+    UniqueCommonDuad(Duad<Set::Elem>),
+}
+
+impl<Set: EnumeratedOrdFiniteSetSignature> SynthemeOverlapResult<Set> {
+    pub fn is_equal(&self) -> bool {
+        match self {
+            SynthemeOverlapResult::Equal => true,
+            SynthemeOverlapResult::Disjoint | SynthemeOverlapResult::UniqueCommonDuad(_) => false,
+        }
+    }
+
+    pub fn is_disjoint(&self) -> bool {
+        match self {
+            SynthemeOverlapResult::Disjoint => true,
+            SynthemeOverlapResult::Equal | SynthemeOverlapResult::UniqueCommonDuad(_) => false,
+        }
+    }
+
+    pub fn unwrap_common_duad(&self) -> &Duad<Set::Elem> {
+        match self {
+            SynthemeOverlapResult::Equal | SynthemeOverlapResult::Disjoint => panic!(),
+            SynthemeOverlapResult::UniqueCommonDuad(duad) => duad,
+        }
+    }
+
+    pub fn into_unwrap_common_duad(self) -> Duad<Set::Elem> {
+        match self {
+            SynthemeOverlapResult::Equal | SynthemeOverlapResult::Disjoint => panic!(),
+            SynthemeOverlapResult::UniqueCommonDuad(duad) => duad,
+        }
+    }
+}
+
+impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
+    SynthemesStructure<Set, SetB>
+{
+    pub fn syntheme(&self, duads: [Duad<Set::Elem>; 3]) -> Result<Syntheme<Set>, &'static str> {
+        let duads_set = self.set().duads().unwrap();
+        let sorted_duads: [_; 3] = duads_set.sort(duads.into()).try_into().unwrap();
+        if duads_set
+            .overlap(&sorted_duads[0], &sorted_duads[1])
+            .is_disjoint()
+            && duads_set
+                .overlap(&sorted_duads[0], &sorted_duads[2])
+                .is_disjoint()
+            && duads_set
+                .overlap(&sorted_duads[1], &sorted_duads[2])
+                .is_disjoint()
+        {
+            let mut sorted_duads = sorted_duads.into_iter();
+            let syntheme = Syntheme {
+                duad_1: sorted_duads.next().unwrap(),
+                duad_2: sorted_duads.next().unwrap(),
+                duad_3: sorted_duads.next().unwrap(),
+            };
+            debug_assert!(self.is_element(&syntheme));
+            Ok(syntheme)
+        } else {
+            Err("duads are not disjoint")
+        }
+    }
+
+    pub fn overlap(&self, s1: &Syntheme<Set>, s2: &Syntheme<Set>) -> SynthemeOverlapResult<Set> {
+        let duads_set = self.set().duads().unwrap();
+        let mut common = vec![];
+        for item in duads_set.merge_sorted_and_unique(
+            vec![&s1.duad_1, &s1.duad_2, &s1.duad_3],
+            vec![&s2.duad_1, &s2.duad_2, &s2.duad_3],
+        ) {
+            match item {
+                MergedUniqueSource::First(_) | MergedUniqueSource::Second(_) => {}
+                MergedUniqueSource::Both(d1, d2) => {
+                    debug_assert!(duads_set.equal(d1, d2));
+                    common.push(d1);
+                }
+            }
+        }
+        match common.len() {
+            0 => SynthemeOverlapResult::Disjoint,
+            1 => {
+                SynthemeOverlapResult::UniqueCommonDuad(common.into_iter().next().unwrap().clone())
+            }
+            3 => SynthemeOverlapResult::Equal,
+            _ => {
+                unreachable!()
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -267,10 +360,6 @@ mod tests {
     #[test]
     fn test_enumeration() {
         let set = i32::structure().into_finite_subset(vec![1, 2, 3, 4, 5, 6]);
-        for p in set.generate_all_elements() {
-            println!("{:?}", p);
-        }
-
         let synthemes_set = set.synthemes().unwrap();
         let synthemes = synthemes_set.list_all_elements_ordered();
         assert_eq!(synthemes.len(), 15);
@@ -307,6 +396,34 @@ mod tests {
             synthemes_set
                 .enumeration_to_element(&Natural::from(15usize))
                 .is_none()
+        );
+    }
+
+    #[test]
+    fn test_overlap() {
+        let set = i32::structure().into_finite_subset(vec![1, 2, 3, 4, 5, 6]);
+        let duads_set = set.duads().unwrap();
+        let synthemes_set = set.synthemes().unwrap();
+
+        assert!(
+            synthemes_set
+                .overlap(
+                    &synthemes_set
+                        .syntheme([
+                            duads_set.duad(1, 2).unwrap(),
+                            duads_set.duad(3, 4).unwrap(),
+                            duads_set.duad(5, 6).unwrap(),
+                        ])
+                        .unwrap(),
+                    &synthemes_set
+                        .syntheme([
+                            duads_set.duad(1, 2).unwrap(),
+                            duads_set.duad(3, 4).unwrap(),
+                            duads_set.duad(5, 6).unwrap(),
+                        ])
+                        .unwrap()
+                )
+                .is_equal()
         );
     }
 }

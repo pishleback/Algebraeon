@@ -1,50 +1,59 @@
-//! Given a 6-element set make the following definitions
-//!  - A duad is a 2-element subset
-//!  - A syntheme is an unordered set of 3 disjoint duads
-//!  - A pentad is an unordered set of 5 disjoint synthemes
-//!
-//! Then there are 6 pentads, and any permutation of the 6 points induces a permutation of the 6 pentads via an outer automorphism of S6
-
+use algebraeon_macros::signature_meta_trait;
 use algebraeon_sets::sets::{
-    FiniteSubsetByOrd, SetToFiniteSubsetsByOrdSignature, SetToFixedSizeFiniteSubsetsByOrdSignature,
+    FiniteSetToFinitelySupportedPermutationsStructure, FiniteSubsetByOrd,
+    FinitelySupportedPermutation, FinitelySupportedPermutationsStructure,
+    SetToFiniteSubsetsByOrdSignature, SetToFixedSizeFiniteSubsetsByOrdSignature,
 };
 use algebraeon_structures::*;
 use std::{cmp::Ordering, marker::PhantomData};
 
 /// A 2-element subset of a 6-element set
 #[derive(Debug, Clone)]
-pub struct Duad<Set: EnumeratedOrdFiniteSetSignature> {
+pub struct Duad<Point> {
     // must have p1 < p2
-    pub p1: Set::Elem,
-    pub p2: Set::Elem,
+    pub p1: Point,
+    pub p2: Point,
 }
 
-impl<Set: EnumeratedOrdFiniteSetSignature> TryFrom<FiniteSubsetByOrd<Set>> for Duad<Set> {
+impl<Point: MetaType> MetaType for Duad<Point>
+where
+    Point::Signature: EnumeratedOrdFiniteSetSignature,
+{
+    type Signature = DuadsStructure<Point::Signature, Point::Signature>;
+
+    fn structure() -> Self::Signature {
+        debug_assert_eq!(Point::structure().size(), Natural::from(6usize));
+        DuadsStructure::try_new(Point::structure()).unwrap()
+    }
+}
+
+impl<Set: EnumeratedOrdFiniteSetSignature> TryFrom<FiniteSubsetByOrd<Set>> for Duad<Set::Elem> {
     type Error = &'static str;
 
     fn try_from(subset: FiniteSubsetByOrd<Set>) -> Result<Self, Self::Error> {
         let mut elems = subset.elems.into_iter();
+        // the elems of subset should be ordered and distinct already
         let duad = Self {
-            p1: elems.next().ok_or("foo")?,
-            p2: elems.next().ok_or("foo")?,
+            p1: elems.next().ok_or("subset not big enough")?,
+            p2: elems.next().ok_or("subset not big enough")?,
         };
         if elems.next().is_some() {
-            return Err("foobar");
+            return Err("subset too big");
         }
         Ok(duad)
     }
 }
 
-impl<Set: EnumeratedOrdFiniteSetSignature> From<Duad<Set>> for FiniteSubsetByOrd<Set> {
-    fn from(val: Duad<Set>) -> Self {
+impl<Set: EnumeratedOrdFiniteSetSignature> From<Duad<Set::Elem>> for FiniteSubsetByOrd<Set> {
+    fn from(val: Duad<Set::Elem>) -> Self {
         FiniteSubsetByOrd {
             elems: vec![val.p1, val.p2],
         }
     }
 }
 
-impl<Set: EnumeratedOrdFiniteSetSignature> From<&Duad<Set>> for FiniteSubsetByOrd<Set> {
-    fn from(val: &Duad<Set>) -> Self {
+impl<Set: EnumeratedOrdFiniteSetSignature> From<&Duad<Set::Elem>> for FiniteSubsetByOrd<Set> {
+    fn from(val: &Duad<Set::Elem>) -> Self {
         FiniteSubsetByOrd {
             elems: vec![val.p1.clone(), val.p2.clone()],
         }
@@ -94,7 +103,7 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> Signatu
 impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> SetSignature
     for DuadsStructure<Set, SetB>
 {
-    type Elem = Duad<Set>;
+    type Elem = Duad<Set::Elem>;
 
     fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
         if !self.set().cmp(&x.p1, &x.p2).is_lt() {
@@ -179,10 +188,142 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
     }
 }
 
+pub enum DuadOverlapResult<Set: EnumeratedOrdFiniteSetSignature> {
+    Equal,
+    Disjoint,
+    UniqueCommonPoint(Set::Elem),
+}
+
+impl<Set: EnumeratedOrdFiniteSetSignature> DuadOverlapResult<Set> {
+    pub fn is_equal(&self) -> bool {
+        match self {
+            DuadOverlapResult::Equal => true,
+            DuadOverlapResult::Disjoint | DuadOverlapResult::UniqueCommonPoint(_) => false,
+        }
+    }
+
+    pub fn is_disjoint(&self) -> bool {
+        match self {
+            DuadOverlapResult::Disjoint => true,
+            DuadOverlapResult::Equal | DuadOverlapResult::UniqueCommonPoint(_) => false,
+        }
+    }
+
+    pub fn unwrap_common_point(&self) -> &Set::Elem {
+        match self {
+            DuadOverlapResult::Equal | DuadOverlapResult::Disjoint => panic!(),
+            DuadOverlapResult::UniqueCommonPoint(point) => point,
+        }
+    }
+
+    pub fn into_unwrap_common_point(self) -> Set::Elem {
+        match self {
+            DuadOverlapResult::Equal | DuadOverlapResult::Disjoint => panic!(),
+            DuadOverlapResult::UniqueCommonPoint(point) => point,
+        }
+    }
+}
+
+impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> DuadsStructure<Set, SetB> {
+    pub fn duad(
+        &self,
+        point_1: Set::Elem,
+        point_2: Set::Elem,
+    ) -> Result<Duad<Set::Elem>, &'static str> {
+        match self.set().cmp(&point_1, &point_2) {
+            Ordering::Equal => Err("points are not distinct"),
+            Ordering::Less => {
+                let duad = Duad {
+                    p1: point_1,
+                    p2: point_2,
+                };
+                debug_assert!(self.is_element(&duad));
+                Ok(duad)
+            }
+            Ordering::Greater => {
+                let duad = Duad {
+                    p1: point_2,
+                    p2: point_1,
+                };
+                debug_assert!(self.is_element(&duad));
+                Ok(duad)
+            }
+        }
+    }
+
+    pub fn overlap(&self, d1: &Duad<Set::Elem>, d2: &Duad<Set::Elem>) -> DuadOverlapResult<Set> {
+        let mut common = vec![];
+        for item in self
+            .set()
+            .merge_sorted_and_unique(vec![&d1.p1, &d1.p2], vec![&d2.p1, &d2.p2])
+        {
+            match item {
+                MergedUniqueSource::First(_) | MergedUniqueSource::Second(_) => {}
+                MergedUniqueSource::Both(p1, p2) => {
+                    debug_assert!(self.set().equal(p1, p2));
+                    common.push(p1);
+                }
+            }
+        }
+        match common.len() {
+            0 => DuadOverlapResult::Disjoint,
+            1 => DuadOverlapResult::UniqueCommonPoint(common.into_iter().next().unwrap().clone()),
+            2 => DuadOverlapResult::Equal,
+            _ => {
+                unreachable!()
+            }
+        }
+    }
+}
+
+#[signature_meta_trait]
+pub trait SetPermutationAsDuadPermutation<Set: EnumeratedOrdFiniteSetSignature>:
+    PermutationsSignature<Set>
+{
+    fn duad_image(&self, set_perm: &Self::Elem, duad: &Duad<Set::Elem>) -> Duad<Set::Elem> {
+        let set = self.set();
+        debug_assert_eq!(set.size(), Natural::from(6usize));
+        let duads = set.duads().unwrap();
+        duads
+            .duad(
+                self.image(set_perm, &duad.p1),
+                self.image(set_perm, &duad.p2),
+            )
+            .unwrap()
+    }
+
+    fn duad_action(&self, set_perm: &Self::Elem) -> FinitelySupportedPermutation<Duad<Set::Elem>> {
+        let set = self.set();
+        debug_assert_eq!(set.size(), Natural::from(6usize));
+        let duads = set.duads().unwrap();
+        let duad_perms = duads.permutations();
+        duad_perms
+            .new_perm(
+                duads
+                    .list_all_elements_ordered()
+                    .into_iter()
+                    .map(|from| {
+                        let to = self.duad_image(set_perm, &from);
+                        (from, to)
+                    })
+                    .collect(),
+            )
+            .unwrap()
+    }
+}
+impl<Set: EnumeratedOrdFiniteSetSignature, SetPerms: PermutationsSignature<Set>>
+    SetPermutationAsDuadPermutation<Set> for SetPerms
+{
+}
+
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+
     use super::*;
-    use algebraeon_sets::sets::SetToFiniteSubsetByOrdSignature;
+    use algebraeon_sets::sets::{
+        FiniteSetToFinitelySupportedPermutationsStructure, SetToFiniteSubsetByOrdSignature,
+    };
     use algebraeon_structures::MetaType;
 
     #[test]
@@ -196,5 +337,18 @@ mod tests {
         for d in duads.generate_all_elements() {
             println!("{:?}", d);
         }
+    }
+
+    #[test]
+    fn test_permutation() {
+        let set = i32::structure().into_finite_subset(vec![1, 2, 3, 4, 5, 6]);
+        let set_perms = set.permutations();
+        let duads = set.duads().unwrap();
+        let duad_perms = duads.permutations();
+        assert_eq!(
+            duad_perms
+                .cycle_shape(&set_perms.duad_action(&set_perms.new_cycle(vec![1, 2, 3]).unwrap())),
+            HashMap::from([(3, 4)])
+        );
     }
 }
