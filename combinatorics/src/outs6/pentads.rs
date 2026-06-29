@@ -1,15 +1,15 @@
 use crate::outs6::*;
+use algebraeon_macros::signature_meta_trait;
+use algebraeon_sets::sets::{
+    FiniteSetToFinitelySupportedPermutationsStructure, FinitelySupportedPermutation,
+};
 use algebraeon_structures::*;
 use std::{cmp::Ordering, marker::PhantomData};
 
 #[derive(Debug, Clone)]
 pub struct Pentad<Elem> {
     // must have syntheme_1 < syntheme_2 < syntheme_3 < syntheme_4 < syntheme_5 and all disjoint
-    syntheme_1: Syntheme<Elem>,
-    syntheme_2: Syntheme<Elem>,
-    syntheme_3: Syntheme<Elem>,
-    syntheme_4: Syntheme<Elem>,
-    syntheme_5: Syntheme<Elem>,
+    synthemes: [Syntheme<Elem>; 5],
 }
 
 /// The 15-element set of duads on a 6-element set
@@ -61,25 +61,16 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> SetSign
 
     fn validate_element(&self, p: &Self::Elem) -> Result<(), String> {
         let synthemes = self.set().synthemes().unwrap();
-        synthemes.validate_element(&p.syntheme_1)?;
-        synthemes.validate_element(&p.syntheme_2)?;
-        synthemes.validate_element(&p.syntheme_3)?;
-        synthemes.validate_element(&p.syntheme_4)?;
-        synthemes.validate_element(&p.syntheme_5)?;
-        let p_synthemes = [
-            &p.syntheme_1,
-            &p.syntheme_2,
-            &p.syntheme_3,
-            &p.syntheme_4,
-            &p.syntheme_5,
-        ];
-        if !synthemes.is_sorted(&p_synthemes) {
+        for s in &p.synthemes {
+            synthemes.validate_element(s)?;
+        }
+        if !synthemes.is_sorted(&p.synthemes) {
             return Err("synthemes are not sorted".to_string());
         }
         for i in 0..5 {
             for j in (i + 1)..5 {
                 if !synthemes
-                    .overlap(&p_synthemes[i], &p_synthemes[j])
+                    .overlap(&p.synthemes[i], &p.synthemes[j])
                     .is_disjoint()
                 {
                     return Err("synthemes are not disjoint".to_string());
@@ -95,11 +86,7 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> EqSigna
 {
     fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
         let synthemes = self.set().synthemes().unwrap();
-        synthemes.equal(&a.syntheme_1, &b.syntheme_1)
-            && synthemes.equal(&a.syntheme_2, &b.syntheme_2)
-            && synthemes.equal(&a.syntheme_3, &b.syntheme_3)
-            && synthemes.equal(&a.syntheme_4, &b.syntheme_4)
-            && synthemes.equal(&a.syntheme_5, &b.syntheme_5)
+        (0..5).all(|i| synthemes.equal(&a.synthemes[i], &b.synthemes[i]))
     }
 }
 
@@ -158,7 +145,79 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
                 .unwrap()
         };
 
-        let mut pentads = vec![];
+        let root_pentad = Pentad {
+            synthemes: [
+                Syntheme {
+                    duads: [
+                        Duad {
+                            points: [p(0), p(1)],
+                        },
+                        Duad {
+                            points: [p(3), p(4)],
+                        },
+                        Duad {
+                            points: [p(2), p(5)],
+                        },
+                    ],
+                },
+                Syntheme {
+                    duads: [
+                        Duad {
+                            points: [p(0), p(2)],
+                        },
+                        Duad {
+                            points: [p(1), p(3)],
+                        },
+                        Duad {
+                            points: [p(4), p(5)],
+                        },
+                    ],
+                },
+                Syntheme {
+                    duads: [
+                        Duad {
+                            points: [p(0), p(3)],
+                        },
+                        Duad {
+                            points: [p(2), p(4)],
+                        },
+                        Duad {
+                            points: [p(1), p(5)],
+                        },
+                    ],
+                },
+                Syntheme {
+                    duads: [
+                        Duad {
+                            points: [p(1), p(2)],
+                        },
+                        Duad {
+                            points: [p(0), p(4)],
+                        },
+                        Duad {
+                            points: [p(3), p(5)],
+                        },
+                    ],
+                },
+                Syntheme {
+                    duads: [
+                        Duad {
+                            points: [p(2), p(3)],
+                        },
+                        Duad {
+                            points: [p(1), p(4)],
+                        },
+                        Duad {
+                            points: [p(0), p(5)],
+                        },
+                    ],
+                },
+            ],
+        };
+        debug_assert!(self.is_element(&root_pentad));
+
+        let mut pentads = vec![root_pentad];
+
         todo!();
 
         debug_assert_eq!(pentads.len(), 6);
@@ -190,8 +249,84 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
     }
 }
 
+impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
+    PentadsStructure<Set, SetB>
+{
+    pub fn pentad(
+        &self,
+        synthemes: [Syntheme<Set::Elem>; 5],
+    ) -> Result<Pentad<Set::Elem>, &'static str> {
+        let synthemes_set = self.set().synthemes().unwrap();
+        for i in 0..5 {
+            for j in (i + 1)..5 {
+                if !synthemes_set
+                    .overlap(&synthemes[i], &synthemes[j])
+                    .is_disjoint()
+                {
+                    return Err("not disjoint");
+                }
+            }
+        }
+        let pentad = Pentad {
+            synthemes: synthemes_set.sort(synthemes.into()).try_into().unwrap(),
+        };
+        debug_assert!(self.is_element(&pentad));
+        Ok(pentad)
+    }
+}
+
+#[signature_meta_trait]
+pub trait SetPermutationAsPentadPermutation<Set: EnumeratedOrdFiniteSetSignature>:
+    PermutationsSignature<Set>
+{
+    fn pentad_image(&self, set_perm: &Self::Elem, pentad: &Pentad<Set::Elem>) -> Pentad<Set::Elem> {
+        let set = self.set();
+        debug_assert_eq!(set.size(), Natural::from(6usize));
+        let pentads = set.pentads().unwrap();
+        pentads
+            .pentad(
+                pentad
+                    .synthemes
+                    .iter()
+                    .map(|s| self.syntheme_image(set_perm, s))
+                    .collect::<Vec<_>>()
+                    .try_into()
+                    .unwrap(),
+            )
+            .unwrap()
+    }
+
+    fn pentad_action(
+        &self,
+        set_perm: &Self::Elem,
+    ) -> FinitelySupportedPermutation<Pentad<Set::Elem>> {
+        let set = self.set();
+        debug_assert_eq!(set.size(), Natural::from(6usize));
+        let pentads = set.pentads().unwrap();
+        let pentads_perms = pentads.permutations();
+        pentads_perms
+            .new_perm(
+                pentads
+                    .list_all_elements()
+                    .into_iter()
+                    .map(|from| {
+                        let to = self.pentad_image(set_perm, &from);
+                        (from, to)
+                    })
+                    .collect(),
+            )
+            .unwrap()
+    }
+}
+impl<Set: EnumeratedOrdFiniteSetSignature, SetPerms: PermutationsSignature<Set>>
+    SetPermutationAsPentadPermutation<Set> for SetPerms
+{
+}
+
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+
     use super::*;
     use algebraeon_sets::sets::SetToFiniteSubsetByOrdSignature;
     use algebraeon_structures::MetaType;
@@ -204,6 +339,7 @@ mod tests {
         assert_eq!(pentads.len(), 6);
         assert_eq!(pentads_set.size(), Natural::from(6usize));
 
+        debug_assert_eq!(pentads.len(), 6);
         // pentads are all valid
         for s in &pentads {
             println!("{:?}", s);
@@ -235,6 +371,19 @@ mod tests {
             pentads_set
                 .enumeration_to_element(&Natural::from(6usize))
                 .is_none()
+        );
+    }
+
+    #[test]
+    fn test_permutation() {
+        let set = i32::structure().into_finite_subset(vec![1, 2, 3, 4, 5, 6]);
+        let set_perms = set.permutations();
+        let pentads = set.pentads().unwrap();
+        let pentad_perms = pentads.permutations();
+        assert_eq!(
+            pentad_perms
+                .cycle_shape(&set_perms.pentad_action(&set_perms.new_cycle(vec![1, 2]).unwrap())),
+            HashMap::from([(2, 3)])
         );
     }
 }

@@ -491,7 +491,8 @@ pub mod examples {
     use crate::composition_table::group::MetaGenerateFiniteSubgroupTableSignature;
     use crate::free_group::todd_coxeter::FinitelyGeneratedGroupPresentation;
     use algebraeon_sets::sets::{
-        FiniteSubsetByHashStructure, FinitelySupportedPermutation, FinitelySupportedPermutationsStructure,
+        FiniteSubsetByHashStructure, FinitelySupportedPermutation,
+        FinitelySupportedPermutationsStructure,
     };
     use algebraeon_structures::*;
 

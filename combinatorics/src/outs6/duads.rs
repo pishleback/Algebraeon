@@ -1,3 +1,4 @@
+use algebraeon_macros::signature_meta_trait;
 use algebraeon_sets::sets::{
     FiniteSetToFinitelySupportedPermutationsStructure, FiniteSubsetByOrd,
     FinitelySupportedPermutation, SetToFiniteSubsetsByOrdSignature,
@@ -10,21 +11,20 @@ use std::{cmp::Ordering, marker::PhantomData};
 #[derive(Debug, Clone)]
 pub struct Duad<Point> {
     // must have p1 < p2
-    pub p1: Point,
-    pub p2: Point,
+    pub points: [Point; 2],
 }
 
-// impl<Point: MetaType> MetaType for Duad<Point>
-// where
-//     Point::Signature: EnumeratedOrdFiniteSetSignature,
-// {
-//     type Signature = DuadsStructure<Point::Signature, Point::Signature>;
+impl<Point: MetaType> MetaType for Duad<Point>
+where
+    Point::Signature: EnumeratedOrdFiniteSetSignature,
+{
+    type Signature = DuadsStructure<Point::Signature, Point::Signature>;
 
-//     fn structure() -> Self::Signature {
-//         debug_assert_eq!(Point::structure().size(), Natural::from(6usize));
-//         DuadsStructure::try_new(Point::structure()).unwrap()
-//     }
-// }
+    fn structure() -> Self::Signature {
+        debug_assert_eq!(Point::structure().size(), Natural::from(6usize));
+        DuadsStructure::try_new(Point::structure()).unwrap()
+    }
+}
 
 impl<Set: EnumeratedOrdFiniteSetSignature> TryFrom<FiniteSubsetByOrd<Set>> for Duad<Set::Elem> {
     type Error = &'static str;
@@ -33,8 +33,10 @@ impl<Set: EnumeratedOrdFiniteSetSignature> TryFrom<FiniteSubsetByOrd<Set>> for D
         let mut elems = subset.elems.into_iter();
         // the elems of subset should be ordered and distinct already
         let duad = Self {
-            p1: elems.next().ok_or("subset not big enough")?,
-            p2: elems.next().ok_or("subset not big enough")?,
+            points: [
+                elems.next().ok_or("subset not big enough")?,
+                elems.next().ok_or("subset not big enough")?,
+            ],
         };
         if elems.next().is_some() {
             return Err("subset too big");
@@ -44,17 +46,17 @@ impl<Set: EnumeratedOrdFiniteSetSignature> TryFrom<FiniteSubsetByOrd<Set>> for D
 }
 
 impl<Set: EnumeratedOrdFiniteSetSignature> From<Duad<Set::Elem>> for FiniteSubsetByOrd<Set> {
-    fn from(val: Duad<Set::Elem>) -> Self {
+    fn from(duad: Duad<Set::Elem>) -> Self {
         FiniteSubsetByOrd {
-            elems: vec![val.p1, val.p2],
+            elems: duad.points.to_vec(),
         }
     }
 }
 
 impl<Set: EnumeratedOrdFiniteSetSignature> From<&Duad<Set::Elem>> for FiniteSubsetByOrd<Set> {
-    fn from(val: &Duad<Set::Elem>) -> Self {
+    fn from(duad: &Duad<Set::Elem>) -> Self {
         FiniteSubsetByOrd {
-            elems: vec![val.p1.clone(), val.p2.clone()],
+            elems: duad.points.to_vec(),
         }
     }
 }
@@ -104,8 +106,8 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> SetSign
 {
     type Elem = Duad<Set::Elem>;
 
-    fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
-        if !self.set().cmp(&x.p1, &x.p2).is_lt() {
+    fn validate_element(&self, duad: &Self::Elem) -> Result<(), String> {
+        if !self.set().cmp(&duad.points[0], &duad.points[1]).is_lt() {
             return Err("invalid duad".to_string());
         }
         Ok(())
@@ -233,16 +235,14 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> DuadsSt
             Ordering::Equal => Err("points are not distinct"),
             Ordering::Less => {
                 let duad = Duad {
-                    p1: point_1,
-                    p2: point_2,
+                    points: [point_1, point_2],
                 };
                 debug_assert!(self.is_element(&duad));
                 Ok(duad)
             }
             Ordering::Greater => {
                 let duad = Duad {
-                    p1: point_2,
-                    p2: point_1,
+                    points: [point_2, point_1],
                 };
                 debug_assert!(self.is_element(&duad));
                 Ok(duad)
@@ -252,10 +252,10 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> DuadsSt
 
     pub fn overlap(&self, d1: &Duad<Set::Elem>, d2: &Duad<Set::Elem>) -> DuadOverlapResult<Set> {
         let mut common = vec![];
-        for item in self
-            .set()
-            .merge_sorted_and_unique(vec![&d1.p1, &d1.p2], vec![&d2.p1, &d2.p2])
-        {
+        for item in self.set().merge_sorted_and_unique(
+            vec![&d1.points[0], &d1.points[1]],
+            vec![&d2.points[0], &d2.points[1]],
+        ) {
             match item {
                 MergedUniqueSource::First(_) | MergedUniqueSource::Second(_) => {}
                 MergedUniqueSource::Both(p1, p2) => {
@@ -275,6 +275,7 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> DuadsSt
     }
 }
 
+#[signature_meta_trait]
 pub trait SetPermutationAsDuadPermutation<Set: EnumeratedOrdFiniteSetSignature>:
     PermutationsSignature<Set>
 {
@@ -284,8 +285,8 @@ pub trait SetPermutationAsDuadPermutation<Set: EnumeratedOrdFiniteSetSignature>:
         let duads = set.duads().unwrap();
         duads
             .duad(
-                self.image(set_perm, &duad.p1),
-                self.image(set_perm, &duad.p2),
+                self.image(set_perm, &duad.points[0]),
+                self.image(set_perm, &duad.points[1]),
             )
             .unwrap()
     }
@@ -298,7 +299,7 @@ pub trait SetPermutationAsDuadPermutation<Set: EnumeratedOrdFiniteSetSignature>:
         duad_perms
             .new_perm(
                 duads
-                    .list_all_elements_ordered()
+                    .list_all_elements()
                     .into_iter()
                     .map(|from| {
                         let to = self.duad_image(set_perm, &from);

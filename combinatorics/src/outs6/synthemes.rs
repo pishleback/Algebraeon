@@ -1,4 +1,5 @@
 use crate::outs6::*;
+use algebraeon_macros::signature_meta_trait;
 use algebraeon_sets::sets::{
     FiniteSetToFinitelySupportedPermutationsStructure, FinitelySupportedPermutation,
     SetToFiniteSubsetsByOrdSignature,
@@ -9,9 +10,7 @@ use std::{cmp::Ordering, marker::PhantomData};
 #[derive(Debug, Clone)]
 pub struct Syntheme<Elem> {
     // must have duad_1 < duad_2 < duad_3 and all disjoint
-    pub duad_1: Duad<Elem>,
-    pub duad_2: Duad<Elem>,
-    pub duad_3: Duad<Elem>,
+    pub duads: [Duad<Elem>; 3],
 }
 
 /// The 15-element set of duads on a 6-element set
@@ -63,24 +62,24 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> SetSign
 
     fn validate_element(&self, s: &Self::Elem) -> Result<(), String> {
         let duads = self.set().duads().unwrap();
-        duads.validate_element(&s.duad_1)?;
-        duads.validate_element(&s.duad_2)?;
-        duads.validate_element(&s.duad_3)?;
-        if !duads.is_sorted(&[&s.duad_1, &s.duad_2, &s.duad_3]) {
+        for duad in &s.duads {
+            duads.validate_element(duad)?;
+        }
+        if !duads.is_sorted(&s.duads) {
             return Err("duads are not sorted".to_string());
         }
         if !self
             .set()
             .finite_subsets()
-            .is_disjoint(&(&s.duad_1).into(), &(&s.duad_2).into())
+            .is_disjoint(&(&s.duads[0]).into(), &(&s.duads[1]).into())
             || !self
                 .set()
                 .finite_subsets()
-                .is_disjoint(&(&s.duad_1).into(), &(&s.duad_3).into())
+                .is_disjoint(&(&s.duads[0]).into(), &(&s.duads[2]).into())
             || !self
                 .set()
                 .finite_subsets()
-                .is_disjoint(&(&s.duad_2).into(), &(&s.duad_3).into())
+                .is_disjoint(&(&s.duads[1]).into(), &(&s.duads[2]).into())
         {
             return Err("duads are not disjoint".to_string());
         }
@@ -95,9 +94,7 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> EqSigna
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(b));
         let duads = self.set().duads().unwrap();
-        duads.equal(&a.duad_1, &b.duad_1)
-            && duads.equal(&a.duad_2, &b.duad_2)
-            && duads.equal(&a.duad_3, &b.duad_3)
+        (0..3).all(|i| duads.equal(&a.duads[i], &b.duads[i]))
     }
 }
 
@@ -167,93 +164,213 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
         };
         if *num == Natural::from(0usize) {
             Some(Syntheme {
-                duad_1: Duad { p1: p(0), p2: p(1) },
-                duad_2: Duad { p1: p(2), p2: p(3) },
-                duad_3: Duad { p1: p(4), p2: p(5) },
+                duads: [
+                    Duad {
+                        points: [p(0), p(1)],
+                    },
+                    Duad {
+                        points: [p(2), p(3)],
+                    },
+                    Duad {
+                        points: [p(4), p(5)],
+                    },
+                ],
             })
         } else if *num == Natural::from(1usize) {
             Some(Syntheme {
-                duad_1: Duad { p1: p(0), p2: p(1) },
-                duad_2: Duad { p1: p(2), p2: p(4) },
-                duad_3: Duad { p1: p(3), p2: p(5) },
+                duads: [
+                    Duad {
+                        points: [p(0), p(1)],
+                    },
+                    Duad {
+                        points: [p(2), p(4)],
+                    },
+                    Duad {
+                        points: [p(3), p(5)],
+                    },
+                ],
             })
         } else if *num == Natural::from(2usize) {
             Some(Syntheme {
-                duad_1: Duad { p1: p(0), p2: p(1) },
-                duad_2: Duad { p1: p(3), p2: p(4) },
-                duad_3: Duad { p1: p(2), p2: p(5) },
+                duads: [
+                    Duad {
+                        points: [p(0), p(1)],
+                    },
+                    Duad {
+                        points: [p(3), p(4)],
+                    },
+                    Duad {
+                        points: [p(2), p(5)],
+                    },
+                ],
             })
         } else if *num == Natural::from(3usize) {
             Some(Syntheme {
-                duad_1: Duad { p1: p(0), p2: p(2) },
-                duad_2: Duad { p1: p(1), p2: p(3) },
-                duad_3: Duad { p1: p(4), p2: p(5) },
+                duads: [
+                    Duad {
+                        points: [p(0), p(2)],
+                    },
+                    Duad {
+                        points: [p(1), p(3)],
+                    },
+                    Duad {
+                        points: [p(4), p(5)],
+                    },
+                ],
             })
         } else if *num == Natural::from(4usize) {
             Some(Syntheme {
-                duad_1: Duad { p1: p(0), p2: p(2) },
-                duad_2: Duad { p1: p(1), p2: p(4) },
-                duad_3: Duad { p1: p(3), p2: p(5) },
+                duads: [
+                    Duad {
+                        points: [p(0), p(2)],
+                    },
+                    Duad {
+                        points: [p(1), p(4)],
+                    },
+                    Duad {
+                        points: [p(3), p(5)],
+                    },
+                ],
             })
         } else if *num == Natural::from(5usize) {
             Some(Syntheme {
-                duad_1: Duad { p1: p(0), p2: p(2) },
-                duad_2: Duad { p1: p(3), p2: p(4) },
-                duad_3: Duad { p1: p(1), p2: p(5) },
+                duads: [
+                    Duad {
+                        points: [p(0), p(2)],
+                    },
+                    Duad {
+                        points: [p(3), p(4)],
+                    },
+                    Duad {
+                        points: [p(1), p(5)],
+                    },
+                ],
             })
         } else if *num == Natural::from(6usize) {
             Some(Syntheme {
-                duad_1: Duad { p1: p(1), p2: p(2) },
-                duad_2: Duad { p1: p(0), p2: p(3) },
-                duad_3: Duad { p1: p(4), p2: p(5) },
+                duads: [
+                    Duad {
+                        points: [p(1), p(2)],
+                    },
+                    Duad {
+                        points: [p(0), p(3)],
+                    },
+                    Duad {
+                        points: [p(4), p(5)],
+                    },
+                ],
             })
         } else if *num == Natural::from(7usize) {
             Some(Syntheme {
-                duad_1: Duad { p1: p(0), p2: p(3) },
-                duad_2: Duad { p1: p(2), p2: p(4) },
-                duad_3: Duad { p1: p(1), p2: p(5) },
+                duads: [
+                    Duad {
+                        points: [p(0), p(3)],
+                    },
+                    Duad {
+                        points: [p(2), p(4)],
+                    },
+                    Duad {
+                        points: [p(1), p(5)],
+                    },
+                ],
             })
         } else if *num == Natural::from(8usize) {
             Some(Syntheme {
-                duad_1: Duad { p1: p(0), p2: p(3) },
-                duad_2: Duad { p1: p(1), p2: p(4) },
-                duad_3: Duad { p1: p(2), p2: p(5) },
+                duads: [
+                    Duad {
+                        points: [p(0), p(3)],
+                    },
+                    Duad {
+                        points: [p(1), p(4)],
+                    },
+                    Duad {
+                        points: [p(2), p(5)],
+                    },
+                ],
             })
         } else if *num == Natural::from(9usize) {
             Some(Syntheme {
-                duad_1: Duad { p1: p(2), p2: p(3) },
-                duad_2: Duad { p1: p(0), p2: p(4) },
-                duad_3: Duad { p1: p(1), p2: p(5) },
+                duads: [
+                    Duad {
+                        points: [p(2), p(3)],
+                    },
+                    Duad {
+                        points: [p(0), p(4)],
+                    },
+                    Duad {
+                        points: [p(1), p(5)],
+                    },
+                ],
             })
         } else if *num == Natural::from(10usize) {
             Some(Syntheme {
-                duad_1: Duad { p1: p(1), p2: p(2) },
-                duad_2: Duad { p1: p(0), p2: p(4) },
-                duad_3: Duad { p1: p(3), p2: p(5) },
+                duads: [
+                    Duad {
+                        points: [p(1), p(2)],
+                    },
+                    Duad {
+                        points: [p(0), p(4)],
+                    },
+                    Duad {
+                        points: [p(3), p(5)],
+                    },
+                ],
             })
         } else if *num == Natural::from(11usize) {
             Some(Syntheme {
-                duad_1: Duad { p1: p(1), p2: p(3) },
-                duad_2: Duad { p1: p(0), p2: p(4) },
-                duad_3: Duad { p1: p(2), p2: p(5) },
+                duads: [
+                    Duad {
+                        points: [p(1), p(3)],
+                    },
+                    Duad {
+                        points: [p(0), p(4)],
+                    },
+                    Duad {
+                        points: [p(2), p(5)],
+                    },
+                ],
             })
         } else if *num == Natural::from(12usize) {
             Some(Syntheme {
-                duad_1: Duad { p1: p(2), p2: p(3) },
-                duad_2: Duad { p1: p(1), p2: p(4) },
-                duad_3: Duad { p1: p(0), p2: p(5) },
+                duads: [
+                    Duad {
+                        points: [p(2), p(3)],
+                    },
+                    Duad {
+                        points: [p(1), p(4)],
+                    },
+                    Duad {
+                        points: [p(0), p(5)],
+                    },
+                ],
             })
         } else if *num == Natural::from(13usize) {
             Some(Syntheme {
-                duad_1: Duad { p1: p(1), p2: p(3) },
-                duad_2: Duad { p1: p(2), p2: p(4) },
-                duad_3: Duad { p1: p(0), p2: p(5) },
+                duads: [
+                    Duad {
+                        points: [p(1), p(3)],
+                    },
+                    Duad {
+                        points: [p(2), p(4)],
+                    },
+                    Duad {
+                        points: [p(0), p(5)],
+                    },
+                ],
             })
         } else if *num == Natural::from(14usize) {
             Some(Syntheme {
-                duad_1: Duad { p1: p(1), p2: p(2) },
-                duad_2: Duad { p1: p(3), p2: p(4) },
-                duad_3: Duad { p1: p(0), p2: p(5) },
+                duads: [
+                    Duad {
+                        points: [p(1), p(2)],
+                    },
+                    Duad {
+                        points: [p(3), p(4)],
+                    },
+                    Duad {
+                        points: [p(0), p(5)],
+                    },
+                ],
             })
         } else {
             None
@@ -316,11 +433,8 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
                 .overlap(&sorted_duads[1], &sorted_duads[2])
                 .is_disjoint()
         {
-            let mut sorted_duads = sorted_duads.into_iter();
             let syntheme = Syntheme {
-                duad_1: sorted_duads.next().unwrap(),
-                duad_2: sorted_duads.next().unwrap(),
-                duad_3: sorted_duads.next().unwrap(),
+                duads: sorted_duads,
             };
             debug_assert!(self.is_element(&syntheme));
             Ok(syntheme)
@@ -336,10 +450,9 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
     ) -> SynthemeOverlapResult<Set> {
         let duads_set = self.set().duads().unwrap();
         let mut common = vec![];
-        for item in duads_set.merge_sorted_and_unique(
-            vec![&s1.duad_1, &s1.duad_2, &s1.duad_3],
-            vec![&s2.duad_1, &s2.duad_2, &s2.duad_3],
-        ) {
+        for item in
+            duads_set.merge_sorted_and_unique(s1.duads.iter().collect(), s2.duads.iter().collect())
+        {
             match item {
                 MergedUniqueSource::First(_) | MergedUniqueSource::Second(_) => {}
                 MergedUniqueSource::Both(d1, d2) => {
@@ -361,6 +474,7 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
     }
 }
 
+#[signature_meta_trait]
 pub trait SetPermutationAsSynthemePermutation<Set: EnumeratedOrdFiniteSetSignature>:
     PermutationsSignature<Set>
 {
@@ -374,9 +488,9 @@ pub trait SetPermutationAsSynthemePermutation<Set: EnumeratedOrdFiniteSetSignatu
         let synthemes = set.synthemes().unwrap();
         synthemes
             .syntheme([
-                self.duad_image(set_perm, &syntheme.duad_1),
-                self.duad_image(set_perm, &syntheme.duad_2),
-                self.duad_image(set_perm, &syntheme.duad_3),
+                self.duad_image(set_perm, &syntheme.duads[0]),
+                self.duad_image(set_perm, &syntheme.duads[1]),
+                self.duad_image(set_perm, &syntheme.duads[2]),
             ])
             .unwrap()
     }
@@ -392,7 +506,7 @@ pub trait SetPermutationAsSynthemePermutation<Set: EnumeratedOrdFiniteSetSignatu
         syntheme_perms
             .new_perm(
                 synthemes
-                    .list_all_elements_ordered()
+                    .list_all_elements()
                     .into_iter()
                     .map(|from| {
                         let to = self.syntheme_image(set_perm, &from);
