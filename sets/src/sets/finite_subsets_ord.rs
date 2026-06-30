@@ -171,8 +171,8 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
 
 impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> FiniteSubsetsByOrdStructure<Set, SetB> {
     pub fn subset(&self, elems: Vec<Set::Elem>) -> <Self as SetSignature>::Elem {
+        #[cfg(debug_assertions)]
         for elem in &elems {
-            #[cfg(debug_assertions)]
             self.set().validate_element(elem).unwrap();
         }
         FiniteSubsetByOrd {
