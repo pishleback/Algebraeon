@@ -1,7 +1,7 @@
 use crate::structure::*;
 use algebraeon_macros::repeat_small_primes;
 use algebraeon_structures::*;
-use std::{borrow::Cow, fmt::Display, hash::Hash};
+use std::{borrow::Cow, cmp::Ordering, fmt::Display, hash::Hash};
 
 fn xgcd(mut x: usize, mut y: usize) -> (usize, isize, isize) {
     let mut pa = 1;
@@ -142,6 +142,18 @@ impl<const N: usize> MetaType for Modulo<N> {
 impl<const N: usize> EqSignature for ModuloCanonicalStructure<N> {
     fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
         a == b
+    }
+}
+
+impl<const N: usize> PartialOrdSignature for ModuloCanonicalStructure<N> {
+    fn partial_cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Ordering> {
+        a.x.partial_cmp(&b.x)
+    }
+}
+
+impl<const N: usize> OrdSignature for ModuloCanonicalStructure<N> {
+    fn cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Ordering {
+        a.x.cmp(&b.x)
     }
 }
 
@@ -291,6 +303,21 @@ impl<const N: usize> CountableSetSignature for ModuloCanonicalStructure<N> {
 impl<const N: usize> FiniteSetSignature for ModuloCanonicalStructure<N> {
     fn size(&self) -> Natural {
         Natural::from(N)
+    }
+}
+
+impl<const N: usize> EnumeratedOrdFiniteSetSignature for ModuloCanonicalStructure<N> {
+    fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
+        (0..N).map(|x| Modulo { x }).collect()
+    }
+
+    fn element_to_enumeration(&self, elem: &Self::Elem) -> Natural {
+        elem.x.into()
+    }
+
+    fn enumeration_to_element(&self, num: &Natural) -> Option<Self::Elem> {
+        let x: usize = num.try_into().ok()?;
+        if x < N { Some(Modulo { x }) } else { None }
     }
 }
 
