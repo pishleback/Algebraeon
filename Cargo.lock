@@ -657,6 +657,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "48c757948c5ede0e46177b7add2e67155f70e33c07fea8284df6576da70b3719"
 
 [[package]]
+name = "either-or-both"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6717164c227120ba9ddf3e2b32305fc0122741d3ee41a54968eae7573ee01933"
+dependencies = [
+ "indexmap",
+ "serde",
+]
+
+[[package]]
 name = "ena"
 version = "0.14.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -876,9 +886,9 @@ dependencies = [
 
 [[package]]
 name = "gungraun"
-version = "0.19.2"
+version = "0.19.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7dcd6043b1ff8096c10cdd5c59930139b52ba63cbd1a3452bc3ff95d996f9334"
+checksum = "42dad80904253d053d82f31c739a304715174f3483a8ce7f4db187c47c1588ee"
 dependencies = [
  "bincode-next",
  "derive_more",
@@ -904,10 +914,11 @@ dependencies = [
 
 [[package]]
 name = "gungraun-runner"
-version = "0.19.2"
+version = "0.19.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6965c4e60026245b5600b05ab4c4af5ae1eaf72b8ec5da86c9cc6af01258d8cc"
+checksum = "9ae33525418129fba64b34a1bfa91f157282559d805ac2bf444736de969dd61a"
 dependencies = [
+ "either-or-both",
  "serde",
 ]
 
