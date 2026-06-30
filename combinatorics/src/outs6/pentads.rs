@@ -9,7 +9,7 @@ use std::{cmp::Ordering, marker::PhantomData};
 #[derive(Debug, Clone)]
 pub struct Pentad<Elem> {
     // must have syntheme_1 < syntheme_2 < syntheme_3 < syntheme_4 < syntheme_5 and all disjoint
-    synthemes: [Syntheme<Elem>; 5],
+    pub(crate) synthemes: [Syntheme<Elem>; 5],
 }
 
 /// The 15-element set of duads on a 6-element set
@@ -85,8 +85,7 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> EqSigna
     for PentadsStructure<Set, SetB>
 {
     fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
-        let synthemes = self.set().synthemes().unwrap();
-        (0..5).all(|i| synthemes.equal(&a.synthemes[i], &b.synthemes[i]))
+        self.cmp(a, b).is_eq()
     }
 }
 
@@ -136,7 +135,6 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
 {
     fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
         // the ordering here is arbitrary but must be the same every time
-        let duads_set = self.set().duads().unwrap();
         let synthemes_set = self.set().synthemes().unwrap();
 
         let p = |i: usize| {
@@ -145,6 +143,7 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
                 .unwrap()
         };
 
+        // An arbitrary pentad from which we obtain the others by applying each syntheme permutation
         let root_pentad = Pentad {
             synthemes: [
                 Syntheme {
@@ -216,22 +215,41 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
         };
         debug_assert!(self.is_element(&root_pentad));
 
-        let mut pentads = vec![root_pentad];
-
-        todo!();
-
+        let mut pentads = vec![];
+        for syntheme in &root_pentad.synthemes {
+            pentads.push(
+                self.set()
+                    .permutations()
+                    .pentad_image(&synthemes_set.to_permutation(syntheme), &root_pentad),
+            );
+        }
+        pentads.push(root_pentad);
         debug_assert_eq!(pentads.len(), 6);
         pentads
     }
 
     fn element_to_enumeration(&self, elem: &Self::Elem) -> Natural {
         assert!(self.validate_element(elem).is_ok());
-        for (i, s) in self.generate_all_elements().enumerate() {
-            if self.equal(&s, elem) {
-                return Natural::from(i);
-            }
-        }
-        unreachable!()
+        // found by printing the pentads produced by self.list_all_elements_ordered() and extracting sufficient information to enumerate them
+        let x: usize = self
+            .set()
+            .element_to_enumeration(&elem.synthemes[1].duads[2].points[0])
+            .try_into()
+            .unwrap();
+        let y: usize = self
+            .set()
+            .element_to_enumeration(&elem.synthemes[3].duads[2].points[0])
+            .try_into()
+            .unwrap();
+        Natural::from(match (x, y) {
+            (3, 1) => 0,
+            (4, 1) => 1,
+            (3, 2) => 2,
+            (1, 3) => 3,
+            (1, 2) => 4,
+            (4, 3) => 5,
+            _ => unreachable!(),
+        } as usize)
     }
 
     fn enumeration_to_element(&self, num: &Natural) -> Option<Self::Elem> {
@@ -341,9 +359,9 @@ mod tests {
 
         debug_assert_eq!(pentads.len(), 6);
         // pentads are all valid
-        for s in &pentads {
-            println!("{:?}", s);
-            assert!(pentads_set.validate_element(s).is_ok());
+        for p in &pentads {
+            println!("{:?}", p);
+            assert!(pentads_set.validate_element(p).is_ok());
         }
 
         // synthemes are all distinct

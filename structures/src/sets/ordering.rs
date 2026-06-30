@@ -210,6 +210,8 @@ pub trait OrdSignature: PartialOrdSignature {
         target: &Self::Elem,
         key: impl Fn(&X) -> &Self::Elem,
     ) -> Option<&'x X> {
+        // println!("binary_search_by_key {:?} {:?}", v.len(), target);
+
         debug_assert!(self.is_sorted_by_key(v, &key));
         if v.is_empty() {
             return None;

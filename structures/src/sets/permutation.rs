@@ -3,7 +3,7 @@ use algebraeon_macros::{signature_meta_trait, skip_meta};
 use std::collections::HashMap;
 
 #[signature_meta_trait]
-pub trait PermutationsSignature<Set: SetSignature>: SetSignature {
+pub trait PermutationsSignature<Set: SetSignature>: GroupSignature {
     #[skip_meta]
     fn set(&self) -> &Set;
 
@@ -16,6 +16,17 @@ pub trait PermutationsSignature<Set: SetSignature>: SetSignature {
     /// Error if any two elements of cycle are equal
     #[allow(clippy::result_unit_err)]
     fn new_cycle(&self, cycle: Vec<Set::Elem>) -> Result<Self::Elem, ()>;
+
+    /// Error if any cycle is invalid
+    #[allow(clippy::result_unit_err)]
+    fn new_cycles(&self, cycles: Vec<Vec<Set::Elem>>) -> Result<Self::Elem, ()> {
+        Ok(self.compose_list(
+            cycles
+                .into_iter()
+                .map(|cycle| self.new_cycle(cycle).unwrap())
+                .collect(),
+        ))
+    }
 
     /// Error if not valid permutation
     #[allow(clippy::result_unit_err)]

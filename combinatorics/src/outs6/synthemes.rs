@@ -10,7 +10,7 @@ use std::{cmp::Ordering, marker::PhantomData};
 #[derive(Debug, Clone)]
 pub struct Syntheme<Elem> {
     // must have duad_1 < duad_2 < duad_3 and all disjoint
-    pub duads: [Duad<Elem>; 3],
+    pub(crate) duads: [Duad<Elem>; 3],
 }
 
 /// The 15-element set of duads on a 6-element set
@@ -472,6 +472,63 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
             }
         }
     }
+
+    /// Convert a syntheme into a 2^3-cycle
+    pub fn to_permutation(
+        &self,
+        syntheme: &Syntheme<Set::Elem>,
+    ) -> FinitelySupportedPermutation<Set::Elem> {
+        let p1 = &syntheme.duads[0].points[0];
+        let p2 = &syntheme.duads[0].points[1];
+        let p3 = &syntheme.duads[1].points[0];
+        let p4 = &syntheme.duads[1].points[1];
+        let p5 = &syntheme.duads[2].points[0];
+        let p6 = &syntheme.duads[2].points[1];
+        self.set()
+            .permutations()
+            .new_perm(vec![
+                (p1.clone(), p2.clone()),
+                (p2.clone(), p1.clone()),
+                (p3.clone(), p4.clone()),
+                (p4.clone(), p3.clone()),
+                (p5.clone(), p6.clone()),
+                (p6.clone(), p5.clone()),
+            ])
+            .unwrap()
+    }
+
+    /// Convert a 2^3-cycle into a syntheme, or return None if the permutation is not a 2^3-cycle
+    pub fn try_from_permutation(
+        &self,
+        swap: &FinitelySupportedPermutation<Set::Elem>,
+    ) -> Option<Syntheme<Set::Elem>> {
+        let disjoint_cycles = self.set().permutations().disjoint_cycles(swap);
+        if disjoint_cycles.len() != 3 {
+            return None;
+        }
+        for cycle in &disjoint_cycles {
+            if cycle.len() != 2 {
+                return None;
+            }
+        }
+        let duads = self.set().duads().unwrap();
+        Some(
+            self.syntheme(
+                disjoint_cycles
+                    .into_iter()
+                    .map(|cycle| {
+                        let mut cycle = cycle.into_iter();
+                        duads
+                            .duad(cycle.next().unwrap(), cycle.next().unwrap())
+                            .unwrap()
+                    })
+                    .collect::<Vec<_>>()
+                    .try_into()
+                    .unwrap(),
+            )
+            .unwrap(),
+        )
+    }
 }
 
 #[signature_meta_trait]
@@ -604,13 +661,40 @@ mod tests {
     fn test_permutation() {
         let set = i32::structure().into_finite_subset(vec![1, 2, 3, 4, 5, 6]);
         let set_perms = set.permutations();
+        let duads = set.duads().unwrap();
         let synthemes = set.synthemes().unwrap();
         let syntheme_perms = synthemes.permutations();
+
         assert_eq!(
             syntheme_perms.cycle_shape(
                 &set_perms.syntheme_action(&set_perms.new_cycle(vec![1, 2, 3]).unwrap())
             ),
             HashMap::from([(3, 5)])
+        );
+
+        assert!(
+            synthemes.equal(
+                &synthemes
+                    .try_from_permutation(
+                        &set_perms
+                            .new_perm(vec![(1, 2), (2, 1), (3, 4), (4, 3), (5, 6), (6, 5)])
+                            .unwrap()
+                    )
+                    .unwrap(),
+                &synthemes
+                    .syntheme([
+                        duads.duad(1, 2).unwrap(),
+                        duads.duad(3, 4).unwrap(),
+                        duads.duad(5, 6).unwrap()
+                    ])
+                    .unwrap()
+            )
+        );
+
+        assert!(
+            &synthemes
+                .try_from_permutation(&set_perms.new_cycle(vec![2, 3, 4]).unwrap())
+                .is_none()
         );
     }
 }

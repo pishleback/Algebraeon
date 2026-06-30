@@ -11,7 +11,7 @@ use std::{cmp::Ordering, marker::PhantomData};
 #[derive(Debug, Clone)]
 pub struct Duad<Point> {
     // must have p1 < p2
-    pub points: [Point; 2],
+    pub(crate) points: [Point; 2],
 }
 
 impl<Point: MetaType> MetaType for Duad<Point>
@@ -273,6 +273,37 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> DuadsSt
             }
         }
     }
+
+    /// Convert a duad into a 2-swap
+    pub fn to_permutation(
+        &self,
+        duad: &Duad<Set::Elem>,
+    ) -> FinitelySupportedPermutation<Set::Elem> {
+        self.set()
+            .permutations()
+            .new_swap(duad.points[0].clone(), duad.points[1].clone())
+            .unwrap()
+    }
+
+    /// Convert a 2-swap into a duad, or return None if the permutation is not a 2-swap
+    pub fn try_from_permutation(
+        &self,
+        swap: &FinitelySupportedPermutation<Set::Elem>,
+    ) -> Option<Duad<Set::Elem>> {
+        let disjoint_cycles = self.set().permutations().disjoint_cycles(swap);
+        if disjoint_cycles.len() != 1 {
+            return None;
+        }
+        let unique_cycle = disjoint_cycles.into_iter().next().unwrap();
+        if unique_cycle.len() != 2 {
+            return None;
+        }
+        let mut unique_cycle = unique_cycle.into_iter();
+        Some(
+            self.duad(unique_cycle.next().unwrap(), unique_cycle.next().unwrap())
+                .unwrap(),
+        )
+    }
 }
 
 #[signature_meta_trait]
@@ -344,10 +375,31 @@ mod tests {
         let set_perms = set.permutations();
         let duads = set.duads().unwrap();
         let duad_perms = duads.permutations();
+
         assert_eq!(
             duad_perms
                 .cycle_shape(&set_perms.duad_action(&set_perms.new_cycle(vec![1, 2, 3]).unwrap())),
             HashMap::from([(3, 4)])
+        );
+
+        assert_eq!(
+            set_perms.cycle_shape(&duads.to_permutation(&duads.duad(1, 2).unwrap())),
+            HashMap::from([(2, 1)])
+        );
+
+        assert!(
+            duads.equal(
+                &duads
+                    .try_from_permutation(&set_perms.new_swap(2, 3).unwrap())
+                    .unwrap(),
+                &duads.duad(2, 3).unwrap()
+            )
+        );
+
+        assert!(
+            &duads
+                .try_from_permutation(&set_perms.new_cycle(vec![2, 3, 4]).unwrap())
+                .is_none()
         );
     }
 }
