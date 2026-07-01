@@ -30,3 +30,8 @@ In that case the solution (or lack thereof) to \\(a = x \circ b\\) for \\(x\\) g
  - `Group : TryInverse + TryLeftInverse + TryRightInverse + LeftCancellativeComposition + RightCancellativeComposition` when every element has an inverse. Left-, right-, and two-sided-inverses all coencide in this case and are computed using `.inverse(a: X) -> X`.
  - `AbelianGroup := Group + CommutativeComposition + CancellativeComposition`.
 
+## Actions
+
+For `G : Group`
+ - `LeftGroupActionSet<G> : Set` for a set equipped with a left action from the group `G`.
+ - `RightGroupActionSet<G> : Set` for a set equipped with a right action from the group `G`.

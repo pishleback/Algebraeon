@@ -218,3 +218,17 @@ impl<Set> FiniteSubgroup<Set> {
         self.elems.iter()
     }
 }
+
+/// A left group action on a set
+pub trait LeftGroupActionSignature<Group: GroupSignature, Set: SetSignature>: Signature {
+    fn group(&self) -> &Group;
+    fn set(&self) -> &Set;
+    fn left_apply(&self, g: &Group::Elem, x: &Set::Elem) -> Set::Elem;
+}
+
+/// A right group action on a set
+pub trait RightGroupActionSignature<Set: SetSignature, Group: GroupSignature>: Signature {
+    fn group(&self) -> &Group;
+    fn set(&self) -> &Set;
+    fn right_apply(&self, g: &Group::Elem, x: &Set::Elem) -> Set::Elem;
+}

@@ -2,6 +2,10 @@ use algebraeon_structures::*;
 use itertools::Itertools;
 use std::{cmp::Ordering, fmt::Debug, marker::PhantomData};
 
+use crate::sets::{
+    FiniteSetToFinitelySupportedPermutationsStructure, FinitelySupportedPermutationsStructure,
+};
+
 #[derive(Debug, Clone)]
 pub struct Function<ElemTo> {
     pub(crate) images: Vec<ElemTo>,
@@ -297,10 +301,151 @@ impl<
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct LeftPermutationActionOnFunctionsStructure<
+    Domain: EnumeratedOrdFiniteSetSignature,
+    DomainB: BorrowedStructure<Domain>,
+    Range: EnumeratedOrdFiniteSetSignature,
+    RangeB: BorrowedStructure<Range>,
+    FunctionsB: BorrowedStructure<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
+    DomainPerms: PermutationsSignature<Domain>,
+    DomainPermsB: BorrowedStructure<DomainPerms>,
+> {
+    _functions: PhantomData<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
+    functions: FunctionsB,
+    _domain_perms: PhantomData<DomainPerms>,
+    domain_perms: DomainPermsB,
+}
+
+impl<
+    Domain: EnumeratedOrdFiniteSetSignature,
+    DomainB: BorrowedStructure<Domain>,
+    Range: EnumeratedOrdFiniteSetSignature,
+    RangeB: BorrowedStructure<Range>,
+    FunctionsB: BorrowedStructure<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
+    DomainPerms: PermutationsSignature<Domain>,
+    DomainPermsB: BorrowedStructure<DomainPerms>,
+>
+    LeftPermutationActionOnFunctionsStructure<
+        Domain,
+        DomainB,
+        Range,
+        RangeB,
+        FunctionsB,
+        DomainPerms,
+        DomainPermsB,
+    >
+{
+    fn new(functions: FunctionsB, domain_perms: DomainPermsB) -> Self {
+        Self {
+            _functions: PhantomData,
+            functions,
+            _domain_perms: PhantomData,
+            domain_perms,
+        }
+    }
+}
+
+impl<
+    Domain: EnumeratedOrdFiniteSetSignature,
+    DomainB: BorrowedStructure<Domain>,
+    Range: EnumeratedOrdFiniteSetSignature,
+    RangeB: BorrowedStructure<Range>,
+    FunctionsB: BorrowedStructure<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
+    DomainPerms: PermutationsSignature<Domain>,
+    DomainPermsB: BorrowedStructure<DomainPerms>,
+> Signature
+    for LeftPermutationActionOnFunctionsStructure<
+        Domain,
+        DomainB,
+        Range,
+        RangeB,
+        FunctionsB,
+        DomainPerms,
+        DomainPermsB,
+    >
+{
+}
+
+impl<
+    Domain: EnumeratedOrdFiniteSetSignature,
+    DomainB: BorrowedStructure<Domain>,
+    Range: EnumeratedOrdFiniteSetSignature,
+    RangeB: BorrowedStructure<Range>,
+> FunctionsStructure<Domain, DomainB, Range, RangeB>
+{
+    pub fn left_permutation_action(
+        &self,
+    ) -> impl LeftGroupActionSignature<FinitelySupportedPermutationsStructure<Domain, Domain>, Self>
+    {
+        LeftPermutationActionOnFunctionsStructure::new(
+            self,
+            self.domain().clone().into_permutations(),
+        )
+    }
+}
+
+/// Sym(D) has a left action on Fun(D -> R) by composition on the left
+impl<
+    Domain: EnumeratedOrdFiniteSetSignature,
+    DomainB: BorrowedStructure<Domain>,
+    Range: EnumeratedOrdFiniteSetSignature,
+    RangeB: BorrowedStructure<Range>,
+    FunctionsB: BorrowedStructure<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
+    DomainPerms: PermutationsSignature<Domain>,
+    DomainPermsB: BorrowedStructure<DomainPerms>,
+> LeftGroupActionSignature<DomainPerms, FunctionsStructure<Domain, DomainB, Range, RangeB>>
+    for LeftPermutationActionOnFunctionsStructure<
+        Domain,
+        DomainB,
+        Range,
+        RangeB,
+        FunctionsB,
+        DomainPerms,
+        DomainPermsB,
+    >
+{
+    fn group(&self) -> &DomainPerms {
+        todo!()
+    }
+
+    fn set(&self) -> &FunctionsStructure<Domain, DomainB, Range, RangeB> {
+        todo!()
+    }
+
+    fn left_apply(
+        &self,
+        g: &<DomainPerms>::Elem,
+        x: &<FunctionsStructure<Domain, DomainB, Range, RangeB> as SetSignature>::Elem,
+    ) -> <FunctionsStructure<Domain, DomainB, Range, RangeB> as SetSignature>::Elem {
+        todo!()
+    }
+}
+
+// /// Sym(R) has a right action on Fun(D -> R) by composition on the right
+// impl<
+//     Domain: EnumeratedOrdFiniteSetSignature,
+//     DomainB: BorrowedStructure<Domain>,
+//     Range: EnumeratedOrdFiniteSetSignature,
+//     RangeB: BorrowedStructure<Range>,
+//     RangePerms: PermutationsSignature<Range>,
+// > RightGroupActionSignature<RangePerms> for FunctionsStructure<Domain, DomainB, Range, RangeB>
+// {
+//     fn right_action(
+//         &self,
+//         range_perm: &RangePerms::Elem,
+//         function: &Function<Range::Elem>,
+//     ) -> Function<Range::Elem> {
+//         todo!()
+//     }
+// }
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::sets::SetToFiniteSubsetByOrdSignature;
+    use crate::sets::{
+        FiniteSetToFinitelySupportedPermutationsStructure, SetToFiniteSubsetByOrdSignature,
+    };
 
     #[test]
     fn test_enumeration() {
@@ -320,5 +465,33 @@ mod tests {
             assert!(fns.equal(&fns.enumeration_to_element(&Natural::from(i)).unwrap(), s));
         }
         assert!(fns.enumeration_to_element(&fns.size()).is_none());
+    }
+
+    #[test]
+    fn test_permutation_actions() {
+        let set_a = i32::structure().into_finite_subset(vec![1, 2, 3, 4, 5]);
+        let set_a_perms = set_a.permutations();
+        let set_b = i32::structure().into_finite_subset(vec![1, 2, 3]);
+        let set_b_perms = set_b.permutations();
+        let fns = set_a.functions_to(&set_b);
+
+        let x = fns
+            .function(|i| match i {
+                1 => 1,
+                2 => 2,
+                3 => 3,
+                4 => 1,
+                5 => 2,
+                _ => unreachable!(),
+            })
+            .unwrap();
+
+        println!("{:?}", x);
+
+        println!(
+            "{:?}",
+            fns.left_permutation_action()
+                .left_apply(&set_a_perms.new_swap(1, 2).unwrap(), &x)
+        );
     }
 }
