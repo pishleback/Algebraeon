@@ -194,12 +194,12 @@ impl<
         self.action.borrow().set()
     }
 
-    fn right_apply(
+    fn apply(
         &self,
         g: &<Group>::Elem,
         x: &<Set as SetSignature>::Elem,
     ) -> <Set as SetSignature>::Elem {
-        self.action.borrow().left_apply(g, x)
+        self.action.borrow().apply(g, x)
     }
 }
 
@@ -218,11 +218,11 @@ impl<
         self.action.borrow().set()
     }
 
-    fn left_apply(
+    fn apply(
         &self,
         g: &<Group>::Elem,
         x: &<Set as SetSignature>::Elem,
     ) -> <Set as SetSignature>::Elem {
-        self.action.borrow().right_apply(g, x)
+        self.action.borrow().apply(g, x)
     }
 }

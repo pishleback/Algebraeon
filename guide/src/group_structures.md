@@ -32,6 +32,6 @@ In that case the solution (or lack thereof) to \\(a = x \circ b\\) for \\(x\\) g
 
 ## Actions
 
-For `G : Group`
- - `LeftGroupActionSet<G> : Set` for a set equipped with a left action from the group `G`.
- - `RightGroupActionSet<G> : Set` for a set equipped with a right action from the group `G`.
+For `G : Group` and `S : Set`
+ - `LeftGroupAction<G, S>` for a left action of a group `G` on a set `S`.
+ - `RightGroupAction<S, G>` for a right action of a group `G` on a set `S`.
