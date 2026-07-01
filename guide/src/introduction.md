@@ -22,13 +22,13 @@ The project is open source and hosted on GitHub [here](https://github.com/pishle
 
 Algebraeon is published to crates.io under an umbrella crate [algebraeon](https://crates.io/crates/algebraeon) and re-exports the sub-crates:
 
-- [algebraeon-sets](https://crates.io/crates/algebraeon-sets)
+- [algebraeon-macros](https://crates.io/crates/algebraeon-macros)
 - [algebraeon-structures](https://crates.io/crates/algebraeon-structures)
+- [algebraeon-sets](https://crates.io/crates/algebraeon-sets)
 - [algebraeon-groups](https://crates.io/crates/algebraeon-groups)
 - [algebraeon-rings](https://crates.io/crates/algebraeon-rings)
 - [algebraeon-geometry](https://crates.io/crates/algebraeon-geometry)
 - [algebraeon-drawing](https://crates.io/crates/algebraeon-drawing)
-- [algebraeon-macros](https://crates.io/crates/algebraeon-macros)
 
 **A Taster**
 

@@ -1,6 +1,7 @@
 mod groups;
 mod nzq;
 mod primitives;
+mod product;
 mod sets;
 mod signatures;
 

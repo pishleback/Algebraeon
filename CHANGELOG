@@ -10,6 +10,12 @@ All notable changes to this project will be documented in this file.
  - Added structure types for quotient sets.
  - Renamed `SetSignature::Set` -> `SetSignature::Elem`.
  - Added Montgomery form for modular arithmetic modulo odd integers.
+ - Added `EnumeratedOrdFiniteSetSignature` for ordered enumerated finite sets.
+ - Added duads, synthemes, and pentads.
+ - Added the set of subsets of a finite set.
+ - Added the set of subsets of a finite set with a fixed size.
+ - Improved the finite set of functions between two finite sets.
+ - Added group actions.
 
 ## [0.0.17] - 2026-03-06
 
