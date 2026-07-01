@@ -94,11 +94,33 @@ impl<Set: SetSignature, SetB: BorrowedStructure<Set>>
             set,
         }
     }
+}
 
-    pub fn set(&self) -> &Set {
-        self.set.borrow()
+pub trait SetToFinitelySupportedPermutationsStructure: SetSignature {
+    fn finitely_supported_permutations(
+        &self,
+    ) -> FinitelySupportedPermutationsStructure<Self, &Self> {
+        FinitelySupportedPermutationsStructure::new(self)
+    }
+
+    fn into_finitely_supported_permutations(
+        self,
+    ) -> FinitelySupportedPermutationsStructure<Self, Self> {
+        FinitelySupportedPermutationsStructure::new(self)
     }
 }
+impl<Set: SetSignature> SetToFinitelySupportedPermutationsStructure for Set {}
+
+pub trait FiniteSetToFinitelySupportedPermutationsStructure: FiniteSetSignature {
+    fn permutations(&self) -> FinitelySupportedPermutationsStructure<Self, &Self> {
+        FinitelySupportedPermutationsStructure::new(self)
+    }
+
+    fn into_permutations(self) -> FinitelySupportedPermutationsStructure<Self, Self> {
+        FinitelySupportedPermutationsStructure::new(self)
+    }
+}
+impl<Set: FiniteSetSignature> FiniteSetToFinitelySupportedPermutationsStructure for Set {}
 
 impl<Set: SetSignature, SetB: BorrowedStructure<Set>> Signature
     for FinitelySupportedPermutationsStructure<Set, SetB>
@@ -181,6 +203,20 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> EqSignature
 impl<Set: OrdSignature, SetB: BorrowedStructure<Set>>
     FinitelySupportedPermutationsStructure<Set, SetB>
 {
+    pub fn map<T>(
+        &self,
+        perm: <Self as SetSignature>::Elem,
+        f: impl Fn(Set::Elem) -> T,
+    ) -> FinitelySupportedPermutation<T> {
+        FinitelySupportedPermutation {
+            perm: perm
+                .perm
+                .into_iter()
+                .map(|(elem, from_and_to)| (f(elem), from_and_to))
+                .collect(),
+        }
+    }
+
     fn image_ref<'a>(
         &self,
         perm: &'a <Self as SetSignature>::Elem,
@@ -217,6 +253,10 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>>
 impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> PermutationsSignature<Set>
     for FinitelySupportedPermutationsStructure<Set, SetB>
 {
+    fn set(&self) -> &Set {
+        self.set.borrow()
+    }
+
     fn new_cycle(&self, cycle: Vec<Set::Elem>) -> Result<Self::Elem, ()> {
         let sorted_enumerated_cycle = self
             .set()
@@ -227,7 +267,7 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> PermutationsSignature<Set>
         {
             return Err(());
         }
-        let n = sorted_enumerated_cycle.len();
+        let n: usize = sorted_enumerated_cycle.len();
         let enumerated_sorted_enumerated_cycle = sorted_enumerated_cycle
             .into_iter()
             .enumerate()
@@ -283,12 +323,14 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> PermutationsSignature<Set>
         {
             return Err(());
         }
+
         if !self
             .set()
             .is_sorted_and_unique_by_key(&cycle_sorted_tos, |(_, to)| to.borrow())
         {
             return Err(());
         }
+
         for merged in self.set().merge_sorted_and_unique_by_key(
             cycle_sorted_froms
                 .iter()
@@ -308,7 +350,6 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> PermutationsSignature<Set>
         }
 
         // at this point we know the input is a valid permutation
-
         let elems_sorted = cycle_sorted_tos
             .iter()
             .filter(|(from, to)| !self.set().equal(from.borrow(), to.borrow()))
@@ -425,27 +466,23 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> CompositionSignature
         let unfixed_elems = self
             .set()
             .merge_sorted_and_unique_by_key(a.perm.clone(), b.perm.clone(), |item| &item.0)
-            .filter(|merged_item| {
-                println!("{:?}", merged_item);
-
-                match merged_item {
-                    MergedUniqueSource::Second(b_item) | MergedUniqueSource::Both(_, b_item) => {
-                        if let Some(a_item) = self.set().binary_search_by_key(
-                            &a.perm,
-                            &b.perm[b_item.1.to].0,
-                            |item| &item.0,
-                        ) && let Some(b_item_2) = self.set().binary_search_by_key(
+            .filter(|merged_item| match merged_item {
+                MergedUniqueSource::Second(b_item) | MergedUniqueSource::Both(_, b_item) => {
+                    if let Some(a_item) =
+                        self.set()
+                            .binary_search_by_key(&a.perm, &b.perm[b_item.1.to].0, |item| &item.0)
+                        && let Some(b_item_2) = self.set().binary_search_by_key(
                             &b.perm,
                             &a.perm[a_item.1.to].0,
                             |item| &item.0,
-                        ) {
-                            !self.set().equal(&b_item.0, &b_item_2.0)
-                        } else {
-                            true
-                        }
+                        )
+                    {
+                        !self.set().equal(&b_item.0, &b_item_2.0)
+                    } else {
+                        true
                     }
-                    MergedUniqueSource::First(_) => true,
                 }
+                MergedUniqueSource::First(_) => true,
             })
             .map(|merged_item| match merged_item {
                 MergedUniqueSource::First(a_item) => a_item.0,
@@ -554,10 +591,9 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> GroupSignature
 impl<Set: OrdSignature + FiniteSetSignature, SetB: BorrowedStructure<Set>> CountableSetSignature
     for FinitelySupportedPermutationsStructure<Set, SetB>
 {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
+    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
         let all_elems = self.set().list_all_elements();
         let n = all_elems.len();
-
         (0..n)
             .permutations(n)
             .map(|perm| {
@@ -571,6 +607,10 @@ impl<Set: OrdSignature + FiniteSetSignature, SetB: BorrowedStructure<Set>> Count
             })
             .collect::<Vec<_>>()
             .into_iter()
+    }
+
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+        self.clone().into_generate_all_elements()
     }
 }
 

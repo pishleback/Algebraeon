@@ -210,6 +210,8 @@ pub trait OrdSignature: PartialOrdSignature {
         target: &Self::Elem,
         key: impl Fn(&X) -> &Self::Elem,
     ) -> Option<&'x X> {
+        // println!("binary_search_by_key {:?} {:?}", v.len(), target);
+
         debug_assert!(self.is_sorted_by_key(v, &key));
         if v.is_empty() {
             return None;
@@ -306,6 +308,21 @@ pub trait OrdSignature: PartialOrdSignature {
 
     fn sort<S: Borrow<Self::Elem>>(&self, a: Vec<S>) -> Vec<S> {
         self.sort_by_key(a, &|x| x.borrow())
+    }
+
+    fn unique<S: Borrow<Self::Elem>>(&self, a: Vec<S>) -> Vec<S> {
+        debug_assert!(self.is_sorted(&a));
+        let mut unique: Vec<S> = vec![];
+        for x in a {
+            if let Some(last) = unique.last() {
+                if !self.equal(x.borrow(), last.borrow()) {
+                    unique.push(x);
+                }
+            } else {
+                unique.push(x);
+            }
+        }
+        unique
     }
 
     fn sort_by_key<X>(&self, mut a: Vec<X>, key: &impl Fn(&X) -> &Self::Elem) -> Vec<X> {

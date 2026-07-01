@@ -15,3 +15,4 @@ algebraeon-structures = { version = "=0.0.17", path = "../structures", default-f
 algebraeon-sets = { version = "=0.0.17", path = "../sets", default-features = false }
 algebraeon-groups = { version = "=0.0.17", path = "../groups", default-features = false }
 algebraeon-rings = { version = "=0.0.17", path = "../rings", default-features = false }
+algebraeon-macros = { version = "=0.0.17", path = "../macros", default-features = false }

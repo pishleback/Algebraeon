@@ -1193,8 +1193,12 @@ impl<
 where
     for<'a> MultiplicativeMonoidUnitsStructure<RS, &'a RS>: FiniteSetSignature<Elem = RS::Elem>,
 {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
+    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
         self.list_all_elements().into_iter()
+    }
+
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+        self.clone().into_generate_all_elements()
     }
 }
 

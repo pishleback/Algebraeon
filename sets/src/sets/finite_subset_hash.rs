@@ -4,8 +4,9 @@ use std::collections::HashSet;
 use std::hash::Hash;
 use std::marker::PhantomData;
 
+// A finite subset of a set
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FiniteSubsetStructure<Set: SetSignature, SetB: BorrowedStructure<Set>>
+pub struct FiniteSubsetByHashStructure<Set: SetSignature, SetB: BorrowedStructure<Set>>
 where
     Set::Elem: MetaType + Eq + Hash,
 {
@@ -14,7 +15,7 @@ where
     elems: HashSet<Set::Elem>,
 }
 
-impl<Set: SetSignature, SetB: BorrowedStructure<Set>> FiniteSubsetStructure<Set, SetB>
+impl<Set: SetSignature, SetB: BorrowedStructure<Set>> FiniteSubsetByHashStructure<Set, SetB>
 where
     Set::Elem: MetaType + Eq + Hash,
 {
@@ -31,13 +32,15 @@ where
     }
 }
 
-impl<Set: SetSignature, SetB: BorrowedStructure<Set>> Signature for FiniteSubsetStructure<Set, SetB> where
-    Set::Elem: MetaType + Eq + Hash
+impl<Set: SetSignature, SetB: BorrowedStructure<Set>> Signature
+    for FiniteSubsetByHashStructure<Set, SetB>
+where
+    Set::Elem: MetaType + Eq + Hash,
 {
 }
 
 impl<Set: SetSignature, SetB: BorrowedStructure<Set>> SetSignature
-    for FiniteSubsetStructure<Set, SetB>
+    for FiniteSubsetByHashStructure<Set, SetB>
 where
     Set::Elem: MetaType + Eq + Hash,
 {
@@ -52,7 +55,7 @@ where
 }
 
 impl<Set: EqSignature, SetB: BorrowedStructure<Set>> EqSignature
-    for FiniteSubsetStructure<Set, SetB>
+    for FiniteSubsetByHashStructure<Set, SetB>
 where
     Set::Elem: MetaType + Eq + Hash,
 {
@@ -64,7 +67,7 @@ where
 }
 
 impl<Set: PartialOrdSignature, SetB: BorrowedStructure<Set>> PartialOrdSignature
-    for FiniteSubsetStructure<Set, SetB>
+    for FiniteSubsetByHashStructure<Set, SetB>
 where
     Set::Elem: MetaType + Eq + Hash,
 {
@@ -76,7 +79,7 @@ where
 }
 
 impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> OrdSignature
-    for FiniteSubsetStructure<Set, SetB>
+    for FiniteSubsetByHashStructure<Set, SetB>
 where
     Set::Elem: MetaType + Eq + Hash,
 {
@@ -88,17 +91,21 @@ where
 }
 
 impl<Set: SetSignature, SetB: BorrowedStructure<Set>> CountableSetSignature
-    for FiniteSubsetStructure<Set, SetB>
+    for FiniteSubsetByHashStructure<Set, SetB>
 where
     Set::Elem: MetaType + Eq + Hash,
 {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
-        self.elems.iter().cloned()
+    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
+        self.elems.into_iter()
+    }
+
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+        self.clone().into_generate_all_elements()
     }
 }
 
 impl<Set: SetSignature, SetB: BorrowedStructure<Set>> FiniteSetSignature
-    for FiniteSubsetStructure<Set, SetB>
+    for FiniteSubsetByHashStructure<Set, SetB>
 where
     Set::Elem: MetaType + Eq + Hash,
 {

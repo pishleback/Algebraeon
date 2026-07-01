@@ -377,7 +377,7 @@ where
         debug_assert!(self.is_squarefree(f));
 
         let n = self.degree(f).unwrap();
-        let q = self.coeff_ring().size();
+        let q = self.coeff_ring().size().try_into().expect("too large");
 
         // 1, x^q, x^2q, x^3q, ..., x^dq
         let x_pows = {
