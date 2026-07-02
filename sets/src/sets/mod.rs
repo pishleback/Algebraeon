@@ -1,5 +1,6 @@
 mod empty;
 mod endofunctions;
+mod finite_set_sized;
 mod finite_subset_hash;
 mod finite_subset_ord;
 mod finite_subsets_ord;
@@ -12,6 +13,7 @@ mod singleton;
 
 pub use empty::*;
 pub use endofunctions::*;
+pub use finite_set_sized::*;
 pub use finite_subset_hash::*;
 pub use finite_subset_ord::*;
 pub use finite_subsets_ord::*;

@@ -15,22 +15,24 @@ pub struct Syntheme<Elem> {
 
 /// The 15-element set of duads on a 6-element set
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SynthemesStructure<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> {
+pub struct SynthemesStructure<
+    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+> {
     _set: PhantomData<Set>,
     set: SetB,
 }
 
-impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
-    SynthemesStructure<Set, SetB>
+impl<
+    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+> SynthemesStructure<Set, SetB>
 {
-    pub fn try_new(set: SetB) -> Option<Self> {
-        if set.borrow().size() == Natural::from(6usize) {
-            Some(Self {
-                _set: PhantomData,
-                set,
-            })
-        } else {
-            None
+    pub fn new(set: SetB) -> Self {
+        debug_assert_eq!(set.borrow().size(), Natural::from(6usize));
+        Self {
+            _set: PhantomData,
+            set,
         }
     }
 
@@ -39,29 +41,38 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
     }
 }
 
-pub trait SetToSynthemesSignature: EnumeratedOrdFiniteSetSignature {
-    fn synthemes(&self) -> Option<SynthemesStructure<Self, &Self>> {
-        SynthemesStructure::try_new(self)
+pub trait SetToSynthemesSignature:
+    FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature
+{
+    fn synthemes(&self) -> SynthemesStructure<Self, &Self> {
+        SynthemesStructure::new(self)
     }
 
-    fn into_synthemes(self) -> Option<SynthemesStructure<Self, Self>> {
-        SynthemesStructure::try_new(self)
+    fn into_synthemes(self) -> SynthemesStructure<Self, Self> {
+        SynthemesStructure::new(self)
     }
 }
-impl<Set: EnumeratedOrdFiniteSetSignature> SetToSynthemesSignature for Set {}
-
-impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> Signature
-    for SynthemesStructure<Set, SetB>
+impl<Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature> SetToSynthemesSignature
+    for Set
 {
 }
 
-impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> SetSignature
-    for SynthemesStructure<Set, SetB>
+impl<
+    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+> Signature for SynthemesStructure<Set, SetB>
+{
+}
+
+impl<
+    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+> SetSignature for SynthemesStructure<Set, SetB>
 {
     type Elem = Syntheme<Set::Elem>;
 
     fn validate_element(&self, s: &Self::Elem) -> Result<(), String> {
-        let duads = self.set().duads().unwrap();
+        let duads = self.set().duads();
         for duad in &s.duads {
             duads.validate_element(duad)?;
         }
@@ -87,27 +98,33 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> SetSign
     }
 }
 
-impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> EqSignature
-    for SynthemesStructure<Set, SetB>
+impl<
+    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+> EqSignature for SynthemesStructure<Set, SetB>
 {
     fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(b));
-        let duads = self.set().duads().unwrap();
+        let duads = self.set().duads();
         (0..3).all(|i| duads.equal(&a.duads[i], &b.duads[i]))
     }
 }
 
-impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> PartialOrdSignature
-    for SynthemesStructure<Set, SetB>
+impl<
+    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+> PartialOrdSignature for SynthemesStructure<Set, SetB>
 {
     fn partial_cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Ordering> {
         Some(self.cmp(a, b))
     }
 }
 
-impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> OrdSignature
-    for SynthemesStructure<Set, SetB>
+impl<
+    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+> OrdSignature for SynthemesStructure<Set, SetB>
 {
     fn cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Ordering {
         debug_assert!(self.is_element(a));
@@ -119,8 +136,10 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> OrdSign
     }
 }
 
-impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> CountableSetSignature
-    for SynthemesStructure<Set, SetB>
+impl<
+    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+> CountableSetSignature for SynthemesStructure<Set, SetB>
 {
     fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
         (0usize..15).map(move |i| self.enumeration_to_element(&Natural::from(i)).unwrap())
@@ -131,16 +150,27 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> Countab
     }
 }
 
-impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> FiniteSetSignature
-    for SynthemesStructure<Set, SetB>
+impl<
+    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+> FiniteSetSignature for SynthemesStructure<Set, SetB>
 {
     fn size(&self) -> Natural {
         Natural::from(15usize)
     }
 }
 
-impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
-    EnumeratedOrdFiniteSetSignature for SynthemesStructure<Set, SetB>
+impl<
+    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+> FiniteSetSizedSignature<15> for SynthemesStructure<Set, SetB>
+{
+}
+
+impl<
+    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+> EnumeratedOrdFiniteSetSignature for SynthemesStructure<Set, SetB>
 {
     fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
         self.list_all_elements()
@@ -414,14 +444,16 @@ impl<Set: EnumeratedOrdFiniteSetSignature> SynthemeOverlapResult<Set> {
     }
 }
 
-impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
-    SynthemesStructure<Set, SetB>
+impl<
+    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+> SynthemesStructure<Set, SetB>
 {
     pub fn syntheme(
         &self,
         duads: [Duad<Set::Elem>; 3],
     ) -> Result<Syntheme<Set::Elem>, &'static str> {
-        let duads_set = self.set().duads().unwrap();
+        let duads_set = self.set().duads();
         let sorted_duads: [_; 3] = duads_set.sort(duads.into()).try_into().unwrap();
         if duads_set
             .overlap(&sorted_duads[0], &sorted_duads[1])
@@ -448,7 +480,7 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
         s1: &Syntheme<Set::Elem>,
         s2: &Syntheme<Set::Elem>,
     ) -> SynthemeOverlapResult<Set> {
-        let duads_set = self.set().duads().unwrap();
+        let duads_set = self.set().duads();
         let mut common = vec![];
         for item in
             duads_set.merge_sorted_and_unique(s1.duads.iter().collect(), s2.duads.iter().collect())
@@ -511,7 +543,7 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
                 return None;
             }
         }
-        let duads = self.set().duads().unwrap();
+        let duads = self.set().duads();
         Some(
             self.syntheme(
                 disjoint_cycles
@@ -532,8 +564,9 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
 }
 
 #[signature_meta_trait]
-pub trait SetPermutationAsSynthemePermutation<Set: EnumeratedOrdFiniteSetSignature>:
-    PermutationsSignature<Set>
+pub trait SetPermutationAsSynthemePermutation<
+    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+>: PermutationsSignature<Set>
 {
     fn syntheme_image(
         &self,
@@ -542,7 +575,7 @@ pub trait SetPermutationAsSynthemePermutation<Set: EnumeratedOrdFiniteSetSignatu
     ) -> Syntheme<Set::Elem> {
         let set = self.set();
         debug_assert_eq!(set.size(), Natural::from(6usize));
-        let synthemes = set.synthemes().unwrap();
+        let synthemes = set.synthemes();
         synthemes
             .syntheme([
                 self.duad_image(set_perm, &syntheme.duads[0]),
@@ -558,7 +591,7 @@ pub trait SetPermutationAsSynthemePermutation<Set: EnumeratedOrdFiniteSetSignatu
     ) -> FinitelySupportedPermutation<Syntheme<Set::Elem>> {
         let set = self.set();
         debug_assert_eq!(set.size(), Natural::from(6usize));
-        let synthemes = set.synthemes().unwrap();
+        let synthemes = set.synthemes();
         let syntheme_perms = synthemes.permutations();
         syntheme_perms
             .new_perm(
@@ -574,8 +607,10 @@ pub trait SetPermutationAsSynthemePermutation<Set: EnumeratedOrdFiniteSetSignatu
             .unwrap()
     }
 }
-impl<Set: EnumeratedOrdFiniteSetSignature, SetPerms: PermutationsSignature<Set>>
-    SetPermutationAsSynthemePermutation<Set> for SetPerms
+impl<
+    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    SetPerms: PermutationsSignature<Set>,
+> SetPermutationAsSynthemePermutation<Set> for SetPerms
 {
 }
 
@@ -584,13 +619,13 @@ mod tests {
     use std::collections::HashMap;
 
     use super::*;
-    use algebraeon_sets::sets::SetToFiniteSubsetByOrdSignature;
+    use algebraeon_sets::sets::SetToFiniteSubsetByOrdSizedSignature;
     use algebraeon_structures::MetaType;
 
     #[test]
     fn test_enumeration() {
-        let set = i32::structure().into_finite_subset(vec![1, 2, 3, 4, 5, 6]);
-        let synthemes_set = set.synthemes().unwrap();
+        let set = i32::structure().into_finite_subset_sized([1, 2, 3, 4, 5, 6]);
+        let synthemes_set = set.synthemes();
         let synthemes = synthemes_set.list_all_elements_ordered();
         assert_eq!(synthemes.len(), 15);
         assert_eq!(synthemes_set.size(), Natural::from(15usize));
@@ -631,9 +666,9 @@ mod tests {
 
     #[test]
     fn test_overlap() {
-        let set = i32::structure().into_finite_subset(vec![1, 2, 3, 4, 5, 6]);
-        let duads_set = set.duads().unwrap();
-        let synthemes_set = set.synthemes().unwrap();
+        let set = i32::structure().into_finite_subset_sized([1, 2, 3, 4, 5, 6]);
+        let duads_set = set.duads();
+        let synthemes_set = set.synthemes();
 
         assert!(
             synthemes_set
@@ -659,10 +694,10 @@ mod tests {
 
     #[test]
     fn test_permutation() {
-        let set = i32::structure().into_finite_subset(vec![1, 2, 3, 4, 5, 6]);
+        let set = i32::structure().into_finite_subset_sized([1, 2, 3, 4, 5, 6]);
         let set_perms = set.permutations();
-        let duads = set.duads().unwrap();
-        let synthemes = set.synthemes().unwrap();
+        let duads = set.duads();
+        let synthemes = set.synthemes();
         let syntheme_perms = synthemes.permutations();
 
         assert_eq!(

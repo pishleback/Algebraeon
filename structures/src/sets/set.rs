@@ -69,6 +69,14 @@ pub trait FiniteSetSignature: CountableSetSignature {
 }
 make_maybe_trait!(FiniteSet);
 
+/// A set with N elements
+#[signature_meta_trait]
+pub trait FiniteSetSizedSignature<const N: usize>: FiniteSetSignature {
+    fn list_all_elements_sized(&self) -> [Self::Elem; N] {
+        self.list_all_elements().try_into().unwrap()
+    }
+}
+
 /// A finite set where the elements are numbered 0, 1, ..., n-1
 /// self.list_all_elements is required to return elements in the correct order
 /// The ordering on the set must also agree with the ordering given by the enumeration

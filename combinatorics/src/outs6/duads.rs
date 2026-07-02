@@ -16,13 +16,13 @@ pub struct Duad<Point> {
 
 impl<Point: MetaType> MetaType for Duad<Point>
 where
-    Point::Signature: EnumeratedOrdFiniteSetSignature,
+    Point::Signature: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
 {
     type Signature = DuadsStructure<Point::Signature, Point::Signature>;
 
     fn structure() -> Self::Signature {
         debug_assert_eq!(Point::structure().size(), Natural::from(6usize));
-        DuadsStructure::try_new(Point::structure()).unwrap()
+        DuadsStructure::new(Point::structure())
     }
 }
 
@@ -63,20 +63,24 @@ impl<Set: EnumeratedOrdFiniteSetSignature> From<&Duad<Set::Elem>> for FiniteSubs
 
 /// The 15-element set of duads on a 6-element set
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct DuadsStructure<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> {
+pub struct DuadsStructure<
+    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+> {
     _set: PhantomData<Set>,
     set: SetB,
 }
 
-impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> DuadsStructure<Set, SetB> {
-    pub fn try_new(set: SetB) -> Option<Self> {
-        if set.borrow().size() == Natural::from(6usize) {
-            Some(Self {
-                _set: PhantomData,
-                set,
-            })
-        } else {
-            None
+impl<
+    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+> DuadsStructure<Set, SetB>
+{
+    pub fn new(set: SetB) -> Self {
+        debug_assert_eq!(set.borrow().size(), Natural::from(6usize));
+        Self {
+            _set: PhantomData,
+            set,
         }
     }
 
@@ -85,24 +89,33 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> DuadsSt
     }
 }
 
-pub trait SetToDuadsSignature: EnumeratedOrdFiniteSetSignature {
-    fn duads(&self) -> Option<DuadsStructure<Self, &Self>> {
-        DuadsStructure::try_new(self)
+pub trait SetToDuadsSignature:
+    FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature
+{
+    fn duads(&self) -> DuadsStructure<Self, &Self> {
+        DuadsStructure::new(self)
     }
 
-    fn into_duads(self) -> Option<DuadsStructure<Self, Self>> {
-        DuadsStructure::try_new(self)
+    fn into_duads(self) -> DuadsStructure<Self, Self> {
+        DuadsStructure::new(self)
     }
 }
-impl<Set: EnumeratedOrdFiniteSetSignature> SetToDuadsSignature for Set {}
-
-impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> Signature
-    for DuadsStructure<Set, SetB>
+impl<Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature> SetToDuadsSignature
+    for Set
 {
 }
 
-impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> SetSignature
-    for DuadsStructure<Set, SetB>
+impl<
+    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+> Signature for DuadsStructure<Set, SetB>
+{
+}
+
+impl<
+    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+> SetSignature for DuadsStructure<Set, SetB>
 {
     type Elem = Duad<Set::Elem>;
 
@@ -114,16 +127,20 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> SetSign
     }
 }
 
-impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> EqSignature
-    for DuadsStructure<Set, SetB>
+impl<
+    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+> EqSignature for DuadsStructure<Set, SetB>
 {
     fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
         self.set().finite_subsets().equal(&a.into(), &b.into())
     }
 }
 
-impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> PartialOrdSignature
-    for DuadsStructure<Set, SetB>
+impl<
+    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+> PartialOrdSignature for DuadsStructure<Set, SetB>
 {
     fn partial_cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Ordering> {
         self.set()
@@ -132,16 +149,20 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> Partial
     }
 }
 
-impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> OrdSignature
-    for DuadsStructure<Set, SetB>
+impl<
+    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+> OrdSignature for DuadsStructure<Set, SetB>
 {
     fn cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Ordering {
         self.set().finite_subsets().cmp(&a.into(), &b.into())
     }
 }
 
-impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> CountableSetSignature
-    for DuadsStructure<Set, SetB>
+impl<
+    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+> CountableSetSignature for DuadsStructure<Set, SetB>
 {
     fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
         self.set()
@@ -156,8 +177,10 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> Countab
     }
 }
 
-impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> FiniteSetSignature
-    for DuadsStructure<Set, SetB>
+impl<
+    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+> FiniteSetSignature for DuadsStructure<Set, SetB>
 {
     fn size(&self) -> Natural {
         debug_assert_eq!(
@@ -168,8 +191,17 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> FiniteS
     }
 }
 
-impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
-    EnumeratedOrdFiniteSetSignature for DuadsStructure<Set, SetB>
+impl<
+    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+> FiniteSetSizedSignature<15> for DuadsStructure<Set, SetB>
+{
+}
+
+impl<
+    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+> EnumeratedOrdFiniteSetSignature for DuadsStructure<Set, SetB>
 {
     fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
         self.list_all_elements()
@@ -225,7 +257,11 @@ impl<Set: EnumeratedOrdFiniteSetSignature> DuadOverlapResult<Set> {
     }
 }
 
-impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> DuadsStructure<Set, SetB> {
+impl<
+    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+> DuadsStructure<Set, SetB>
+{
     pub fn duad(
         &self,
         point_1: Set::Elem,
@@ -307,13 +343,14 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>> DuadsSt
 }
 
 #[signature_meta_trait]
-pub trait SetPermutationAsDuadPermutation<Set: EnumeratedOrdFiniteSetSignature>:
-    PermutationsSignature<Set>
+pub trait SetPermutationAsDuadPermutation<
+    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+>: PermutationsSignature<Set>
 {
     fn duad_image(&self, set_perm: &Self::Elem, duad: &Duad<Set::Elem>) -> Duad<Set::Elem> {
         let set = self.set();
         debug_assert_eq!(set.size(), Natural::from(6usize));
-        let duads = set.duads().unwrap();
+        let duads = set.duads();
         duads
             .duad(
                 self.image(set_perm, &duad.points[0]),
@@ -325,7 +362,7 @@ pub trait SetPermutationAsDuadPermutation<Set: EnumeratedOrdFiniteSetSignature>:
     fn duad_action(&self, set_perm: &Self::Elem) -> FinitelySupportedPermutation<Duad<Set::Elem>> {
         let set = self.set();
         debug_assert_eq!(set.size(), Natural::from(6usize));
-        let duads = set.duads().unwrap();
+        let duads = set.duads();
         let duad_perms = duads.permutations();
         duad_perms
             .new_perm(
@@ -341,8 +378,10 @@ pub trait SetPermutationAsDuadPermutation<Set: EnumeratedOrdFiniteSetSignature>:
             .unwrap()
     }
 }
-impl<Set: EnumeratedOrdFiniteSetSignature, SetPerms: PermutationsSignature<Set>>
-    SetPermutationAsDuadPermutation<Set> for SetPerms
+impl<
+    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    SetPerms: PermutationsSignature<Set>,
+> SetPermutationAsDuadPermutation<Set> for SetPerms
 {
 }
 
@@ -352,18 +391,18 @@ mod tests {
 
     use super::*;
     use algebraeon_sets::sets::{
-        FiniteSetToFinitelySupportedPermutationsStructure, SetToFiniteSubsetByOrdSignature,
+        FiniteSetToFinitelySupportedPermutationsStructure, SetToFiniteSubsetByOrdSizedSignature,
     };
     use algebraeon_structures::MetaType;
 
     #[test]
     fn test_enumeration() {
-        let set = i32::structure().into_finite_subset(vec![1, 2, 3, 4, 5, 6]);
+        let set = i32::structure().into_finite_subset_sized([1, 2, 3, 4, 5, 6]);
         for p in set.generate_all_elements() {
             println!("{:?}", p);
         }
 
-        let duads = set.duads().unwrap();
+        let duads = set.duads();
         for d in duads.generate_all_elements() {
             println!("{:?}", d);
         }
@@ -371,9 +410,9 @@ mod tests {
 
     #[test]
     fn test_permutation() {
-        let set = i32::structure().into_finite_subset(vec![1, 2, 3, 4, 5, 6]);
+        let set = i32::structure().into_finite_subset_sized([1, 2, 3, 4, 5, 6]);
         let set_perms = set.permutations();
-        let duads = set.duads().unwrap();
+        let duads = set.duads();
         let duad_perms = duads.permutations();
 
         assert_eq!(
