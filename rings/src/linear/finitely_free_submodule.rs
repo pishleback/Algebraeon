@@ -1,5 +1,6 @@
 use super::{finitely_free_coset::*, finitely_free_module::*};
 use crate::{matrix::*, structure::*};
+use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 use algebraeon_structures::*;
 use std::{borrow::Borrow, fmt::Debug};
 
@@ -45,27 +46,41 @@ impl<Set: Clone + Debug> FinitelyFreeSubmodule<Set> {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FinitelyFreeSubmoduleStructure<
+    Set: EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
     Ring: ReducedHermiteAlgorithmSignature,
     RingB: BorrowedStructure<Ring>,
 > {
-    module: FinitelyFreeModuleStructure<Ring, RingB>,
+    module: FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>,
 }
 
-impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
-    FinitelyFreeSubmoduleStructure<Ring, RingB>
+impl<
+    Set: EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+    Ring: ReducedHermiteAlgorithmSignature,
+    RingB: BorrowedStructure<Ring>,
+> FinitelyFreeSubmoduleStructure<Set, SetB, Ring, RingB>
 {
-    pub fn new(module: FinitelyFreeModuleStructure<Ring, RingB>) -> Self {
+    pub fn new(module: FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>) -> Self {
         Self { module }
     }
 }
 
-impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> Signature
-    for FinitelyFreeSubmoduleStructure<Ring, RingB>
+impl<
+    Set: EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+    Ring: ReducedHermiteAlgorithmSignature,
+    RingB: BorrowedStructure<Ring>,
+> Signature for FinitelyFreeSubmoduleStructure<Set, SetB, Ring, RingB>
 {
 }
 
-impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> SetSignature
-    for FinitelyFreeSubmoduleStructure<Ring, RingB>
+impl<
+    Set: EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+    Ring: ReducedHermiteAlgorithmSignature,
+    RingB: BorrowedStructure<Ring>,
+> SetSignature for FinitelyFreeSubmoduleStructure<Set, SetB, Ring, RingB>
 {
     type Elem = FinitelyFreeSubmodule<Ring::Elem>;
 
@@ -78,10 +93,14 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> Set
     }
 }
 
-impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
-    FinitelyFreeSubmoduleStructure<Ring, RingB>
+impl<
+    Set: EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+    Ring: ReducedHermiteAlgorithmSignature,
+    RingB: BorrowedStructure<Ring>,
+> FinitelyFreeSubmoduleStructure<Set, SetB, Ring, RingB>
 {
-    pub fn module(&self) -> &FinitelyFreeModuleStructure<Ring, RingB> {
+    pub fn module(&self) -> &FinitelyFreeModuleStructure<Set, SetB, Ring, RingB> {
         &self.module
     }
 
@@ -328,7 +347,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         let matrix = Matrix::join_rows(cols, vec![&x_rows, &y_rows]);
         let matrix_ker = self
             .ring()
-            .free_module(matrix.rows())
+            .free_module(EnumeratedFiniteSetStructure::new(matrix.rows()))
             .submodules()
             .matrix_row_kernel(matrix)
             .into_row_basis_matrix();
@@ -415,8 +434,12 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
     }
 }
 
-impl<Ring: UniqueReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> EqSignature
-    for FinitelyFreeSubmoduleStructure<Ring, RingB>
+impl<
+    Set: EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+    Ring: UniqueReducedHermiteAlgorithmSignature,
+    RingB: BorrowedStructure<Ring>,
+> EqSignature for FinitelyFreeSubmoduleStructure<Set, SetB, Ring, RingB>
 {
     fn equal(
         &self,
@@ -435,7 +458,9 @@ mod tests {
 
     #[test]
     fn test_finitely_free_submodule_kernel() {
-        let submodules = Integer::structure().into_free_module(3).into_submodules();
+        let submodules = Integer::structure()
+            .into_free_module(EnumeratedFiniteSetStructure::new(3))
+            .into_submodules();
 
         let a = submodules.span(vec![&vec![1.into(), 1.into(), (-1).into()]]);
 
@@ -453,7 +478,7 @@ mod tests {
         let a = Matrix::from_rows(vec![vec![1, 2, 4, 5], vec![1, 2, 3, 4]]);
         a.pprint();
         let a_reduced = Integer::structure()
-            .free_module(4)
+            .free_module(EnumeratedFiniteSetStructure::new(4))
             .submodules()
             .matrix_row_span(a)
             .into_row_basis_matrix();
@@ -465,7 +490,7 @@ mod tests {
 
     #[test]
     fn test_finitely_free_submodule_unreduced_equal() {
-        let modules = Integer::structure().into_free_module(4);
+        let modules = Integer::structure().into_free_module(EnumeratedFiniteSetStructure::new(4));
         assert!(
             modules.submodules().equal(
                 &modules
@@ -480,7 +505,7 @@ mod tests {
 
     #[test]
     fn test_finitely_free_submodule_intersect() {
-        let modules = Integer::structure().into_free_module(4);
+        let modules = Integer::structure().into_free_module(EnumeratedFiniteSetStructure::new(4));
 
         let a = modules.submodules().matrix_row_span(Matrix::from_rows(vec![
             vec![2, 0, 0, 0],
@@ -507,7 +532,7 @@ mod tests {
 
     #[test]
     fn test_finitely_free_submodule_element_reduction() {
-        let modules = Integer::structure().into_free_module(4);
+        let modules = Integer::structure().into_free_module(EnumeratedFiniteSetStructure::new(4));
 
         let a = modules.submodules().matrix_row_span(Matrix::from_rows(vec![
             vec![3, 2, 0, 3],
@@ -537,7 +562,7 @@ mod tests {
 
     #[test]
     fn test_finitely_free_submodule_extension_basis() {
-        let modules = Rational::structure().into_free_module(3);
+        let modules = Rational::structure().into_free_module(EnumeratedFiniteSetStructure::new(3));
 
         let a = Matrix::<Rational>::from_rows(vec![vec![1, 0, 0], vec![1, 0, 0], vec![-1, 0, 0]]);
 

@@ -3,6 +3,7 @@ use crate::{
     matrix::{Matrix, ReducedHermiteAlgorithmSignature, UniqueReducedHermiteAlgorithmSignature},
     structure::*,
 };
+use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 use algebraeon_structures::*;
 use std::fmt::Debug;
 
@@ -37,27 +38,41 @@ impl<Set: Clone + Debug> FinitelyFreeSubmoduleCoset<Set> {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FinitelyFreeSubmoduleCosetStructure<
+    Set: EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
     Ring: ReducedHermiteAlgorithmSignature,
     RingB: BorrowedStructure<Ring>,
 > {
-    module: FinitelyFreeModuleStructure<Ring, RingB>,
+    module: FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>,
 }
 
-impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
-    FinitelyFreeSubmoduleCosetStructure<Ring, RingB>
+impl<
+    Set: EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+    Ring: ReducedHermiteAlgorithmSignature,
+    RingB: BorrowedStructure<Ring>,
+> FinitelyFreeSubmoduleCosetStructure<Set, SetB, Ring, RingB>
 {
-    pub fn new(module: FinitelyFreeModuleStructure<Ring, RingB>) -> Self {
+    pub fn new(module: FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>) -> Self {
         Self { module }
     }
 }
 
-impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> Signature
-    for FinitelyFreeSubmoduleCosetStructure<Ring, RingB>
+impl<
+    Set: EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+    Ring: ReducedHermiteAlgorithmSignature,
+    RingB: BorrowedStructure<Ring>,
+> Signature for FinitelyFreeSubmoduleCosetStructure<Set, SetB, Ring, RingB>
 {
 }
 
-impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> SetSignature
-    for FinitelyFreeSubmoduleCosetStructure<Ring, RingB>
+impl<
+    Set: EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+    Ring: ReducedHermiteAlgorithmSignature,
+    RingB: BorrowedStructure<Ring>,
+> SetSignature for FinitelyFreeSubmoduleCosetStructure<Set, SetB, Ring, RingB>
 {
     type Elem = FinitelyFreeSubmoduleCoset<Ring::Elem>;
 
@@ -67,14 +82,18 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> Set
     }
 }
 
-impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
-    FinitelyFreeSubmoduleCosetStructure<Ring, RingB>
+impl<
+    Set: EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+    Ring: ReducedHermiteAlgorithmSignature,
+    RingB: BorrowedStructure<Ring>,
+> FinitelyFreeSubmoduleCosetStructure<Set, SetB, Ring, RingB>
 {
     pub fn ring(&self) -> &Ring {
         self.module.ring()
     }
 
-    pub fn module(&self) -> &FinitelyFreeModuleStructure<Ring, RingB> {
+    pub fn module(&self) -> &FinitelyFreeModuleStructure<Set, SetB, Ring, RingB> {
         &self.module
     }
 
@@ -183,7 +202,9 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
             self.ring().add(v, &y_offset[c])
         });
 
-        let larger_module = self.ring().free_module(self.module().rank() + 1);
+        let larger_module = self
+            .ring()
+            .free_module(EnumeratedFiniteSetStructure::new(self.module().rank() + 1));
 
         let linearlized_intersection_row_basis = larger_module
             .submodules()
@@ -267,8 +288,12 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
     }
 }
 
-impl<Ring: UniqueReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> EqSignature
-    for FinitelyFreeSubmoduleCosetStructure<Ring, RingB>
+impl<
+    Set: EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+    Ring: UniqueReducedHermiteAlgorithmSignature,
+    RingB: BorrowedStructure<Ring>,
+> EqSignature for FinitelyFreeSubmoduleCosetStructure<Set, SetB, Ring, RingB>
 {
     fn equal(&self, x: &Self::Elem, y: &Self::Elem) -> bool {
         self.module().equal(&x.offset, &y.offset)
@@ -282,7 +307,7 @@ mod tests {
 
     #[test]
     fn test_cosets() {
-        let module = Integer::structure().into_free_module(2);
+        let module = Integer::structure().into_free_module(EnumeratedFiniteSetStructure::new(2));
 
         let coset1 = module.submodules().coset(
             &Matrix::<Integer>::from_rows(vec![vec![15, 0], vec![0, 10]]).row_span(),
@@ -328,7 +353,7 @@ mod tests {
 
     #[test]
     fn test_cosets_intersect() {
-        let module = Integer::structure().into_free_module(2);
+        let module = Integer::structure().into_free_module(EnumeratedFiniteSetStructure::new(2));
 
         let coset1 = module.submodules().coset(
             &Matrix::<Integer>::from_rows(vec![vec![6, 4], vec![0, 3]]).row_span(),
