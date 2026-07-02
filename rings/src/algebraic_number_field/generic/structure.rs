@@ -9,6 +9,7 @@ use crate::{
         FiniteRankFreeRingExtension, MetaGreatestCommonDivisorSignature, RingHomomorphism,
     },
 };
+use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 use algebraeon_structures::*;
 use std::marker::PhantomData;
 
@@ -1182,10 +1183,14 @@ mod integer_submodule_inclusion {
         _sublatb: PhantomData<IntegerSubmoduleB>,
         integer_submodule_to_module: IntegerSubmoduleInclusionB,
         integer_module_to_submodule: FinitelyFreeSubmoduleStructure<
+            EnumeratedFiniteSetStructure,
+            EnumeratedFiniteSetStructure,
             IntegerCanonicalStructure,
             &'static IntegerCanonicalStructure,
         >,
         integer_submodule_to_submodules: FinitelyFreeSubmoduleStructure<
+            EnumeratedFiniteSetStructure,
+            EnumeratedFiniteSetStructure,
             IntegerCanonicalStructure,
             &'static IntegerCanonicalStructure,
         >,
@@ -1254,6 +1259,8 @@ mod integer_submodule_inclusion {
         pub fn integer_module_to_submodule(
             &self,
         ) -> &FinitelyFreeSubmoduleStructure<
+            EnumeratedFiniteSetStructure,
+            EnumeratedFiniteSetStructure,
             IntegerCanonicalStructure,
             &'static IntegerCanonicalStructure,
         > {
@@ -1263,6 +1270,8 @@ mod integer_submodule_inclusion {
         pub fn integer_submodule_to_submodules(
             &self,
         ) -> &FinitelyFreeSubmoduleStructure<
+            EnumeratedFiniteSetStructure,
+            EnumeratedFiniteSetStructure,
             IntegerCanonicalStructure,
             &'static IntegerCanonicalStructure,
         > {
@@ -1290,10 +1299,14 @@ mod integer_submodule_inclusion {
     >
         Morphism<
             FinitelyFreeSubmoduleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
                 &'static IntegerCanonicalStructure,
             >,
             FinitelyFreeSubmoduleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
                 &'static IntegerCanonicalStructure,
             >,
@@ -1310,6 +1323,8 @@ mod integer_submodule_inclusion {
         fn domain(
             &self,
         ) -> &FinitelyFreeSubmoduleStructure<
+            EnumeratedFiniteSetStructure,
+            EnumeratedFiniteSetStructure,
             IntegerCanonicalStructure,
             &'static IntegerCanonicalStructure,
         > {
@@ -1319,6 +1334,8 @@ mod integer_submodule_inclusion {
         fn range(
             &self,
         ) -> &FinitelyFreeSubmoduleStructure<
+            EnumeratedFiniteSetStructure,
+            EnumeratedFiniteSetStructure,
             IntegerCanonicalStructure,
             &'static IntegerCanonicalStructure,
         > {
@@ -1346,10 +1363,14 @@ mod integer_submodule_inclusion {
     >
         Function<
             FinitelyFreeSubmoduleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
                 &'static IntegerCanonicalStructure,
             >,
             FinitelyFreeSubmoduleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
                 &'static IntegerCanonicalStructure,
             >,
@@ -1393,10 +1414,14 @@ mod integer_submodule_inclusion {
     >
         InjectiveFunction<
             FinitelyFreeSubmoduleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
                 &'static IntegerCanonicalStructure,
             >,
             FinitelyFreeSubmoduleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
                 &'static IntegerCanonicalStructure,
             >,
@@ -1445,9 +1470,13 @@ pub trait FullRankIntegerSubmoduleWithBasisSignature<K: AlgebraicNumberFieldSign
 
     fn free_integer_submodule_restructure(
         &self,
-    ) -> FinitelyFreeModuleStructure<IntegerCanonicalStructure, &'static IntegerCanonicalStructure>
-    {
-        Integer::structure_ref().free_module(self.n())
+    ) -> FinitelyFreeModuleStructure<
+        EnumeratedFiniteSetStructure,
+        EnumeratedFiniteSetStructure,
+        IntegerCanonicalStructure,
+        &'static IntegerCanonicalStructure,
+    > {
+        Integer::structure_ref().free_module(EnumeratedFiniteSetStructure::new(self.n()))
     }
 
     fn contains_element(&self, p: &K::Elem) -> bool {

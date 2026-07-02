@@ -3,6 +3,7 @@ use crate::linear::{
     finitely_free_module::FinitelyFreeModuleStructure,
     finitely_free_submodule::FinitelyFreeSubmodule,
 };
+use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 use algebraeon_structures::*;
 
 #[derive(Debug, Clone)]
@@ -248,7 +249,10 @@ where
                         .collect_vec();
                     // ker(S) in ker(S^2) in ker(S^3) in ...
 
-                    let module = FinitelyFreeModuleStructure::<FS, _>::new(ac_field, m);
+                    let module = FinitelyFreeModuleStructure::<_, _, FS, _>::new(
+                        EnumeratedFiniteSetStructure::new(m),
+                        ac_field,
+                    );
                     let mut accounted = module.submodules().zero_submodule();
 
                     let mut jordan_block_bases = vec![];

@@ -58,3 +58,21 @@ impl FiniteSetSignature for EnumeratedFiniteSetStructure {
         Natural::from(self.n)
     }
 }
+
+impl EnumeratedOrdFiniteSetSignature for EnumeratedFiniteSetStructure {
+    fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
+        (0..self.n).collect()
+    }
+
+    fn element_to_enumeration(&self, elem: &Self::Elem) -> Natural {
+        Natural::from(*elem)
+    }
+
+    fn enumeration_to_element(&self, num: &Natural) -> Option<Self::Elem> {
+        if let Ok(num) = TryInto::<usize>::try_into(num) {
+            if num < self.n { Some(num) } else { None }
+        } else {
+            None
+        }
+    }
+}

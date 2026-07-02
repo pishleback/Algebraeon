@@ -21,6 +21,7 @@ use crate::{
         ZeroSignature,
     },
 };
+use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 use algebraeon_structures::*;
 
 pub type RingOfIntegersWithIntegralBasis<K, KB> = OrderWithBasis<K, KB, true>;
@@ -490,12 +491,12 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> OrderWithBasis<
                         &self.quotient_integer_submodule(
                             &order_to_maximal_order.integer_submodules_inclusion().image(
                                 &Integer::structure()
-                                    .free_module(anf.n())
+                                    .free_module(EnumeratedFiniteSetStructure::new(anf.n()))
                                     .submodules()
                                     .full_submodule(),
                             ),
                             &Integer::structure()
-                                .free_module(anf.n())
+                                .free_module(EnumeratedFiniteSetStructure::new(anf.n()))
                                 .submodules()
                                 .full_submodule(),
                         ),
@@ -530,12 +531,12 @@ impl<K: AlgebraicNumberFieldSignature, KB: BorrowedStructure<K>> OrderWithBasis<
                 &self.quotient_integer_submodule(
                     &order_to_maximal_order.integer_submodules_inclusion().image(
                         &Integer::structure()
-                            .free_module(anf.n())
+                            .free_module(EnumeratedFiniteSetStructure::new(anf.n()))
                             .submodules()
                             .full_submodule(),
                     ),
                     &Integer::structure()
-                        .free_module(anf.n())
+                        .free_module(EnumeratedFiniteSetStructure::new(anf.n()))
                         .submodules()
                         .full_submodule(),
                 ),

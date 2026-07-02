@@ -16,6 +16,7 @@ use crate::{
     structure::*,
 };
 use algebraeon_sets::combinatorics::num_partitions_part_pool;
+use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 use algebraeon_structures::*;
 use itertools::Itertools;
 use std::{borrow::Cow, marker::PhantomData};
@@ -165,6 +166,8 @@ impl<
 }
 
 mod integer_submodules_to_ideals {
+    use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
+
     use super::*;
 
     #[derive(Debug, Clone)]
@@ -175,7 +178,14 @@ mod integer_submodules_to_ideals {
         OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
         IB: BorrowedStructure<OrderIdealsStructure<K, KB, MAXIMAL, OB>>,
         IntB: BorrowedStructure<IntegerCanonicalStructure>,
-        SB: BorrowedStructure<FinitelyFreeSubmoduleStructure<IntegerCanonicalStructure, IntB>>,
+        SB: BorrowedStructure<
+            FinitelyFreeSubmoduleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
+                IntegerCanonicalStructure,
+                IntB,
+            >,
+        >,
     > {
         _k: PhantomData<K>,
         _kb: PhantomData<KB>,
@@ -192,7 +202,14 @@ mod integer_submodules_to_ideals {
         OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
         IB: BorrowedStructure<OrderIdealsStructure<K, KB, MAXIMAL, OB>>,
         IntB: BorrowedStructure<IntegerCanonicalStructure>,
-        SB: BorrowedStructure<FinitelyFreeSubmoduleStructure<IntegerCanonicalStructure, IntB>>,
+        SB: BorrowedStructure<
+            FinitelyFreeSubmoduleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
+                IntegerCanonicalStructure,
+                IntB,
+            >,
+        >,
     > SubmoduleToIdeals<K, KB, MAXIMAL, OB, IB, IntB, SB>
     {
         pub fn new(ideals: IB, integer_submodules: SB) -> Self {
@@ -212,7 +229,12 @@ mod integer_submodules_to_ideals {
 
         fn integer_submodules(
             &self,
-        ) -> &FinitelyFreeSubmoduleStructure<IntegerCanonicalStructure, IntB> {
+        ) -> &FinitelyFreeSubmoduleStructure<
+            EnumeratedFiniteSetStructure,
+            EnumeratedFiniteSetStructure,
+            IntegerCanonicalStructure,
+            IntB,
+        > {
             self.integer_submodules.borrow()
         }
     }
@@ -224,18 +246,37 @@ mod integer_submodules_to_ideals {
         OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
         IB: BorrowedStructure<OrderIdealsStructure<K, KB, MAXIMAL, OB>>,
         IntB: BorrowedStructure<IntegerCanonicalStructure>,
-        SB: BorrowedStructure<FinitelyFreeSubmoduleStructure<IntegerCanonicalStructure, IntB>>,
+        SB: BorrowedStructure<
+            FinitelyFreeSubmoduleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
+                IntegerCanonicalStructure,
+                IntB,
+            >,
+        >,
     >
         Morphism<
             OrderIdealsStructure<K, KB, MAXIMAL, OB>,
-            FinitelyFreeSubmoduleStructure<IntegerCanonicalStructure, IntB>,
+            FinitelyFreeSubmoduleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
+                IntegerCanonicalStructure,
+                IntB,
+            >,
         > for SubmoduleToIdeals<K, KB, MAXIMAL, OB, IB, IntB, SB>
     {
         fn domain(&self) -> &OrderIdealsStructure<K, KB, MAXIMAL, OB> {
             self.ideals()
         }
 
-        fn range(&self) -> &FinitelyFreeSubmoduleStructure<IntegerCanonicalStructure, IntB> {
+        fn range(
+            &self,
+        ) -> &FinitelyFreeSubmoduleStructure<
+            EnumeratedFiniteSetStructure,
+            EnumeratedFiniteSetStructure,
+            IntegerCanonicalStructure,
+            IntB,
+        > {
             self.integer_submodules()
         }
     }
@@ -247,11 +288,23 @@ mod integer_submodules_to_ideals {
         OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
         IB: BorrowedStructure<OrderIdealsStructure<K, KB, MAXIMAL, OB>>,
         IntB: BorrowedStructure<IntegerCanonicalStructure>,
-        SB: BorrowedStructure<FinitelyFreeSubmoduleStructure<IntegerCanonicalStructure, IntB>>,
+        SB: BorrowedStructure<
+            FinitelyFreeSubmoduleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
+                IntegerCanonicalStructure,
+                IntB,
+            >,
+        >,
     >
         Function<
             OrderIdealsStructure<K, KB, MAXIMAL, OB>,
-            FinitelyFreeSubmoduleStructure<IntegerCanonicalStructure, IntB>,
+            FinitelyFreeSubmoduleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
+                IntegerCanonicalStructure,
+                IntB,
+            >,
         > for SubmoduleToIdeals<K, KB, MAXIMAL, OB, IB, IntB, SB>
     {
         fn image(&self, x: &OrderIdeal) -> FinitelyFreeSubmodule<Integer> {
@@ -271,11 +324,23 @@ mod integer_submodules_to_ideals {
         OB: BorrowedStructure<OrderWithBasis<K, KB, MAXIMAL>>,
         IB: BorrowedStructure<OrderIdealsStructure<K, KB, MAXIMAL, OB>>,
         IntB: BorrowedStructure<IntegerCanonicalStructure>,
-        SB: BorrowedStructure<FinitelyFreeSubmoduleStructure<IntegerCanonicalStructure, IntB>>,
+        SB: BorrowedStructure<
+            FinitelyFreeSubmoduleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
+                IntegerCanonicalStructure,
+                IntB,
+            >,
+        >,
     >
         InjectiveFunction<
             OrderIdealsStructure<K, KB, MAXIMAL, OB>,
-            FinitelyFreeSubmoduleStructure<IntegerCanonicalStructure, IntB>,
+            FinitelyFreeSubmoduleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
+                IntegerCanonicalStructure,
+                IntB,
+            >,
         > for SubmoduleToIdeals<K, KB, MAXIMAL, OB, IB, IntB, SB>
     {
         fn try_preimage(&self, y: &FinitelyFreeSubmodule<Integer>) -> Option<OrderIdeal> {
@@ -312,6 +377,8 @@ impl<
         &Self,
         &'static IntegerCanonicalStructure,
         FinitelyFreeSubmoduleStructure<
+            EnumeratedFiniteSetStructure,
+            EnumeratedFiniteSetStructure,
             IntegerCanonicalStructure,
             &'static IntegerCanonicalStructure,
         >,
@@ -334,6 +401,8 @@ impl<
         Self,
         &'static IntegerCanonicalStructure,
         FinitelyFreeSubmoduleStructure<
+            EnumeratedFiniteSetStructure,
+            EnumeratedFiniteSetStructure,
             IntegerCanonicalStructure,
             &'static IntegerCanonicalStructure,
         >,

@@ -56,27 +56,41 @@ impl<Set: Clone + Debug> FinitelyFreeSubmoduleAffineSubset<Set> {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FinitelyFreeSubmoduleAffineSubsetStructure<
+    Set: EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
     Ring: ReducedHermiteAlgorithmSignature,
     RingB: BorrowedStructure<Ring>,
 > {
-    module: FinitelyFreeModuleStructure<Ring, RingB>,
+    module: FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>,
 }
 
-impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
-    FinitelyFreeSubmoduleAffineSubsetStructure<Ring, RingB>
+impl<
+    Set: EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+    Ring: ReducedHermiteAlgorithmSignature,
+    RingB: BorrowedStructure<Ring>,
+> FinitelyFreeSubmoduleAffineSubsetStructure<Set, SetB, Ring, RingB>
 {
-    pub fn new(module: FinitelyFreeModuleStructure<Ring, RingB>) -> Self {
+    pub fn new(module: FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>) -> Self {
         Self { module }
     }
 }
 
-impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> Signature
-    for FinitelyFreeSubmoduleAffineSubsetStructure<Ring, RingB>
+impl<
+    Set: EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+    Ring: ReducedHermiteAlgorithmSignature,
+    RingB: BorrowedStructure<Ring>,
+> Signature for FinitelyFreeSubmoduleAffineSubsetStructure<Set, SetB, Ring, RingB>
 {
 }
 
-impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> SetSignature
-    for FinitelyFreeSubmoduleAffineSubsetStructure<Ring, RingB>
+impl<
+    Set: EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+    Ring: ReducedHermiteAlgorithmSignature,
+    RingB: BorrowedStructure<Ring>,
+> SetSignature for FinitelyFreeSubmoduleAffineSubsetStructure<Set, SetB, Ring, RingB>
 {
     type Elem = FinitelyFreeSubmoduleAffineSubset<Ring::Elem>;
 
@@ -86,14 +100,18 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> Set
     }
 }
 
-impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
-    FinitelyFreeSubmoduleAffineSubsetStructure<Ring, RingB>
+impl<
+    Set: EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+    Ring: ReducedHermiteAlgorithmSignature,
+    RingB: BorrowedStructure<Ring>,
+> FinitelyFreeSubmoduleAffineSubsetStructure<Set, SetB, Ring, RingB>
 {
     pub fn ring(&self) -> &Ring {
         self.module().ring()
     }
 
-    pub fn module(&self) -> &FinitelyFreeModuleStructure<Ring, RingB> {
+    pub fn module(&self) -> &FinitelyFreeModuleStructure<Set, SetB, Ring, RingB> {
         &self.module
     }
 
@@ -241,8 +259,12 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
     }
 }
 
-impl<Ring: UniqueReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> EqSignature
-    for FinitelyFreeSubmoduleAffineSubsetStructure<Ring, RingB>
+impl<
+    Set: EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+    Ring: UniqueReducedHermiteAlgorithmSignature,
+    RingB: BorrowedStructure<Ring>,
+> EqSignature for FinitelyFreeSubmoduleAffineSubsetStructure<Set, SetB, Ring, RingB>
 {
     fn equal(
         &self,

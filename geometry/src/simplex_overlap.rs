@@ -7,6 +7,7 @@ use algebraeon_rings::{
     matrix::{Matrix, MatrixStructure},
     structure::{FieldSignature, OrderedRingSignature, ZeroEqSignature},
 };
+use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 use itertools::Itertools;
 use std::collections::HashSet;
 use std::hash::Hash;
@@ -117,7 +118,10 @@ where
 
             let normal_space =
                 FinitelyFreeSubmoduleStructure::new(
-                    FinitelyFreeModuleStructure::<FS, &'f FS>::new(field, space_dim),
+                    FinitelyFreeModuleStructure::<_, _, FS, &'f FS>::new(
+                        EnumeratedFiniteSetStructure::new(space_dim),
+                        field,
+                    ),
                 )
                 .intersect(
                     MatrixStructure::new(space.field().clone()).col_kernel(Matrix::construct(
@@ -169,23 +173,30 @@ where
                     .map(|k| b_sub.point(k + 1) - b_sub_root)
                     .collect::<Vec<_>>();
 
-                let normal_space = FinitelyFreeSubmoduleStructure::new(
-                    FinitelyFreeModuleStructure::<FS, &'f FS>::new(field, space_dim),
-                )
-                .intersect(
-                    MatrixStructure::new(space.field().clone()).col_kernel(Matrix::construct(
-                        i + j,
-                        space_dim,
-                        |r, c| {
-                            if r < i {
-                                a_sub_vecs[r].coordinate(c).clone()
-                            } else {
-                                b_sub_vecs[r - i].coordinate(c).clone()
-                            }
-                        },
-                    )),
-                    linear_span_foo_submodule.clone(),
-                );
+                let normal_space =
+                    FinitelyFreeSubmoduleStructure::new(FinitelyFreeModuleStructure::<
+                        _,
+                        _,
+                        FS,
+                        &'f FS,
+                    >::new(
+                        EnumeratedFiniteSetStructure::new(space_dim),
+                        field,
+                    ))
+                    .intersect(
+                        MatrixStructure::new(space.field().clone()).col_kernel(Matrix::construct(
+                            i + j,
+                            space_dim,
+                            |r, c| {
+                                if r < i {
+                                    a_sub_vecs[r].coordinate(c).clone()
+                                } else {
+                                    b_sub_vecs[r - i].coordinate(c).clone()
+                                }
+                            },
+                        )),
+                        linear_span_foo_submodule.clone(),
+                    );
 
                 debug_assert!(normal_space.rank() >= 1);
 
