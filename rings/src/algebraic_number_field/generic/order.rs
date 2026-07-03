@@ -5,7 +5,7 @@ use crate::{
     },
     linear::{
         finitely_free_module::RingToFinitelyFreeModuleSignature,
-        finitely_free_submodule::FinitelyFreeSubmodule,
+        finitely_free_submodules::FinitelyFreeSubmodule,
     },
     matrix::{Matrix, SymmetricMatrix},
     structure::{

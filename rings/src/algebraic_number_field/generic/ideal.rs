@@ -7,8 +7,8 @@ use crate::{
         AlgebraicIntegerRingSignature, AlgebraicNumberFieldSignature, OrderWithBasis,
     },
     linear::{
-        finitely_free_affine::FinitelyFreeSubmoduleAffineSubset,
-        finitely_free_submodule::{FinitelyFreeSubmodule, FinitelyFreeSubmoduleStructure},
+        finitely_free_affine_subsets::FinitelyFreeSubmoduleAffineSubset,
+        finitely_free_submodules::{FinitelyFreeSubmodule, FinitelyFreeSubmodulesStructure},
     },
     matrix::Matrix,
     num_theory::integer_ideal::IntegerIdealsStructure,
@@ -179,7 +179,7 @@ mod integer_submodules_to_ideals {
         IB: BorrowedStructure<OrderIdealsStructure<K, KB, MAXIMAL, OB>>,
         IntB: BorrowedStructure<IntegerCanonicalStructure>,
         SB: BorrowedStructure<
-            FinitelyFreeSubmoduleStructure<
+            FinitelyFreeSubmodulesStructure<
                 EnumeratedFiniteSetStructure,
                 EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
@@ -203,7 +203,7 @@ mod integer_submodules_to_ideals {
         IB: BorrowedStructure<OrderIdealsStructure<K, KB, MAXIMAL, OB>>,
         IntB: BorrowedStructure<IntegerCanonicalStructure>,
         SB: BorrowedStructure<
-            FinitelyFreeSubmoduleStructure<
+            FinitelyFreeSubmodulesStructure<
                 EnumeratedFiniteSetStructure,
                 EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
@@ -229,7 +229,7 @@ mod integer_submodules_to_ideals {
 
         fn integer_submodules(
             &self,
-        ) -> &FinitelyFreeSubmoduleStructure<
+        ) -> &FinitelyFreeSubmodulesStructure<
             EnumeratedFiniteSetStructure,
             EnumeratedFiniteSetStructure,
             IntegerCanonicalStructure,
@@ -247,7 +247,7 @@ mod integer_submodules_to_ideals {
         IB: BorrowedStructure<OrderIdealsStructure<K, KB, MAXIMAL, OB>>,
         IntB: BorrowedStructure<IntegerCanonicalStructure>,
         SB: BorrowedStructure<
-            FinitelyFreeSubmoduleStructure<
+            FinitelyFreeSubmodulesStructure<
                 EnumeratedFiniteSetStructure,
                 EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
@@ -257,7 +257,7 @@ mod integer_submodules_to_ideals {
     >
         Morphism<
             OrderIdealsStructure<K, KB, MAXIMAL, OB>,
-            FinitelyFreeSubmoduleStructure<
+            FinitelyFreeSubmodulesStructure<
                 EnumeratedFiniteSetStructure,
                 EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
@@ -271,7 +271,7 @@ mod integer_submodules_to_ideals {
 
         fn range(
             &self,
-        ) -> &FinitelyFreeSubmoduleStructure<
+        ) -> &FinitelyFreeSubmodulesStructure<
             EnumeratedFiniteSetStructure,
             EnumeratedFiniteSetStructure,
             IntegerCanonicalStructure,
@@ -289,7 +289,7 @@ mod integer_submodules_to_ideals {
         IB: BorrowedStructure<OrderIdealsStructure<K, KB, MAXIMAL, OB>>,
         IntB: BorrowedStructure<IntegerCanonicalStructure>,
         SB: BorrowedStructure<
-            FinitelyFreeSubmoduleStructure<
+            FinitelyFreeSubmodulesStructure<
                 EnumeratedFiniteSetStructure,
                 EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
@@ -299,7 +299,7 @@ mod integer_submodules_to_ideals {
     >
         Function<
             OrderIdealsStructure<K, KB, MAXIMAL, OB>,
-            FinitelyFreeSubmoduleStructure<
+            FinitelyFreeSubmodulesStructure<
                 EnumeratedFiniteSetStructure,
                 EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
@@ -325,7 +325,7 @@ mod integer_submodules_to_ideals {
         IB: BorrowedStructure<OrderIdealsStructure<K, KB, MAXIMAL, OB>>,
         IntB: BorrowedStructure<IntegerCanonicalStructure>,
         SB: BorrowedStructure<
-            FinitelyFreeSubmoduleStructure<
+            FinitelyFreeSubmodulesStructure<
                 EnumeratedFiniteSetStructure,
                 EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
@@ -335,7 +335,7 @@ mod integer_submodules_to_ideals {
     >
         InjectiveFunction<
             OrderIdealsStructure<K, KB, MAXIMAL, OB>,
-            FinitelyFreeSubmoduleStructure<
+            FinitelyFreeSubmodulesStructure<
                 EnumeratedFiniteSetStructure,
                 EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
@@ -376,7 +376,7 @@ impl<
         OB,
         &Self,
         &'static IntegerCanonicalStructure,
-        FinitelyFreeSubmoduleStructure<
+        FinitelyFreeSubmodulesStructure<
             EnumeratedFiniteSetStructure,
             EnumeratedFiniteSetStructure,
             IntegerCanonicalStructure,
@@ -400,7 +400,7 @@ impl<
         OB,
         Self,
         &'static IntegerCanonicalStructure,
-        FinitelyFreeSubmoduleStructure<
+        FinitelyFreeSubmodulesStructure<
             EnumeratedFiniteSetStructure,
             EnumeratedFiniteSetStructure,
             IntegerCanonicalStructure,

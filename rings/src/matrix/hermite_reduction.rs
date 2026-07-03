@@ -1,8 +1,8 @@
 use super::*;
 use crate::linear::{
-    finitely_free_affine::FinitelyFreeSubmoduleAffineSubset,
+    finitely_free_affine_subsets::FinitelyFreeSubmoduleAffineSubset,
     finitely_free_module::FinitelyFreeModuleStructure,
-    finitely_free_submodule::FinitelyFreeSubmodule,
+    finitely_free_submodules::FinitelyFreeSubmodule,
 };
 use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 use algebraeon_structures::*;

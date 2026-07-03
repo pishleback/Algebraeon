@@ -2,11 +2,15 @@ use algebraeon_rings::{
     finite_fields::quaternary_field::{QuaternaryField, QuaternaryFieldCanonicalStructure},
     linear::{
         finitely_free_module::{FinitelyFreeModuleStructure, RingToFinitelyFreeModuleSignature},
-        finitely_free_submodule::FinitelyFreeSubmodule,
+        finitely_free_submodules::FinitelyFreeSubmodule,
+    },
+    structure::{
+        AdditionSignature, AdditiveGroupSignature, AdditiveMonoidSignature,
+        CancellativeAdditionSignature, ModuleSignature, RinglikeSpecializationSignature,
+        SemiModuleSignature, TryNegateSignature, ZeroSignature,
     },
 };
 use algebraeon_structures::*;
-use std::marker::PhantomData;
 
 /// The hexacode on a 6-element set
 ///     0 1  2 3  4 5
@@ -130,6 +134,84 @@ impl<
             return Err("not a hexacodeword".to_string());
         }
         Ok(())
+    }
+}
+
+impl<
+    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<6>,
+    SetB: BorrowedStructure<Set>,
+> RinglikeSpecializationSignature for HexacodeStructure<Set, SetB>
+{
+}
+
+impl<
+    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<6>,
+    SetB: BorrowedStructure<Set>,
+> ZeroSignature for HexacodeStructure<Set, SetB>
+{
+    fn zero(&self) -> Self::Elem {
+        todo!()
+    }
+}
+
+impl<
+    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<6>,
+    SetB: BorrowedStructure<Set>,
+> AdditionSignature for HexacodeStructure<Set, SetB>
+{
+    fn add(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+        todo!()
+    }
+}
+
+impl<
+    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<6>,
+    SetB: BorrowedStructure<Set>,
+> CancellativeAdditionSignature for HexacodeStructure<Set, SetB>
+{
+    fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+        todo!()
+    }
+}
+
+impl<
+    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<6>,
+    SetB: BorrowedStructure<Set>,
+> TryNegateSignature for HexacodeStructure<Set, SetB>
+{
+    fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
+        todo!()
+    }
+}
+
+impl<
+    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<6>,
+    SetB: BorrowedStructure<Set>,
+> AdditiveMonoidSignature for HexacodeStructure<Set, SetB>
+{
+}
+
+impl<
+    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<6>,
+    SetB: BorrowedStructure<Set>,
+> AdditiveGroupSignature for HexacodeStructure<Set, SetB>
+{
+    fn neg(&self, a: &Self::Elem) -> Self::Elem {
+        todo!()
+    }
+}
+
+impl<
+    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<6>,
+    SetB: BorrowedStructure<Set>,
+> SemiModuleSignature<QuaternaryFieldCanonicalStructure> for HexacodeStructure<Set, SetB>
+{
+    fn ring(&self) -> &QuaternaryFieldCanonicalStructure {
+        todo!()
+    }
+
+    fn scalar_mul(&self, a: &Self::Elem, x: &QuaternaryField) -> Self::Elem {
+        todo!()
     }
 }
 

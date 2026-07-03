@@ -2,7 +2,7 @@ use crate::{ambient_space::common_space, simplex::Simplex, vector::DotProduct};
 use algebraeon_rings::{
     linear::{
         finitely_free_module::FinitelyFreeModuleStructure,
-        finitely_free_submodule::FinitelyFreeSubmoduleStructure,
+        finitely_free_submodules::FinitelyFreeSubmodulesStructure,
     },
     matrix::{Matrix, MatrixStructure},
     structure::{FieldSignature, OrderedRingSignature, ZeroEqSignature},
@@ -117,7 +117,7 @@ where
             // Add the normal to the sum of A and B for the degenerate case
 
             let normal_space =
-                FinitelyFreeSubmoduleStructure::new(
+                FinitelyFreeSubmodulesStructure::new(
                     FinitelyFreeModuleStructure::<_, _, FS, &'f FS>::new(
                         EnumeratedFiniteSetStructure::new(space_dim),
                         field,
@@ -174,7 +174,7 @@ where
                     .collect::<Vec<_>>();
 
                 let normal_space =
-                    FinitelyFreeSubmoduleStructure::new(FinitelyFreeModuleStructure::<
+                    FinitelyFreeSubmodulesStructure::new(FinitelyFreeModuleStructure::<
                         _,
                         _,
                         FS,

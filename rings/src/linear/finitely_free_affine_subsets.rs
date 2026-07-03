@@ -1,5 +1,5 @@
 use super::{
-    finitely_free_coset::FinitelyFreeSubmoduleCoset,
+    finitely_free_cosets::FinitelyFreeSubmoduleCoset,
     finitely_free_module::FinitelyFreeModuleStructure,
 };
 use crate::matrix::{ReducedHermiteAlgorithmSignature, UniqueReducedHermiteAlgorithmSignature};
@@ -55,7 +55,7 @@ impl<Set: Clone + Debug> FinitelyFreeSubmoduleAffineSubset<Set> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FinitelyFreeSubmoduleAffineSubsetStructure<
+pub struct FinitelyFreeSubmoduleAffineSubsetsStructure<
     Set: EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: ReducedHermiteAlgorithmSignature,
@@ -69,7 +69,7 @@ impl<
     SetB: BorrowedStructure<Set>,
     Ring: ReducedHermiteAlgorithmSignature,
     RingB: BorrowedStructure<Ring>,
-> FinitelyFreeSubmoduleAffineSubsetStructure<Set, SetB, Ring, RingB>
+> FinitelyFreeSubmoduleAffineSubsetsStructure<Set, SetB, Ring, RingB>
 {
     pub fn new(module: FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>) -> Self {
         Self { module }
@@ -81,7 +81,7 @@ impl<
     SetB: BorrowedStructure<Set>,
     Ring: ReducedHermiteAlgorithmSignature,
     RingB: BorrowedStructure<Ring>,
-> Signature for FinitelyFreeSubmoduleAffineSubsetStructure<Set, SetB, Ring, RingB>
+> Signature for FinitelyFreeSubmoduleAffineSubsetsStructure<Set, SetB, Ring, RingB>
 {
 }
 
@@ -90,7 +90,7 @@ impl<
     SetB: BorrowedStructure<Set>,
     Ring: ReducedHermiteAlgorithmSignature,
     RingB: BorrowedStructure<Ring>,
-> SetSignature for FinitelyFreeSubmoduleAffineSubsetStructure<Set, SetB, Ring, RingB>
+> SetSignature for FinitelyFreeSubmoduleAffineSubsetsStructure<Set, SetB, Ring, RingB>
 {
     type Elem = FinitelyFreeSubmoduleAffineSubset<Ring::Elem>;
 
@@ -105,7 +105,7 @@ impl<
     SetB: BorrowedStructure<Set>,
     Ring: ReducedHermiteAlgorithmSignature,
     RingB: BorrowedStructure<Ring>,
-> FinitelyFreeSubmoduleAffineSubsetStructure<Set, SetB, Ring, RingB>
+> FinitelyFreeSubmoduleAffineSubsetsStructure<Set, SetB, Ring, RingB>
 {
     pub fn ring(&self) -> &Ring {
         self.module().ring()
@@ -264,7 +264,7 @@ impl<
     SetB: BorrowedStructure<Set>,
     Ring: UniqueReducedHermiteAlgorithmSignature,
     RingB: BorrowedStructure<Ring>,
-> EqSignature for FinitelyFreeSubmoduleAffineSubsetStructure<Set, SetB, Ring, RingB>
+> EqSignature for FinitelyFreeSubmoduleAffineSubsetsStructure<Set, SetB, Ring, RingB>
 {
     fn equal(
         &self,
