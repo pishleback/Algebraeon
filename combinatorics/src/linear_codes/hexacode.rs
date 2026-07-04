@@ -2,12 +2,12 @@ use algebraeon_rings::{
     finite_fields::quaternary_field::{QuaternaryField, QuaternaryFieldCanonicalStructure},
     linear::{
         finitely_free_module::{FinitelyFreeModuleStructure, RingToFinitelyFreeModuleSignature},
-        finitely_free_submodules::FinitelyFreeSubmodule,
+        finitely_free_submodule::FinitelyFreeSubmoduleStructure,
     },
     structure::{
         AdditionSignature, AdditiveGroupSignature, AdditiveMonoidSignature,
-        CancellativeAdditionSignature, ModuleSignature, RinglikeSpecializationSignature,
-        SemiModuleSignature, TryNegateSignature, ZeroSignature,
+        CancellativeAdditionSignature, RinglikeSpecializationSignature, SemiModuleSignature,
+        TryNegateSignature, ZeroSignature,
     },
 };
 use algebraeon_structures::*;
@@ -20,35 +20,23 @@ use algebraeon_structures::*;
 ///     b a  b a  a b
 /// where
 ///     F4 = {0, 1, a, b}
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HexacodeStructure<
     Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<6>,
     SetB: BorrowedStructure<Set>,
 > {
-    full_space: FinitelyFreeModuleStructure<
+    hexacode: FinitelyFreeSubmoduleStructure<
         Set,
         SetB,
         QuaternaryFieldCanonicalStructure,
         QuaternaryFieldCanonicalStructure,
+        FinitelyFreeModuleStructure<
+            Set,
+            SetB,
+            QuaternaryFieldCanonicalStructure,
+            QuaternaryFieldCanonicalStructure,
+        >,
     >,
-    hexacode_subspace: FinitelyFreeSubmodule<QuaternaryField>,
-}
-
-impl<
-    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<6>,
-    SetB: BorrowedStructure<Set>,
-> PartialEq for HexacodeStructure<Set, SetB>
-{
-    fn eq(&self, other: &Self) -> bool {
-        self.full_space == other.full_space
-    }
-}
-
-impl<
-    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<6>,
-    SetB: BorrowedStructure<Set>,
-> Eq for HexacodeStructure<Set, SetB>
-{
 }
 
 pub trait SetToHexacodeSignature:
@@ -101,13 +89,12 @@ impl<
             ],
         ]);
         Self {
-            full_space,
-            hexacode_subspace,
+            hexacode: FinitelyFreeSubmoduleStructure::new(full_space, hexacode_subspace),
         }
     }
 
     pub fn set(&self) -> &Set {
-        self.full_space.set()
+        self.hexacode.set()
     }
 }
 
@@ -126,14 +113,7 @@ impl<
     type Elem = Vec<QuaternaryField>;
 
     fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
-        if !self
-            .full_space
-            .submodules()
-            .contains_element(&self.hexacode_subspace, x)
-        {
-            return Err("not a hexacodeword".to_string());
-        }
-        Ok(())
+        self.hexacode.validate_element(x)
     }
 }
 
@@ -150,7 +130,7 @@ impl<
 > ZeroSignature for HexacodeStructure<Set, SetB>
 {
     fn zero(&self) -> Self::Elem {
-        todo!()
+        self.hexacode.zero()
     }
 }
 
@@ -160,7 +140,7 @@ impl<
 > AdditionSignature for HexacodeStructure<Set, SetB>
 {
     fn add(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
-        todo!()
+        self.hexacode.add(a, b)
     }
 }
 
@@ -170,7 +150,7 @@ impl<
 > CancellativeAdditionSignature for HexacodeStructure<Set, SetB>
 {
     fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
-        todo!()
+        self.hexacode.try_sub(a, b)
     }
 }
 
@@ -180,7 +160,7 @@ impl<
 > TryNegateSignature for HexacodeStructure<Set, SetB>
 {
     fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
-        todo!()
+        self.hexacode.try_neg(a)
     }
 }
 
@@ -197,7 +177,7 @@ impl<
 > AdditiveGroupSignature for HexacodeStructure<Set, SetB>
 {
     fn neg(&self, a: &Self::Elem) -> Self::Elem {
-        todo!()
+        self.hexacode.neg(a)
     }
 }
 
@@ -207,25 +187,23 @@ impl<
 > SemiModuleSignature<QuaternaryFieldCanonicalStructure> for HexacodeStructure<Set, SetB>
 {
     fn ring(&self) -> &QuaternaryFieldCanonicalStructure {
-        todo!()
+        self.hexacode.ring()
     }
 
     fn scalar_mul(&self, a: &Self::Elem, x: &QuaternaryField) -> Self::Elem {
-        todo!()
+        self.hexacode.scalar_mul(a, x)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use algebraeon_sets::sets::{
-        FiniteSetToFinitelySupportedPermutationsStructure, SetToFiniteSubsetByOrdSizedSignature,
-    };
+    use algebraeon_sets::sets::SetToFiniteSubsetByOrdSizedSignature;
 
     #[test]
     fn test() {
         let set = i32::structure().into_finite_subset_sized([1, 2, 3, 4, 5, 6]);
-        let set_perms = set.permutations();
+        // let set_perms = set.permutations();
 
         let hexacode = set.hexacode();
 

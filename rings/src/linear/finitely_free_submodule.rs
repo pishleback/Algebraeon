@@ -76,6 +76,10 @@ impl<
     pub fn module(&self) -> &FinitelyFreeModuleStructure<Set, SetB, Ring, RingB> {
         self.module.borrow()
     }
+
+    pub fn set(&self) -> &Set {
+        self.module().set()
+    }
 }
 
 impl<
