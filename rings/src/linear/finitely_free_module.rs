@@ -7,8 +7,9 @@ use crate::{
     matrix::{Matrix, MatrixStructure, ReducedHermiteAlgorithmSignature},
     structure::*,
 };
+use algebraeon_sets::sets::FunctionsStructure;
 use algebraeon_structures::*;
-use std::{borrow::Cow, marker::PhantomData};
+use std::borrow::Cow;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FinitelyFreeModuleStructure<
@@ -17,10 +18,7 @@ pub struct FinitelyFreeModuleStructure<
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
 > {
-    _set: PhantomData<Set>,
-    set: SetB,
-    _ring: PhantomData<Ring>,
-    ring: RingB,
+    functions: FunctionsStructure<Set, SetB, Ring, RingB>,
 }
 
 impl<
@@ -32,10 +30,7 @@ impl<
 {
     pub fn new(set: SetB, ring: RingB) -> Self {
         Self {
-            _set: PhantomData,
-            set,
-            _ring: PhantomData,
-            ring,
+            functions: FunctionsStructure::new(set, ring),
         }
     }
 }
@@ -81,11 +76,19 @@ impl<
 > FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>
 {
     pub fn set(&self) -> &Set {
-        self.set.borrow()
+        self.functions.domain()
     }
 
     pub fn ring(&self) -> &Ring {
-        self.ring.borrow()
+        self.functions.range()
+    }
+
+    pub fn functions_restructure(&self) -> &FunctionsStructure<Set, SetB, Ring, RingB> {
+        &self.functions
+    }
+
+    pub fn into_functions_restructure(self) -> FunctionsStructure<Set, SetB, Ring, RingB> {
+        self.functions
     }
 
     pub fn to_col(&self, v: &<Self as SetSignature>::Elem) -> Matrix<Ring::Elem> {
@@ -210,13 +213,7 @@ impl<
     type Elem = Vec<Ring::Elem>;
 
     fn validate_element(&self, v: &Self::Elem) -> Result<(), String> {
-        if self.rank() != v.len() {
-            return Err("wrong size".to_string());
-        }
-        for r in v {
-            self.ring().validate_element(r)?;
-        }
-        Ok(())
+        self.functions_restructure().validate_element(v)
     }
 }
 
@@ -228,9 +225,7 @@ impl<
 > EqSignature for FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>
 {
     fn equal(&self, v: &Self::Elem, w: &Self::Elem) -> bool {
-        debug_assert!(self.validate_element(v).is_ok());
-        debug_assert!(self.validate_element(w).is_ok());
-        (0..self.rank()).all(|i| self.ring().equal(&v[i], &w[i]))
+        self.functions_restructure().equal(v, w)
     }
 }
 
@@ -333,7 +328,7 @@ impl<
 > SemiModuleSignature<Ring> for FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>
 {
     fn ring(&self) -> &Ring {
-        self.ring.borrow()
+        self.functions.range()
     }
 
     fn scalar_mul(&self, v: &Self::Elem, r: &Ring::Elem) -> Self::Elem {
