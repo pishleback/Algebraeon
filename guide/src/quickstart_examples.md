@@ -68,6 +68,8 @@ use algebraeon::structures::Integer;
 use algebraeon::rings::linear::finitely_free_module::RingToFinitelyFreeModuleSignature;
 use algebraeon::rings::matrix::Matrix;
 use algebraeon::structures::MetaType;
+use algebraeon::sets::sets::EnumeratedFiniteSetStructure;
+
 let m = Matrix::<Integer>::from_rows(
     vec![
         vec![3, 4, 1], 
@@ -77,7 +79,7 @@ let m = Matrix::<Integer>::from_rows(
 );
 let y = vec![5.into(), 5.into(), 3.into()];
 for x in Integer::structure()
-    .free_module(3)
+    .free_module(EnumeratedFiniteSetStructure::new(3))
     .affine_subsets()
     .affine_basis(&m.row_solution_set(&y))
 {

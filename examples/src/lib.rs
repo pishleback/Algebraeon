@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
 #![allow(clippy::doc_lazy_continuation)] // because it parses the guide weirdly
-// #![doc = include_str!("../../README.md")]
-// include!(concat!(env!("OUT_DIR"), "/generated_docs.rs"));
+#![doc = include_str!("../../README.md")]
+include!(concat!(env!("OUT_DIR"), "/generated_docs.rs"));
 
 #[cfg(test)]
 mod tests {
