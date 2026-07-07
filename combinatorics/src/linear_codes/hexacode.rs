@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 use algebraeon_rings::{
     finite_fields::quaternary_field::{QuaternaryField, QuaternaryFieldCanonicalStructure},
     linear::{
@@ -120,6 +122,86 @@ impl<
 impl<
     Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<6>,
     SetB: BorrowedStructure<Set>,
+> EqSignature for HexacodeStructure<Set, SetB>
+{
+    fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
+        self.hexacode.equal(a, b)
+    }
+}
+
+impl<
+    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<6>,
+    SetB: BorrowedStructure<Set>,
+> PartialOrdSignature for HexacodeStructure<Set, SetB>
+{
+    fn partial_cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Ordering> {
+        self.hexacode.partial_cmp(a, b)
+    }
+}
+
+impl<
+    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<6>,
+    SetB: BorrowedStructure<Set>,
+> OrdSignature for HexacodeStructure<Set, SetB>
+{
+    fn cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Ordering {
+        self.hexacode.cmp(a, b)
+    }
+}
+
+impl<
+    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<6>,
+    SetB: BorrowedStructure<Set>,
+> CountableSetSignature for HexacodeStructure<Set, SetB>
+{
+    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
+        self.hexacode.into_generate_all_elements()
+    }
+
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+        self.hexacode.generate_all_elements()
+    }
+}
+
+impl<
+    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<6>,
+    SetB: BorrowedStructure<Set>,
+> FiniteSetSignature for HexacodeStructure<Set, SetB>
+{
+    fn list_all_elements(&self) -> Vec<Self::Elem> {
+        self.hexacode.list_all_elements()
+    }
+
+    fn size(&self) -> Natural {
+        self.hexacode.size()
+    }
+
+    fn generate_random_elements(&self, seed: u64) -> impl Iterator<Item = Self::Elem> {
+        self.hexacode.generate_random_elements(seed)
+    }
+}
+
+impl<
+    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<6>,
+    SetB: BorrowedStructure<Set>,
+> EnumeratedOrdFiniteSetSignature for HexacodeStructure<Set, SetB>
+{
+    fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
+        self.hexacode.list_all_elements_ordered()
+    }
+
+    fn element_to_enumeration(&self, elem: &Self::Elem) -> Natural {
+        self.hexacode.element_to_enumeration(elem)
+    }
+
+    fn enumeration_to_element(&self, num: &Natural) -> Option<Self::Elem> {
+        self.hexacode.enumeration_to_element(num)
+    }
+}
+
+impl<
+    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<6>,
+    SetB: BorrowedStructure<Set>,
 > RinglikeSpecializationSignature for HexacodeStructure<Set, SetB>
 {
 }
@@ -208,5 +290,38 @@ mod tests {
         let hexacode = set.hexacode();
 
         println!("{:?}", hexacode);
+
+        for x in hexacode.list_all_elements() {
+            println!("{:?}", x);
+        }
+    }
+
+    #[test]
+    fn test_enumeration() {
+        let set = i32::structure().into_finite_subset_sized([1, 2, 3, 4, 5, 6]);
+        let hexacode = set.hexacode();
+        let codewords = hexacode.list_all_elements_ordered();
+        assert_eq!(codewords.len(), 64);
+        assert_eq!(hexacode.size(), Natural::from(64usize));
+
+        // codewords are all valid
+        for v in &codewords {
+            println!("{:?}", v);
+            assert!(hexacode.validate_element(v).is_ok());
+        }
+
+        // enumeration is correct
+        for (i, v) in codewords.iter().enumerate() {
+            assert_eq!(Natural::from(i), hexacode.element_to_enumeration(v));
+            assert!(hexacode.equal(
+                &hexacode.enumeration_to_element(&Natural::from(i)).unwrap(),
+                v
+            ));
+        }
+        assert!(
+            hexacode
+                .enumeration_to_element(&Natural::from(64usize))
+                .is_none()
+        );
     }
 }

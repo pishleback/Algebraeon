@@ -9,7 +9,7 @@ use crate::{
 };
 use algebraeon_sets::sets::FunctionsStructure;
 use algebraeon_structures::*;
-use std::borrow::Cow;
+use std::{borrow::Cow, cmp::Ordering};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FinitelyFreeModuleStructure<
@@ -226,6 +226,87 @@ impl<
 {
     fn equal(&self, v: &Self::Elem, w: &Self::Elem) -> bool {
         self.functions_restructure().equal(v, w)
+    }
+}
+
+impl<
+    Set: EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+    Ring: RingSignature + OrdSignature,
+    RingB: BorrowedStructure<Ring>,
+> PartialOrdSignature for FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>
+{
+    fn partial_cmp(&self, v: &Self::Elem, w: &Self::Elem) -> Option<Ordering> {
+        self.functions_restructure().partial_cmp(v, w)
+    }
+}
+
+impl<
+    Set: EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+    Ring: RingSignature + OrdSignature,
+    RingB: BorrowedStructure<Ring>,
+> OrdSignature for FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>
+{
+    fn cmp(&self, v: &Self::Elem, w: &Self::Elem) -> Ordering {
+        self.functions_restructure().cmp(v, w)
+    }
+}
+
+impl<
+    Set: EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+    Ring: RingSignature + EnumeratedOrdFiniteSetSignature,
+    RingB: BorrowedStructure<Ring>,
+> CountableSetSignature for FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>
+{
+    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
+        self.into_functions_restructure()
+            .into_generate_all_elements()
+    }
+
+    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+        self.functions_restructure().generate_all_elements()
+    }
+}
+
+impl<
+    Set: EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+    Ring: RingSignature + EnumeratedOrdFiniteSetSignature,
+    RingB: BorrowedStructure<Ring>,
+> FiniteSetSignature for FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>
+{
+    fn list_all_elements(&self) -> Vec<Self::Elem> {
+        self.functions_restructure().list_all_elements()
+    }
+
+    fn size(&self) -> Natural {
+        self.functions_restructure().size()
+    }
+
+    fn generate_random_elements(&self, seed: u64) -> impl Iterator<Item = Self::Elem> {
+        self.functions_restructure().generate_random_elements(seed)
+    }
+}
+
+impl<
+    Set: EnumeratedOrdFiniteSetSignature,
+    SetB: BorrowedStructure<Set>,
+    Ring: RingSignature + EnumeratedOrdFiniteSetSignature,
+    RingB: BorrowedStructure<Ring>,
+> EnumeratedOrdFiniteSetSignature for FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>
+{
+    fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
+        self.functions_restructure().list_all_elements_ordered()
+    }
+
+    fn element_to_enumeration(&self, elem: &Self::Elem) -> Natural {
+        self.functions_restructure().element_to_enumeration(elem)
+    }
+
+    fn enumeration_to_element(&self, num: &Natural) -> Option<Self::Elem> {
+        self.functions_restructure().enumeration_to_element(num)
     }
 }
 
