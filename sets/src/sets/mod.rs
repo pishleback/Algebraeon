@@ -1,3 +1,5 @@
+mod cartesian_product;
+mod disjoint_union;
 mod empty;
 mod endofunctions;
 mod finite_set_sized;
@@ -11,6 +13,8 @@ mod pairs;
 mod permutations;
 mod singleton;
 
+pub use cartesian_product::*;
+pub use disjoint_union::*;
 pub use empty::*;
 pub use endofunctions::*;
 pub use finite_set_sized::*;
