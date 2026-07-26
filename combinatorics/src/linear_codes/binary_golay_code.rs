@@ -1,4 +1,5 @@
 use algebraeon_rings::{
+    finite_fields::quaternary_field::QuaternaryField,
     linear::{
         finitely_free_module::{FinitelyFreeModuleStructure, RingToFinitelyFreeModuleSignature},
         finitely_free_submodule::FinitelyFreeSubmoduleStructure,
@@ -6,29 +7,42 @@ use algebraeon_rings::{
     num_theory::modulo::const_naive::{Modulo, ModuloCanonicalStructure},
     structure::{
         AdditionSignature, AdditiveGroupSignature, AdditiveMonoidSignature,
-        CancellativeAdditionSignature, RinglikeSpecializationSignature, SemiModuleSignature,
-        TryNegateSignature, ZeroSignature,
+        CancellativeAdditionSignature, MetaZeroEqSignature, RinglikeSpecializationSignature,
+        SemiModuleSignature, TryNegateSignature, ZeroSignature,
     },
 };
 use algebraeon_structures::*;
 use std::cmp::Ordering;
 
-/// The extended binary Golay code on a 24-element set {0, 1, ..., 22, 23 (inf)}
+use crate::linear_codes::hexacode::{HexacodeStructure, HexacodeVector};
+
+// This numbering is chosen such that the group PSL(2, F32) acting on the points is a subgroup of M24
+//   0    1      2    3      4    5
+// +----+----+ +----+----+ +----+----+
+// | ∞  | 0  | | 1  | 11 | | 2  | 22 |  0
+// +----+----+ +----+----+ +----+----+
+// | 19 | 3  | | 20 | 4  | | 10 | 18 |  1
+// +----+----+ +----+----+ +----+----+
+// | 15 | 6  | | 14 | 16 | | 17 | 8  |  a
+// +----+----+ +----+----+ +----+----+
+// | 5  | 9  | | 21 | 13 | | 7  | 12 |  b
+// +----+----+ +----+----+ +----+----+
+
+/// This is the extended binary Golay code on a 24-element set.
+/// With the 24-element set numbered as shown, the extended binary Golay code is the set of all vectors over F2 such that
+///  - The parity of the top row is equal to the parity of every column
+///  - The length 6 vector over F4, formed by summing for each column the elements of F4 for which the entry is 1, is a hexacodeword
 ///
 ///   0    1      2    3      4    5
 /// +----+----+ +----+----+ +----+----+
-/// | ∞  | 0  | | 1  | 11 | | 2  | 22 |  0
+/// | 0  | 1  | | 2  | 3  | | 4  | 5  |  0
 /// +----+----+ +----+----+ +----+----+
-/// | 19 | 3  | | 20 | 4  | | 10 | 18 |  1
+/// | 6  | 7  | | 8  | 9  | | 10 | 11 |  1
 /// +----+----+ +----+----+ +----+----+
-/// | 15 | 6  | | 14 | 16 | | 17 | 8  |  a
+/// | 12 | 13 | | 14 | 15 | | 16 | 17 |  a
 /// +----+----+ +----+----+ +----+----+
-/// | 5  | 9  | | 21 | 13 | | 7  | 12 |  b
+/// | 18 | 19 | | 20 | 21 | | 22 | 23 |  b
 /// +----+----+ +----+----+ +----+----+
-///
-/// The numbering fairly arbitrary, but is chosen such that the group PSL(2, F32) acting on the points is a subgroup of M24
-/// The columns are ordered 0..6 and the hexacode on the columns is related to the structure of the extended binary Golay code
-/// The rows are labelled by the elements of F4
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExtendedBinaryGolayCodeStructure<
     Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<24>,
@@ -46,6 +60,47 @@ pub struct ExtendedBinaryGolayCodeStructure<
             ModuloCanonicalStructure<2>,
         >,
     >,
+}
+
+// not necessarily a codeword
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub struct BinaryVector24 {
+    // a length 24 vector using the first 24 bits
+    n: u32,
+}
+
+impl TryFrom<Vec<Modulo<2>>> for BinaryVector24 {
+    type Error = ();
+
+    fn try_from(vec: Vec<Modulo<2>>) -> Result<Self, Self::Error> {
+        if vec.len() == 24 {
+            let mut n = 0;
+            for (i, x) in vec.into_iter().enumerate() {
+                if !x.is_zero() {
+                    n |= 1 << i;
+                }
+            }
+            Ok(Self { n })
+        } else {
+            Err(())
+        }
+    }
+}
+
+impl From<BinaryVector24> for Vec<Modulo<2>> {
+    fn from(val: BinaryVector24) -> Self {
+        use algebraeon_rings::structure::MetaOneSignature;
+        use algebraeon_rings::structure::MetaZeroSignature;
+        (0..24)
+            .map(|i| {
+                if val.n & (1 << i as u32) == 0 {
+                    Modulo::zero()
+                } else {
+                    Modulo::one()
+                }
+            })
+            .collect()
+    }
 }
 
 pub trait SetToExtendedBinaryGolayCodeSignature:
@@ -259,6 +314,10 @@ impl<
     }
 }
 
+// pub fn project_to_hexacode(vec: &BinaryVector24) -> HexacodeVector {
+//     todo!()
+// }
+
 #[cfg(test)]
 mod tests {
     use std::println;
@@ -271,20 +330,19 @@ mod tests {
     };
 
     #[test]
-    fn test() {
+    fn list_elements() {
         let set = i32::structure()
             .into_finite_subset_sized(std::array::from_fn::<_, 24, _>(|i| i as i32));
         let ebgc = set.extended_binary_golay_code();
 
         println!("{:?}", ebgc);
-
         for x in ebgc.list_all_elements() {
             println!("{:?}", x);
         }
     }
 
     #[test]
-    fn test_enumeration() {
+    fn enumeration() {
         let set = i32::structure()
             .into_finite_subset_sized(std::array::from_fn::<_, 24, _>(|i| i as i32));
         let ebgc = set.extended_binary_golay_code();
@@ -310,18 +368,37 @@ mod tests {
     }
 
     #[test]
-    fn test_6set_times_quaternary_field() {
+    fn set6_times_quaternary_field() {
         let set6 = i32::structure().into_finite_subset_sized([1, 2, 3, 4, 5, 6]);
-
         let set24 = CartesianProductSetStructure::new(QuaternaryField::structure(), set6);
-
         for x in set24.list_all_elements_ordered() {
             println!("{:?}", x);
         }
-
         let ebgc = set24
             .try_into_sized::<24>()
             .unwrap()
             .extended_binary_golay_code();
+    }
+
+    #[test]
+    fn hexacode_project() {
+        let set24 = CartesianProductSetStructure::new(
+            QuaternaryField::structure(),
+            i32::structure().into_finite_subset_sized([1, 2, 3, 4, 5, 6]),
+        );
+
+        let x = BinaryVector24 { n: 5 };
+        println!("{:?}", Vec::<Modulo::<2>>::from(x));
+
+        // project_to_hexacode(vec![Modulo::zero()]);
+
+        // for x in set24.list_all_elements_ordered() {
+        //     println!("{:?}", x);
+        // }
+
+        // let ebgc = set24
+        //     .try_into_sized::<24>()
+        //     .unwrap()
+        //     .extended_binary_golay_code();
     }
 }

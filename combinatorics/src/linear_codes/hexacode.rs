@@ -41,6 +41,31 @@ pub struct HexacodeStructure<
     >,
 }
 
+// not necessarily a codeword
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub struct HexacodeVector {
+    // a length 6 vector
+    vec: Vec<QuaternaryField>,
+}
+
+impl TryFrom<Vec<QuaternaryField>> for HexacodeVector {
+    type Error = ();
+
+    fn try_from(vec: Vec<QuaternaryField>) -> Result<Self, Self::Error> {
+        if vec.len() == 6 {
+            Ok(Self { vec })
+        } else {
+            Err(())
+        }
+    }
+}
+
+impl From<HexacodeVector> for Vec<QuaternaryField> {
+    fn from(val: HexacodeVector) -> Self {
+        val.vec
+    }
+}
+
 pub trait SetToHexacodeSignature:
     EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<6>
 {
@@ -112,10 +137,10 @@ impl<
     SetB: BorrowedStructure<Set>,
 > SetSignature for HexacodeStructure<Set, SetB>
 {
-    type Elem = Vec<QuaternaryField>;
+    type Elem = HexacodeVector;
 
     fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
-        self.hexacode.validate_element(x)
+        self.hexacode.validate_element(&x.vec)
     }
 }
 
@@ -125,7 +150,7 @@ impl<
 > EqSignature for HexacodeStructure<Set, SetB>
 {
     fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
-        self.hexacode.equal(a, b)
+        self.hexacode.equal(&a.vec, &b.vec)
     }
 }
 
@@ -135,7 +160,7 @@ impl<
 > PartialOrdSignature for HexacodeStructure<Set, SetB>
 {
     fn partial_cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Ordering> {
-        self.hexacode.partial_cmp(a, b)
+        self.hexacode.partial_cmp(&a.vec, &b.vec)
     }
 }
 
@@ -145,7 +170,7 @@ impl<
 > OrdSignature for HexacodeStructure<Set, SetB>
 {
     fn cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Ordering {
-        self.hexacode.cmp(a, b)
+        self.hexacode.cmp(&a.vec, &b.vec)
     }
 }
 
@@ -155,11 +180,15 @@ impl<
 > CountableSetSignature for HexacodeStructure<Set, SetB>
 {
     fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
-        self.hexacode.into_generate_all_elements()
+        self.hexacode
+            .into_generate_all_elements()
+            .map(|vec| HexacodeVector { vec })
     }
 
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
-        self.hexacode.generate_all_elements()
+        self.hexacode
+            .generate_all_elements()
+            .map(|vec| HexacodeVector { vec })
     }
 }
 
@@ -169,7 +198,11 @@ impl<
 > FiniteSetSignature for HexacodeStructure<Set, SetB>
 {
     fn list_all_elements(&self) -> Vec<Self::Elem> {
-        self.hexacode.list_all_elements()
+        self.hexacode
+            .list_all_elements()
+            .into_iter()
+            .map(|vec| HexacodeVector { vec })
+            .collect()
     }
 
     fn size(&self) -> Natural {
@@ -177,7 +210,9 @@ impl<
     }
 
     fn generate_random_elements(&self, seed: u64) -> impl Iterator<Item = Self::Elem> {
-        self.hexacode.generate_random_elements(seed)
+        self.hexacode
+            .generate_random_elements(seed)
+            .map(|vec| HexacodeVector { vec })
     }
 }
 
@@ -187,15 +222,21 @@ impl<
 > EnumeratedOrdFiniteSetSignature for HexacodeStructure<Set, SetB>
 {
     fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
-        self.hexacode.list_all_elements_ordered()
+        self.hexacode
+            .list_all_elements_ordered()
+            .into_iter()
+            .map(|vec| HexacodeVector { vec })
+            .collect()
     }
 
     fn element_to_enumeration(&self, elem: &Self::Elem) -> Natural {
-        self.hexacode.element_to_enumeration(elem)
+        self.hexacode.element_to_enumeration(&elem.vec)
     }
 
     fn enumeration_to_element(&self, num: &Natural) -> Option<Self::Elem> {
-        self.hexacode.enumeration_to_element(num)
+        self.hexacode
+            .enumeration_to_element(num)
+            .map(|vec| HexacodeVector { vec })
     }
 }
 
@@ -212,7 +253,9 @@ impl<
 > ZeroSignature for HexacodeStructure<Set, SetB>
 {
     fn zero(&self) -> Self::Elem {
-        self.hexacode.zero()
+        HexacodeVector {
+            vec: self.hexacode.zero(),
+        }
     }
 }
 
@@ -222,7 +265,9 @@ impl<
 > AdditionSignature for HexacodeStructure<Set, SetB>
 {
     fn add(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
-        self.hexacode.add(a, b)
+        HexacodeVector {
+            vec: self.hexacode.add(&a.vec, &b.vec),
+        }
     }
 }
 
@@ -232,7 +277,9 @@ impl<
 > CancellativeAdditionSignature for HexacodeStructure<Set, SetB>
 {
     fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
-        self.hexacode.try_sub(a, b)
+        Some(HexacodeVector {
+            vec: self.hexacode.try_sub(&a.vec, &b.vec)?,
+        })
     }
 }
 
@@ -242,7 +289,9 @@ impl<
 > TryNegateSignature for HexacodeStructure<Set, SetB>
 {
     fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
-        self.hexacode.try_neg(a)
+        Some(HexacodeVector {
+            vec: self.hexacode.try_neg(&a.vec)?,
+        })
     }
 }
 
@@ -259,7 +308,9 @@ impl<
 > AdditiveGroupSignature for HexacodeStructure<Set, SetB>
 {
     fn neg(&self, a: &Self::Elem) -> Self::Elem {
-        self.hexacode.neg(a)
+        HexacodeVector {
+            vec: self.hexacode.neg(&a.vec),
+        }
     }
 }
 
@@ -273,7 +324,9 @@ impl<
     }
 
     fn scalar_mul(&self, a: &Self::Elem, x: &QuaternaryField) -> Self::Elem {
-        self.hexacode.scalar_mul(a, x)
+        HexacodeVector {
+            vec: self.hexacode.scalar_mul(&a.vec, x),
+        }
     }
 }
 
