@@ -76,3 +76,16 @@ impl EnumeratedOrdFiniteSetSignature for EnumeratedFiniteSetStructure {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn enumerate() {
+        algebraeon_structures::assert_enumerated_ord_finite_set!(
+            EnumeratedFiniteSetStructure::new(123),
+            123
+        );
+    }
+}

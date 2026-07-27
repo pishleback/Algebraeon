@@ -1,17 +1,15 @@
-use crate::sets::{
-    FiniteSetSizedStructure, FiniteSetToFiniteSetSizedSignature, SetToFiniteSubsetsByOrdSignature,
-};
+use crate::sets::SetToFiniteSubsetsByOrdSignature;
 use algebraeon_structures::*;
 use std::cmp::Ordering;
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FiniteSubsetByOrd<Set: SetSignature> {
+pub struct FiniteSubsetByOrd<Elem> {
     // ordered
-    pub elems: Vec<Set::Elem>,
+    pub elems: Vec<Elem>,
 }
 
-impl<Set: OrdSignature> FiniteSubsetByOrd<Set> {
+impl<Elem> FiniteSubsetByOrd<Elem> {
     pub fn size(&self) -> usize {
         self.elems.len()
     }
@@ -23,7 +21,7 @@ pub struct FiniteSubsetByOrdStructure<Set: OrdSignature, SetB: BorrowedStructure
     _set: PhantomData<Set>,
     set: SetB,
     // ordered
-    subset: FiniteSubsetByOrd<Set>,
+    subset: FiniteSubsetByOrd<Set::Elem>,
 }
 
 pub trait SetToFiniteSubsetByOrdSignature: OrdSignature {
@@ -161,30 +159,30 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
     }
 }
 
-pub trait SetToFiniteSubsetByOrdSizedSignature<const N: usize>: OrdSignature {
-    fn finite_subset_sized(
-        &self,
-        elems: [Self::Elem; N],
-    ) -> FiniteSetSizedStructure<N, FiniteSubsetByOrdStructure<Self, &Self>> {
-        FiniteSubsetByOrdStructure::new(self, elems.to_vec())
-            .try_into_sized()
-            .unwrap()
-    }
+// pub trait SetToFiniteSubsetByOrdSizedSignature<const N: usize>: OrdSignature {
+//     fn const_size_finite_subset(
+//         &self,
+//         elems: [Self::Elem; N],
+//     ) -> FiniteSetSizedStructure<N, FiniteSubsetByOrdStructure<Self, &Self>> {
+//         FiniteSubsetByOrdStructure::new(self, elems.to_vec())
+//             .try_into_sized()
+//             .unwrap()
+//     }
 
-    fn into_finite_subset_sized(
-        self,
-        elems: [Self::Elem; N],
-    ) -> FiniteSetSizedStructure<N, FiniteSubsetByOrdStructure<Self, Self>> {
-        FiniteSubsetByOrdStructure::new(self, elems.to_vec())
-            .try_into_sized()
-            .unwrap()
-    }
-}
-impl<const N: usize, Set: OrdSignature> SetToFiniteSubsetByOrdSizedSignature<N> for Set {}
+//     fn into_const_size_finite_subset(
+//         self,
+//         elems: [Self::Elem; N],
+//     ) -> FiniteSetSizedStructure<N, FiniteSubsetByOrdStructure<Self, Self>> {
+//         FiniteSubsetByOrdStructure::new(self, elems.to_vec())
+//             .try_into_sized()
+//             .unwrap()
+//     }
+// }
+// impl<const N: usize, Set: OrdSignature> SetToFiniteSubsetByOrdSizedSignature<N> for Set {}
 
 #[cfg(test)]
 mod tests {
-    use crate::sets::{SetToFiniteSubsetByOrdSignature, SetToFiniteSubsetByOrdSizedSignature};
+    use crate::sets::{FiniteSetToFiniteSetSizedSignature, SetToFiniteSubsetByOrdSignature};
     use algebraeon_structures::*;
 
     #[test]
@@ -195,7 +193,21 @@ mod tests {
 
     #[test]
     fn test_sized() {
-        let set = i32::structure().into_finite_subset_sized([1, 2, 3, 4, 5, 6]);
+        let set = i32::structure()
+            .into_finite_subset(vec![1, 2, 3, 4, 5, 6])
+            .try_into_const_sized::<6>()
+            .unwrap();
         assert_eq!(set.size(), Natural::from(6usize));
+    }
+
+    #[test]
+    fn enumeration() {
+        algebraeon_structures::assert_enumerated_ord_finite_set!(
+            i32::structure()
+                .into_finite_subset(vec![1, 2, 3, 4, 5])
+                .try_into_const_sized::<5>()
+                .unwrap(),
+            5
+        );
     }
 }

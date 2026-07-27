@@ -71,7 +71,7 @@ impl Display for Monomial {
             write!(f, "1")
         } else {
             for VariablePower { var, pow } in &self.prod {
-                write!(f, "{}", &var.name)?;
+                write!(f, "{}", var.name)?;
                 if *pow != 1 {
                     write!(f, "^")?;
                     write!(f, "{}", pow)?;

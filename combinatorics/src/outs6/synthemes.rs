@@ -616,57 +616,24 @@ impl<
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-
     use super::*;
-    use algebraeon_sets::sets::SetToFiniteSubsetByOrdSizedSignature;
+    use algebraeon_sets::sets::SetToConstSizeFiniteSubsetByOrdSignature;
     use algebraeon_structures::MetaType;
+    use std::collections::HashMap;
 
     #[test]
     fn test_enumeration() {
-        let set = i32::structure().into_finite_subset_sized([1, 2, 3, 4, 5, 6]);
-        let synthemes_set = set.synthemes();
-        let synthemes = synthemes_set.list_all_elements_ordered();
-        assert_eq!(synthemes.len(), 15);
-        assert_eq!(synthemes_set.size(), Natural::from(15usize));
-
-        // synthemes are all valid
-        for s in &synthemes {
-            println!("{:?}", s);
-            assert!(synthemes_set.validate_element(s).is_ok());
-        }
-
-        // synthemes are all disjoint
-        for i in 0..15 {
-            for j in (i + 1)..15 {
-                let si = &synthemes[i];
-                let sj = &synthemes[j];
-                assert!(synthemes_set.cmp(si, sj).is_lt());
-            }
-        }
-
-        // enumeration is correct
-        for (i, s) in synthemes.iter().enumerate() {
-            assert_eq!(Natural::from(i), synthemes_set.element_to_enumeration(s));
-            assert!(
-                synthemes_set.equal(
-                    &synthemes_set
-                        .enumeration_to_element(&Natural::from(i))
-                        .unwrap(),
-                    s
-                )
-            );
-        }
-        assert!(
-            synthemes_set
-                .enumeration_to_element(&Natural::from(15usize))
-                .is_none()
+        algebraeon_structures::assert_enumerated_ord_finite_set!(
+            i32::structure()
+                .into_const_size_finite_subset([1, 2, 3, 4, 5, 6])
+                .into_synthemes(),
+            15
         );
     }
 
     #[test]
     fn test_overlap() {
-        let set = i32::structure().into_finite_subset_sized([1, 2, 3, 4, 5, 6]);
+        let set = i32::structure().into_const_size_finite_subset([1, 2, 3, 4, 5, 6]);
         let duads_set = set.duads();
         let synthemes_set = set.synthemes();
 
@@ -694,7 +661,7 @@ mod tests {
 
     #[test]
     fn test_permutation() {
-        let set = i32::structure().into_finite_subset_sized([1, 2, 3, 4, 5, 6]);
+        let set = i32::structure().into_const_size_finite_subset([1, 2, 3, 4, 5, 6]);
         let set_perms = set.permutations();
         let duads = set.duads();
         let synthemes = set.synthemes();

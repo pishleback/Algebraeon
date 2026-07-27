@@ -26,10 +26,10 @@ where
     }
 }
 
-impl<Set: EnumeratedOrdFiniteSetSignature> TryFrom<FiniteSubsetByOrd<Set>> for Duad<Set::Elem> {
+impl<Elem> TryFrom<FiniteSubsetByOrd<Elem>> for Duad<Elem> {
     type Error = &'static str;
 
-    fn try_from(subset: FiniteSubsetByOrd<Set>) -> Result<Self, Self::Error> {
+    fn try_from(subset: FiniteSubsetByOrd<Elem>) -> Result<Self, Self::Error> {
         let mut elems = subset.elems.into_iter();
         // the elems of subset should be ordered and distinct already
         let duad = Self {
@@ -45,16 +45,16 @@ impl<Set: EnumeratedOrdFiniteSetSignature> TryFrom<FiniteSubsetByOrd<Set>> for D
     }
 }
 
-impl<Set: EnumeratedOrdFiniteSetSignature> From<Duad<Set::Elem>> for FiniteSubsetByOrd<Set> {
-    fn from(duad: Duad<Set::Elem>) -> Self {
+impl<Elem: Clone> From<Duad<Elem>> for FiniteSubsetByOrd<Elem> {
+    fn from(duad: Duad<Elem>) -> Self {
         FiniteSubsetByOrd {
             elems: duad.points.to_vec(),
         }
     }
 }
 
-impl<Set: EnumeratedOrdFiniteSetSignature> From<&Duad<Set::Elem>> for FiniteSubsetByOrd<Set> {
-    fn from(duad: &Duad<Set::Elem>) -> Self {
+impl<Elem: Clone> From<&Duad<Elem>> for FiniteSubsetByOrd<Elem> {
+    fn from(duad: &Duad<Elem>) -> Self {
         FiniteSubsetByOrd {
             elems: duad.points.to_vec(),
         }
@@ -387,30 +387,26 @@ impl<
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-
     use super::*;
     use algebraeon_sets::sets::{
-        FiniteSetToFinitelySupportedPermutationsStructure, SetToFiniteSubsetByOrdSizedSignature,
+        FiniteSetToFinitelySupportedPermutationsStructure, SetToConstSizeFiniteSubsetByOrdSignature,
     };
     use algebraeon_structures::MetaType;
+    use std::collections::HashMap;
 
     #[test]
     fn test_enumeration() {
-        let set = i32::structure().into_finite_subset_sized([1, 2, 3, 4, 5, 6]);
-        for p in set.generate_all_elements() {
-            println!("{:?}", p);
-        }
-
-        let duads = set.duads();
-        for d in duads.generate_all_elements() {
-            println!("{:?}", d);
-        }
+        algebraeon_structures::assert_enumerated_ord_finite_set!(
+            i32::structure()
+                .into_const_size_finite_subset([1, 2, 3, 4, 5, 6])
+                .into_duads(),
+            15
+        );
     }
 
     #[test]
     fn test_permutation() {
-        let set = i32::structure().into_finite_subset_sized([1, 2, 3, 4, 5, 6]);
+        let set = i32::structure().into_const_size_finite_subset([1, 2, 3, 4, 5, 6]);
         let set_perms = set.permutations();
         let duads = set.duads();
         let duad_perms = duads.permutations();

@@ -133,6 +133,8 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
     let has_eq = has_option(&input.attrs, "eq");
     let has_partial_ord = has_option(&input.attrs, "partial_ord");
     let has_ord = has_option(&input.attrs, "ord");
+    let has_finite = has_option(&input.attrs, "finite");
+    let has_ord_finite = has_option(&input.attrs, "ord_finite");
 
     let impl_eq_signature = if has_eq {
         quote! {
@@ -181,6 +183,67 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
         quote! {}
     };
 
+    let impl_finite_signature = if has_finite {
+        quote! {
+            impl CountableSetSignature for #newtype_name {
+                fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
+                    <#name as cantor::Finite>::iter()
+                }
+
+                fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+                    <#name as cantor::Finite>::iter()
+                }
+            }
+
+            impl FiniteSetSignature for #newtype_name {
+                fn list_all_elements(&self) -> Vec<Self::Elem> {
+                    self.list_all_elements_ordered()
+                }
+
+                fn size(&self) -> Natural {
+                    Natural::from(<#name as cantor::Finite>::COUNT)
+                }
+            }
+        }
+    } else {
+        quote! {}
+    };
+
+    let impl_ord_finite_signature = if has_ord_finite {
+        let test_enumeration_name = Ident::new(
+            &format!("test_{name}CanonicalStructure_enumeration"),
+            name.span(),
+        );
+
+        quote! {
+            impl EnumeratedOrdFiniteSetSignature for #newtype_name {
+                fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
+                    <#name as cantor::Finite>::iter().collect()
+                }
+
+                fn element_to_enumeration(&self, elem: &Self::Elem) -> Natural {
+                    Natural::from(<#name as cantor::Finite>::index_of(elem.clone()))
+                }
+
+                fn enumeration_to_element(&self, num: &Natural) -> Option<Self::Elem> {
+                    if let Ok(num) = TryInto::<usize>::try_into(num) {
+                        <#name as cantor::Finite>::nth(num)
+                    } else {
+                        None
+                    }
+                }
+            }
+
+            #[test]
+            #[allow(non_snake_case)]
+            fn #test_enumeration_name() {
+                algebraeon_structures::assert_enumerated_ord_finite_set!(#name::structure(), <#name as cantor::Finite>::COUNT);
+            }
+        }
+    } else {
+        quote! {}
+    };
+
     let expanded = quote! {
         #[derive(Debug, Clone, PartialEq, Eq)]
         #vis struct #newtype_name {}
@@ -204,6 +267,8 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
         #impl_eq_signature
         #impl_partial_ord_signature
         #impl_ord_signature
+        #impl_finite_signature
+        #impl_ord_finite_signature
 
         impl MetaType for #name {
             type Signature = #newtype_name;

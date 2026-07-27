@@ -195,15 +195,13 @@ impl<
 
 #[cfg(test)]
 mod tests {
-    use std::println;
-
     use super::*;
-    use crate::sets::SetToFiniteSubsetByOrdSizedSignature;
+    use crate::sets::SetToConstSizeFiniteSubsetByOrdSignature;
 
     #[test]
     fn test() {
-        let set_0 = i32::structure().into_finite_subset_sized([1, 2, 3, 4, 5]);
-        let set_1 = i32::structure().into_finite_subset_sized([6, 7, 8]);
+        let set_0 = i32::structure().into_const_size_finite_subset([1, 2, 3, 4, 5]);
+        let set_1 = i32::structure().into_const_size_finite_subset([6, 7, 8]);
         let set_01 = CartesianProductSetStructure::new(set_0, set_1);
 
         assert!(set_01.is_element(&(1, 6)));
@@ -213,33 +211,10 @@ mod tests {
     }
 
     #[test]
-    fn test_enumeration() {
-        let set_0 = i32::structure().into_finite_subset_sized([1, 2, 3, 4, 5]);
-        let set_1 = i32::structure().into_finite_subset_sized([6, 7, 8]);
+    fn enumeration() {
+        let set_0 = i32::structure().into_const_size_finite_subset([1, 2, 3, 4, 5]);
+        let set_1 = i32::structure().into_const_size_finite_subset([6, 7, 8]);
         let set_01 = CartesianProductSetStructure::new(set_0, set_1);
-        let elements = set_01.list_all_elements_ordered();
-        assert_eq!(elements.len(), 15);
-        assert_eq!(set_01.size(), Natural::from(15usize));
-
-        // elements are all valid
-        for v in &elements {
-            println!("{:?}", v);
-            assert!(set_01.validate_element(v).is_ok());
-        }
-
-        // enumeration is correct
-        for (i, v) in elements.iter().enumerate() {
-            println!("{:?} {:?} {:?}", i, v, set_01.element_to_enumeration(v));
-            assert_eq!(Natural::from(i), set_01.element_to_enumeration(v));
-            assert!(set_01.equal(
-                &set_01.enumeration_to_element(&Natural::from(i)).unwrap(),
-                v
-            ));
-        }
-        assert!(
-            set_01
-                .enumeration_to_element(&Natural::from(15usize))
-                .is_none()
-        );
+        algebraeon_structures::assert_enumerated_ord_finite_set!(set_01, 15);
     }
 }

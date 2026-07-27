@@ -1,5 +1,4 @@
 use algebraeon_rings::{
-    finite_fields::quaternary_field::QuaternaryField,
     linear::{
         finitely_free_module::{FinitelyFreeModuleStructure, RingToFinitelyFreeModuleSignature},
         finitely_free_submodule::FinitelyFreeSubmoduleStructure,
@@ -13,8 +12,6 @@ use algebraeon_rings::{
 };
 use algebraeon_structures::*;
 use std::cmp::Ordering;
-
-use crate::linear_codes::hexacode::{HexacodeStructure, HexacodeVector};
 
 // This numbering is chosen such that the group PSL(2, F32) acting on the points is a subgroup of M24
 //   0    1      2    3      4    5
@@ -343,27 +340,11 @@ mod tests {
 
     #[test]
     fn enumeration() {
-        let set = i32::structure()
-            .into_finite_subset_sized(std::array::from_fn::<_, 24, _>(|i| i as i32));
-        let ebgc = set.extended_binary_golay_code();
-        let codewords = ebgc.list_all_elements_ordered();
-        assert_eq!(codewords.len(), 2usize.pow(12));
-        assert_eq!(ebgc.size(), Natural::from(2usize.pow(12)));
-
-        // codewords are all valid
-        for v in &codewords {
-            println!("{:?}", v);
-            assert!(ebgc.validate_element(v).is_ok());
-        }
-
-        // enumeration is correct
-        for (i, v) in codewords.iter().enumerate() {
-            assert_eq!(Natural::from(i), ebgc.element_to_enumeration(v));
-            assert!(ebgc.equal(&ebgc.enumeration_to_element(&Natural::from(i)).unwrap(), v));
-        }
-        assert!(
-            ebgc.enumeration_to_element(&Natural::from(2usize.pow(12)))
-                .is_none()
+        algebraeon_structures::assert_enumerated_ord_finite_set!(
+            i32::structure()
+                .into_finite_subset_sized(std::array::from_fn::<_, 24, _>(|i| i as i32))
+                .into_extended_binary_golay_code(),
+            2usize.pow(12)
         );
     }
 

@@ -81,6 +81,10 @@ impl<
         self.module.borrow()
     }
 
+    pub fn submodule(&self) -> &FinitelyFreeSubmodule<Ring::Elem> {
+        &self.submodule
+    }
+
     pub fn set(&self) -> &Set {
         self.module().set()
     }
@@ -331,5 +335,39 @@ impl<
 
     fn scalar_mul(&self, a: &Self::Elem, x: &Ring::Elem) -> Self::Elem {
         self.module().scalar_mul(a, x)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::finite_fields::quaternary_field::QuaternaryField;
+
+    #[test]
+    fn enumeration() {
+        let module = FinitelyFreeModuleStructure::new(
+            EnumeratedFiniteSetStructure::new(4),
+            QuaternaryField::structure(),
+        );
+        algebraeon_structures::assert_enumerated_ord_finite_set!(
+            FinitelyFreeSubmoduleStructure::new(
+                &module,
+                module.generated_submodule(vec![
+                    &vec![
+                        QuaternaryField::Zero,
+                        QuaternaryField::Alpha,
+                        QuaternaryField::Beta,
+                        QuaternaryField::One
+                    ],
+                    &vec![
+                        QuaternaryField::Alpha,
+                        QuaternaryField::Zero,
+                        QuaternaryField::Zero,
+                        QuaternaryField::Beta
+                    ]
+                ])
+            ),
+            16
+        );
     }
 }

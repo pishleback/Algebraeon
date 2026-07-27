@@ -448,8 +448,21 @@ impl<
 
 #[cfg(test)]
 mod tests {
+    use crate::finite_fields::quaternary_field::QuaternaryField;
+
     use super::*;
     use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
+
+    #[test]
+    fn enumeration() {
+        algebraeon_structures::assert_enumerated_ord_finite_set!(
+            FinitelyFreeModuleStructure::new(
+                EnumeratedFiniteSetStructure::new(3),
+                QuaternaryField::structure(),
+            ),
+            64
+        );
+    }
 
     #[test]
     fn test_finite_rank_modules() {

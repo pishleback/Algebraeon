@@ -96,12 +96,12 @@ impl<
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::sets::SetToFiniteSubsetByOrdSizedSignature;
+    use crate::sets::SetToConstSizeFiniteSubsetByOrdSignature;
 
     #[test]
     fn test() {
-        let set_0 = i32::structure().into_finite_subset_sized([1, 2, 3, 4, 5]);
-        let set_1 = i32::structure().into_finite_subset_sized([6, 7, 8]);
+        let set_0 = i32::structure().into_const_size_finite_subset([1, 2, 3, 4, 5]);
+        let set_1 = i32::structure().into_const_size_finite_subset([6, 7, 8]);
 
         let set_01 = DisjointUnionSetStructure::new(set_0, set_1);
 

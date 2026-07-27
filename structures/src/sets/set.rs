@@ -93,6 +93,46 @@ pub trait EnumeratedOrdFiniteSetSignature: FiniteSetSignature + OrdSignature {
     fn enumeration_to_element(&self, num: &Natural) -> Option<Self::Elem>;
 }
 
+// for testing the invariants of EnumeratedOrdFiniteSetSignature
+#[macro_export]
+macro_rules! assert_enumerated_ord_finite_set {
+    (
+        $set:expr,
+        $size:expr
+    ) => {{
+        let size = $size as usize;
+        let set = $set;
+        let elements = set.list_all_elements_ordered();
+
+        assert_eq!(elements.len(), size);
+        assert_eq!(set.size(), Natural::from(size));
+
+        // all elements are valid
+        for elem in &elements {
+            println!("{:?}", elem);
+            assert!(set.validate_element(elem).is_ok());
+        }
+
+        // all elements are distinct and ordered
+        for i in 0..size {
+            for j in (i + 1)..size {
+                let si = &elements[i];
+                let sj = &elements[j];
+                assert!(set.cmp(si, sj).is_lt());
+            }
+        }
+
+        // enumeration is correct
+        for (i, s) in elements.iter().enumerate() {
+            assert_eq!(Natural::from(i), set.element_to_enumeration(s));
+            assert!(set.equal(&set.enumeration_to_element(&Natural::from(i)).unwrap(), s));
+        }
+
+        // enumeration past the end is invalid
+        assert!(set.enumeration_to_element(&Natural::from(size)).is_none());
+    }};
+}
+
 #[derive(Debug, Clone)]
 pub struct FiniteSetRandomElementGenerator<S: FiniteSetSignature, R: Rng> {
     all_elements: Vec<S::Elem>,

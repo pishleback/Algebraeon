@@ -1,8 +1,10 @@
 mod cartesian_product;
+mod const_size_finite_set;
+mod const_size_finite_subset_ord;
+mod const_size_functions;
 mod disjoint_union;
 mod empty;
 mod endofunctions;
-mod finite_set_sized;
 mod finite_subset_hash;
 mod finite_subset_ord;
 mod finite_subsets_ord;
@@ -14,10 +16,12 @@ mod permutations;
 mod singleton;
 
 pub use cartesian_product::*;
+pub use const_size_finite_set::*;
+pub use const_size_finite_subset_ord::*;
+pub use const_size_functions::*;
 pub use disjoint_union::*;
 pub use empty::*;
 pub use endofunctions::*;
-pub use finite_set_sized::*;
 pub use finite_subset_hash::*;
 pub use finite_subset_ord::*;
 pub use finite_subsets_ord::*;

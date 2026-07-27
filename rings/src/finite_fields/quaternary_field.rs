@@ -1,10 +1,11 @@
 use crate::structure::*;
 use algebraeon_macros::CanonicalStructure;
 use algebraeon_structures::*;
+use cantor::Finite;
 use std::fmt::Display;
 
 //the finite field of 4 elements
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Ord, Eq, Hash, CanonicalStructure)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Ord, Eq, Hash, CanonicalStructure, Finite)]
 #[canonical_structure(eq, partial_ord, ord)]
 pub enum QuaternaryField {
     Zero,
@@ -231,6 +232,11 @@ impl FiniteFieldSignature for QuaternaryFieldCanonicalStructure {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn enumeration() {
+        algebraeon_structures::assert_enumerated_ord_finite_set!(QuaternaryField::structure(), 4);
+    }
 
     #[test]
     fn test_neg() {

@@ -7,8 +7,9 @@ use std::{cmp::Ordering, fmt::Debug, marker::PhantomData};
 
 /// Represent all functions from `domain` to `range`
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FunctionsStructure<
-    Domain: SetSignature,
+pub struct ConstSizeFunctionsStructure<
+    const N: usize,
+    Domain: FiniteSetSizedSignature<N>,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -20,11 +21,12 @@ pub struct FunctionsStructure<
 }
 
 impl<
-    Domain: SetSignature,
+    const N: usize,
+    Domain: FiniteSetSizedSignature<N>,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
-> FunctionsStructure<Domain, DomainB, Range, RangeB>
+> ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>
 {
     pub fn new(domain: DomainB, range: RangeB) -> Self {
         Self {
@@ -36,46 +38,53 @@ impl<
     }
 }
 
-pub trait SetToFunctionsToSignature: SetSignature {
-    fn into_functions_to<Range: SetSignature>(
+pub trait SetToConstSizeFunctionsToSignature: SetSignature {
+    fn into_const_size_functions_to<const N: usize, Range: SetSignature>(
         self,
         range: Range,
-    ) -> FunctionsStructure<Self, Self, Range, Range> {
-        FunctionsStructure::new(self, range)
+    ) -> ConstSizeFunctionsStructure<N, Self, Self, Range, Range>
+    where
+        Self: FiniteSetSizedSignature<N>,
+    {
+        ConstSizeFunctionsStructure::new(self, range)
     }
 
-    fn functions_to<'a, Range: SetSignature>(
+    fn const_size_functions_to<'a, const N: usize, Range: SetSignature>(
         &self,
         range: &'a Range,
-    ) -> FunctionsStructure<Self, &Self, Range, &'a Range> {
-        FunctionsStructure::new(self, range)
+    ) -> ConstSizeFunctionsStructure<N, Self, &Self, Range, &'a Range>
+    where
+        Self: FiniteSetSizedSignature<N>,
+    {
+        ConstSizeFunctionsStructure::new(self, range)
     }
 }
-impl<Set: SetSignature> SetToFunctionsToSignature for Set {}
+impl<Set: SetSignature> SetToConstSizeFunctionsToSignature for Set {}
 
-pub trait SetToFunctionsFromSignature: SetSignature {
-    fn into_functions_from<Domain: SetSignature>(
+pub trait SetToConstSizeFunctionsFromSignature: SetSignature {
+    fn into_functions_from<const N: usize, Domain: FiniteSetSizedSignature<N>>(
         self,
         domain: Domain,
-    ) -> FunctionsStructure<Domain, Domain, Self, Self> {
-        FunctionsStructure::new(domain, self)
+    ) -> ConstSizeFunctionsStructure<N, Domain, Domain, Self, Self> {
+        ConstSizeFunctionsStructure::new(domain, self)
     }
 
-    fn functions_from<'a, Domain: SetSignature>(
+    fn functions_from<'a, const N: usize, Domain: FiniteSetSizedSignature<N>>(
         &self,
         domain: &'a Domain,
-    ) -> FunctionsStructure<Domain, &'a Domain, Self, &Self> {
-        FunctionsStructure::new(domain, self)
+    ) -> ConstSizeFunctionsStructure<N, Domain, &'a Domain, Self, &Self> {
+        ConstSizeFunctionsStructure::new(domain, self)
     }
 }
-impl<Set: SetSignature> SetToFunctionsFromSignature for Set {}
+impl<Set: SetSignature> SetToConstSizeFunctionsFromSignature for Set {}
 
 impl<
-    Domain: SetSignature,
+    const N: usize,
+    Domain: FiniteSetSizedSignature<N>,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
-> FunctionsStructure<Domain, DomainB, Range, RangeB>
+> ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>
 {
     pub fn domain(&self) -> &Domain {
         self.domain.borrow()
@@ -87,28 +96,32 @@ impl<
 }
 
 impl<
-    Domain: SetSignature,
+    const N: usize,
+    Domain: FiniteSetSizedSignature<N>,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
-> Signature for FunctionsStructure<Domain, DomainB, Range, RangeB>
+> Signature for ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>
 {
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Domain: FiniteSetSizedSignature<N> + EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
-> FunctionsStructure<Domain, DomainB, Range, RangeB>
+> ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>
 {
-    pub fn function(&self, f: impl Fn(&Domain::Elem) -> Range::Elem) -> Option<Vec<Range::Elem>> {
+    pub fn function(&self, f: impl Fn(&Domain::Elem) -> Range::Elem) -> Option<[Range::Elem; N]> {
         let s = self
             .domain()
             .list_all_elements_ordered()
             .iter()
             .map(f)
-            .collect();
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap();
         for y in &s {
             if !self.range().is_element(y) {
                 return None;
@@ -117,7 +130,7 @@ impl<
         Some(s)
     }
 
-    pub fn image<'a>(&self, f: &'a Vec<Range::Elem>, x: &Domain::Elem) -> &'a Range::Elem {
+    pub fn image<'a>(&self, f: &'a [Range::Elem; N], x: &Domain::Elem) -> &'a Range::Elem {
         debug_assert!(self.is_element(f));
         debug_assert!(self.domain().is_element(x));
         &f[TryInto::<usize>::try_into(self.domain().element_to_enumeration(x)).unwrap()]
@@ -125,13 +138,14 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Domain: FiniteSetSizedSignature<N> + EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
-> SetSignature for FunctionsStructure<Domain, DomainB, Range, RangeB>
+> SetSignature for ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>
 {
-    type Elem = Vec<Range::Elem>;
+    type Elem = [Range::Elem; N];
 
     fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
         if Natural::from(x.len()) != self.domain().size() {
@@ -145,11 +159,12 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Domain: FiniteSetSizedSignature<N> + EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: EqSignature,
     RangeB: BorrowedStructure<Range>,
-> EqSignature for FunctionsStructure<Domain, DomainB, Range, RangeB>
+> EqSignature for ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>
 {
     fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
         debug_assert!(self.is_element(a));
@@ -161,11 +176,12 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Domain: FiniteSetSizedSignature<N> + EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: OrdSignature,
     RangeB: BorrowedStructure<Range>,
-> PartialOrdSignature for FunctionsStructure<Domain, DomainB, Range, RangeB>
+> PartialOrdSignature for ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>
 {
     fn partial_cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Option<std::cmp::Ordering> {
         Some(self.cmp(a, b))
@@ -173,11 +189,12 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Domain: FiniteSetSizedSignature<N> + EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: OrdSignature,
     RangeB: BorrowedStructure<Range>,
-> OrdSignature for FunctionsStructure<Domain, DomainB, Range, RangeB>
+> OrdSignature for ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>
 {
     fn cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Ordering {
         debug_assert!(self.is_element(a));
@@ -200,17 +217,19 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Domain: FiniteSetSizedSignature<N> + EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: EnumeratedOrdFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
-> CountableSetSignature for FunctionsStructure<Domain, DomainB, Range, RangeB>
+> CountableSetSignature for ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>
 {
     fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
         let n: usize = self.domain().size().try_into().unwrap_or(usize::MAX);
         (0..n)
             .map(|_| self.range().list_all_elements())
             .multi_cartesian_product()
+            .map(|f| f.try_into().unwrap())
     }
 
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
@@ -219,11 +238,12 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Domain: FiniteSetSizedSignature<N> + EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: EnumeratedOrdFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
-> FiniteSetSignature for FunctionsStructure<Domain, DomainB, Range, RangeB>
+> FiniteSetSignature for ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>
 {
     fn size(&self) -> Natural {
         self.range().size().pow(&self.domain().size())
@@ -231,11 +251,13 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Domain: FiniteSetSizedSignature<N> + EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: EnumeratedOrdFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
-> EnumeratedOrdFiniteSetSignature for FunctionsStructure<Domain, DomainB, Range, RangeB>
+> EnumeratedOrdFiniteSetSignature
+    for ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>
 {
     fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
         let n: usize = self.domain().size().try_into().unwrap_or(usize::MAX);
@@ -251,7 +273,14 @@ impl<
             .collect::<Vec<_>>()
             .into_iter()
             .rev()
-            .map(|images| images.into_iter().rev().collect())
+            .map(|images| {
+                images
+                    .into_iter()
+                    .rev()
+                    .collect::<Vec<_>>()
+                    .try_into()
+                    .unwrap()
+            })
             .collect()
     }
 
@@ -280,37 +309,41 @@ impl<
             (n, k) = n.div_mod(&r);
             f.push(self.range().enumeration_to_element(&k).unwrap())
         }
+        let f = f.try_into().unwrap();
         debug_assert!(self.is_element(&f));
         Some(f)
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-struct RightPermutationActionOnFunctionsStructure<
-    Domain: EnumeratedOrdFiniteSetSignature,
+struct RightPermutationActionOnConstSizeFunctionsStructure<
+    const N: usize,
+    Domain: FiniteSetSizedSignature<N> + EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
-    FunctionsB: BorrowedStructure<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
+    FunctionsB: BorrowedStructure<ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>>,
     DomainPerms: PermutationsSignature<Domain>,
     DomainPermsB: BorrowedStructure<DomainPerms>,
 > {
-    _functions: PhantomData<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
+    _functions: PhantomData<ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>>,
     functions: FunctionsB,
     _domain_perms: PhantomData<DomainPerms>,
     domain_perms: DomainPermsB,
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Domain: FiniteSetSizedSignature<N> + EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
-    FunctionsB: BorrowedStructure<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
+    FunctionsB: BorrowedStructure<ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>>,
     DomainPerms: PermutationsSignature<Domain>,
     DomainPermsB: BorrowedStructure<DomainPerms>,
 >
-    RightPermutationActionOnFunctionsStructure<
+    RightPermutationActionOnConstSizeFunctionsStructure<
+        N,
         Domain,
         DomainB,
         Range,
@@ -331,15 +364,17 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Domain: FiniteSetSizedSignature<N> + EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
-    FunctionsB: BorrowedStructure<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
+    FunctionsB: BorrowedStructure<ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>>,
     DomainPerms: PermutationsSignature<Domain>,
     DomainPermsB: BorrowedStructure<DomainPerms>,
 > Signature
-    for RightPermutationActionOnFunctionsStructure<
+    for RightPermutationActionOnConstSizeFunctionsStructure<
+        N,
         Domain,
         DomainB,
         Range,
@@ -352,31 +387,38 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Domain: FiniteSetSizedSignature<N> + EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
-> FunctionsStructure<Domain, DomainB, Range, RangeB>
+> ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>
 {
     pub fn domain_permutation_action(
         &self,
     ) -> impl RightGroupActionSignature<Self, FinitelySupportedPermutationsStructure<Domain, &Domain>>
     {
-        RightPermutationActionOnFunctionsStructure::new(self, self.domain().permutations())
+        RightPermutationActionOnConstSizeFunctionsStructure::new(self, self.domain().permutations())
     }
 }
 
 /// Sym(D) has a right action on Fun(D -> R) by composition on the right
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Domain: FiniteSetSizedSignature<N> + EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
-    FunctionsB: BorrowedStructure<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
+    FunctionsB: BorrowedStructure<ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>>,
     DomainPerms: PermutationsSignature<Domain>,
     DomainPermsB: BorrowedStructure<DomainPerms>,
-> RightGroupActionSignature<FunctionsStructure<Domain, DomainB, Range, RangeB>, DomainPerms>
-    for RightPermutationActionOnFunctionsStructure<
+>
+    RightGroupActionSignature<
+        ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>,
+        DomainPerms,
+    >
+    for RightPermutationActionOnConstSizeFunctionsStructure<
+        N,
         Domain,
         DomainB,
         Range,
@@ -390,15 +432,16 @@ impl<
         self.domain_perms.borrow()
     }
 
-    fn set(&self) -> &FunctionsStructure<Domain, DomainB, Range, RangeB> {
+    fn set(&self) -> &ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB> {
         self.functions.borrow()
     }
 
     fn apply(
         &self,
         g: &<DomainPerms>::Elem,
-        f: &<FunctionsStructure<Domain, DomainB, Range, RangeB> as SetSignature>::Elem,
-    ) -> <FunctionsStructure<Domain, DomainB, Range, RangeB> as SetSignature>::Elem {
+        f: &<ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB> as SetSignature>::Elem,
+    ) -> <ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB> as SetSignature>::Elem
+    {
         let functions = self.functions.borrow();
         let domain_perms = self.domain_perms.borrow();
         functions
@@ -408,31 +451,34 @@ impl<
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-struct LeftPermutationActionOnFunctionsStructure<
-    Domain: SetSignature,
+struct LeftPermutationActionOnConstSizeFunctionsStructure<
+    const N: usize,
+    Domain: FiniteSetSizedSignature<N>,
     DomainB: BorrowedStructure<Domain>,
     Range: EnumeratedOrdFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
-    FunctionsB: BorrowedStructure<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
+    FunctionsB: BorrowedStructure<ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>>,
     RangePerms: PermutationsSignature<Range>,
     RangePermsB: BorrowedStructure<RangePerms>,
 > {
-    _functions: PhantomData<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
+    _functions: PhantomData<ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>>,
     functions: FunctionsB,
     _range_perms: PhantomData<RangePerms>,
     range_perms: RangePermsB,
 }
 
 impl<
-    Domain: SetSignature,
+    const N: usize,
+    Domain: FiniteSetSizedSignature<N>,
     DomainB: BorrowedStructure<Domain>,
     Range: EnumeratedOrdFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
-    FunctionsB: BorrowedStructure<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
+    FunctionsB: BorrowedStructure<ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>>,
     RangePerms: PermutationsSignature<Range>,
     RangePermsB: BorrowedStructure<RangePerms>,
 >
-    LeftPermutationActionOnFunctionsStructure<
+    LeftPermutationActionOnConstSizeFunctionsStructure<
+        N,
         Domain,
         DomainB,
         Range,
@@ -453,15 +499,17 @@ impl<
 }
 
 impl<
-    Domain: SetSignature,
+    const N: usize,
+    Domain: FiniteSetSizedSignature<N>,
     DomainB: BorrowedStructure<Domain>,
     Range: EnumeratedOrdFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
-    FunctionsB: BorrowedStructure<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
+    FunctionsB: BorrowedStructure<ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>>,
     RangePerms: PermutationsSignature<Range>,
     RangePermsB: BorrowedStructure<RangePerms>,
 > Signature
-    for LeftPermutationActionOnFunctionsStructure<
+    for LeftPermutationActionOnConstSizeFunctionsStructure<
+        N,
         Domain,
         DomainB,
         Range,
@@ -474,31 +522,38 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Domain: FiniteSetSizedSignature<N> + EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: EnumeratedOrdFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
-> FunctionsStructure<Domain, DomainB, Range, RangeB>
+> ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>
 {
     pub fn range_permutation_action(
         &self,
     ) -> impl LeftGroupActionSignature<FinitelySupportedPermutationsStructure<Range, &Range>, Self>
     {
-        LeftPermutationActionOnFunctionsStructure::new(self, self.range().permutations())
+        LeftPermutationActionOnConstSizeFunctionsStructure::new(self, self.range().permutations())
     }
 }
 
 /// Sym(R) has a left action on Fun(D -> R) by composition on the left
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Domain: FiniteSetSizedSignature<N> + EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: EnumeratedOrdFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
-    FunctionsB: BorrowedStructure<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
+    FunctionsB: BorrowedStructure<ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>>,
     RangePerms: PermutationsSignature<Range>,
     RangePermsB: BorrowedStructure<RangePerms>,
-> LeftGroupActionSignature<RangePerms, FunctionsStructure<Domain, DomainB, Range, RangeB>>
-    for LeftPermutationActionOnFunctionsStructure<
+>
+    LeftGroupActionSignature<
+        RangePerms,
+        ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>,
+    >
+    for LeftPermutationActionOnConstSizeFunctionsStructure<
+        N,
         Domain,
         DomainB,
         Range,
@@ -512,15 +567,16 @@ impl<
         self.range_perms.borrow()
     }
 
-    fn set(&self) -> &FunctionsStructure<Domain, DomainB, Range, RangeB> {
+    fn set(&self) -> &ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB> {
         self.functions.borrow()
     }
 
     fn apply(
         &self,
         g: &<RangePerms>::Elem,
-        f: &<FunctionsStructure<Domain, DomainB, Range, RangeB> as SetSignature>::Elem,
-    ) -> <FunctionsStructure<Domain, DomainB, Range, RangeB> as SetSignature>::Elem {
+        f: &<ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB> as SetSignature>::Elem,
+    ) -> <ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB> as SetSignature>::Elem
+    {
         let functions = self.functions.borrow();
         let range_perms = self.range_perms.borrow();
         functions
@@ -533,22 +589,22 @@ impl<
 mod tests {
     use super::*;
     use crate::sets::{
-        FiniteSetToFinitelySupportedPermutationsStructure, SetToFiniteSubsetByOrdSignature,
+        FiniteSetToFinitelySupportedPermutationsStructure, SetToConstSizeFiniteSubsetByOrdSignature,
     };
 
     #[test]
     fn enumerate() {
-        let set_a = i32::structure().into_finite_subset(vec![1, 2, 3, 4, 5]);
-        let set_b = i32::structure().into_finite_subset(vec![1, 2, 3]);
-        let fns = set_a.functions_to(&set_b);
+        let set_a = i32::structure().into_const_size_finite_subset([1, 2, 3, 4, 5]);
+        let set_b = i32::structure().into_const_size_finite_subset([1, 2, 3]);
+        let fns = set_a.const_size_functions_to(&set_b);
         algebraeon_structures::assert_enumerated_ord_finite_set!(fns, 243);
     }
 
     #[test]
     fn test_image() {
-        let set_a = i32::structure().into_finite_subset(vec![1, 2, 3, 4, 5]);
-        let set_b = i32::structure().into_finite_subset(vec![1, 2, 3]);
-        let fns = set_a.functions_to(&set_b);
+        let set_a = i32::structure().into_const_size_finite_subset([1, 2, 3, 4, 5]);
+        let set_b = i32::structure().into_const_size_finite_subset([1, 2, 3]);
+        let fns = set_a.const_size_functions_to(&set_b);
         let f = fns
             .function(|i| match i {
                 1 => 1,
@@ -568,11 +624,11 @@ mod tests {
 
     #[test]
     fn test_permutation_actions() {
-        let set_a = i32::structure().into_finite_subset(vec![1, 2, 3, 4, 5]);
+        let set_a = i32::structure().into_const_size_finite_subset([1, 2, 3, 4, 5]);
         let set_a_perms = set_a.permutations();
-        let set_b = i32::structure().into_finite_subset(vec![1, 2, 3]);
+        let set_b = i32::structure().into_const_size_finite_subset([1, 2, 3]);
         let set_b_perms = set_b.permutations();
-        let fns = set_a.functions_to(&set_b);
+        let fns = set_a.const_size_functions_to(&set_b);
 
         let x = fns
             .function(|i| match i {

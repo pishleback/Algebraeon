@@ -41,7 +41,7 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> Signature
 impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> SetSignature
     for FiniteSubsetsByOrdStructure<Set, SetB>
 {
-    type Elem = FiniteSubsetByOrd<Set>;
+    type Elem = FiniteSubsetByOrd<Set::Elem>;
 
     fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
         if !self.set().is_sorted_and_unique(&x.elems) {
@@ -208,47 +208,26 @@ mod tests {
     use algebraeon_structures::*;
 
     #[test]
-    fn test_enumerate_0() {
-        let set = i32::structure().into_finite_subset(vec![]);
-        let subsets = set.finite_subsets();
-        for (idx, subset) in subsets.generate_all_elements().enumerate() {
-            assert_eq!(Natural::from(idx), subsets.element_to_enumeration(&subset));
-            assert_eq!(
-                subsets.enumeration_to_element(&Natural::from(idx)),
-                Some(subset)
-            );
-        }
-        assert_eq!(subsets.enumeration_to_element(&Natural::from(1usize)), None);
-    }
+    fn test_enumerate() {
+        algebraeon_structures::assert_enumerated_ord_finite_set!(
+            i32::structure()
+                .into_finite_subset(vec![])
+                .into_finite_subsets(),
+            1
+        );
 
-    #[test]
-    fn test_enumerate_1() {
-        let set = i32::structure().into_finite_subset(vec![1]);
-        let subsets = set.finite_subsets();
-        for (idx, subset) in subsets.generate_all_elements().enumerate() {
-            assert_eq!(Natural::from(idx), subsets.element_to_enumeration(&subset));
-            assert_eq!(
-                subsets.enumeration_to_element(&Natural::from(idx)),
-                Some(subset)
-            );
-        }
-        assert_eq!(subsets.enumeration_to_element(&Natural::from(2usize)), None);
-    }
+        algebraeon_structures::assert_enumerated_ord_finite_set!(
+            i32::structure()
+                .into_finite_subset(vec![1])
+                .into_finite_subsets(),
+            2
+        );
 
-    #[test]
-    fn test_enumerate_6() {
-        let set = i32::structure().into_finite_subset(vec![1, 2, 3, 4, 5, 6]);
-        let subsets = set.finite_subsets();
-        for (idx, subset) in subsets.generate_all_elements().enumerate() {
-            assert_eq!(Natural::from(idx), subsets.element_to_enumeration(&subset));
-            assert_eq!(
-                subsets.enumeration_to_element(&Natural::from(idx)),
-                Some(subset)
-            );
-        }
-        assert_eq!(
-            subsets.enumeration_to_element(&Natural::from(64usize)),
-            None
+        algebraeon_structures::assert_enumerated_ord_finite_set!(
+            i32::structure()
+                .into_finite_subset(vec![1, 2, 3, 4, 5, 6])
+                .into_finite_subsets(),
+            64
         );
     }
 
