@@ -5,7 +5,7 @@
 /combinatorics/target
 /geometry/target
 /drawing/target
-.vscode/launch.json
 .DS_Store
 /examples/src/bin/*
 /guide/book
+.devenv*

@@ -32,7 +32,7 @@ impl<Ring: HermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> MatrixStru
     /// - U is invertible
     /// - UM=H
     /// - u_det is the determinant of u
-    /// - pivots[r] is the column of the rth pivot
+    /// - `pivots[r]` is the column of the rth pivot
     pub fn row_hermite_algorithm(
         &self,
         mut m: Matrix<Ring::Elem>,
@@ -185,7 +185,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
     /// - H is in row reduced hermite normal form, meaning entries above pivots have euclidean norm strictly less than the pivot
     /// - U is invertible
     /// - UM=H
-    /// - pivots[r] is the column of the rth pivot and pivots.len() == rank(A)
+    /// - `pivots[r]` is the column of the rth pivot and pivots.len() == rank(A)
     pub fn row_reduced_hermite_algorithm(
         &self,
         m: Matrix<Ring::Elem>,
