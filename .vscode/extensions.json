@@ -1,0 +1,9 @@
+{
+    "recommendations": [
+        "datakurre.devenv",
+        "rust-lang.rust-analyzer",
+        "tamasfe.even-better-toml",
+        "bierner.markdown-preview-github-styles",
+        "github.vscode-github-actions",
+    ],
+}
