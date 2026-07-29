@@ -362,7 +362,7 @@ mod tests {
                 let x = Natural::from(x);
                 let n = Natural::from(n);
                 let r = x.nth_root_floor(&n);
-                println!("{}th root of {} is {}", &n, &x, &r);
+                println!("{}th root of {} is {}", n, x, r);
                 assert!(r.pow(&n) <= x);
                 assert!(x == Natural::ZERO || (r + Natural::ONE).pow(&n) > x);
             }
