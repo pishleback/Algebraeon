@@ -3,26 +3,19 @@
 use crate::linear_codes::ordered_syntheme::{
     OrderedSynthemePoint, OrderedSynthemePointCanonicalStructure,
 };
-use algebraeon_macros::CanonicalStructure;
 use algebraeon_rings::{
     finite_fields::quaternary_field::{QuaternaryField, QuaternaryFieldCanonicalStructure},
     linear::{
         const_finitely_free_module::{
             ConstFinitelyFreeModuleStructure, RingToConstFinitelyFreeModuleSignature,
         },
-        finitely_free_module::FinitelyFreeModuleStructure,
         finitely_free_submodule::FinitelyFreeSubmoduleStructure,
         finitely_free_submodules::FinitelyFreeSubmodule,
     },
-    structure::{
-        AdditionSignature, AdditiveGroupSignature, AdditiveMonoidSignature,
-        CancellativeAdditionSignature, FinitelyFreeModuleSignature,
-        RinglikeSpecializationSignature, SemiModuleSignature, TryNegateSignature, ZeroSignature,
-    },
+    structure::FinitelyFreeModuleSignature,
 };
 use algebraeon_structures::*;
-use cantor::{ArrayMap, Finite};
-use std::{cmp::Ordering, sync::OnceLock};
+use std::sync::OnceLock;
 
 type AmbientSpace = ConstFinitelyFreeModuleStructure<
     6,
@@ -144,8 +137,36 @@ pub fn complete_hexacodeword_from_3(given: [Option<QuaternaryField>; 6]) -> Opti
 /// Returns None if the number of given coordinates is not 5
 pub fn correct_hexacodeword_from_5(
     given: [Option<QuaternaryField>; 6],
-) -> Option<ArrayMap<OrderedSynthemePoint, QuaternaryField>> {
-    todo!()
+) -> Option<[QuaternaryField; 6]> {
+    if given
+        .iter()
+        .map(|x| if x.is_some() { 1 } else { 0 })
+        .sum::<usize>()
+        != 5
+    {
+        None
+    } else {
+        for codeword in hexacode_subspace_structure().list_all_elements() {
+            if given
+                .iter()
+                .enumerate()
+                .map(|(i, x)| {
+                    if let Some(x) = x
+                        && x == &codeword[i]
+                    {
+                        1
+                    } else {
+                        0
+                    }
+                })
+                .sum::<usize>()
+                >= 4
+            {
+                return Some(codeword);
+            }
+        }
+        unreachable!()
+    }
 }
 
 #[cfg(test)]
@@ -253,6 +274,103 @@ mod tests {
         );
         assert!(
             complete_hexacodeword_from_3([
+                Some(F4::Zero),
+                Some(F4::Zero),
+                Some(F4::Zero),
+                Some(F4::Zero),
+                Some(F4::Zero),
+                Some(F4::Zero)
+            ])
+            .is_none()
+        );
+    }
+
+    #[test]
+    fn test_correct_5() {
+        type F4 = QuaternaryField;
+
+        assert_eq!(
+            correct_hexacodeword_from_5([
+                Some(F4::Zero),
+                Some(F4::Zero),
+                Some(F4::Zero),
+                Some(F4::Zero),
+                Some(F4::Zero),
+                None,
+            ])
+            .unwrap(),
+            [F4::Zero, F4::Zero, F4::Zero, F4::Zero, F4::Zero, F4::Zero]
+        );
+
+        assert_eq!(
+            correct_hexacodeword_from_5([
+                Some(F4::Zero),
+                Some(F4::Zero),
+                Some(F4::Zero),
+                Some(F4::One),
+                Some(F4::Zero),
+                None,
+            ])
+            .unwrap(),
+            [F4::Zero, F4::Zero, F4::Zero, F4::Zero, F4::Zero, F4::Zero]
+        );
+
+        assert_eq!(
+            correct_hexacodeword_from_5([
+                Some(F4::One),
+                Some(F4::Alpha),
+                None,
+                Some(F4::Zero),
+                Some(F4::Beta),
+                Some(F4::Beta),
+            ])
+            .unwrap(),
+            [F4::One, F4::Alpha, F4::Beta, F4::Zero, F4::Beta, F4::Zero]
+        );
+
+        assert!(correct_hexacodeword_from_5([None, None, None, None, None, None]).is_none());
+        assert!(
+            correct_hexacodeword_from_5([Some(F4::Zero), None, None, None, None, None]).is_none()
+        );
+        assert!(
+            correct_hexacodeword_from_5([Some(F4::Zero), Some(F4::Zero), None, None, None, None])
+                .is_none()
+        );
+        assert!(
+            correct_hexacodeword_from_5([
+                Some(F4::Zero),
+                Some(F4::Zero),
+                Some(F4::Zero),
+                None,
+                None,
+                None
+            ])
+            .is_none()
+        );
+        assert!(
+            correct_hexacodeword_from_5([
+                Some(F4::Zero),
+                Some(F4::Zero),
+                Some(F4::Zero),
+                Some(F4::Zero),
+                None,
+                None
+            ])
+            .is_none()
+        );
+        assert!(
+            correct_hexacodeword_from_5([
+                Some(F4::Zero),
+                Some(F4::Zero),
+                Some(F4::Zero),
+                Some(F4::Zero),
+                Some(F4::Zero),
+                None
+            ])
+            .is_some()
+        );
+        assert!(
+            correct_hexacodeword_from_5([
                 Some(F4::Zero),
                 Some(F4::Zero),
                 Some(F4::Zero),
