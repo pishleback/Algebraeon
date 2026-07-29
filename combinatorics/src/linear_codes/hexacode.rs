@@ -109,16 +109,34 @@ pub fn hexacode_subspace_structure() -> &'static FinitelyFreeSubmoduleStructure<
 pub type HexacodeVector = [QuaternaryField; 6];
 
 pub fn is_hexacodeword(vector: &HexacodeVector) -> bool {
-    todo!()
+    hexacode_subspace_structure().is_element(vector)
 }
 
 /// Given 3 coordinates find the unique completion to a hexacodeword
 ///
 /// Returns None if the number of given coordinates is not 3
-pub fn complete_hexacodeword_from_3(
-    given: [Option<QuaternaryField>; 6],
-) -> Option<ArrayMap<OrderedSynthemePoint, QuaternaryField>> {
-    todo!()
+pub fn complete_hexacodeword_from_3(given: [Option<QuaternaryField>; 6]) -> Option<HexacodeVector> {
+    if given
+        .iter()
+        .map(|x| if x.is_some() { 1 } else { 0 })
+        .sum::<usize>()
+        != 3
+    {
+        None
+    } else {
+        for codeword in hexacode_subspace_structure().list_all_elements() {
+            if given.iter().enumerate().all(|(i, x)| {
+                if let Some(x) = x {
+                    x == &codeword[i]
+                } else {
+                    true
+                }
+            }) {
+                return Some(codeword);
+            }
+        }
+        unreachable!()
+    }
 }
 
 /// Given 5 coordinates find the unique completion to a hexacodeword allowing at most 1 of the given coordinates to change
@@ -135,12 +153,114 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test() {
-        println!("{:?}", space_structure());
-        println!("{:?}", hexacode_subspace());
-
+    fn test_is_hexacodeword() {
         for x in hexacode_subspace_structure().list_all_elements() {
-            println!("{:?}", x);
+            assert!(is_hexacodeword(&x));
         }
+
+        let mut c = 0;
+        for x in space_structure().list_all_elements() {
+            if is_hexacodeword(&x) {
+                c += 1;
+            }
+        }
+        assert_eq!(c, 64);
+    }
+
+    #[test]
+    fn test_complete_3() {
+        type F4 = QuaternaryField;
+
+        assert_eq!(
+            complete_hexacodeword_from_3([
+                Some(F4::Zero),
+                Some(F4::Zero),
+                Some(F4::Zero),
+                None,
+                None,
+                None,
+            ])
+            .unwrap(),
+            [F4::Zero, F4::Zero, F4::Zero, F4::Zero, F4::Zero, F4::Zero]
+        );
+
+        assert_eq!(
+            complete_hexacodeword_from_3([
+                Some(F4::Zero),
+                Some(F4::One),
+                Some(F4::Zero),
+                None,
+                None,
+                None,
+            ])
+            .unwrap(),
+            [F4::Zero, F4::One, F4::Zero, F4::One, F4::Alpha, F4::Beta]
+        );
+
+        assert_eq!(
+            complete_hexacodeword_from_3([
+                None,
+                None,
+                Some(F4::Alpha),
+                None,
+                Some(F4::Beta),
+                Some(F4::Beta),
+            ])
+            .unwrap(),
+            [F4::One, F4::One, F4::Alpha, F4::Alpha, F4::Beta, F4::Beta]
+        );
+
+        assert!(complete_hexacodeword_from_3([None, None, None, None, None, None]).is_none());
+        assert!(
+            complete_hexacodeword_from_3([Some(F4::Zero), None, None, None, None, None]).is_none()
+        );
+        assert!(
+            complete_hexacodeword_from_3([Some(F4::Zero), Some(F4::Zero), None, None, None, None])
+                .is_none()
+        );
+        assert!(
+            complete_hexacodeword_from_3([
+                Some(F4::Zero),
+                Some(F4::Zero),
+                Some(F4::Zero),
+                None,
+                None,
+                None
+            ])
+            .is_some()
+        );
+        assert!(
+            complete_hexacodeword_from_3([
+                Some(F4::Zero),
+                Some(F4::Zero),
+                Some(F4::Zero),
+                Some(F4::Zero),
+                None,
+                None
+            ])
+            .is_none()
+        );
+        assert!(
+            complete_hexacodeword_from_3([
+                Some(F4::Zero),
+                Some(F4::Zero),
+                Some(F4::Zero),
+                Some(F4::Zero),
+                Some(F4::Zero),
+                None
+            ])
+            .is_none()
+        );
+        assert!(
+            complete_hexacodeword_from_3([
+                Some(F4::Zero),
+                Some(F4::Zero),
+                Some(F4::Zero),
+                Some(F4::Zero),
+                Some(F4::Zero),
+                Some(F4::Zero)
+            ])
+            .is_none()
+        );
     }
 }
