@@ -10,8 +10,6 @@ use std::marker::PhantomData;
 mod range_module {
     use std::borrow::Cow;
 
-    use itertools::Itertools;
-
     use super::*;
     #[derive(Debug, Clone)]
     pub struct RingHomomorphismRangeModuleStructure<
@@ -146,36 +144,37 @@ mod range_module {
         }
     }
 
-    impl<
-        'h,
-        Domain: RingSignature + FiniteSetSignature,
-        Range: RingSignature,
-        Hom: FiniteRankFreeRingExtension<Domain, Range>,
-    > CountableSetSignature for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
-    {
-        fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
-            let n = self.homomorphism().degree();
-            let ring_elements = self.ring().list_all_elements();
-            let hom = self.homomorphism().clone();
-            (0..n)
-                .map(move |_| ring_elements.clone())
-                .multi_cartesian_product()
-                .map(move |v| hom.from_vec(v))
-        }
+    // impl<
+    //     'h,
+    //     Basis: FiniteSetSignature,
+    //     Domain: RingSignature + FiniteSetSignature,
+    //     Range: RingSignature,
+    //     Hom: FiniteRankFreeRingExtension<Basis, Domain, Range>,
+    // > CountableSetSignature for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
+    // {
+    //     fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
+    //         let n = self.homomorphism().degree();
+    //         let ring_elements = self.ring().list_all_elements();
+    //         let hom = self.homomorphism().clone();
+    //         (0..n)
+    //             .map(move |_| ring_elements.clone())
+    //             .multi_cartesian_product()
+    //             .map(move |v| hom.from_vec(v))
+    //     }
 
-        fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
-            self.clone().into_generate_all_elements()
-        }
-    }
+    //     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+    //         self.clone().into_generate_all_elements()
+    //     }
+    // }
 
-    impl<
-        'h,
-        Domain: RingSignature + FiniteSetSignature,
-        Range: RingSignature,
-        Hom: FiniteRankFreeRingExtension<Domain, Range>,
-    > FiniteSetSignature for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
-    {
-    }
+    // impl<
+    //     'h,
+    //     Domain: RingSignature + FiniteSetSignature,
+    //     Range: RingSignature,
+    //     Hom: FiniteRankFreeRingExtension<Domain, Range>,
+    // > FiniteSetSignature for RingHomomorphismRangeModuleStructure<'h, Domain, Range, Hom>
+    // {
+    // }
 
     pub trait RingHomomorphism<Domain: RingSignature, Range: RingSignature>:
         Function<Domain, Range>
@@ -336,7 +335,7 @@ pub trait IntegralDomainExtensionAllPolynomialRoots<
 }
 
 /// A ring extension Z -> R such that R is a finitely free Z-module
-pub trait FiniteRankFreeRingExtension<Z: RingSignature, R: RingSignature>:
+pub trait FiniteRankFreeRingExtension<Basis: FiniteSetSignature, Z: RingSignature, R: RingSignature>:
     RingHomomorphism<Z, R> + InjectiveFunction<Z, R>
 {
     // things inherited from the finitely free domain-module structure on the range
@@ -355,13 +354,15 @@ pub trait FiniteRankFreeRingExtension<Z: RingSignature, R: RingSignature>:
     fn row_multiplication_matrix(&self, a: &R::Elem) -> Matrix<Z::Elem>;
 }
 
-impl<Z: RingSignature, R: RingSignature, Hom: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>>
-    FiniteRankFreeRingExtension<Z, R> for Hom
+impl<
+    Basis: FiniteSetSignature,
+    Z: RingSignature,
+    R: RingSignature,
+    Hom: RingHomomorphism<Z, R> + InjectiveFunction<Z, R>,
+> FiniteRankFreeRingExtension<Basis, Z, R> for Hom
 where
     for<'h> RingHomomorphismRangeModuleStructure<'h, Z, R, Self>:
-        FinitelyFreeModuleSignature<Z, Elem = R::Elem>,
-    for<'h> <RingHomomorphismRangeModuleStructure<'h, Z, R, Self> as FreeModuleSignature<Z>>::Basis:
-        FiniteSetSignature,
+        FinitelyFreeModuleSignature<Basis, Z, Elem = R::Elem>,
 {
     fn degree(&self) -> usize {
         self.range_module_structure().rank()
@@ -403,8 +404,12 @@ where
 }
 
 /// A finite dimensional field extension F -> K
-pub trait FiniteDimensionalFieldExtension<F: FieldSignature, K: FieldSignature>:
-    RingHomomorphism<F, K> + InjectiveFunction<F, K> + FiniteRankFreeRingExtension<F, K>
+pub trait FiniteDimensionalFieldExtension<
+    Basis: FiniteSetSignature,
+    F: FieldSignature,
+    K: FieldSignature,
+>:
+    RingHomomorphism<F, K> + InjectiveFunction<F, K> + FiniteRankFreeRingExtension<Basis, F, K>
 {
     fn norm(&self, a: &K::Elem) -> F::Elem;
 
@@ -428,13 +433,15 @@ pub trait FiniteDimensionalFieldExtension<F: FieldSignature, K: FieldSignature>:
     }
 }
 
-impl<F: FieldSignature, K: FieldSignature, Hom: RingHomomorphism<F, K> + InjectiveFunction<F, K>>
-    FiniteDimensionalFieldExtension<F, K> for Hom
+impl<
+    Basis: FiniteSetSignature,
+    F: FieldSignature,
+    K: FieldSignature,
+    Hom: RingHomomorphism<F, K> + InjectiveFunction<F, K>,
+> FiniteDimensionalFieldExtension<Basis, F, K> for Hom
 where
     for<'h> RingHomomorphismRangeModuleStructure<'h, F, K, Self>:
-        FinitelyFreeModuleSignature<F, Elem = K::Elem>,
-    for<'h> <RingHomomorphismRangeModuleStructure<'h, F, K, Self> as FreeModuleSignature<F>>::Basis:
-        FiniteSetSignature,
+        FinitelyFreeModuleSignature<Basis, F, Elem = K::Elem>,
 {
     fn norm(&self, a: &K::Elem) -> F::Elem {
         MatrixStructure::new(self.domain().clone())

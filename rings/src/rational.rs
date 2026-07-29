@@ -129,7 +129,7 @@ impl CharZeroFieldSignature for RationalCanonicalStructure {
 }
 
 impl<'h, B: BorrowedStructure<RationalCanonicalStructure>>
-    FreeModuleSignature<RationalCanonicalStructure>
+    FreeModuleSignature<SingletonSetStructure, RationalCanonicalStructure>
     for RingHomomorphismRangeModuleStructure<
         'h,
         RationalCanonicalStructure,
@@ -137,10 +137,8 @@ impl<'h, B: BorrowedStructure<RationalCanonicalStructure>>
         PrincipalRationalMap<RationalCanonicalStructure, B>,
     >
 {
-    type Basis = SingletonSetStructure;
-
-    fn basis_set(&self) -> impl std::borrow::Borrow<Self::Basis> {
-        Self::Basis::default()
+    fn basis_set(&self) -> impl std::borrow::Borrow<SingletonSetStructure> {
+        SingletonSetStructure::default()
     }
 
     fn to_component<'a>(&self, _: &(), v: &'a Rational) -> Cow<'a, Rational> {

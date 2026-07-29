@@ -1,9 +1,7 @@
 use super::finitely_free_submodules::FinitelyFreeSubmodule;
 use crate::{
-    linear::finitely_free_module::{
-        FinitelyFreeModuleStructure, RingToFinitelyFreeModuleSignature,
-    },
-    matrix::{RingMatricesSignature, UniqueReducedHermiteAlgorithmSignature},
+    linear::finitely_free_module::RingToFinitelyFreeModuleSignature,
+    matrix::{ReducedHermiteAlgorithmSignature, RingMatricesSignature},
     structure::*,
 };
 use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
@@ -13,37 +11,34 @@ use std::{cmp::Ordering, marker::PhantomData};
 #[derive(Debug, Clone)]
 pub struct FinitelyFreeSubmoduleStructure<
     Set: EnumeratedOrdFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: RingSignature,
-    RingB: BorrowedStructure<Ring>,
-    ModuleB: BorrowedStructure<FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>>,
+    Ring: ReducedHermiteAlgorithmSignature,
+    Module: FinitelyFreeModuleSignature<Set, Ring>,
+    ModuleB: BorrowedStructure<Module>,
 > {
-    _phantom: PhantomData<(Set, SetB, Ring, RingB)>,
+    _phantom: PhantomData<(Set, Ring, Module)>,
     module: ModuleB,
     submodule: FinitelyFreeSubmodule<Ring::Elem>,
 }
 
 impl<
     Set: EnumeratedOrdFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: RingSignature,
-    RingB: BorrowedStructure<Ring>,
-    ModuleB: BorrowedStructure<FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>>,
-> From<FinitelyFreeSubmoduleStructure<Set, SetB, Ring, RingB, ModuleB>>
+    Ring: ReducedHermiteAlgorithmSignature,
+    Module: FinitelyFreeModuleSignature<Set, Ring>,
+    ModuleB: BorrowedStructure<Module>,
+> From<FinitelyFreeSubmoduleStructure<Set, Ring, Module, ModuleB>>
     for FinitelyFreeSubmodule<Ring::Elem>
 {
-    fn from(val: FinitelyFreeSubmoduleStructure<Set, SetB, Ring, RingB, ModuleB>) -> Self {
+    fn from(val: FinitelyFreeSubmoduleStructure<Set, Ring, Module, ModuleB>) -> Self {
         val.submodule
     }
 }
 
 impl<
     Set: EnumeratedOrdFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: UniqueReducedHermiteAlgorithmSignature,
-    RingB: BorrowedStructure<Ring>,
-    ModuleB: BorrowedStructure<FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>>,
-> PartialEq for FinitelyFreeSubmoduleStructure<Set, SetB, Ring, RingB, ModuleB>
+    Ring: ReducedHermiteAlgorithmSignature,
+    Module: FinitelyFreeModuleSignature<Set, Ring>,
+    ModuleB: BorrowedStructure<Module>,
+> PartialEq for FinitelyFreeSubmoduleStructure<Set, Ring, Module, ModuleB>
 {
     fn eq(&self, other: &Self) -> bool {
         let module = self.module.borrow();
@@ -53,21 +48,19 @@ impl<
 
 impl<
     Set: EnumeratedOrdFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: UniqueReducedHermiteAlgorithmSignature,
-    RingB: BorrowedStructure<Ring>,
-    ModuleB: BorrowedStructure<FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>>,
-> Eq for FinitelyFreeSubmoduleStructure<Set, SetB, Ring, RingB, ModuleB>
+    Ring: ReducedHermiteAlgorithmSignature,
+    Module: FinitelyFreeModuleSignature<Set, Ring>,
+    ModuleB: BorrowedStructure<Module>,
+> Eq for FinitelyFreeSubmoduleStructure<Set, Ring, Module, ModuleB>
 {
 }
 
 impl<
     Set: EnumeratedOrdFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: RingSignature,
-    RingB: BorrowedStructure<Ring>,
-    ModuleB: BorrowedStructure<FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>>,
-> FinitelyFreeSubmoduleStructure<Set, SetB, Ring, RingB, ModuleB>
+    Ring: ReducedHermiteAlgorithmSignature,
+    Module: FinitelyFreeModuleSignature<Set, Ring>,
+    ModuleB: BorrowedStructure<Module>,
+> FinitelyFreeSubmoduleStructure<Set, Ring, Module, ModuleB>
 {
     pub fn new(module: ModuleB, submodule: FinitelyFreeSubmodule<Ring::Elem>) -> Self {
         Self {
@@ -77,16 +70,12 @@ impl<
         }
     }
 
-    pub fn module(&self) -> &FinitelyFreeModuleStructure<Set, SetB, Ring, RingB> {
+    pub fn module(&self) -> &Module {
         self.module.borrow()
     }
 
     pub fn submodule(&self) -> &FinitelyFreeSubmodule<Ring::Elem> {
         &self.submodule
-    }
-
-    pub fn set(&self) -> &Set {
-        self.module().set()
     }
 
     pub fn rank(&self) -> usize {
@@ -96,23 +85,21 @@ impl<
 
 impl<
     Set: EnumeratedOrdFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: UniqueReducedHermiteAlgorithmSignature,
-    RingB: BorrowedStructure<Ring>,
-    ModuleB: BorrowedStructure<FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>>,
-> Signature for FinitelyFreeSubmoduleStructure<Set, SetB, Ring, RingB, ModuleB>
+    Ring: ReducedHermiteAlgorithmSignature,
+    Module: FinitelyFreeModuleSignature<Set, Ring>,
+    ModuleB: BorrowedStructure<Module>,
+> Signature for FinitelyFreeSubmoduleStructure<Set, Ring, Module, ModuleB>
 {
 }
 
 impl<
     Set: EnumeratedOrdFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: UniqueReducedHermiteAlgorithmSignature,
-    RingB: BorrowedStructure<Ring>,
-    ModuleB: BorrowedStructure<FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>>,
-> SetSignature for FinitelyFreeSubmoduleStructure<Set, SetB, Ring, RingB, ModuleB>
+    Ring: ReducedHermiteAlgorithmSignature,
+    Module: FinitelyFreeModuleSignature<Set, Ring>,
+    ModuleB: BorrowedStructure<Module>,
+> SetSignature for FinitelyFreeSubmoduleStructure<Set, Ring, Module, ModuleB>
 {
-    type Elem = Vec<Ring::Elem>;
+    type Elem = Module::Elem;
 
     fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
         self.module().validate_element(x)?;
@@ -129,11 +116,10 @@ impl<
 
 impl<
     Set: EnumeratedOrdFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: UniqueReducedHermiteAlgorithmSignature,
-    RingB: BorrowedStructure<Ring>,
-    ModuleB: BorrowedStructure<FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>>,
-> EqSignature for FinitelyFreeSubmoduleStructure<Set, SetB, Ring, RingB, ModuleB>
+    Ring: ReducedHermiteAlgorithmSignature,
+    Module: FinitelyFreeModuleSignature<Set, Ring> + EqSignature,
+    ModuleB: BorrowedStructure<Module>,
+> EqSignature for FinitelyFreeSubmoduleStructure<Set, Ring, Module, ModuleB>
 {
     fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
         self.module().equal(a, b)
@@ -142,11 +128,10 @@ impl<
 
 impl<
     Set: EnumeratedOrdFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: UniqueReducedHermiteAlgorithmSignature + OrdSignature,
-    RingB: BorrowedStructure<Ring>,
-    ModuleB: BorrowedStructure<FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>>,
-> PartialOrdSignature for FinitelyFreeSubmoduleStructure<Set, SetB, Ring, RingB, ModuleB>
+    Ring: ReducedHermiteAlgorithmSignature,
+    Module: FinitelyFreeModuleSignature<Set, Ring> + OrdSignature,
+    ModuleB: BorrowedStructure<Module>,
+> PartialOrdSignature for FinitelyFreeSubmoduleStructure<Set, Ring, Module, ModuleB>
 {
     fn partial_cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Ordering> {
         self.module().partial_cmp(a, b)
@@ -155,11 +140,10 @@ impl<
 
 impl<
     Set: EnumeratedOrdFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: UniqueReducedHermiteAlgorithmSignature + OrdSignature,
-    RingB: BorrowedStructure<Ring>,
-    ModuleB: BorrowedStructure<FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>>,
-> OrdSignature for FinitelyFreeSubmoduleStructure<Set, SetB, Ring, RingB, ModuleB>
+    Ring: ReducedHermiteAlgorithmSignature,
+    Module: FinitelyFreeModuleSignature<Set, Ring> + OrdSignature,
+    ModuleB: BorrowedStructure<Module>,
+> OrdSignature for FinitelyFreeSubmoduleStructure<Set, Ring, Module, ModuleB>
 {
     fn cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Ordering {
         self.module().cmp(a, b)
@@ -168,11 +152,10 @@ impl<
 
 impl<
     Set: EnumeratedOrdFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: UniqueReducedHermiteAlgorithmSignature + EnumeratedOrdFiniteSetSignature,
-    RingB: BorrowedStructure<Ring>,
-    ModuleB: BorrowedStructure<FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>>,
-> CountableSetSignature for FinitelyFreeSubmoduleStructure<Set, SetB, Ring, RingB, ModuleB>
+    Ring: ReducedHermiteAlgorithmSignature + EnumeratedOrdFiniteSetSignature,
+    Module: FinitelyFreeModuleSignature<Set, Ring>,
+    ModuleB: BorrowedStructure<Module>,
+> CountableSetSignature for FinitelyFreeSubmoduleStructure<Set, Ring, Module, ModuleB>
 {
     fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
         self.list_all_elements().into_iter()
@@ -185,18 +168,20 @@ impl<
 
 impl<
     Set: EnumeratedOrdFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: UniqueReducedHermiteAlgorithmSignature + EnumeratedOrdFiniteSetSignature,
-    RingB: BorrowedStructure<Ring>,
-    ModuleB: BorrowedStructure<FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>>,
-> FiniteSetSignature for FinitelyFreeSubmoduleStructure<Set, SetB, Ring, RingB, ModuleB>
+    Ring: ReducedHermiteAlgorithmSignature + EnumeratedOrdFiniteSetSignature,
+    Module: FinitelyFreeModuleSignature<Set, Ring>,
+    ModuleB: BorrowedStructure<Module>,
+> FiniteSetSignature for FinitelyFreeSubmoduleStructure<Set, Ring, Module, ModuleB>
 {
     fn list_all_elements(&self) -> Vec<Self::Elem> {
         let row_basis = self.submodule.row_basis_matrix();
         self.ring()
             .free_module(EnumeratedFiniteSetStructure::new(row_basis.rows()))
             .generate_all_elements()
-            .map(|coeffs| self.ring().matrix_structure().apply_row(row_basis, &coeffs))
+            .map(|coeffs| {
+                self.module()
+                    .from_vec(self.ring().matrix_structure().apply_row(row_basis, &coeffs))
+            })
             .collect()
     }
 
@@ -207,12 +192,10 @@ impl<
 
 impl<
     Set: EnumeratedOrdFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: UniqueReducedHermiteAlgorithmSignature + EnumeratedOrdFiniteSetSignature,
-    RingB: BorrowedStructure<Ring>,
-    ModuleB: BorrowedStructure<FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>>,
-> EnumeratedOrdFiniteSetSignature
-    for FinitelyFreeSubmoduleStructure<Set, SetB, Ring, RingB, ModuleB>
+    Ring: ReducedHermiteAlgorithmSignature + EnumeratedOrdFiniteSetSignature,
+    Module: FinitelyFreeModuleSignature<Set, Ring> + OrdSignature,
+    ModuleB: BorrowedStructure<Module>,
+> EnumeratedOrdFiniteSetSignature for FinitelyFreeSubmoduleStructure<Set, Ring, Module, ModuleB>
 {
     fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
         self.sort(self.list_all_elements())
@@ -236,22 +219,19 @@ impl<
 
 impl<
     Set: EnumeratedOrdFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: UniqueReducedHermiteAlgorithmSignature,
-    RingB: BorrowedStructure<Ring>,
-    ModuleB: BorrowedStructure<FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>>,
-> RinglikeSpecializationSignature
-    for FinitelyFreeSubmoduleStructure<Set, SetB, Ring, RingB, ModuleB>
+    Ring: ReducedHermiteAlgorithmSignature,
+    Module: FinitelyFreeModuleSignature<Set, Ring>,
+    ModuleB: BorrowedStructure<Module>,
+> RinglikeSpecializationSignature for FinitelyFreeSubmoduleStructure<Set, Ring, Module, ModuleB>
 {
 }
 
 impl<
     Set: EnumeratedOrdFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: UniqueReducedHermiteAlgorithmSignature,
-    RingB: BorrowedStructure<Ring>,
-    ModuleB: BorrowedStructure<FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>>,
-> ZeroSignature for FinitelyFreeSubmoduleStructure<Set, SetB, Ring, RingB, ModuleB>
+    Ring: ReducedHermiteAlgorithmSignature,
+    Module: FinitelyFreeModuleSignature<Set, Ring>,
+    ModuleB: BorrowedStructure<Module>,
+> ZeroSignature for FinitelyFreeSubmoduleStructure<Set, Ring, Module, ModuleB>
 {
     fn zero(&self) -> Self::Elem {
         self.module().zero()
@@ -260,11 +240,10 @@ impl<
 
 impl<
     Set: EnumeratedOrdFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: UniqueReducedHermiteAlgorithmSignature,
-    RingB: BorrowedStructure<Ring>,
-    ModuleB: BorrowedStructure<FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>>,
-> AdditionSignature for FinitelyFreeSubmoduleStructure<Set, SetB, Ring, RingB, ModuleB>
+    Ring: ReducedHermiteAlgorithmSignature,
+    Module: FinitelyFreeModuleSignature<Set, Ring>,
+    ModuleB: BorrowedStructure<Module>,
+> AdditionSignature for FinitelyFreeSubmoduleStructure<Set, Ring, Module, ModuleB>
 {
     fn add(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.module().add(a, b)
@@ -273,12 +252,10 @@ impl<
 
 impl<
     Set: EnumeratedOrdFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: UniqueReducedHermiteAlgorithmSignature,
-    RingB: BorrowedStructure<Ring>,
-    ModuleB: BorrowedStructure<FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>>,
-> CancellativeAdditionSignature
-    for FinitelyFreeSubmoduleStructure<Set, SetB, Ring, RingB, ModuleB>
+    Ring: ReducedHermiteAlgorithmSignature,
+    Module: FinitelyFreeModuleSignature<Set, Ring>,
+    ModuleB: BorrowedStructure<Module>,
+> CancellativeAdditionSignature for FinitelyFreeSubmoduleStructure<Set, Ring, Module, ModuleB>
 {
     fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         self.module().try_sub(a, b)
@@ -287,11 +264,10 @@ impl<
 
 impl<
     Set: EnumeratedOrdFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: UniqueReducedHermiteAlgorithmSignature,
-    RingB: BorrowedStructure<Ring>,
-    ModuleB: BorrowedStructure<FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>>,
-> TryNegateSignature for FinitelyFreeSubmoduleStructure<Set, SetB, Ring, RingB, ModuleB>
+    Ring: ReducedHermiteAlgorithmSignature,
+    Module: FinitelyFreeModuleSignature<Set, Ring>,
+    ModuleB: BorrowedStructure<Module>,
+> TryNegateSignature for FinitelyFreeSubmoduleStructure<Set, Ring, Module, ModuleB>
 {
     fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
         self.module().try_neg(a)
@@ -300,21 +276,19 @@ impl<
 
 impl<
     Set: EnumeratedOrdFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: UniqueReducedHermiteAlgorithmSignature,
-    RingB: BorrowedStructure<Ring>,
-    ModuleB: BorrowedStructure<FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>>,
-> AdditiveMonoidSignature for FinitelyFreeSubmoduleStructure<Set, SetB, Ring, RingB, ModuleB>
+    Ring: ReducedHermiteAlgorithmSignature,
+    Module: FinitelyFreeModuleSignature<Set, Ring>,
+    ModuleB: BorrowedStructure<Module>,
+> AdditiveMonoidSignature for FinitelyFreeSubmoduleStructure<Set, Ring, Module, ModuleB>
 {
 }
 
 impl<
     Set: EnumeratedOrdFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: UniqueReducedHermiteAlgorithmSignature,
-    RingB: BorrowedStructure<Ring>,
-    ModuleB: BorrowedStructure<FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>>,
-> AdditiveGroupSignature for FinitelyFreeSubmoduleStructure<Set, SetB, Ring, RingB, ModuleB>
+    Ring: ReducedHermiteAlgorithmSignature,
+    Module: FinitelyFreeModuleSignature<Set, Ring>,
+    ModuleB: BorrowedStructure<Module>,
+> AdditiveGroupSignature for FinitelyFreeSubmoduleStructure<Set, Ring, Module, ModuleB>
 {
     fn neg(&self, a: &Self::Elem) -> Self::Elem {
         self.module().neg(a)
@@ -323,11 +297,10 @@ impl<
 
 impl<
     Set: EnumeratedOrdFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: UniqueReducedHermiteAlgorithmSignature,
-    RingB: BorrowedStructure<Ring>,
-    ModuleB: BorrowedStructure<FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>>,
-> SemiModuleSignature<Ring> for FinitelyFreeSubmoduleStructure<Set, SetB, Ring, RingB, ModuleB>
+    Ring: ReducedHermiteAlgorithmSignature,
+    Module: FinitelyFreeModuleSignature<Set, Ring>,
+    ModuleB: BorrowedStructure<Module>,
+> SemiModuleSignature<Ring> for FinitelyFreeSubmoduleStructure<Set, Ring, Module, ModuleB>
 {
     fn ring(&self) -> &Ring {
         self.module().ring()
@@ -341,7 +314,10 @@ impl<
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::finite_fields::quaternary_field::QuaternaryField;
+    use crate::{
+        finite_fields::quaternary_field::QuaternaryField,
+        linear::finitely_free_module::FinitelyFreeModuleStructure,
+    };
 
     #[test]
     fn enumeration() {
@@ -349,24 +325,22 @@ mod tests {
             EnumeratedFiniteSetStructure::new(4),
             QuaternaryField::structure(),
         );
+
         algebraeon_structures::assert_enumerated_ord_finite_set!(
-            FinitelyFreeSubmoduleStructure::new(
-                &module,
-                module.generated_submodule(vec![
-                    &vec![
-                        QuaternaryField::Zero,
-                        QuaternaryField::Alpha,
-                        QuaternaryField::Beta,
-                        QuaternaryField::One
-                    ],
-                    &vec![
-                        QuaternaryField::Alpha,
-                        QuaternaryField::Zero,
-                        QuaternaryField::Zero,
-                        QuaternaryField::Beta
-                    ]
-                ])
-            ),
+            module.submodule_structure(module.generated_submodule(vec![
+                &vec![
+                    QuaternaryField::Zero,
+                    QuaternaryField::Alpha,
+                    QuaternaryField::Beta,
+                    QuaternaryField::One
+                ],
+                &vec![
+                    QuaternaryField::Alpha,
+                    QuaternaryField::Zero,
+                    QuaternaryField::Zero,
+                    QuaternaryField::Beta
+                ]
+            ])),
             16
         );
     }

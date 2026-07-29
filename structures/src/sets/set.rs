@@ -71,7 +71,7 @@ make_maybe_trait!(FiniteSet);
 
 /// A set with N elements
 #[signature_meta_trait]
-pub trait FiniteSetSizedSignature<const N: usize>: FiniteSetSignature {
+pub trait ConstSizeFiniteSetSignature<const N: usize>: FiniteSetSignature {
     fn list_all_elements_sized(&self) -> [Self::Elem; N] {
         self.list_all_elements().try_into().unwrap()
     }

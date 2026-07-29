@@ -297,7 +297,7 @@ impl<D: BorrowedElem<Integer>> SemiModuleSignature<RationalCanonicalStructure>
 }
 
 impl<'h, D: BorrowedElem<Integer>, B: BorrowedStructure<QuadraticNumberFieldStructure<D>>>
-    FreeModuleSignature<RationalCanonicalStructure>
+    FreeModuleSignature<QuadraticNumberFieldBasisCanonicalStructure, RationalCanonicalStructure>
     for RingHomomorphismRangeModuleStructure<
         'h,
         RationalCanonicalStructure,
@@ -305,9 +305,7 @@ impl<'h, D: BorrowedElem<Integer>, B: BorrowedStructure<QuadraticNumberFieldStru
         PrincipalRationalMap<QuadraticNumberFieldStructure<D>, B>,
     >
 {
-    type Basis = QuadraticNumberFieldBasisCanonicalStructure;
-
-    fn basis_set(&self) -> impl std::borrow::Borrow<Self::Basis> {
+    fn basis_set(&self) -> impl std::borrow::Borrow<QuadraticNumberFieldBasisCanonicalStructure> {
         QuadraticNumberFieldBasis::structure()
     }
 

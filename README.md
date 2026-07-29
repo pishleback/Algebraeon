@@ -93,6 +93,7 @@ use algebraeon::rings::matrix::Matrix;
 use algebraeon::structures::Integer;
 use algebraeon::structures::MetaType;
 use algebraeon::sets::sets::EnumeratedFiniteSetStructure;
+use algebraeon::rings::structure::FinitelyFreeModuleSignature;
 
 let m = Matrix::<Integer>::from_rows(vec![vec![3, 4, 1], vec![2, 1, 2], vec![1, 3, -1]]);
 let y = vec![5.into(), 5.into(), 3.into()];

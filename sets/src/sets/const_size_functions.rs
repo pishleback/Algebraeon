@@ -1,5 +1,6 @@
 use crate::sets::{
     FiniteSetToFinitelySupportedPermutationsStructure, FinitelySupportedPermutationsStructure,
+    FunctionsStructure,
 };
 use algebraeon_structures::*;
 use itertools::Itertools;
@@ -9,7 +10,7 @@ use std::{cmp::Ordering, fmt::Debug, marker::PhantomData};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ConstSizeFunctionsStructure<
     const N: usize,
-    Domain: FiniteSetSizedSignature<N>,
+    Domain: ConstSizeFiniteSetSignature<N>,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -22,7 +23,7 @@ pub struct ConstSizeFunctionsStructure<
 
 impl<
     const N: usize,
-    Domain: FiniteSetSizedSignature<N>,
+    Domain: ConstSizeFiniteSetSignature<N>,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -36,6 +37,18 @@ impl<
             range,
         }
     }
+
+    pub fn into_domain_and_range(self) -> (DomainB, RangeB) {
+        (self.domain, self.range)
+    }
+
+    pub fn forget_const(&self) -> FunctionsStructure<Domain, &Domain, Range, &Range> {
+        FunctionsStructure::new(self.domain.borrow(), self.range.borrow())
+    }
+
+    pub fn into_forget_const(self) -> FunctionsStructure<Domain, DomainB, Range, RangeB> {
+        FunctionsStructure::new(self.domain, self.range)
+    }
 }
 
 pub trait SetToConstSizeFunctionsToSignature: SetSignature {
@@ -44,7 +57,7 @@ pub trait SetToConstSizeFunctionsToSignature: SetSignature {
         range: Range,
     ) -> ConstSizeFunctionsStructure<N, Self, Self, Range, Range>
     where
-        Self: FiniteSetSizedSignature<N>,
+        Self: ConstSizeFiniteSetSignature<N>,
     {
         ConstSizeFunctionsStructure::new(self, range)
     }
@@ -54,7 +67,7 @@ pub trait SetToConstSizeFunctionsToSignature: SetSignature {
         range: &'a Range,
     ) -> ConstSizeFunctionsStructure<N, Self, &Self, Range, &'a Range>
     where
-        Self: FiniteSetSizedSignature<N>,
+        Self: ConstSizeFiniteSetSignature<N>,
     {
         ConstSizeFunctionsStructure::new(self, range)
     }
@@ -62,14 +75,14 @@ pub trait SetToConstSizeFunctionsToSignature: SetSignature {
 impl<Set: SetSignature> SetToConstSizeFunctionsToSignature for Set {}
 
 pub trait SetToConstSizeFunctionsFromSignature: SetSignature {
-    fn into_functions_from<const N: usize, Domain: FiniteSetSizedSignature<N>>(
+    fn into_functions_from<const N: usize, Domain: ConstSizeFiniteSetSignature<N>>(
         self,
         domain: Domain,
     ) -> ConstSizeFunctionsStructure<N, Domain, Domain, Self, Self> {
         ConstSizeFunctionsStructure::new(domain, self)
     }
 
-    fn functions_from<'a, const N: usize, Domain: FiniteSetSizedSignature<N>>(
+    fn functions_from<'a, const N: usize, Domain: ConstSizeFiniteSetSignature<N>>(
         &self,
         domain: &'a Domain,
     ) -> ConstSizeFunctionsStructure<N, Domain, &'a Domain, Self, &Self> {
@@ -80,7 +93,7 @@ impl<Set: SetSignature> SetToConstSizeFunctionsFromSignature for Set {}
 
 impl<
     const N: usize,
-    Domain: FiniteSetSizedSignature<N>,
+    Domain: ConstSizeFiniteSetSignature<N>,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -97,7 +110,7 @@ impl<
 
 impl<
     const N: usize,
-    Domain: FiniteSetSizedSignature<N>,
+    Domain: ConstSizeFiniteSetSignature<N>,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -107,7 +120,7 @@ impl<
 
 impl<
     const N: usize,
-    Domain: FiniteSetSizedSignature<N> + EnumeratedOrdFiniteSetSignature,
+    Domain: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -139,7 +152,7 @@ impl<
 
 impl<
     const N: usize,
-    Domain: FiniteSetSizedSignature<N> + EnumeratedOrdFiniteSetSignature,
+    Domain: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -160,7 +173,7 @@ impl<
 
 impl<
     const N: usize,
-    Domain: FiniteSetSizedSignature<N> + EnumeratedOrdFiniteSetSignature,
+    Domain: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: EqSignature,
     RangeB: BorrowedStructure<Range>,
@@ -177,7 +190,7 @@ impl<
 
 impl<
     const N: usize,
-    Domain: FiniteSetSizedSignature<N> + EnumeratedOrdFiniteSetSignature,
+    Domain: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: OrdSignature,
     RangeB: BorrowedStructure<Range>,
@@ -190,7 +203,7 @@ impl<
 
 impl<
     const N: usize,
-    Domain: FiniteSetSizedSignature<N> + EnumeratedOrdFiniteSetSignature,
+    Domain: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: OrdSignature,
     RangeB: BorrowedStructure<Range>,
@@ -218,7 +231,7 @@ impl<
 
 impl<
     const N: usize,
-    Domain: FiniteSetSizedSignature<N> + EnumeratedOrdFiniteSetSignature,
+    Domain: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: EnumeratedOrdFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -239,7 +252,7 @@ impl<
 
 impl<
     const N: usize,
-    Domain: FiniteSetSizedSignature<N> + EnumeratedOrdFiniteSetSignature,
+    Domain: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: EnumeratedOrdFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -252,7 +265,7 @@ impl<
 
 impl<
     const N: usize,
-    Domain: FiniteSetSizedSignature<N> + EnumeratedOrdFiniteSetSignature,
+    Domain: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: EnumeratedOrdFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -318,7 +331,7 @@ impl<
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct RightPermutationActionOnConstSizeFunctionsStructure<
     const N: usize,
-    Domain: FiniteSetSizedSignature<N> + EnumeratedOrdFiniteSetSignature,
+    Domain: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -334,7 +347,7 @@ struct RightPermutationActionOnConstSizeFunctionsStructure<
 
 impl<
     const N: usize,
-    Domain: FiniteSetSizedSignature<N> + EnumeratedOrdFiniteSetSignature,
+    Domain: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -365,7 +378,7 @@ impl<
 
 impl<
     const N: usize,
-    Domain: FiniteSetSizedSignature<N> + EnumeratedOrdFiniteSetSignature,
+    Domain: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -388,7 +401,7 @@ impl<
 
 impl<
     const N: usize,
-    Domain: FiniteSetSizedSignature<N> + EnumeratedOrdFiniteSetSignature,
+    Domain: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -405,7 +418,7 @@ impl<
 /// Sym(D) has a right action on Fun(D -> R) by composition on the right
 impl<
     const N: usize,
-    Domain: FiniteSetSizedSignature<N> + EnumeratedOrdFiniteSetSignature,
+    Domain: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -453,7 +466,7 @@ impl<
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct LeftPermutationActionOnConstSizeFunctionsStructure<
     const N: usize,
-    Domain: FiniteSetSizedSignature<N>,
+    Domain: ConstSizeFiniteSetSignature<N>,
     DomainB: BorrowedStructure<Domain>,
     Range: EnumeratedOrdFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -469,7 +482,7 @@ struct LeftPermutationActionOnConstSizeFunctionsStructure<
 
 impl<
     const N: usize,
-    Domain: FiniteSetSizedSignature<N>,
+    Domain: ConstSizeFiniteSetSignature<N>,
     DomainB: BorrowedStructure<Domain>,
     Range: EnumeratedOrdFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -500,7 +513,7 @@ impl<
 
 impl<
     const N: usize,
-    Domain: FiniteSetSizedSignature<N>,
+    Domain: ConstSizeFiniteSetSignature<N>,
     DomainB: BorrowedStructure<Domain>,
     Range: EnumeratedOrdFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -523,7 +536,7 @@ impl<
 
 impl<
     const N: usize,
-    Domain: FiniteSetSizedSignature<N> + EnumeratedOrdFiniteSetSignature,
+    Domain: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: EnumeratedOrdFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -540,7 +553,7 @@ impl<
 /// Sym(R) has a left action on Fun(D -> R) by composition on the left
 impl<
     const N: usize,
-    Domain: FiniteSetSizedSignature<N> + EnumeratedOrdFiniteSetSignature,
+    Domain: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: EnumeratedOrdFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,

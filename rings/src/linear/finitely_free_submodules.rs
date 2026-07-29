@@ -2,7 +2,7 @@ use super::{finitely_free_cosets::*, finitely_free_module::*};
 use crate::{matrix::*, structure::*};
 use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 use algebraeon_structures::*;
-use std::{borrow::Borrow, fmt::Debug};
+use std::{borrow::Borrow, fmt::Debug, marker::PhantomData};
 
 #[derive(Debug, Clone)]
 pub struct FinitelyFreeSubmodule<Elem: Clone + Debug> {
@@ -47,45 +47,53 @@ impl<Elem: Clone + Debug> FinitelyFreeSubmodule<Elem> {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FinitelyFreeSubmodulesStructure<
     Set: EnumeratedOrdFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
     Ring: ReducedHermiteAlgorithmSignature,
-    RingB: BorrowedStructure<Ring>,
+    Module: FinitelyFreeModuleSignature<Set, Ring>,
+    ModuleB: BorrowedStructure<Module>,
 > {
-    module: FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>,
+    _set: PhantomData<Set>,
+    _ring: PhantomData<Ring>,
+    _module: PhantomData<Module>,
+    module: ModuleB,
 }
 
 impl<
     Set: EnumeratedOrdFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
     Ring: ReducedHermiteAlgorithmSignature,
-    RingB: BorrowedStructure<Ring>,
-> FinitelyFreeSubmodulesStructure<Set, SetB, Ring, RingB>
+    Module: FinitelyFreeModuleSignature<Set, Ring>,
+    ModuleB: BorrowedStructure<Module>,
+> FinitelyFreeSubmodulesStructure<Set, Ring, Module, ModuleB>
 {
-    pub fn new(module: FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>) -> Self {
-        Self { module }
+    pub fn new(module: ModuleB) -> Self {
+        Self {
+            _set: PhantomData,
+            _ring: PhantomData,
+            _module: PhantomData,
+            module,
+        }
     }
 }
 
 impl<
     Set: EnumeratedOrdFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
     Ring: ReducedHermiteAlgorithmSignature,
-    RingB: BorrowedStructure<Ring>,
-> Signature for FinitelyFreeSubmodulesStructure<Set, SetB, Ring, RingB>
+    Module: FinitelyFreeModuleSignature<Set, Ring>,
+    ModuleB: BorrowedStructure<Module>,
+> Signature for FinitelyFreeSubmodulesStructure<Set, Ring, Module, ModuleB>
 {
 }
 
 impl<
     Set: EnumeratedOrdFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
     Ring: ReducedHermiteAlgorithmSignature,
-    RingB: BorrowedStructure<Ring>,
-> SetSignature for FinitelyFreeSubmodulesStructure<Set, SetB, Ring, RingB>
+    Module: FinitelyFreeModuleSignature<Set, Ring>,
+    ModuleB: BorrowedStructure<Module>,
+> SetSignature for FinitelyFreeSubmodulesStructure<Set, Ring, Module, ModuleB>
 {
     type Elem = FinitelyFreeSubmodule<Ring::Elem>;
 
     fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
-        if x.row_basis.cols() != self.module.rank() {
+        if x.row_basis.cols() != self.module().rank() {
             return Err("dimensions don't match".to_string());
         }
         // TODO: more checks
@@ -95,13 +103,13 @@ impl<
 
 impl<
     Set: EnumeratedOrdFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
     Ring: ReducedHermiteAlgorithmSignature,
-    RingB: BorrowedStructure<Ring>,
-> FinitelyFreeSubmodulesStructure<Set, SetB, Ring, RingB>
+    Module: FinitelyFreeModuleSignature<Set, Ring>,
+    ModuleB: BorrowedStructure<Module>,
+> FinitelyFreeSubmodulesStructure<Set, Ring, Module, ModuleB>
 {
-    pub fn module(&self) -> &FinitelyFreeModuleStructure<Set, SetB, Ring, RingB> {
-        &self.module
+    pub fn module(&self) -> &Module {
+        self.module.borrow()
     }
 
     pub fn ring(&self) -> &Ring {
@@ -139,36 +147,42 @@ impl<
         self.matrix_col_span_and_basis(matrix).0
     }
 
-    pub fn span(
-        &self,
-        span: Vec<impl Borrow<Vec<Ring::Elem>>>,
-    ) -> FinitelyFreeSubmodule<Ring::Elem> {
+    pub fn span(&self, span: Vec<impl Borrow<Module::Elem>>) -> FinitelyFreeSubmodule<Ring::Elem> {
         for v in &span {
-            debug_assert_eq!(v.borrow().len(), self.module().rank());
+            debug_assert!(self.module().is_element(v.borrow()));
         }
+        let span = span
+            .into_iter()
+            .map(|v| self.module().to_vec(v.borrow()))
+            .collect::<Vec<_>>();
         self.matrix_row_span(Matrix::construct(
             span.len(),
             self.module().rank(),
-            |r, c| span[r].borrow()[c].clone(),
+            |r, c| span[r][c].clone(),
         ))
     }
 
     pub fn kernel(
         &self,
-        items: Vec<impl Borrow<Vec<Ring::Elem>>>,
+        items: Vec<impl Borrow<Module::Elem>>,
     ) -> FinitelyFreeSubmodule<Ring::Elem> {
         let n = self.module().rank();
         debug_assert_eq!(items.len(), n);
+        for v in &items {
+            debug_assert!(self.module().is_element(v.borrow()));
+        }
+        let items = items
+            .into_iter()
+            .map(|v| self.module().to_vec(v.borrow()))
+            .collect::<Vec<_>>();
         if n == 0 {
             self.zero_submodule()
         } else {
-            let cols = items.first().unwrap().borrow().len();
+            let cols = items.first().unwrap().len();
             for v in &items[1..] {
-                assert_eq!(v.borrow().len(), cols);
+                assert_eq!(v.len(), cols);
             }
-            self.matrix_row_kernel(Matrix::construct(n, cols, |r, c| {
-                items[r].borrow()[c].clone()
-            }))
+            self.matrix_row_kernel(Matrix::construct(n, cols, |r, c| items[r][c].clone()))
         }
     }
 
@@ -246,11 +260,11 @@ impl<
     pub fn reduce_element(
         &self,
         submodule: &FinitelyFreeSubmodule<Ring::Elem>,
-        element: &Vec<Ring::Elem>,
-    ) -> (Vec<Ring::Elem>, Vec<Ring::Elem>) {
+        element: &Module::Elem,
+    ) -> (Vec<Ring::Elem>, Module::Elem) {
         debug_assert!(self.validate_element(submodule).is_ok());
         debug_assert!(self.module().validate_element(element).is_ok());
-        let mut reduced_element = element.clone();
+        let mut reduced_element = self.module().to_vec(element);
         let mut coset = vec![];
         for (r, &c) in submodule.pivots.iter().enumerate() {
             let quo = self
@@ -270,7 +284,8 @@ impl<
             }
             coset.push(quo);
         }
-        (coset, reduced_element)
+
+        (coset, self.module().from_vec(reduced_element))
     }
 
     pub fn equal_slow(
@@ -286,14 +301,15 @@ impl<
     pub fn contains_element(
         &self,
         submodule: &FinitelyFreeSubmodule<Ring::Elem>,
-        element: &Vec<Ring::Elem>,
+        element: &Module::Elem,
     ) -> bool {
         debug_assert!(self.validate_element(submodule).is_ok());
         debug_assert!(self.module().validate_element(element).is_ok());
         let (_offset, element_reduced) = self.reduce_element(submodule, element);
-        element_reduced
-            .iter()
-            .all(|coeff| self.ring().is_zero(coeff))
+        self.module()
+            .to_vec(&element_reduced)
+            .into_iter()
+            .all(|coeff| self.ring().is_zero(&coeff))
     }
 
     pub fn contains(
@@ -304,7 +320,7 @@ impl<
         debug_assert!(self.validate_element(x).is_ok());
         debug_assert!(self.validate_element(y).is_ok());
         for b in y.basis() {
-            if !self.contains_element(x, &b) {
+            if !self.contains_element(x, &self.module().from_vec(b)) {
                 return false;
             }
         }
@@ -417,7 +433,7 @@ impl<
     pub fn coset(
         &self,
         x: &FinitelyFreeSubmodule<Ring::Elem>,
-        offset: &Vec<Ring::Elem>,
+        offset: &Module::Elem,
     ) -> FinitelyFreeSubmoduleCoset<Ring::Elem> {
         self.module()
             .cosets()
@@ -436,10 +452,10 @@ impl<
 
 impl<
     Set: EnumeratedOrdFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: UniqueReducedHermiteAlgorithmSignature,
-    RingB: BorrowedStructure<Ring>,
-> EqSignature for FinitelyFreeSubmodulesStructure<Set, SetB, Ring, RingB>
+    Ring: ReducedHermiteAlgorithmSignature,
+    Module: FinitelyFreeModuleSignature<Set, Ring>,
+    ModuleB: BorrowedStructure<Module>,
+> EqSignature for FinitelyFreeSubmodulesStructure<Set, Ring, Module, ModuleB>
 {
     fn equal(
         &self,

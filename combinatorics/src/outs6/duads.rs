@@ -16,7 +16,7 @@ pub struct Duad<Point> {
 
 impl<Point: MetaType> MetaType for Duad<Point>
 where
-    Point::Signature: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Point::Signature: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
 {
     type Signature = DuadsStructure<Point::Signature, Point::Signature>;
 
@@ -64,7 +64,7 @@ impl<Elem: Clone> From<&Duad<Elem>> for FiniteSubsetByOrd<Elem> {
 /// The 15-element set of duads on a 6-element set
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DuadsStructure<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > {
     _set: PhantomData<Set>,
@@ -72,7 +72,7 @@ pub struct DuadsStructure<
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > DuadsStructure<Set, SetB>
 {
@@ -90,7 +90,7 @@ impl<
 }
 
 pub trait SetToDuadsSignature:
-    FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature
+    ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature
 {
     fn duads(&self) -> DuadsStructure<Self, &Self> {
         DuadsStructure::new(self)
@@ -100,20 +100,20 @@ pub trait SetToDuadsSignature:
         DuadsStructure::new(self)
     }
 }
-impl<Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature> SetToDuadsSignature
+impl<Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature> SetToDuadsSignature
     for Set
 {
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > Signature for DuadsStructure<Set, SetB>
 {
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > SetSignature for DuadsStructure<Set, SetB>
 {
@@ -128,7 +128,7 @@ impl<
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > EqSignature for DuadsStructure<Set, SetB>
 {
@@ -138,7 +138,7 @@ impl<
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > PartialOrdSignature for DuadsStructure<Set, SetB>
 {
@@ -150,7 +150,7 @@ impl<
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > OrdSignature for DuadsStructure<Set, SetB>
 {
@@ -160,7 +160,7 @@ impl<
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > CountableSetSignature for DuadsStructure<Set, SetB>
 {
@@ -178,7 +178,7 @@ impl<
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > FiniteSetSignature for DuadsStructure<Set, SetB>
 {
@@ -192,14 +192,14 @@ impl<
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
-> FiniteSetSizedSignature<15> for DuadsStructure<Set, SetB>
+> ConstSizeFiniteSetSignature<15> for DuadsStructure<Set, SetB>
 {
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > EnumeratedOrdFiniteSetSignature for DuadsStructure<Set, SetB>
 {
@@ -258,7 +258,7 @@ impl<Set: EnumeratedOrdFiniteSetSignature> DuadOverlapResult<Set> {
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > DuadsStructure<Set, SetB>
 {
@@ -344,7 +344,7 @@ impl<
 
 #[signature_meta_trait]
 pub trait SetPermutationAsDuadPermutation<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
 >: PermutationsSignature<Set>
 {
     fn duad_image(&self, set_perm: &Self::Elem, duad: &Duad<Set::Elem>) -> Duad<Set::Elem> {
@@ -379,7 +379,7 @@ pub trait SetPermutationAsDuadPermutation<
     }
 }
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetPerms: PermutationsSignature<Set>,
 > SetPermutationAsDuadPermutation<Set> for SetPerms
 {

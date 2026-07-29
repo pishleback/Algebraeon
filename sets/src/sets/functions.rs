@@ -34,6 +34,10 @@ impl<
             range,
         }
     }
+
+    pub fn into_domain_and_range(self) -> (DomainB, RangeB) {
+        (self.domain, self.range)
+    }
 }
 
 pub trait SetToFunctionsToSignature: SetSignature {

@@ -16,7 +16,7 @@ pub struct Syntheme<Elem> {
 /// The 15-element set of duads on a 6-element set
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SynthemesStructure<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > {
     _set: PhantomData<Set>,
@@ -24,7 +24,7 @@ pub struct SynthemesStructure<
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > SynthemesStructure<Set, SetB>
 {
@@ -42,7 +42,7 @@ impl<
 }
 
 pub trait SetToSynthemesSignature:
-    FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature
+    ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature
 {
     fn synthemes(&self) -> SynthemesStructure<Self, &Self> {
         SynthemesStructure::new(self)
@@ -52,20 +52,20 @@ pub trait SetToSynthemesSignature:
         SynthemesStructure::new(self)
     }
 }
-impl<Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature> SetToSynthemesSignature
+impl<Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature> SetToSynthemesSignature
     for Set
 {
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > Signature for SynthemesStructure<Set, SetB>
 {
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > SetSignature for SynthemesStructure<Set, SetB>
 {
@@ -99,7 +99,7 @@ impl<
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > EqSignature for SynthemesStructure<Set, SetB>
 {
@@ -112,7 +112,7 @@ impl<
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > PartialOrdSignature for SynthemesStructure<Set, SetB>
 {
@@ -122,7 +122,7 @@ impl<
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > OrdSignature for SynthemesStructure<Set, SetB>
 {
@@ -137,7 +137,7 @@ impl<
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > CountableSetSignature for SynthemesStructure<Set, SetB>
 {
@@ -151,7 +151,7 @@ impl<
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > FiniteSetSignature for SynthemesStructure<Set, SetB>
 {
@@ -161,14 +161,14 @@ impl<
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
-> FiniteSetSizedSignature<15> for SynthemesStructure<Set, SetB>
+> ConstSizeFiniteSetSignature<15> for SynthemesStructure<Set, SetB>
 {
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > EnumeratedOrdFiniteSetSignature for SynthemesStructure<Set, SetB>
 {
@@ -445,7 +445,7 @@ impl<Set: EnumeratedOrdFiniteSetSignature> SynthemeOverlapResult<Set> {
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > SynthemesStructure<Set, SetB>
 {
@@ -565,7 +565,7 @@ impl<
 
 #[signature_meta_trait]
 pub trait SetPermutationAsSynthemePermutation<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
 >: PermutationsSignature<Set>
 {
     fn syntheme_image(
@@ -608,7 +608,7 @@ pub trait SetPermutationAsSynthemePermutation<
     }
 }
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetPerms: PermutationsSignature<Set>,
 > SetPermutationAsSynthemePermutation<Set> for SetPerms
 {

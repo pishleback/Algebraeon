@@ -2,6 +2,7 @@ use super::{Polynomial, polynomial_structure::*};
 use crate::{matrix::*, structure::*};
 use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 use algebraeon_structures::*;
+use itertools::Itertools;
 use std::borrow::{Borrow, Cow};
 
 pub type PolynomialQuotientRingStructure<FS, FSB, FSPB, const IS_FIELD: bool> =
@@ -153,11 +154,13 @@ where
     PolynomialStructure<FS, FSB>: SetSignature<Elem = Polynomial<FS::Elem>>,
 {
     fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
-        self.coefficient_ring_inclusion()
-            .range_module_structure()
-            .generate_all_elements()
-            .collect::<Vec<_>>()
-            .into_iter()
+        let n = self.coefficient_ring_inclusion().degree();
+        let ring_elements = self.ring().coeff_ring().list_all_elements();
+        let hom = self.coefficient_ring_inclusion().clone();
+        (0..n)
+            .map(move |_| ring_elements.clone())
+            .multi_cartesian_product()
+            .map(move |v| hom.from_vec(v))
     }
 
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
@@ -268,7 +271,7 @@ impl<
     FieldB: BorrowedStructure<Field>,
     FieldPolyB: BorrowedStructure<PolynomialStructure<Field, FieldB>>,
     const IS_FIELD: bool,
-> FreeModuleSignature<Field>
+> FreeModuleSignature<EnumeratedFiniteSetStructure, Field>
     for RingHomomorphismRangeModuleStructure<
         'h,
         Field,
@@ -276,10 +279,8 @@ impl<
         PolynomialQuotientRingExtension<Field, FieldB, FieldPolyB, IS_FIELD>,
     >
 {
-    type Basis = EnumeratedFiniteSetStructure;
-
-    fn basis_set(&self) -> impl std::borrow::Borrow<Self::Basis> {
-        Self::Basis::new(self.module().degree())
+    fn basis_set(&self) -> impl std::borrow::Borrow<EnumeratedFiniteSetStructure> {
+        EnumeratedFiniteSetStructure::new(self.module().degree())
     }
 
     fn to_component<'a>(&self, b: &usize, v: &'a Polynomial<Field::Elem>) -> Cow<'a, Field::Elem> {

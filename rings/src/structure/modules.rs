@@ -1,4 +1,13 @@
-use crate::{matrix::Matrix, structure::*};
+use crate::{
+    linear::{
+        finitely_free_affine_subsets::FinitelyFreeSubmoduleAffineSubsetsStructure,
+        finitely_free_cosets::FinitelyFreeSubmoduleCosetsStructure,
+        finitely_free_submodule::FinitelyFreeSubmoduleStructure,
+        finitely_free_submodules::{FinitelyFreeSubmodule, FinitelyFreeSubmodulesStructure},
+    },
+    matrix::{Matrix, MatrixStructure, ReducedHermiteAlgorithmSignature},
+    structure::*,
+};
 use algebraeon_structures::*;
 use std::borrow::{Borrow, Cow};
 
@@ -29,29 +38,25 @@ impl<Ring: RingSignature, Module: SemiModuleSignature<Ring> + AdditiveGroupSigna
 {
 }
 
-pub trait FinitelyGeneratedModuleSignature<Ring: RingSignature>: ModuleSignature<Ring> {}
-
-pub trait FreeModuleSignature<Ring: RingSignature>: ModuleSignature<Ring> {
-    type Basis: SetSignature;
-
-    fn basis_set(&self) -> impl Borrow<Self::Basis>;
-
-    fn to_component<'a>(
-        &self,
-        b: &<Self::Basis as SetSignature>::Elem,
-        v: &'a Self::Elem,
-    ) -> Cow<'a, Ring::Elem>;
-
-    fn from_component(&self, b: &<Self::Basis as SetSignature>::Elem, r: &Ring::Elem)
-    -> Self::Elem;
+pub trait FinitelyGeneratedModuleSignature<GeneratingSet: FiniteSetSignature, Ring: RingSignature>:
+    ModuleSignature<Ring>
+{
 }
 
-pub trait FinitelyFreeModuleSignature<Ring: RingSignature>:
-    FreeModuleSignature<Ring> + FinitelyGeneratedModuleSignature<Ring>
-where
-    Self::Basis: FiniteSetSignature,
+pub trait FreeModuleSignature<Basis: SetSignature, Ring: RingSignature>:
+    ModuleSignature<Ring>
 {
-    fn basis(&self) -> Vec<<Self::Basis as SetSignature>::Elem> {
+    fn basis_set(&self) -> impl Borrow<Basis>;
+
+    fn to_component<'a>(&self, b: &Basis::Elem, v: &'a Self::Elem) -> Cow<'a, Ring::Elem>;
+
+    fn from_component(&self, b: &Basis::Elem, r: &Ring::Elem) -> Self::Elem;
+}
+
+pub trait FinitelyFreeModuleSignature<Basis: FiniteSetSignature, Ring: RingSignature>:
+    FreeModuleSignature<Basis, Ring> + FinitelyGeneratedModuleSignature<Basis, Ring>
+{
+    fn basis(&self) -> Vec<Basis::Elem> {
         self.basis_set().borrow().list_all_elements()
     }
 
@@ -123,19 +128,105 @@ where
     fn from_row(&self, v: Matrix<Ring::Elem>) -> Self::Elem {
         self.from_col(v.transpose())
     }
+
+    fn submodule_structure(
+        &self,
+        submodule: FinitelyFreeSubmodule<Ring::Elem>,
+    ) -> FinitelyFreeSubmoduleStructure<Basis, Ring, Self, &Self>
+    where
+        Basis: EnumeratedOrdFiniteSetSignature,
+        Ring: ReducedHermiteAlgorithmSignature,
+    {
+        FinitelyFreeSubmoduleStructure::new(self, submodule)
+    }
+
+    fn submodules(&self) -> FinitelyFreeSubmodulesStructure<Basis, Ring, Self, &Self>
+    where
+        Basis: EnumeratedOrdFiniteSetSignature,
+        Ring: ReducedHermiteAlgorithmSignature,
+    {
+        FinitelyFreeSubmodulesStructure::new(self)
+    }
+
+    fn into_submodules(self) -> FinitelyFreeSubmodulesStructure<Basis, Ring, Self, Self>
+    where
+        Basis: EnumeratedOrdFiniteSetSignature,
+        Ring: ReducedHermiteAlgorithmSignature,
+    {
+        FinitelyFreeSubmodulesStructure::new(self)
+    }
+
+    fn cosets(&self) -> FinitelyFreeSubmoduleCosetsStructure<Basis, Ring, Self, &Self>
+    where
+        Basis: EnumeratedOrdFiniteSetSignature,
+        Ring: ReducedHermiteAlgorithmSignature,
+    {
+        FinitelyFreeSubmoduleCosetsStructure::new(self)
+    }
+
+    fn into_cosets(self) -> FinitelyFreeSubmoduleCosetsStructure<Basis, Ring, Self, Self>
+    where
+        Basis: EnumeratedOrdFiniteSetSignature,
+        Ring: ReducedHermiteAlgorithmSignature,
+    {
+        FinitelyFreeSubmoduleCosetsStructure::new(self)
+    }
+
+    fn affine_subsets(
+        &self,
+    ) -> FinitelyFreeSubmoduleAffineSubsetsStructure<Basis, Ring, Self, &Self>
+    where
+        Basis: EnumeratedOrdFiniteSetSignature,
+        Ring: ReducedHermiteAlgorithmSignature,
+    {
+        FinitelyFreeSubmoduleAffineSubsetsStructure::new(self)
+    }
+
+    fn into_affine_subsets(
+        self,
+    ) -> FinitelyFreeSubmoduleAffineSubsetsStructure<Basis, Ring, Self, Self>
+    where
+        Basis: EnumeratedOrdFiniteSetSignature,
+        Ring: ReducedHermiteAlgorithmSignature,
+    {
+        FinitelyFreeSubmoduleAffineSubsetsStructure::new(self)
+    }
+
+    fn improper_submodule(&self) -> FinitelyFreeSubmodule<Ring::Elem>
+    where
+        Basis: EnumeratedOrdFiniteSetSignature,
+        Ring: ReducedHermiteAlgorithmSignature,
+    {
+        self.submodules()
+            .matrix_row_span(MatrixStructure::new(self.ring().clone()).ident(self.rank()))
+    }
+
+    fn generated_submodule(&self, generators: Vec<&Self::Elem>) -> FinitelyFreeSubmodule<Ring::Elem>
+    where
+        Basis: EnumeratedOrdFiniteSetSignature,
+        Ring: ReducedHermiteAlgorithmSignature,
+    {
+        for generator in &generators {
+            debug_assert!(self.validate_element(generator).is_ok());
+        }
+        let generators = generators
+            .into_iter()
+            .map(|g| self.to_vec(g))
+            .collect::<Vec<_>>();
+        let row_span = Matrix::construct(generators.len(), self.rank(), |r, c| {
+            generators[r][c].clone()
+        });
+        self.submodules().matrix_row_span(row_span)
+    }
 }
 
-impl<Ring: RingSignature, Module: FreeModuleSignature<Ring>> FinitelyGeneratedModuleSignature<Ring>
-    for Module
-where
-    Module::Basis: FiniteSetSignature,
+impl<Basis: FiniteSetSignature, Ring: RingSignature, Module: FreeModuleSignature<Basis, Ring>>
+    FinitelyGeneratedModuleSignature<Basis, Ring> for Module
 {
 }
 
-impl<Ring: RingSignature, Module: FreeModuleSignature<Ring>> FinitelyFreeModuleSignature<Ring>
-    for Module
-where
-    Module::Basis: FiniteSetSignature,
+impl<Basis: FiniteSetSignature, Ring: RingSignature, Module: FreeModuleSignature<Basis, Ring>>
+    FinitelyFreeModuleSignature<Basis, Ring> for Module
 {
 }
 

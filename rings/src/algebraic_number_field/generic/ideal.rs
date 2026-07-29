@@ -2,6 +2,7 @@ use crate::algebraic_number_field::{
     FullRankIntegerSubmoduleWithBasisSignature, RingOfIntegersIntegralExtensionWithIdeals,
     RingOfIntegersToAlgebraicNumberFieldInclusion,
 };
+use crate::linear::finitely_free_module::FinitelyFreeModuleStructure;
 use crate::{
     algebraic_number_field::{
         AlgebraicIntegerRingSignature, AlgebraicNumberFieldSignature, OrderWithBasis,
@@ -166,9 +167,9 @@ impl<
 }
 
 mod integer_submodules_to_ideals {
-    use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
-
     use super::*;
+    use crate::linear::finitely_free_module::FinitelyFreeModuleStructure;
+    use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 
     #[derive(Debug, Clone)]
     pub struct SubmoduleToIdeals<
@@ -181,9 +182,19 @@ mod integer_submodules_to_ideals {
         SB: BorrowedStructure<
             FinitelyFreeSubmodulesStructure<
                 EnumeratedFiniteSetStructure,
-                EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
-                IntB,
+                FinitelyFreeModuleStructure<
+                    EnumeratedFiniteSetStructure,
+                    EnumeratedFiniteSetStructure,
+                    IntegerCanonicalStructure,
+                    IntB,
+                >,
+                FinitelyFreeModuleStructure<
+                    EnumeratedFiniteSetStructure,
+                    EnumeratedFiniteSetStructure,
+                    IntegerCanonicalStructure,
+                    IntB,
+                >,
             >,
         >,
     > {
@@ -205,9 +216,19 @@ mod integer_submodules_to_ideals {
         SB: BorrowedStructure<
             FinitelyFreeSubmodulesStructure<
                 EnumeratedFiniteSetStructure,
-                EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
-                IntB,
+                FinitelyFreeModuleStructure<
+                    EnumeratedFiniteSetStructure,
+                    EnumeratedFiniteSetStructure,
+                    IntegerCanonicalStructure,
+                    IntB,
+                >,
+                FinitelyFreeModuleStructure<
+                    EnumeratedFiniteSetStructure,
+                    EnumeratedFiniteSetStructure,
+                    IntegerCanonicalStructure,
+                    IntB,
+                >,
             >,
         >,
     > SubmoduleToIdeals<K, KB, MAXIMAL, OB, IB, IntB, SB>
@@ -231,9 +252,19 @@ mod integer_submodules_to_ideals {
             &self,
         ) -> &FinitelyFreeSubmodulesStructure<
             EnumeratedFiniteSetStructure,
-            EnumeratedFiniteSetStructure,
             IntegerCanonicalStructure,
-            IntB,
+            FinitelyFreeModuleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
+                IntegerCanonicalStructure,
+                IntB,
+            >,
+            FinitelyFreeModuleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
+                IntegerCanonicalStructure,
+                IntB,
+            >,
         > {
             self.integer_submodules.borrow()
         }
@@ -249,9 +280,19 @@ mod integer_submodules_to_ideals {
         SB: BorrowedStructure<
             FinitelyFreeSubmodulesStructure<
                 EnumeratedFiniteSetStructure,
-                EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
-                IntB,
+                FinitelyFreeModuleStructure<
+                    EnumeratedFiniteSetStructure,
+                    EnumeratedFiniteSetStructure,
+                    IntegerCanonicalStructure,
+                    IntB,
+                >,
+                FinitelyFreeModuleStructure<
+                    EnumeratedFiniteSetStructure,
+                    EnumeratedFiniteSetStructure,
+                    IntegerCanonicalStructure,
+                    IntB,
+                >,
             >,
         >,
     >
@@ -259,9 +300,19 @@ mod integer_submodules_to_ideals {
             OrderIdealsStructure<K, KB, MAXIMAL, OB>,
             FinitelyFreeSubmodulesStructure<
                 EnumeratedFiniteSetStructure,
-                EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
-                IntB,
+                FinitelyFreeModuleStructure<
+                    EnumeratedFiniteSetStructure,
+                    EnumeratedFiniteSetStructure,
+                    IntegerCanonicalStructure,
+                    IntB,
+                >,
+                FinitelyFreeModuleStructure<
+                    EnumeratedFiniteSetStructure,
+                    EnumeratedFiniteSetStructure,
+                    IntegerCanonicalStructure,
+                    IntB,
+                >,
             >,
         > for SubmoduleToIdeals<K, KB, MAXIMAL, OB, IB, IntB, SB>
     {
@@ -273,9 +324,19 @@ mod integer_submodules_to_ideals {
             &self,
         ) -> &FinitelyFreeSubmodulesStructure<
             EnumeratedFiniteSetStructure,
-            EnumeratedFiniteSetStructure,
             IntegerCanonicalStructure,
-            IntB,
+            FinitelyFreeModuleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
+                IntegerCanonicalStructure,
+                IntB,
+            >,
+            FinitelyFreeModuleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
+                IntegerCanonicalStructure,
+                IntB,
+            >,
         > {
             self.integer_submodules()
         }
@@ -291,9 +352,19 @@ mod integer_submodules_to_ideals {
         SB: BorrowedStructure<
             FinitelyFreeSubmodulesStructure<
                 EnumeratedFiniteSetStructure,
-                EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
-                IntB,
+                FinitelyFreeModuleStructure<
+                    EnumeratedFiniteSetStructure,
+                    EnumeratedFiniteSetStructure,
+                    IntegerCanonicalStructure,
+                    IntB,
+                >,
+                FinitelyFreeModuleStructure<
+                    EnumeratedFiniteSetStructure,
+                    EnumeratedFiniteSetStructure,
+                    IntegerCanonicalStructure,
+                    IntB,
+                >,
             >,
         >,
     >
@@ -301,9 +372,19 @@ mod integer_submodules_to_ideals {
             OrderIdealsStructure<K, KB, MAXIMAL, OB>,
             FinitelyFreeSubmodulesStructure<
                 EnumeratedFiniteSetStructure,
-                EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
-                IntB,
+                FinitelyFreeModuleStructure<
+                    EnumeratedFiniteSetStructure,
+                    EnumeratedFiniteSetStructure,
+                    IntegerCanonicalStructure,
+                    IntB,
+                >,
+                FinitelyFreeModuleStructure<
+                    EnumeratedFiniteSetStructure,
+                    EnumeratedFiniteSetStructure,
+                    IntegerCanonicalStructure,
+                    IntB,
+                >,
             >,
         > for SubmoduleToIdeals<K, KB, MAXIMAL, OB, IB, IntB, SB>
     {
@@ -327,9 +408,19 @@ mod integer_submodules_to_ideals {
         SB: BorrowedStructure<
             FinitelyFreeSubmodulesStructure<
                 EnumeratedFiniteSetStructure,
-                EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
-                IntB,
+                FinitelyFreeModuleStructure<
+                    EnumeratedFiniteSetStructure,
+                    EnumeratedFiniteSetStructure,
+                    IntegerCanonicalStructure,
+                    IntB,
+                >,
+                FinitelyFreeModuleStructure<
+                    EnumeratedFiniteSetStructure,
+                    EnumeratedFiniteSetStructure,
+                    IntegerCanonicalStructure,
+                    IntB,
+                >,
             >,
         >,
     >
@@ -337,9 +428,19 @@ mod integer_submodules_to_ideals {
             OrderIdealsStructure<K, KB, MAXIMAL, OB>,
             FinitelyFreeSubmodulesStructure<
                 EnumeratedFiniteSetStructure,
-                EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
-                IntB,
+                FinitelyFreeModuleStructure<
+                    EnumeratedFiniteSetStructure,
+                    EnumeratedFiniteSetStructure,
+                    IntegerCanonicalStructure,
+                    IntB,
+                >,
+                FinitelyFreeModuleStructure<
+                    EnumeratedFiniteSetStructure,
+                    EnumeratedFiniteSetStructure,
+                    IntegerCanonicalStructure,
+                    IntB,
+                >,
             >,
         > for SubmoduleToIdeals<K, KB, MAXIMAL, OB, IB, IntB, SB>
     {
@@ -378,9 +479,19 @@ impl<
         &'static IntegerCanonicalStructure,
         FinitelyFreeSubmodulesStructure<
             EnumeratedFiniteSetStructure,
-            EnumeratedFiniteSetStructure,
             IntegerCanonicalStructure,
-            &'static IntegerCanonicalStructure,
+            FinitelyFreeModuleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
+                IntegerCanonicalStructure,
+                &'static IntegerCanonicalStructure,
+            >,
+            FinitelyFreeModuleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
+                IntegerCanonicalStructure,
+                &'static IntegerCanonicalStructure,
+            >,
         >,
     > {
         integer_submodules_to_ideals::SubmoduleToIdeals::new(
@@ -402,9 +513,19 @@ impl<
         &'static IntegerCanonicalStructure,
         FinitelyFreeSubmodulesStructure<
             EnumeratedFiniteSetStructure,
-            EnumeratedFiniteSetStructure,
             IntegerCanonicalStructure,
-            &'static IntegerCanonicalStructure,
+            FinitelyFreeModuleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
+                IntegerCanonicalStructure,
+                &'static IntegerCanonicalStructure,
+            >,
+            FinitelyFreeModuleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
+                IntegerCanonicalStructure,
+                &'static IntegerCanonicalStructure,
+            >,
         >,
     > {
         let integer_submodules = self

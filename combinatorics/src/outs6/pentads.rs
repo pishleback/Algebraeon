@@ -15,7 +15,7 @@ pub struct Pentad<Elem> {
 /// The 15-element set of duads on a 6-element set
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PentadsStructure<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > {
     _set: PhantomData<Set>,
@@ -23,7 +23,7 @@ pub struct PentadsStructure<
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > PentadsStructure<Set, SetB>
 {
@@ -41,7 +41,7 @@ impl<
 }
 
 pub trait SetToPentadsSignature:
-    FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature
+    ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature
 {
     fn pentads(&self) -> PentadsStructure<Self, &Self> {
         PentadsStructure::new(self)
@@ -51,20 +51,20 @@ pub trait SetToPentadsSignature:
         PentadsStructure::new(self)
     }
 }
-impl<Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature> SetToPentadsSignature
+impl<Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature> SetToPentadsSignature
     for Set
 {
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > Signature for PentadsStructure<Set, SetB>
 {
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > SetSignature for PentadsStructure<Set, SetB>
 {
@@ -93,7 +93,7 @@ impl<
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > EqSignature for PentadsStructure<Set, SetB>
 {
@@ -103,7 +103,7 @@ impl<
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > PartialOrdSignature for PentadsStructure<Set, SetB>
 {
@@ -113,7 +113,7 @@ impl<
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > OrdSignature for PentadsStructure<Set, SetB>
 {
@@ -128,7 +128,7 @@ impl<
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > CountableSetSignature for PentadsStructure<Set, SetB>
 {
@@ -142,7 +142,7 @@ impl<
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > FiniteSetSignature for PentadsStructure<Set, SetB>
 {
@@ -152,14 +152,14 @@ impl<
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
-> FiniteSetSizedSignature<6> for PentadsStructure<Set, SetB>
+> ConstSizeFiniteSetSignature<6> for PentadsStructure<Set, SetB>
 {
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > EnumeratedOrdFiniteSetSignature for PentadsStructure<Set, SetB>
 {
@@ -298,7 +298,7 @@ impl<
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > PentadsStructure<Set, SetB>
 {
@@ -327,7 +327,7 @@ impl<
 
 #[signature_meta_trait]
 pub trait SetPermutationAsPentadPermutation<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
 >: PermutationsSignature<Set>
 {
     fn pentad_image(&self, set_perm: &Self::Elem, pentad: &Pentad<Set::Elem>) -> Pentad<Set::Elem> {
@@ -370,7 +370,7 @@ pub trait SetPermutationAsPentadPermutation<
     }
 }
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetPerms: PermutationsSignature<Set>,
 > SetPermutationAsPentadPermutation<Set> for SetPerms
 {

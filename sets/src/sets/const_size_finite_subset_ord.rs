@@ -184,7 +184,7 @@ impl<const N: usize, Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructu
 }
 
 impl<const N: usize, Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
-    FiniteSetSizedSignature<N> for ConstSizeFiniteSubsetByOrdStructure<N, Set, SetB>
+    ConstSizeFiniteSetSignature<N> for ConstSizeFiniteSubsetByOrdStructure<N, Set, SetB>
 {
 }
 

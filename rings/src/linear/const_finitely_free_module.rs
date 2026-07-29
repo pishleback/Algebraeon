@@ -1,71 +1,98 @@
-use crate::{matrix::Matrix, structure::*};
-use algebraeon_sets::sets::FunctionsStructure;
+use crate::{
+    linear::finitely_free_module::FinitelyFreeModuleStructure, matrix::Matrix, structure::*,
+};
+use algebraeon_sets::sets::ConstSizeFunctionsStructure;
 use algebraeon_structures::*;
 use std::{borrow::Cow, cmp::Ordering};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FinitelyFreeModuleStructure<
-    Set: EnumeratedOrdFiniteSetSignature,
+pub struct ConstFinitelyFreeModuleStructure<
+    const N: usize,
+    Set: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
 > {
-    functions: FunctionsStructure<Set, SetB, Ring, RingB>,
+    functions: ConstSizeFunctionsStructure<N, Set, SetB, Ring, RingB>,
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Set: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
-> FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>
+> ConstFinitelyFreeModuleStructure<N, Set, SetB, Ring, RingB>
 {
     pub fn new(set: SetB, ring: RingB) -> Self {
         Self {
-            functions: FunctionsStructure::new(set, ring),
+            functions: ConstSizeFunctionsStructure::new(set, ring),
         }
     }
+
+    pub fn forget_const(&self) -> FinitelyFreeModuleStructure<Set, &Set, Ring, &Ring> {
+        FinitelyFreeModuleStructure::new(self.functions.domain(), self.functions.range())
+    }
+
+    pub fn into_forget_const(self) -> FinitelyFreeModuleStructure<Set, SetB, Ring, RingB> {
+        let (set, ring) = self.functions.into_forget_const().into_domain_and_range();
+        FinitelyFreeModuleStructure::new(set, ring)
+    }
 }
-pub trait RingToFinitelyFreeModuleSignature: RingSignature {
-    fn free_module<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>(
+pub trait RingToConstFinitelyFreeModuleSignature: RingSignature {
+    fn free_module<
+        const N: usize,
+        Set: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
+        SetB: BorrowedStructure<Set>,
+    >(
         &self,
         set: SetB,
-    ) -> FinitelyFreeModuleStructure<Set, SetB, Self, &Self> {
-        FinitelyFreeModuleStructure::new(set, self)
+    ) -> ConstFinitelyFreeModuleStructure<N, Set, SetB, Self, &Self> {
+        ConstFinitelyFreeModuleStructure::new(set, self)
     }
 
-    fn into_free_module<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>(
+    fn into_free_module<
+        const N: usize,
+        Set: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
+        SetB: BorrowedStructure<Set>,
+    >(
         self,
         set: SetB,
-    ) -> FinitelyFreeModuleStructure<Set, SetB, Self, Self> {
-        FinitelyFreeModuleStructure::new(set, self)
+    ) -> ConstFinitelyFreeModuleStructure<N, Set, SetB, Self, Self> {
+        ConstFinitelyFreeModuleStructure::new(set, self)
     }
 }
-impl<Ring: RingSignature> RingToFinitelyFreeModuleSignature for Ring {}
+impl<Ring: RingSignature> RingToConstFinitelyFreeModuleSignature for Ring {}
 
-pub trait SetToFinitelyFreeModuleSignature: EnumeratedOrdFiniteSetSignature {
+pub trait SetToConstFinitelyFreeModuleSignature<const N: usize>:
+    ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature
+{
     fn free_module<Ring: RingSignature, RingB: BorrowedStructure<Ring>>(
         &self,
         ring: RingB,
-    ) -> FinitelyFreeModuleStructure<Self, &Self, Ring, RingB> {
-        FinitelyFreeModuleStructure::new(self, ring)
+    ) -> ConstFinitelyFreeModuleStructure<N, Self, &Self, Ring, RingB> {
+        ConstFinitelyFreeModuleStructure::new(self, ring)
     }
 
     fn into_free_module<Ring: RingSignature, RingB: BorrowedStructure<Ring>>(
         self,
         ring: RingB,
-    ) -> FinitelyFreeModuleStructure<Self, Self, Ring, RingB> {
-        FinitelyFreeModuleStructure::new(self, ring)
+    ) -> ConstFinitelyFreeModuleStructure<N, Self, Self, Ring, RingB> {
+        ConstFinitelyFreeModuleStructure::new(self, ring)
     }
 }
-impl<Set: EnumeratedOrdFiniteSetSignature> SetToFinitelyFreeModuleSignature for Set {}
+impl<const N: usize, Set: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature>
+    SetToConstFinitelyFreeModuleSignature<N> for Set
+{
+}
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Set: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
-> FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>
+> ConstFinitelyFreeModuleStructure<N, Set, SetB, Ring, RingB>
 {
     pub fn set(&self) -> &Set {
         self.functions.domain()
@@ -75,71 +102,56 @@ impl<
         self.functions.range()
     }
 
-    pub fn functions_restructure(&self) -> &FunctionsStructure<Set, SetB, Ring, RingB> {
+    pub fn functions_restructure(&self) -> &ConstSizeFunctionsStructure<N, Set, SetB, Ring, RingB> {
         &self.functions
     }
 
-    pub fn into_functions_restructure(self) -> FunctionsStructure<Set, SetB, Ring, RingB> {
+    pub fn into_functions_restructure(
+        self,
+    ) -> ConstSizeFunctionsStructure<N, Set, SetB, Ring, RingB> {
         self.functions
     }
 
     pub fn to_col(&self, v: &<Self as SetSignature>::Elem) -> Matrix<Ring::Elem> {
-        debug_assert!(self.validate_element(v).is_ok());
-        Matrix::construct(self.rank(), 1, |r, _| v[r].clone())
+        self.forget_const().to_col(&v.to_vec())
     }
 
     pub fn to_row(&self, v: &<Self as SetSignature>::Elem) -> Matrix<Ring::Elem> {
-        debug_assert!(self.validate_element(v).is_ok());
-        Matrix::construct(1, self.rank(), |_, c| v[c].clone())
+        self.forget_const().to_row(&v.to_vec())
     }
 
     pub fn from_row(&self, m: &Matrix<Ring::Elem>) -> <Self as SetSignature>::Elem {
-        debug_assert_eq!(m.rows(), 1);
-        debug_assert_eq!(m.cols(), self.rank());
-        (0..self.rank())
-            .map(|i| m.at(0, i).unwrap().clone())
-            .collect()
+        self.forget_const().from_row(m).try_into().unwrap()
     }
 
     pub fn from_col(&self, m: &Matrix<Ring::Elem>) -> <Self as SetSignature>::Elem {
-        debug_assert_eq!(m.cols(), 1);
-        debug_assert_eq!(m.rows(), self.rank());
-        (0..self.rank())
-            .map(|i| m.at(i, 0).unwrap().clone())
-            .collect()
+        self.forget_const().from_col(m).try_into().unwrap()
     }
 
     pub fn basis_element(&self, i: usize) -> <Self as SetSignature>::Elem {
-        debug_assert!(i < self.rank());
-        (0..self.rank())
-            .map(|j| {
-                if i == j {
-                    self.ring().one()
-                } else {
-                    self.ring().zero()
-                }
-            })
-            .collect()
+        self.forget_const().basis_element(i).try_into().unwrap()
     }
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Set: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
-> Signature for FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>
+> Signature for ConstFinitelyFreeModuleStructure<N, Set, SetB, Ring, RingB>
 {
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Set: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
-> SetSignature for FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>
+> SetSignature for ConstFinitelyFreeModuleStructure<N, Set, SetB, Ring, RingB>
 {
-    type Elem = Vec<Ring::Elem>;
+    type Elem = [Ring::Elem; N];
 
     fn validate_element(&self, v: &Self::Elem) -> Result<(), String> {
         self.functions_restructure().validate_element(v)
@@ -147,11 +159,12 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Set: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature + EqSignature,
     RingB: BorrowedStructure<Ring>,
-> EqSignature for FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>
+> EqSignature for ConstFinitelyFreeModuleStructure<N, Set, SetB, Ring, RingB>
 {
     fn equal(&self, v: &Self::Elem, w: &Self::Elem) -> bool {
         self.functions_restructure().equal(v, w)
@@ -159,11 +172,12 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Set: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature + OrdSignature,
     RingB: BorrowedStructure<Ring>,
-> PartialOrdSignature for FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>
+> PartialOrdSignature for ConstFinitelyFreeModuleStructure<N, Set, SetB, Ring, RingB>
 {
     fn partial_cmp(&self, v: &Self::Elem, w: &Self::Elem) -> Option<Ordering> {
         self.functions_restructure().partial_cmp(v, w)
@@ -171,11 +185,12 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Set: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature + OrdSignature,
     RingB: BorrowedStructure<Ring>,
-> OrdSignature for FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>
+> OrdSignature for ConstFinitelyFreeModuleStructure<N, Set, SetB, Ring, RingB>
 {
     fn cmp(&self, v: &Self::Elem, w: &Self::Elem) -> Ordering {
         self.functions_restructure().cmp(v, w)
@@ -183,11 +198,12 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Set: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature + EnumeratedOrdFiniteSetSignature,
     RingB: BorrowedStructure<Ring>,
-> CountableSetSignature for FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>
+> CountableSetSignature for ConstFinitelyFreeModuleStructure<N, Set, SetB, Ring, RingB>
 {
     fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
         self.into_functions_restructure()
@@ -200,11 +216,12 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Set: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature + EnumeratedOrdFiniteSetSignature,
     RingB: BorrowedStructure<Ring>,
-> FiniteSetSignature for FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>
+> FiniteSetSignature for ConstFinitelyFreeModuleStructure<N, Set, SetB, Ring, RingB>
 {
     fn list_all_elements(&self) -> Vec<Self::Elem> {
         self.functions_restructure().list_all_elements()
@@ -220,11 +237,12 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Set: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature + EnumeratedOrdFiniteSetSignature,
     RingB: BorrowedStructure<Ring>,
-> EnumeratedOrdFiniteSetSignature for FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>
+> EnumeratedOrdFiniteSetSignature for ConstFinitelyFreeModuleStructure<N, Set, SetB, Ring, RingB>
 {
     fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
         self.functions_restructure().list_all_elements_ordered()
@@ -240,48 +258,50 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Set: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
-> RinglikeSpecializationSignature for FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>
+> RinglikeSpecializationSignature for ConstFinitelyFreeModuleStructure<N, Set, SetB, Ring, RingB>
 {
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Set: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
-> ZeroSignature for FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>
+> ZeroSignature for ConstFinitelyFreeModuleStructure<N, Set, SetB, Ring, RingB>
 {
     fn zero(&self) -> Self::Elem {
-        (0..self.rank()).map(|_| self.ring().zero()).collect()
+        std::array::from_fn(|_| self.ring().zero())
     }
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Set: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
-> AdditionSignature for FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>
+> AdditionSignature for ConstFinitelyFreeModuleStructure<N, Set, SetB, Ring, RingB>
 {
     fn add(&self, v: &Self::Elem, w: &Self::Elem) -> Self::Elem {
         debug_assert!(self.validate_element(v).is_ok());
         debug_assert!(self.validate_element(w).is_ok());
-        (0..self.rank())
-            .map(|i| self.ring().add(&v[i], &w[i]))
-            .collect()
+        std::array::from_fn(|i| self.ring().add(&v[i], &w[i]))
     }
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Set: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
-> CancellativeAdditionSignature for FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>
+> CancellativeAdditionSignature for ConstFinitelyFreeModuleStructure<N, Set, SetB, Ring, RingB>
 {
     fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.sub(a, b))
@@ -289,11 +309,12 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Set: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
-> TryNegateSignature for FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>
+> TryNegateSignature for ConstFinitelyFreeModuleStructure<N, Set, SetB, Ring, RingB>
 {
     fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
@@ -301,41 +322,42 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Set: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
-> AdditiveMonoidSignature for FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>
+> AdditiveMonoidSignature for ConstFinitelyFreeModuleStructure<N, Set, SetB, Ring, RingB>
 {
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Set: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
-> AdditiveGroupSignature for FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>
+> AdditiveGroupSignature for ConstFinitelyFreeModuleStructure<N, Set, SetB, Ring, RingB>
 {
     fn neg(&self, v: &Self::Elem) -> Self::Elem {
         debug_assert!(self.validate_element(v).is_ok());
-        v.iter().map(|r| self.ring().neg(r)).collect()
+        std::array::from_fn(|i| self.ring().neg(&v[i]))
     }
 
     fn sub(&self, v: &Self::Elem, w: &Self::Elem) -> Self::Elem {
         debug_assert!(self.validate_element(v).is_ok());
         debug_assert!(self.validate_element(w).is_ok());
-        (0..self.rank())
-            .map(|i| self.ring().sub(&v[i], &w[i]))
-            .collect()
+        std::array::from_fn(|i| self.ring().sub(&v[i], &w[i]))
     }
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Set: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
-> SemiModuleSignature<Ring> for FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>
+> SemiModuleSignature<Ring> for ConstFinitelyFreeModuleStructure<N, Set, SetB, Ring, RingB>
 {
     fn ring(&self) -> &Ring {
         self.functions.range()
@@ -343,16 +365,17 @@ impl<
 
     fn scalar_mul(&self, v: &Self::Elem, r: &Ring::Elem) -> Self::Elem {
         debug_assert!(self.validate_element(v).is_ok());
-        v.iter().map(|s| self.ring().mul(r, s)).collect()
+        std::array::from_fn(|i| self.ring().mul(r, &v[i]))
     }
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    const N: usize,
+    Set: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
-> FreeModuleSignature<Set, Ring> for FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>
+> FreeModuleSignature<Set, Ring> for ConstFinitelyFreeModuleStructure<N, Set, SetB, Ring, RingB>
 {
     fn basis_set(&self) -> impl std::borrow::Borrow<Set> {
         self.set()
@@ -378,13 +401,13 @@ mod tests {
     use crate::finite_fields::quaternary_field::QuaternaryField;
 
     use super::*;
-    use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
+    use algebraeon_sets::sets::ConstSizeEnumeratedFiniteSetStructure;
 
     #[test]
     fn enumeration() {
         algebraeon_structures::assert_enumerated_ord_finite_set!(
-            FinitelyFreeModuleStructure::new(
-                EnumeratedFiniteSetStructure::new(3),
+            ConstFinitelyFreeModuleStructure::new(
+                ConstSizeEnumeratedFiniteSetStructure::<3>::new(),
                 QuaternaryField::structure(),
             ),
             64
@@ -393,8 +416,8 @@ mod tests {
 
     #[test]
     fn test_finite_rank_modules() {
-        let m = FinitelyFreeModuleStructure::new(
-            EnumeratedFiniteSetStructure::new(3),
+        let m = ConstFinitelyFreeModuleStructure::new(
+            ConstSizeEnumeratedFiniteSetStructure::<3>::new(),
             Integer::structure(),
         );
 
@@ -404,17 +427,17 @@ mod tests {
 
         assert_eq!(
             m.add(&m.neg(&b), &m.add(&a, &b)),
-            vec![Integer::from(1), Integer::from(0), Integer::from(0)]
+            [Integer::from(1), Integer::from(0), Integer::from(0)]
         );
 
         assert_eq!(
             m.add(&m.add(&a, &b), &m.add(&b, &c)),
-            vec![Integer::from(1), Integer::from(2), Integer::from(1)]
+            [Integer::from(1), Integer::from(2), Integer::from(1)]
         );
 
         assert_eq!(
             m.scalar_mul(&a, &5.into()),
-            vec![Integer::from(5), Integer::from(0), Integer::from(0)]
+            [Integer::from(5), Integer::from(0), Integer::from(0)]
         );
 
         assert_eq!(m.basis_vecs(), vec![a, b, c]);

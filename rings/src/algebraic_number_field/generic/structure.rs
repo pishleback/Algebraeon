@@ -17,7 +17,7 @@ use std::marker::PhantomData;
 /// the inclusion of its rational subfield is finite dimensional
 pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
     type Basis: FiniteSetSignature;
-    type RationalInclusion<B: BorrowedStructure<Self>>: FiniteDimensionalFieldExtension<RationalCanonicalStructure, Self>;
+    type RationalInclusion<B: BorrowedStructure<Self>>: FiniteDimensionalFieldExtension<Self::Basis, RationalCanonicalStructure, Self>;
 
     fn inbound_finite_dimensional_rational_extension(&self) -> Self::RationalInclusion<&Self>;
     fn into_inbound_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self>;
@@ -962,7 +962,7 @@ mod integer_submodule_inclusion {
         linear::finitely_free_submodules::{
             FinitelyFreeSubmodule, FinitelyFreeSubmodulesStructure,
         },
-        structure::RingSignature,
+        structure::{FinitelyFreeModuleSignature, RingSignature},
     };
     use std::marker::PhantomData;
 
@@ -1186,15 +1186,35 @@ mod integer_submodule_inclusion {
         integer_submodule_to_module: IntegerSubmoduleInclusionB,
         integer_module_to_submodule: FinitelyFreeSubmodulesStructure<
             EnumeratedFiniteSetStructure,
-            EnumeratedFiniteSetStructure,
             IntegerCanonicalStructure,
-            &'static IntegerCanonicalStructure,
+            FinitelyFreeModuleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
+                IntegerCanonicalStructure,
+                &'static IntegerCanonicalStructure,
+            >,
+            FinitelyFreeModuleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
+                IntegerCanonicalStructure,
+                &'static IntegerCanonicalStructure,
+            >,
         >,
         integer_submodule_to_submodules: FinitelyFreeSubmodulesStructure<
             EnumeratedFiniteSetStructure,
-            EnumeratedFiniteSetStructure,
             IntegerCanonicalStructure,
-            &'static IntegerCanonicalStructure,
+            FinitelyFreeModuleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
+                IntegerCanonicalStructure,
+                &'static IntegerCanonicalStructure,
+            >,
+            FinitelyFreeModuleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
+                IntegerCanonicalStructure,
+                &'static IntegerCanonicalStructure,
+            >,
         >,
     }
 
@@ -1262,9 +1282,19 @@ mod integer_submodule_inclusion {
             &self,
         ) -> &FinitelyFreeSubmodulesStructure<
             EnumeratedFiniteSetStructure,
-            EnumeratedFiniteSetStructure,
             IntegerCanonicalStructure,
-            &'static IntegerCanonicalStructure,
+            FinitelyFreeModuleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
+                IntegerCanonicalStructure,
+                &'static IntegerCanonicalStructure,
+            >,
+            FinitelyFreeModuleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
+                IntegerCanonicalStructure,
+                &'static IntegerCanonicalStructure,
+            >,
         > {
             &self.integer_module_to_submodule
         }
@@ -1273,9 +1303,19 @@ mod integer_submodule_inclusion {
             &self,
         ) -> &FinitelyFreeSubmodulesStructure<
             EnumeratedFiniteSetStructure,
-            EnumeratedFiniteSetStructure,
             IntegerCanonicalStructure,
-            &'static IntegerCanonicalStructure,
+            FinitelyFreeModuleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
+                IntegerCanonicalStructure,
+                &'static IntegerCanonicalStructure,
+            >,
+            FinitelyFreeModuleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
+                IntegerCanonicalStructure,
+                &'static IntegerCanonicalStructure,
+            >,
         > {
             &self.integer_submodule_to_submodules
         }
@@ -1302,15 +1342,35 @@ mod integer_submodule_inclusion {
         Morphism<
             FinitelyFreeSubmodulesStructure<
                 EnumeratedFiniteSetStructure,
-                EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
-                &'static IntegerCanonicalStructure,
+                FinitelyFreeModuleStructure<
+                    EnumeratedFiniteSetStructure,
+                    EnumeratedFiniteSetStructure,
+                    IntegerCanonicalStructure,
+                    &'static IntegerCanonicalStructure,
+                >,
+                FinitelyFreeModuleStructure<
+                    EnumeratedFiniteSetStructure,
+                    EnumeratedFiniteSetStructure,
+                    IntegerCanonicalStructure,
+                    &'static IntegerCanonicalStructure,
+                >,
             >,
             FinitelyFreeSubmodulesStructure<
                 EnumeratedFiniteSetStructure,
-                EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
-                &'static IntegerCanonicalStructure,
+                FinitelyFreeModuleStructure<
+                    EnumeratedFiniteSetStructure,
+                    EnumeratedFiniteSetStructure,
+                    IntegerCanonicalStructure,
+                    &'static IntegerCanonicalStructure,
+                >,
+                FinitelyFreeModuleStructure<
+                    EnumeratedFiniteSetStructure,
+                    EnumeratedFiniteSetStructure,
+                    IntegerCanonicalStructure,
+                    &'static IntegerCanonicalStructure,
+                >,
             >,
         >
         for IntegerSubmoduleIntegerSubmoduleInclusion<
@@ -1326,9 +1386,19 @@ mod integer_submodule_inclusion {
             &self,
         ) -> &FinitelyFreeSubmodulesStructure<
             EnumeratedFiniteSetStructure,
-            EnumeratedFiniteSetStructure,
             IntegerCanonicalStructure,
-            &'static IntegerCanonicalStructure,
+            FinitelyFreeModuleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
+                IntegerCanonicalStructure,
+                &'static IntegerCanonicalStructure,
+            >,
+            FinitelyFreeModuleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
+                IntegerCanonicalStructure,
+                &'static IntegerCanonicalStructure,
+            >,
         > {
             &self.integer_submodule_to_submodules
         }
@@ -1337,9 +1407,19 @@ mod integer_submodule_inclusion {
             &self,
         ) -> &FinitelyFreeSubmodulesStructure<
             EnumeratedFiniteSetStructure,
-            EnumeratedFiniteSetStructure,
             IntegerCanonicalStructure,
-            &'static IntegerCanonicalStructure,
+            FinitelyFreeModuleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
+                IntegerCanonicalStructure,
+                &'static IntegerCanonicalStructure,
+            >,
+            FinitelyFreeModuleStructure<
+                EnumeratedFiniteSetStructure,
+                EnumeratedFiniteSetStructure,
+                IntegerCanonicalStructure,
+                &'static IntegerCanonicalStructure,
+            >,
         > {
             &self.integer_module_to_submodule
         }
@@ -1366,15 +1446,35 @@ mod integer_submodule_inclusion {
         Function<
             FinitelyFreeSubmodulesStructure<
                 EnumeratedFiniteSetStructure,
-                EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
-                &'static IntegerCanonicalStructure,
+                FinitelyFreeModuleStructure<
+                    EnumeratedFiniteSetStructure,
+                    EnumeratedFiniteSetStructure,
+                    IntegerCanonicalStructure,
+                    &'static IntegerCanonicalStructure,
+                >,
+                FinitelyFreeModuleStructure<
+                    EnumeratedFiniteSetStructure,
+                    EnumeratedFiniteSetStructure,
+                    IntegerCanonicalStructure,
+                    &'static IntegerCanonicalStructure,
+                >,
             >,
             FinitelyFreeSubmodulesStructure<
                 EnumeratedFiniteSetStructure,
-                EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
-                &'static IntegerCanonicalStructure,
+                FinitelyFreeModuleStructure<
+                    EnumeratedFiniteSetStructure,
+                    EnumeratedFiniteSetStructure,
+                    IntegerCanonicalStructure,
+                    &'static IntegerCanonicalStructure,
+                >,
+                FinitelyFreeModuleStructure<
+                    EnumeratedFiniteSetStructure,
+                    EnumeratedFiniteSetStructure,
+                    IntegerCanonicalStructure,
+                    &'static IntegerCanonicalStructure,
+                >,
             >,
         >
         for IntegerSubmoduleIntegerSubmoduleInclusion<
@@ -1417,15 +1517,35 @@ mod integer_submodule_inclusion {
         InjectiveFunction<
             FinitelyFreeSubmodulesStructure<
                 EnumeratedFiniteSetStructure,
-                EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
-                &'static IntegerCanonicalStructure,
+                FinitelyFreeModuleStructure<
+                    EnumeratedFiniteSetStructure,
+                    EnumeratedFiniteSetStructure,
+                    IntegerCanonicalStructure,
+                    &'static IntegerCanonicalStructure,
+                >,
+                FinitelyFreeModuleStructure<
+                    EnumeratedFiniteSetStructure,
+                    EnumeratedFiniteSetStructure,
+                    IntegerCanonicalStructure,
+                    &'static IntegerCanonicalStructure,
+                >,
             >,
             FinitelyFreeSubmodulesStructure<
                 EnumeratedFiniteSetStructure,
-                EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
-                &'static IntegerCanonicalStructure,
+                FinitelyFreeModuleStructure<
+                    EnumeratedFiniteSetStructure,
+                    EnumeratedFiniteSetStructure,
+                    IntegerCanonicalStructure,
+                    &'static IntegerCanonicalStructure,
+                >,
+                FinitelyFreeModuleStructure<
+                    EnumeratedFiniteSetStructure,
+                    EnumeratedFiniteSetStructure,
+                    IntegerCanonicalStructure,
+                    &'static IntegerCanonicalStructure,
+                >,
             >,
         >
         for IntegerSubmoduleIntegerSubmoduleInclusion<
