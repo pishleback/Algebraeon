@@ -164,25 +164,20 @@ impl<
 
     pub fn kernel(
         &self,
-        items: Vec<impl Borrow<Module::Elem>>,
+        items: Vec<impl Borrow<Vec<Ring::Elem>>>,
     ) -> FinitelyFreeSubmodule<Ring::Elem> {
         let n = self.module().rank();
         debug_assert_eq!(items.len(), n);
-        for v in &items {
-            debug_assert!(self.module().is_element(v.borrow()));
-        }
-        let items = items
-            .into_iter()
-            .map(|v| self.module().to_vec(v.borrow()))
-            .collect::<Vec<_>>();
         if n == 0 {
             self.zero_submodule()
         } else {
-            let cols = items.first().unwrap().len();
+            let cols = items.first().unwrap().borrow().len();
             for v in &items[1..] {
-                assert_eq!(v.len(), cols);
+                assert_eq!(v.borrow().len(), cols);
             }
-            self.matrix_row_kernel(Matrix::construct(n, cols, |r, c| items[r][c].clone()))
+            self.matrix_row_kernel(Matrix::construct(n, cols, |r, c| {
+                items[r].borrow()[c].clone()
+            }))
         }
     }
 
