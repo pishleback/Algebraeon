@@ -299,7 +299,7 @@ impl Morphism<ConwayFiniteFieldStructure, ConwayFiniteFieldStructure>
     }
 }
 
-impl Function<ConwayFiniteFieldStructure, ConwayFiniteFieldStructure>
+impl FunctionMorphism<ConwayFiniteFieldStructure, ConwayFiniteFieldStructure>
     for ConwayFiniteFieldInclusion
 {
     fn image(&self, x: &Polynomial<Integer>) -> Polynomial<Integer> {
@@ -311,7 +311,7 @@ impl Function<ConwayFiniteFieldStructure, ConwayFiniteFieldStructure>
     }
 }
 
-impl InjectiveFunction<ConwayFiniteFieldStructure, ConwayFiniteFieldStructure>
+impl InjectiveFunctionMorphism<ConwayFiniteFieldStructure, ConwayFiniteFieldStructure>
     for ConwayFiniteFieldInclusion
 {
     fn try_preimage(&self, x: &Polynomial<Integer>) -> Option<Polynomial<Integer>> {

@@ -35,7 +35,7 @@ impl<ICS: IntegralClosureExtension> Morphism<ICS::R, ICS::K>
     }
 }
 
-impl<ICS: IntegralClosureExtension> Function<ICS::R, ICS::K>
+impl<ICS: IntegralClosureExtension> FunctionMorphism<ICS::R, ICS::K>
     for FieldOfFractionsInclusionForIntegralClosure<ICS>
 {
     fn image(&self, x: &<ICS::R as SetSignature>::Elem) -> <ICS::K as SetSignature>::Elem {
@@ -43,7 +43,7 @@ impl<ICS: IntegralClosureExtension> Function<ICS::R, ICS::K>
     }
 }
 
-impl<ICS: IntegralClosureExtension> InjectiveFunction<ICS::R, ICS::K>
+impl<ICS: IntegralClosureExtension> InjectiveFunctionMorphism<ICS::R, ICS::K>
     for FieldOfFractionsInclusionForIntegralClosure<ICS>
 {
     fn try_preimage(
@@ -109,10 +109,10 @@ pub trait IntegralClosureExtension: Debug + Clone + Send + Sync {
     type K: FieldSignature;
     type ZQ<BZ : BorrowedStructure<Self::Z>, BQ : BorrowedStructure<Self::Q>>: FieldOfFractionsInclusion<Self::Z, Self::Q>;
     type ZR<BZ: BorrowedStructure<Self::Z>, BR: BorrowedStructure<Self::R>>: RingHomomorphism<Self::Z, Self::R>
-        + InjectiveFunction<Self::Z, Self::R>;
+        + InjectiveFunctionMorphism<Self::Z, Self::R>;
     type QK<BQ : BorrowedStructure<Self::Q>, BK : BorrowedStructure<Self::K>>: FiniteDimensionalFieldExtension<Self::QKBasis, Self::Q, Self::K>;
     type RK<BR: BorrowedStructure<Self::R>, BK: BorrowedStructure<Self::K>>: RingHomomorphism<Self::R, Self::K>
-        + InjectiveFunction<Self::R, Self::K>;
+        + InjectiveFunctionMorphism<Self::R, Self::K>;
 
     fn z_ring(&self) -> &Self::Z;
     fn q_field(&self) -> &Self::Q;
@@ -129,7 +129,7 @@ pub trait IntegralClosureExtension: Debug + Clone + Send + Sync {
     /// - `z_to_r` followed by `r_to_k`
     fn z_to_k(
         &self,
-    ) -> impl RingHomomorphism<Self::Z, Self::K> + InjectiveFunction<Self::Z, Self::K> {
+    ) -> impl RingHomomorphism<Self::Z, Self::K> + InjectiveFunctionMorphism<Self::Z, Self::K> {
         CompositionMorphism::new(self.z_to_q().into_owned(), self.q_to_k().into_owned())
     }
 

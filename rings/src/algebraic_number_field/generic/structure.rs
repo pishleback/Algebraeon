@@ -216,7 +216,7 @@ mod ring_of_integers_to_algebraic_number_field_inclusion {
         K: AlgebraicNumberFieldSignature,
         R: AlgebraicIntegerRingSignature<K>,
         RB: BorrowedStructure<R>,
-    > Function<R, K> for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
+    > FunctionMorphism<R, K> for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
     {
         fn image(&self, x: &<R as SetSignature>::Elem) -> <K as SetSignature>::Elem {
             self.roi().to_anf(x)
@@ -227,7 +227,7 @@ mod ring_of_integers_to_algebraic_number_field_inclusion {
         K: AlgebraicNumberFieldSignature,
         R: AlgebraicIntegerRingSignature<K>,
         RB: BorrowedStructure<R>,
-    > InjectiveFunction<R, K> for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
+    > InjectiveFunctionMorphism<R, K> for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R, RB>
     {
         fn try_preimage(&self, y: &<K as SetSignature>::Elem) -> Option<<R as SetSignature>::Elem> {
             self.roi().try_from_anf(y)
@@ -376,7 +376,7 @@ mod order_to_ring_of_integers_inclusion {
         KOB: BorrowedStructure<K>,
         const MAXIMAL: bool,
         OB: BorrowedStructure<OrderWithBasis<K, KOB, MAXIMAL>>,
-    > Function<OrderWithBasis<K, KOB, MAXIMAL>, R>
+    > FunctionMorphism<OrderWithBasis<K, KOB, MAXIMAL>, R>
         for OrderToRingOfIntegersInclusion<K, R, RB, KOB, MAXIMAL, OB>
     {
         fn image(&self, x: &Vec<Integer>) -> <R as SetSignature>::Elem {
@@ -410,7 +410,7 @@ mod order_to_ring_of_integers_inclusion {
         KOB: BorrowedStructure<K>,
         const MAXIMAL: bool,
         OB: BorrowedStructure<OrderWithBasis<K, KOB, MAXIMAL>>,
-    > InjectiveFunction<OrderWithBasis<K, KOB, MAXIMAL>, R>
+    > InjectiveFunctionMorphism<OrderWithBasis<K, KOB, MAXIMAL>, R>
         for OrderToRingOfIntegersInclusion<K, R, RB, KOB, MAXIMAL, OB>
     {
         fn try_preimage(&self, y: &<R as SetSignature>::Elem) -> Option<Vec<Integer>> {
@@ -426,7 +426,7 @@ mod order_to_ring_of_integers_inclusion {
         RB: BorrowedStructure<R>,
         KOB: BorrowedStructure<K>,
         OB: BorrowedStructure<OrderWithBasis<K, KOB, true>>,
-    > BijectiveFunction<OrderWithBasis<K, KOB, true>, R>
+    > BijectiveFunctionMorphism<OrderWithBasis<K, KOB, true>, R>
         for OrderToRingOfIntegersInclusion<K, R, RB, KOB, true, OB>
     {
     }
@@ -500,7 +500,7 @@ mod anf_inclusion {
         K: AlgebraicNumberFieldSignature,
         IntegerModule: FullRankIntegerSubmoduleWithBasisSignature<K>,
         IntegerModuleB: BorrowedStructure<IntegerModule>,
-    > Function<IntegerModule, K>
+    > FunctionMorphism<IntegerModule, K>
         for AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion<
             K,
             IntegerModule,
@@ -524,7 +524,7 @@ mod anf_inclusion {
         K: AlgebraicNumberFieldSignature,
         IntegerModule: FullRankIntegerSubmoduleWithBasisSignature<K>,
         IntegerModuleB: BorrowedStructure<IntegerModule>,
-    > InjectiveFunction<IntegerModule, K>
+    > InjectiveFunctionMorphism<IntegerModule, K>
         for AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion<
             K,
             IntegerModule,
@@ -1104,7 +1104,7 @@ mod integer_submodule_inclusion {
         IntegerModuleB: BorrowedStructure<IntegerModule>,
         IntegerSubmodule: FullRankIntegerSubmoduleWithBasisSignature<K>,
         IntegerSubmoduleB: BorrowedStructure<IntegerSubmodule>,
-    > Function<IntegerSubmodule, IntegerModule>
+    > FunctionMorphism<IntegerSubmodule, IntegerModule>
         for IntegerSubmoduleInclusion<
             K,
             IntegerModule,
@@ -1135,7 +1135,7 @@ mod integer_submodule_inclusion {
         IntegerModuleB: BorrowedStructure<IntegerModule>,
         IntegerSubmodule: FullRankIntegerSubmoduleWithBasisSignature<K>,
         IntegerSubmoduleB: BorrowedStructure<IntegerSubmodule>,
-    > InjectiveFunction<IntegerSubmodule, IntegerModule>
+    > InjectiveFunctionMorphism<IntegerSubmodule, IntegerModule>
         for IntegerSubmoduleInclusion<
             K,
             IntegerModule,
@@ -1443,7 +1443,7 @@ mod integer_submodule_inclusion {
                 >,
             >,
     >
-        Function<
+        FunctionMorphism<
             FinitelyFreeSubmodulesStructure<
                 EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
@@ -1514,7 +1514,7 @@ mod integer_submodule_inclusion {
                 >,
             >,
     >
-        InjectiveFunction<
+        InjectiveFunctionMorphism<
             FinitelyFreeSubmodulesStructure<
                 EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,

@@ -67,8 +67,13 @@ impl<A: Signature, B: Signature, C: Signature, AB: Morphism<A, B>, BC: Morphism<
     }
 }
 
-impl<A: SetSignature, B: SetSignature, C: SetSignature, AB: Function<A, B>, BC: Function<B, C>>
-    Function<A, C> for CompositionMorphism<A, B, C, AB, BC>
+impl<
+    A: SetSignature,
+    B: SetSignature,
+    C: SetSignature,
+    AB: FunctionMorphism<A, B>,
+    BC: FunctionMorphism<B, C>,
+> FunctionMorphism<A, C> for CompositionMorphism<A, B, C, AB, BC>
 {
     fn image(&self, x: &A::Elem) -> C::Elem {
         self.b_to_c.image(&self.a_to_b.image(x))
@@ -79,9 +84,9 @@ impl<
     A: SetSignature,
     B: SetSignature,
     C: SetSignature,
-    AB: InjectiveFunction<A, B>,
-    BC: InjectiveFunction<B, C>,
-> InjectiveFunction<A, C> for CompositionMorphism<A, B, C, AB, BC>
+    AB: InjectiveFunctionMorphism<A, B>,
+    BC: InjectiveFunctionMorphism<B, C>,
+> InjectiveFunctionMorphism<A, C> for CompositionMorphism<A, B, C, AB, BC>
 {
     fn try_preimage(&self, x: &C::Elem) -> Option<A::Elem> {
         self.a_to_b.try_preimage(&self.b_to_c.try_preimage(x)?)
@@ -92,9 +97,9 @@ impl<
     A: SetSignature,
     B: SetSignature,
     C: SetSignature,
-    AB: BijectiveFunction<A, B>,
-    BC: BijectiveFunction<B, C>,
-> BijectiveFunction<A, C> for CompositionMorphism<A, B, C, AB, BC>
+    AB: BijectiveFunctionMorphism<A, B>,
+    BC: BijectiveFunctionMorphism<B, C>,
+> BijectiveFunctionMorphism<A, C> for CompositionMorphism<A, B, C, AB, BC>
 {
     fn preimage(&self, x: &C::Elem) -> A::Elem {
         self.a_to_b.preimage(&self.b_to_c.preimage(x))

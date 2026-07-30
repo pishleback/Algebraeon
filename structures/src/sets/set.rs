@@ -1,6 +1,7 @@
 use crate::*;
 
 use algebraeon_macros::{signature_meta_trait, skip_meta};
+use ambassador::delegatable_trait;
 use paste::paste;
 use rand::{Rng, RngExt, SeedableRng, rngs::StdRng};
 use std::fmt::Debug;
@@ -9,6 +10,7 @@ use std::fmt::Debug;
 /// a set of elements of type `Self::Elem` with some
 /// structure, for example, the structure of a ring.
 #[signature_meta_trait]
+#[delegatable_trait]
 pub trait SetSignature: Signature {
     type Elem: Clone + Debug + Send + Sync;
 
@@ -29,15 +31,18 @@ pub trait MetaType: Clone + Debug {
 }
 
 #[signature_meta_trait]
+#[delegatable_trait]
 pub trait ToStringSignature: SetSignature {
     fn to_string(&self, elem: &Self::Elem) -> String;
 }
 
 #[signature_meta_trait]
+#[delegatable_trait]
 pub trait EqSignature: SetSignature {
     fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool;
 }
 
+#[delegatable_trait]
 pub trait CountableSetSignature: SetSignature {
     /// Yield distinct elements of the set such that every element eventually appears.
     /// Always yields elements in the same order.
@@ -47,6 +52,7 @@ pub trait CountableSetSignature: SetSignature {
 
 /// A set with finitely many elements
 #[signature_meta_trait]
+#[delegatable_trait]
 pub trait FiniteSetSignature: CountableSetSignature {
     /// A list of all elements in the set.
     /// Must always return elements in the same order.
@@ -81,6 +87,7 @@ pub trait ConstSizeFiniteSetSignature<const N: usize>: FiniteSetSignature {
 /// self.list_all_elements is required to return elements in the correct order
 /// The ordering on the set must also agree with the ordering given by the enumeration
 #[signature_meta_trait]
+#[delegatable_trait]
 pub trait EnumeratedOrdFiniteSetSignature: FiniteSetSignature + OrdSignature {
     /// List all elements in the order in which they are numbered
     fn list_all_elements_ordered(&self) -> Vec<Self::Elem>;

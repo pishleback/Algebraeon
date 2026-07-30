@@ -22,16 +22,16 @@ impl<X: Signature> Morphism<X, X> for IdentityMorphism<X> {
     }
 }
 
-impl<X: SetSignature> Function<X, X> for IdentityMorphism<X> {
+impl<X: SetSignature> FunctionMorphism<X, X> for IdentityMorphism<X> {
     fn image(&self, x: &X::Elem) -> X::Elem {
         x.clone()
     }
 }
 
-impl<X: SetSignature> InjectiveFunction<X, X> for IdentityMorphism<X> {
+impl<X: SetSignature> InjectiveFunctionMorphism<X, X> for IdentityMorphism<X> {
     fn try_preimage(&self, x: &X::Elem) -> Option<X::Elem> {
         Some(x.clone())
     }
 }
 
-impl<X: SetSignature> BijectiveFunction<X, X> for IdentityMorphism<X> {}
+impl<X: SetSignature> BijectiveFunctionMorphism<X, X> for IdentityMorphism<X> {}

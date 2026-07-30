@@ -234,6 +234,6 @@ pub trait LinearTransformation<
     Ring: RingSignature,
     Domain: ModuleSignature<Ring>,
     Range: ModuleSignature<Ring>,
->: Function<Domain, Range>
+>: FunctionMorphism<Domain, Range>
 {
 }

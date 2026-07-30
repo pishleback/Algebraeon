@@ -232,7 +232,7 @@ impl<
     FieldB: BorrowedStructure<Field>,
     FieldPolyB: BorrowedStructure<PolynomialStructure<Field, FieldB>>,
     const IS_FIELD: bool,
-> Function<Field, PolynomialQuotientRingStructure<Field, FieldB, FieldPolyB, IS_FIELD>>
+> FunctionMorphism<Field, PolynomialQuotientRingStructure<Field, FieldB, FieldPolyB, IS_FIELD>>
     for PolynomialQuotientRingExtension<Field, FieldB, FieldPolyB, IS_FIELD>
 {
     fn image(&self, x: &Field::Elem) -> Polynomial<Field::Elem> {
@@ -255,8 +255,11 @@ impl<
     FieldB: BorrowedStructure<Field>,
     FieldPolyB: BorrowedStructure<PolynomialStructure<Field, FieldB>>,
     const IS_FIELD: bool,
-> InjectiveFunction<Field, PolynomialQuotientRingStructure<Field, FieldB, FieldPolyB, IS_FIELD>>
-    for PolynomialQuotientRingExtension<Field, FieldB, FieldPolyB, IS_FIELD>
+>
+    InjectiveFunctionMorphism<
+        Field,
+        PolynomialQuotientRingStructure<Field, FieldB, FieldPolyB, IS_FIELD>,
+    > for PolynomialQuotientRingExtension<Field, FieldB, FieldPolyB, IS_FIELD>
 {
     fn try_preimage(&self, x: &Polynomial<Field::Elem>) -> Option<Field::Elem> {
         self.domain()

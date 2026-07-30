@@ -90,8 +90,11 @@ impl<
 
 impl<
     AlgebraicNumberFieldPolynomialQuotientStructureBorrowed: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>,
-> Function<AlgebraicNumberFieldPolynomialQuotientStructure, QuadraticNumberFieldStructure<Integer>>
-    for QuadraticNumberFieldIsomorphism<AlgebraicNumberFieldPolynomialQuotientStructureBorrowed>
+>
+    FunctionMorphism<
+        AlgebraicNumberFieldPolynomialQuotientStructure,
+        QuadraticNumberFieldStructure<Integer>,
+    > for QuadraticNumberFieldIsomorphism<AlgebraicNumberFieldPolynomialQuotientStructureBorrowed>
 {
     fn image(&self, x: &Polynomial<Rational>) -> QuadraticNumberFieldElement {
         let x = self.anf_polyquo.borrow().to_vec(x);
@@ -110,7 +113,7 @@ impl<
 impl<
     AlgebraicNumberFieldPolynomialQuotientStructureBorrowed: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>,
 >
-    InjectiveFunction<
+    InjectiveFunctionMorphism<
         AlgebraicNumberFieldPolynomialQuotientStructure,
         QuadraticNumberFieldStructure<Integer>,
     > for QuadraticNumberFieldIsomorphism<AlgebraicNumberFieldPolynomialQuotientStructureBorrowed>
@@ -123,7 +126,7 @@ impl<
 impl<
     AlgebraicNumberFieldPolynomialQuotientStructureBorrowed: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>,
 >
-    BijectiveFunction<
+    BijectiveFunctionMorphism<
         AlgebraicNumberFieldPolynomialQuotientStructure,
         QuadraticNumberFieldStructure<Integer>,
     > for QuadraticNumberFieldIsomorphism<AlgebraicNumberFieldPolynomialQuotientStructureBorrowed>

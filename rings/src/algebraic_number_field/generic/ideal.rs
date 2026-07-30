@@ -266,7 +266,7 @@ mod integer_submodules_to_ideals {
         IntB: BorrowedStructure<IntegerCanonicalStructure>,
         SB: BorrowedStructure<FinitelyFreeIntegerSubmodulesStructure<IntB>>,
     >
-        Function<
+        FunctionMorphism<
             OrderIdealsStructure<K, KB, MAXIMAL, OB>,
             FinitelyFreeIntegerSubmodulesStructure<IntB>,
         > for SubmoduleToIdeals<K, KB, MAXIMAL, OB, IB, IntB, SB>
@@ -290,7 +290,7 @@ mod integer_submodules_to_ideals {
         IntB: BorrowedStructure<IntegerCanonicalStructure>,
         SB: BorrowedStructure<FinitelyFreeIntegerSubmodulesStructure<IntB>>,
     >
-        InjectiveFunction<
+        InjectiveFunctionMorphism<
             OrderIdealsStructure<K, KB, MAXIMAL, OB>,
             FinitelyFreeIntegerSubmodulesStructure<IntB>,
         > for SubmoduleToIdeals<K, KB, MAXIMAL, OB, IB, IntB, SB>

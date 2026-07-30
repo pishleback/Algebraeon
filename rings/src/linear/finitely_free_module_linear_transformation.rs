@@ -276,7 +276,7 @@ impl<
     const INJECTIVE: bool,
     const SURJECTIVE: bool,
 >
-    Function<
+    FunctionMorphism<
         FinitelyFreeModuleStructure<SetDomain, SetDomainB, Ring, RingDomainB>,
         FinitelyFreeModuleStructure<SetRange, SetRangeB, Ring, RingRangeB>,
     >
@@ -313,7 +313,7 @@ impl<
     RingRangeB: BorrowedStructure<Ring>,
     const SURJECTIVE: bool,
 >
-    InjectiveFunction<
+    InjectiveFunctionMorphism<
         FinitelyFreeModuleStructure<SetDomain, SetDomainB, Ring, RingDomainB>,
         FinitelyFreeModuleStructure<SetRange, SetRangeB, Ring, RingRangeB>,
     >
@@ -345,7 +345,7 @@ impl<
     RingDomainB: BorrowedStructure<Ring>,
     RingRangeB: BorrowedStructure<Ring>,
 >
-    BijectiveFunction<
+    BijectiveFunctionMorphism<
         FinitelyFreeModuleStructure<SetDomain, SetDomainB, Ring, RingDomainB>,
         FinitelyFreeModuleStructure<SetRange, SetRangeB, Ring, RingRangeB>,
     >

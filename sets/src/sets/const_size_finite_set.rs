@@ -117,7 +117,7 @@ impl<const N: usize, Set: EnumeratedOrdFiniteSetSignature> EnumeratedOrdFiniteSe
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::sets::SetToFiniteSubsetByOrdSignature;
+    use crate::sets::{SetToConstSizeFiniteSubsetByOrdSignature, SetToFiniteSubsetByOrdSignature};
 
     #[test]
     fn enumeration() {
@@ -127,6 +127,14 @@ mod tests {
                 .try_into_const_sized::<5>()
                 .unwrap(),
             5
+        );
+    }
+
+    #[test]
+    fn optional_enumeration() {
+        assert_enumerated_ord_finite_set!(
+            OptionalStructure::new(i32::structure().into_const_size_finite_subset([1, 2, 3, 4, 5])),
+            6
         );
     }
 }

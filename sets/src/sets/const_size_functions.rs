@@ -4,7 +4,137 @@ use crate::sets::{
 };
 use algebraeon_structures::*;
 use itertools::Itertools;
-use std::{cmp::Ordering, fmt::Debug, marker::PhantomData};
+use std::{
+    cmp::Ordering,
+    fmt::Debug,
+    marker::PhantomData,
+    ops::{Index, IndexMut},
+};
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Function<const N: usize, DomainElem, RangeElem> {
+    _domain: PhantomData<DomainElem>,
+    images: [RangeElem; N],
+}
+
+impl<const N: usize, DomainElem: MetaType, RangeElem> Function<N, DomainElem, RangeElem> {
+    pub fn new(f: impl FnMut(DomainElem) -> RangeElem) -> Self
+    where
+        DomainElem::Signature: EnumeratedOrdFiniteSetSignature + ConstSizeFiniteSetSignature<N>,
+    {
+        Self {
+            _domain: PhantomData,
+            images: DomainElem::structure()
+                .list_all_elements_ordered()
+                .into_iter()
+                .map(f)
+                .collect::<Vec<_>>()
+                .try_into()
+                .map_err(|_| ())
+                .unwrap(),
+        }
+    }
+}
+
+impl<const N: usize, DomainElem, RangeElem> Function<N, DomainElem, RangeElem> {
+    pub fn iter(&self) -> std::slice::Iter<'_, RangeElem> {
+        self.images.iter()
+    }
+
+    pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, RangeElem> {
+        self.images.iter_mut()
+    }
+
+    pub fn map<NewRangeElem>(
+        self,
+        f: impl FnMut(RangeElem) -> NewRangeElem,
+    ) -> Function<N, DomainElem, NewRangeElem> {
+        Function {
+            _domain: PhantomData,
+            images: self.images.map(f),
+        }
+    }
+}
+
+impl<const N: usize, DomainElem, RangeElem> IntoIterator for Function<N, DomainElem, RangeElem> {
+    type Item = RangeElem;
+    type IntoIter = std::array::IntoIter<RangeElem, N>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.images.into_iter()
+    }
+}
+
+impl<const N: usize, DomainElem, RangeElem> Index<usize> for Function<N, DomainElem, RangeElem> {
+    type Output = RangeElem;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.images[index]
+    }
+}
+
+impl<const N: usize, DomainElem, RangeElem> IndexMut<usize> for Function<N, DomainElem, RangeElem> {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.images[index]
+    }
+}
+
+impl<const N: usize, DomainElem, RangeElem> From<[RangeElem; N]>
+    for Function<N, DomainElem, RangeElem>
+{
+    fn from(images: [RangeElem; N]) -> Self {
+        Self {
+            _domain: PhantomData,
+            images,
+        }
+    }
+}
+
+impl<const N: usize, DomainElem, RangeElem> From<Function<N, DomainElem, RangeElem>>
+    for [RangeElem; N]
+{
+    fn from(func: Function<N, DomainElem, RangeElem>) -> Self {
+        func.images
+    }
+}
+
+impl<const N: usize, DomainElem, RangeElem: Clone> From<&Function<N, DomainElem, RangeElem>>
+    for [RangeElem; N]
+{
+    fn from(func: &Function<N, DomainElem, RangeElem>) -> Self {
+        func.images.clone()
+    }
+}
+
+impl<const N: usize, DomainElem, RangeElem> TryFrom<Vec<RangeElem>>
+    for Function<N, DomainElem, RangeElem>
+{
+    type Error = ();
+
+    fn try_from(images: Vec<RangeElem>) -> Result<Self, Self::Error> {
+        if let Ok(images) = TryInto::<[RangeElem; N]>::try_into(images) {
+            Ok(images.into())
+        } else {
+            Err(())
+        }
+    }
+}
+
+impl<const N: usize, DomainElem, RangeElem> From<Function<N, DomainElem, RangeElem>>
+    for Vec<RangeElem>
+{
+    fn from(func: Function<N, DomainElem, RangeElem>) -> Self {
+        func.images.into()
+    }
+}
+
+impl<const N: usize, DomainElem, RangeElem: Clone> From<&Function<N, DomainElem, RangeElem>>
+    for Vec<RangeElem>
+{
+    fn from(func: &Function<N, DomainElem, RangeElem>) -> Self {
+        func.images.clone().into()
+    }
+}
 
 /// Represent all functions from `domain` to `range`
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -126,8 +256,11 @@ impl<
     RangeB: BorrowedStructure<Range>,
 > ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>
 {
-    pub fn function(&self, f: impl Fn(&Domain::Elem) -> Range::Elem) -> Option<[Range::Elem; N]> {
-        let s = self
+    pub fn function(
+        &self,
+        f: impl Fn(&Domain::Elem) -> Range::Elem,
+    ) -> Option<Function<N, Domain::Elem, Range::Elem>> {
+        let s: [_; N] = self
             .domain()
             .list_all_elements_ordered()
             .iter()
@@ -140,10 +273,14 @@ impl<
                 return None;
             }
         }
-        Some(s)
+        Some(s.into())
     }
 
-    pub fn image<'a>(&self, f: &'a [Range::Elem; N], x: &Domain::Elem) -> &'a Range::Elem {
+    pub fn image<'a>(
+        &self,
+        f: &'a <Self as SetSignature>::Elem,
+        x: &Domain::Elem,
+    ) -> &'a Range::Elem {
         debug_assert!(self.is_element(f));
         debug_assert!(self.domain().is_element(x));
         &f[TryInto::<usize>::try_into(self.domain().element_to_enumeration(x)).unwrap()]
@@ -158,13 +295,10 @@ impl<
     RangeB: BorrowedStructure<Range>,
 > SetSignature for ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>
 {
-    type Elem = [Range::Elem; N];
+    type Elem = Function<N, Domain::Elem, Range::Elem>;
 
     fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
-        if Natural::from(x.len()) != self.domain().size() {
-            return Err("Incorrect vector length".to_string());
-        }
-        for y in x {
+        for y in &x.images {
             self.range().validate_element(y)?;
         }
         Ok(())
@@ -182,9 +316,7 @@ impl<
     fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(b));
-        let n = a.len();
-        debug_assert_eq!(n, b.len());
-        (0..n).all(|i| self.range().equal(&a[i], &b[i]))
+        (0..N).all(|i| self.range().equal(&a[i], &b[i]))
     }
 }
 
@@ -212,9 +344,7 @@ impl<
     fn cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Ordering {
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(b));
-        let n = a.len();
-        debug_assert_eq!(n, b.len());
-        for i in (0..n).rev() {
+        for i in (0..N).rev() {
             match self.range().cmp(&a[i], &b[i]) {
                 Ordering::Less => {
                     return Ordering::Less;
@@ -299,11 +429,10 @@ impl<
 
     fn element_to_enumeration(&self, elem: &Self::Elem) -> Natural {
         debug_assert!(self.is_element(elem));
-        let d = elem.len();
         let r = self.range().size();
         debug_assert_eq!(self.range().size(), (&r).into());
         let mut num = Natural::ZERO;
-        for i in (0..d).rev() {
+        for i in (0..N).rev() {
             num = num * &r + self.range().element_to_enumeration(&elem[i]);
         }
         num

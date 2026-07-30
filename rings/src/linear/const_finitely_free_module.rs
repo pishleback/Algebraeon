@@ -1,7 +1,7 @@
 use crate::{
     linear::finitely_free_module::FinitelyFreeModuleStructure, matrix::Matrix, structure::*,
 };
-use algebraeon_sets::sets::ConstSizeFunctionsStructure;
+use algebraeon_sets::sets::{ConstSizeFunctionsStructure, Function};
 use algebraeon_structures::*;
 use std::{borrow::Cow, cmp::Ordering};
 
@@ -113,11 +113,11 @@ impl<
     }
 
     pub fn to_col(&self, v: &<Self as SetSignature>::Elem) -> Matrix<Ring::Elem> {
-        self.forget_const().to_col(&v.to_vec())
+        self.forget_const().to_col(&v.into())
     }
 
     pub fn to_row(&self, v: &<Self as SetSignature>::Elem) -> Matrix<Ring::Elem> {
-        self.forget_const().to_row(&v.to_vec())
+        self.forget_const().to_row(&v.into())
     }
 
     pub fn from_row(&self, m: &Matrix<Ring::Elem>) -> <Self as SetSignature>::Elem {
@@ -151,7 +151,7 @@ impl<
     RingB: BorrowedStructure<Ring>,
 > SetSignature for ConstFinitelyFreeModuleStructure<N, Set, SetB, Ring, RingB>
 {
-    type Elem = [Ring::Elem; N];
+    type Elem = Function<N, Set::Elem, Ring::Elem>;
 
     fn validate_element(&self, v: &Self::Elem) -> Result<(), String> {
         self.functions_restructure().validate_element(v)
@@ -276,7 +276,7 @@ impl<
 > ZeroSignature for ConstFinitelyFreeModuleStructure<N, Set, SetB, Ring, RingB>
 {
     fn zero(&self) -> Self::Elem {
-        std::array::from_fn(|_| self.ring().zero())
+        std::array::from_fn(|_| self.ring().zero()).into()
     }
 }
 
@@ -291,7 +291,7 @@ impl<
     fn add(&self, v: &Self::Elem, w: &Self::Elem) -> Self::Elem {
         debug_assert!(self.validate_element(v).is_ok());
         debug_assert!(self.validate_element(w).is_ok());
-        std::array::from_fn(|i| self.ring().add(&v[i], &w[i]))
+        std::array::from_fn(|i| self.ring().add(&v[i], &w[i])).into()
     }
 }
 
@@ -341,13 +341,13 @@ impl<
 {
     fn neg(&self, v: &Self::Elem) -> Self::Elem {
         debug_assert!(self.validate_element(v).is_ok());
-        std::array::from_fn(|i| self.ring().neg(&v[i]))
+        std::array::from_fn(|i| self.ring().neg(&v[i])).into()
     }
 
     fn sub(&self, v: &Self::Elem, w: &Self::Elem) -> Self::Elem {
         debug_assert!(self.validate_element(v).is_ok());
         debug_assert!(self.validate_element(w).is_ok());
-        std::array::from_fn(|i| self.ring().sub(&v[i], &w[i]))
+        std::array::from_fn(|i| self.ring().sub(&v[i], &w[i])).into()
     }
 }
 
@@ -365,7 +365,7 @@ impl<
 
     fn scalar_mul(&self, v: &Self::Elem, r: &Ring::Elem) -> Self::Elem {
         debug_assert!(self.validate_element(v).is_ok());
-        std::array::from_fn(|i| self.ring().mul(r, &v[i]))
+        std::array::from_fn(|i| self.ring().mul(r, &v[i])).into()
     }
 }
 
@@ -427,17 +427,17 @@ mod tests {
 
         assert_eq!(
             m.add(&m.neg(&b), &m.add(&a, &b)),
-            [Integer::from(1), Integer::from(0), Integer::from(0)]
+            [Integer::from(1), Integer::from(0), Integer::from(0)].into()
         );
 
         assert_eq!(
             m.add(&m.add(&a, &b), &m.add(&b, &c)),
-            [Integer::from(1), Integer::from(2), Integer::from(1)]
+            [Integer::from(1), Integer::from(2), Integer::from(1)].into()
         );
 
         assert_eq!(
             m.scalar_mul(&a, &5.into()),
-            [Integer::from(5), Integer::from(0), Integer::from(0)]
+            [Integer::from(5), Integer::from(0), Integer::from(0)].into()
         );
 
         assert_eq!(m.basis_vecs(), vec![a, b, c]);

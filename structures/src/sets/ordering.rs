@@ -1,5 +1,6 @@
 use crate::*;
 use algebraeon_macros::{signature_meta_trait, skip_meta};
+use ambassador::delegatable_trait;
 use std::{borrow::Borrow, cmp::Ordering};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -145,15 +146,17 @@ impl<'s, X, O: OrdSignature + 's, K: Fn(&X) -> &O::Elem> Iterator for VecMergerU
 }
 
 #[signature_meta_trait]
+#[delegatable_trait]
 pub trait PartialOrdSignature: EqSignature {
     #[skip_meta]
-    fn partial_cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Ordering>;
+    fn partial_cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Option<std::cmp::Ordering>;
 }
 
 #[signature_meta_trait]
+#[delegatable_trait]
 pub trait OrdSignature: PartialOrdSignature {
     #[skip_meta]
-    fn cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Ordering;
+    fn cmp(&self, a: &Self::Elem, b: &Self::Elem) -> std::cmp::Ordering;
 
     #[skip_meta]
     fn max(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
@@ -173,7 +176,7 @@ pub trait OrdSignature: PartialOrdSignature {
         }
     }
 
-    fn is_sorted(&self, a: &[impl Borrow<Self::Elem>]) -> bool {
+    fn is_sorted(&self, a: &[impl std::borrow::Borrow<Self::Elem>]) -> bool {
         for i in 1..a.len() {
             if self.cmp(a[i - 1].borrow(), a[i].borrow()) == Ordering::Greater {
                 return false;
@@ -186,7 +189,7 @@ pub trait OrdSignature: PartialOrdSignature {
         self.is_sorted(&a.iter().map(key).collect::<Vec<_>>())
     }
 
-    fn is_sorted_and_unique(&self, a: &[impl Borrow<Self::Elem>]) -> bool {
+    fn is_sorted_and_unique(&self, a: &[impl std::borrow::Borrow<Self::Elem>]) -> bool {
         for i in 1..a.len() {
             if self.cmp(a[i - 1].borrow(), a[i].borrow()) != Ordering::Less {
                 return false;
@@ -199,7 +202,11 @@ pub trait OrdSignature: PartialOrdSignature {
         self.is_sorted_and_unique(&a.iter().map(key).collect::<Vec<_>>())
     }
 
-    fn binary_search(&self, v: &[impl Borrow<Self::Elem>], target: &Self::Elem) -> bool {
+    fn binary_search(
+        &self,
+        v: &[impl std::borrow::Borrow<Self::Elem>],
+        target: &Self::Elem,
+    ) -> bool {
         self.binary_search_by_key(v, target, |x| x.borrow())
             .is_some()
     }
@@ -244,7 +251,7 @@ pub trait OrdSignature: PartialOrdSignature {
 
     fn binary_search_index(
         &self,
-        v: &[impl Borrow<Self::Elem>],
+        v: &[impl std::borrow::Borrow<Self::Elem>],
         target: &Self::Elem,
     ) -> Option<usize> {
         self.binary_search_index_by_key(v, target, |item| item.borrow())
@@ -265,7 +272,7 @@ pub trait OrdSignature: PartialOrdSignature {
     }
 
     #[skip_meta]
-    fn merge_sorted<'s, S: Borrow<Self::Elem> + 's>(
+    fn merge_sorted<'s, S: std::borrow::Borrow<Self::Elem> + 's>(
         &'s self,
         a: Vec<S>,
         b: Vec<S>,
@@ -286,7 +293,7 @@ pub trait OrdSignature: PartialOrdSignature {
     }
 
     #[skip_meta]
-    fn merge_sorted_and_unique<'s, S: Borrow<Self::Elem> + 's>(
+    fn merge_sorted_and_unique<'s, S: std::borrow::Borrow<Self::Elem> + 's>(
         &'s self,
         a: Vec<S>,
         b: Vec<S>,
@@ -306,11 +313,11 @@ pub trait OrdSignature: PartialOrdSignature {
         VecMergerUnique::new(self, a, b, key)
     }
 
-    fn sort<S: Borrow<Self::Elem>>(&self, a: Vec<S>) -> Vec<S> {
+    fn sort<S: std::borrow::Borrow<Self::Elem>>(&self, a: Vec<S>) -> Vec<S> {
         self.sort_by_key(a, &|x| x.borrow())
     }
 
-    fn unique<S: Borrow<Self::Elem>>(&self, a: Vec<S>) -> Vec<S> {
+    fn unique<S: std::borrow::Borrow<Self::Elem>>(&self, a: Vec<S>) -> Vec<S> {
         debug_assert!(self.is_sorted(&a));
         let mut unique: Vec<S> = vec![];
         for x in a {
@@ -325,7 +332,8 @@ pub trait OrdSignature: PartialOrdSignature {
         unique
     }
 
-    fn sort_by_key<X>(&self, mut a: Vec<X>, key: &impl Fn(&X) -> &Self::Elem) -> Vec<X> {
+    fn sort_by_key<X>(&self, a: Vec<X>, key: &impl Fn(&X) -> &Self::Elem) -> Vec<X> {
+        let mut a = a;
         match a.len() {
             0 | 1 => a,
             2 => match self.cmp(key(&a[0]).borrow(), key(&a[1]).borrow()) {
