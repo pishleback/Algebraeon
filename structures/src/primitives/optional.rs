@@ -131,3 +131,16 @@ impl<Elem: MetaType> MetaType for Option<Elem> {
         OptionalStructure::new(Elem::structure())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn optional_enumeration() {
+        assert_enumerated_ord_finite_set!(
+            OptionalStructure::new(i32::structure().into_const_size_finite_subset([1, 2, 3, 4, 5])),
+            6
+        );
+    }
+}

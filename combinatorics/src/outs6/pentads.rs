@@ -379,7 +379,6 @@ impl<
 #[cfg(test)]
 mod tests {
     use super::*;
-    use algebraeon_sets::sets::SetToConstSizeFiniteSubsetByOrdSignature;
     use algebraeon_structures::MetaType;
     use std::collections::HashMap;
 

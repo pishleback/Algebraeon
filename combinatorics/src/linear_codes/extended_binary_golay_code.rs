@@ -1,8 +1,7 @@
 //! The hexacode on the standard ordered syntheme
 
-use crate::linear_codes::ordered_syntheme::{
-    OrderedSynthemePoint, OrderedSynthemePointCanonicalStructure,
-};
+use crate::linear_codes::ordered_syntheme::OrderedSynthemePoint;
+use algebraeon_macros::CanonicalStructure;
 use algebraeon_rings::{
     finite_fields::quaternary_field::QuaternaryField,
     linear::{
@@ -13,12 +12,15 @@ use algebraeon_rings::{
         finitely_free_submodules::FinitelyFreeSubmodule,
     },
     num_theory::modulo::const_naive::Modulo,
-    structure::FinitelyFreeModuleSignature,
+    structure::{FinitelyFreeModuleSignature, MetaAdditionSignature, MetaZeroEqSignature},
 };
-use algebraeon_sets::sets::{CartesianProductSetStructure, Function};
+use algebraeon_sets::sets::Function;
 use algebraeon_structures::*;
-use ambassador::Delegate;
-use std::sync::OnceLock;
+use cantor::Finite;
+use std::{
+    ops::{Add, BitAnd, BitOr},
+    sync::OnceLock,
+};
 
 type F2 = Modulo<2>;
 type F2Structure = <F2 as MetaType>::Signature;
@@ -26,57 +28,97 @@ const ZERO: F2 = F2::new(0);
 const ONE: F2 = F2::new(1);
 
 type F4 = QuaternaryField;
-type F4Structure = <F4 as MetaType>::Signature;
 
-#[derive(Delegate, Debug, Clone, PartialEq, Eq)]
-#[delegate(Signature)]
-#[delegate(SetSignature)]
-#[delegate(EqSignature)]
-#[delegate(PartialOrdSignature)]
-#[delegate(OrdSignature)]
-#[delegate(CountableSetSignature)]
-#[delegate(FiniteSetSignature)]
-#[delegate(EnumeratedOrdFiniteSetSignature)]
-pub struct MogPointStructure(
-    CartesianProductSetStructure<
-        F4Structure,
-        F4Structure,
-        OrderedSynthemePointCanonicalStructure,
-        OrderedSynthemePointCanonicalStructure,
-    >,
-);
-impl Default for MogPointStructure {
-    fn default() -> Self {
-        Self(CartesianProductSetStructure::new(
-            F4::structure(),
-            OrderedSynthemePoint::structure(),
-        ))
-    }
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Finite, CanonicalStructure)]
+#[canonical_structure(eq, partial_ord, ord, finite, ord_finite)]
+pub struct MogPoint {
+    row: F4,
+    col: OrderedSynthemePoint,
 }
-impl ConstSizeFiniteSetSignature<24> for MogPointStructure {}
-type MogPoint = <MogPointStructure as SetSignature>::Elem;
+
+impl ConstSizeFiniteSetSignature<24> for MogPointCanonicalStructure {}
 
 pub type LabelledPoints<Elem> = Function<24, MogPoint, Elem>;
-pub type Vector = LabelledPoints<F2>;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Vector(LabelledPoints<F2>);
+
+impl From<LabelledPoints<F2>> for Vector {
+    fn from(value: LabelledPoints<F2>) -> Self {
+        Self(value)
+    }
+}
+
+impl From<Vector> for LabelledPoints<F2> {
+    fn from(value: Vector) -> Self {
+        value.0
+    }
+}
+
+impl From<[F2; 24]> for Vector {
+    fn from(value: [F2; 24]) -> Self {
+        LabelledPoints::from(value).into()
+    }
+}
+
+impl Add<&Vector> for &Vector {
+    type Output = Vector;
+
+    fn add(self, other: &Vector) -> Self::Output {
+        LabelledPoints::<F2>::new(|p| F2::add(self.0.image(&p), other.0.image(&p))).into()
+    }
+}
+
+impl BitAnd<&Vector> for &Vector {
+    type Output = Vector;
+
+    fn bitand(self, other: &Vector) -> Self::Output {
+        LabelledPoints::<F2>::new(|p| {
+            match (self.0.image(&p).is_zero(), other.0.image(&p).is_zero()) {
+                (true, true) | (true, false) | (false, true) => ZERO,
+                (false, false) => ONE,
+            }
+        })
+        .into()
+    }
+}
+
+impl BitOr<&Vector> for &Vector {
+    type Output = Vector;
+
+    fn bitor(self, other: &Vector) -> Self::Output {
+        LabelledPoints::<F2>::new(|p| {
+            match (self.0.image(&p).is_zero(), other.0.image(&p).is_zero()) {
+                (true, true) => ZERO,
+                (false, false) | (true, false) | (false, true) => ONE,
+            }
+        })
+        .into()
+    }
+}
 
 type AmbientSpace = ConstFinitelyFreeModuleStructure<
     24,
-    MogPointStructure,
-    MogPointStructure,
+    MogPointCanonicalStructure,
+    MogPointCanonicalStructure,
     F2Structure,
     F2Structure,
 >;
 
 struct ExtendedBinaryGolayCodeCache {
-    subspace:
-        FinitelyFreeSubmoduleStructure<MogPointStructure, F2Structure, AmbientSpace, AmbientSpace>,
+    subspace: FinitelyFreeSubmoduleStructure<
+        MogPointCanonicalStructure,
+        F2Structure,
+        AmbientSpace,
+        AmbientSpace,
+    >,
 }
 
 static EXTENDED_BINARY_GOLAY_CODE_CACHE: OnceLock<ExtendedBinaryGolayCodeCache> = OnceLock::new();
 
 fn cache() -> &'static ExtendedBinaryGolayCodeCache {
     EXTENDED_BINARY_GOLAY_CODE_CACHE.get_or_init(|| {
-        let points = MogPointStructure::default();
+        let points = MogPoint::structure();
         let space = F2::structure().into_free_module(points);
         const Z: F2 = ZERO;
         const O: F2 = ONE;
@@ -163,7 +205,7 @@ pub fn extended_binary_golay_code_subspace() -> &'static FinitelyFreeSubmodule<F
 
 /// The 12 dimensional vector subspace structure given by the extended binary Golay code
 pub fn extended_binary_golay_code_subspace_structure() -> &'static FinitelyFreeSubmoduleStructure<
-    MogPointStructure,
+    MogPointCanonicalStructure,
     F2Structure,
     AmbientSpace,
     AmbientSpace,
@@ -185,11 +227,6 @@ pub fn is_octad(vector: &LabelledPoints<F2>) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use crate::linear_codes::{
-        hexacode::HexacodeVector,
-        ordered_syntheme::{OrderedSynthemePair, OrderedSynthemeSide},
-    };
-
     use super::*;
 
     #[test]
@@ -231,17 +268,41 @@ mod tests {
 
     #[test]
     fn test() {
-        let v = HexacodeVector::new(|p| match (p.pair, p.side) {
-            (OrderedSynthemePair::Left, OrderedSynthemeSide::Left) => F4::Zero,
-            (OrderedSynthemePair::Left, OrderedSynthemeSide::Right) => F4::One,
-            (OrderedSynthemePair::Middle, OrderedSynthemeSide::Left) => F4::Alpha,
-            (OrderedSynthemePair::Middle, OrderedSynthemeSide::Right) => F4::Beta,
-            (OrderedSynthemePair::Right, OrderedSynthemeSide::Left) => F4::One,
-            (OrderedSynthemePair::Right, OrderedSynthemeSide::Right) => F4::Zero,
-        });
+        const Z: F2 = ZERO;
+        const O: F2 = ONE;
+
+        let a: Vector = [
+            O, O, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z,
+        ]
+        .into();
+
+        let b: Vector = [
+            O, Z, O, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z,
+        ]
+        .into();
+
         assert_eq!(
-            v,
-            [F4::Zero, F4::One, F4::Alpha, F4::Beta, F4::One, F4::Zero].into()
+            &a + &b,
+            [
+                Z, O, O, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z,
+            ]
+            .into()
+        );
+
+        assert_eq!(
+            &a & &b,
+            [
+                O, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z,
+            ]
+            .into()
+        );
+
+        assert_eq!(
+            &a | &b,
+            [
+                O, O, O, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z,
+            ]
+            .into()
         );
     }
 }

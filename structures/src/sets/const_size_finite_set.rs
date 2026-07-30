@@ -1,4 +1,4 @@
-use algebraeon_structures::*;
+use crate::*;
 use std::cmp::Ordering;
 
 /// A sized finite set from an unsized finite set
@@ -117,24 +117,16 @@ impl<const N: usize, Set: EnumeratedOrdFiniteSetSignature> EnumeratedOrdFiniteSe
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::sets::{SetToConstSizeFiniteSubsetByOrdSignature, SetToFiniteSubsetByOrdSignature};
+    use crate::sets::SetToFiniteSubsetByOrdSignature;
 
     #[test]
     fn enumeration() {
-        algebraeon_structures::assert_enumerated_ord_finite_set!(
+        assert_enumerated_ord_finite_set!(
             i32::structure()
                 .into_finite_subset(vec![1, 2, 3, 4, 5])
                 .try_into_const_sized::<5>()
                 .unwrap(),
             5
-        );
-    }
-
-    #[test]
-    fn optional_enumeration() {
-        assert_enumerated_ord_finite_set!(
-            OptionalStructure::new(i32::structure().into_const_size_finite_subset([1, 2, 3, 4, 5])),
-            6
         );
     }
 }

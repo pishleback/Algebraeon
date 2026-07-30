@@ -1,5 +1,4 @@
-use crate::sets::SetToFiniteSubsetsByOrdSignature;
-use algebraeon_structures::*;
+use crate::*;
 use std::cmp::Ordering;
 use std::marker::PhantomData;
 
@@ -43,7 +42,24 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> PartialEq
         if set != other.set() {
             return false;
         }
-        set.finite_subsets().equal(&self.subset, &other.subset)
+        for item in self
+            .set()
+            .merge_sorted_and_unique(
+                self.subset.elems.iter().collect(),
+                other.subset.elems.iter().collect(),
+            )
+            .collect::<Vec<_>>()
+            .into_iter()
+            .rev()
+        {
+            match item {
+                MergedUniqueSource::First(_) | MergedUniqueSource::Second(_) => {
+                    return false;
+                }
+                MergedUniqueSource::Both(_, _) => {}
+            }
+        }
+        true
     }
 }
 
@@ -182,8 +198,7 @@ impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
 
 #[cfg(test)]
 mod tests {
-    use crate::sets::{FiniteSetToFiniteSetSizedSignature, SetToFiniteSubsetByOrdSignature};
-    use algebraeon_structures::*;
+    use super::*;
 
     #[test]
     fn test_unsized() {
@@ -202,7 +217,7 @@ mod tests {
 
     #[test]
     fn enumeration() {
-        algebraeon_structures::assert_enumerated_ord_finite_set!(
+        assert_enumerated_ord_finite_set!(
             i32::structure()
                 .into_finite_subset(vec![1, 2, 3, 4, 5])
                 .try_into_const_sized::<5>()

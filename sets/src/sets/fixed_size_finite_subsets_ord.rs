@@ -1,7 +1,4 @@
-use crate::{
-    combinatorics::subsets_colex,
-    sets::{FiniteSubsetByOrd, SetToFiniteSubsetsByOrdSignature},
-};
+use crate::{combinatorics::subsets_colex, sets::SetToFiniteSubsetsByOrdSignature};
 use algebraeon_structures::*;
 use std::{cmp::Ordering, marker::PhantomData};
 
@@ -191,7 +188,7 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>>
 
 #[cfg(test)]
 mod tests {
-    use crate::sets::{SetToFiniteSubsetByOrdSignature, SetToFixedSizeFiniteSubsetsByOrdSignature};
+    use crate::sets::SetToFixedSizeFiniteSubsetsByOrdSignature;
     use algebraeon_structures::*;
 
     #[test]

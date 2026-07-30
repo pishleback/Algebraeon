@@ -536,9 +536,7 @@ impl<
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::sets::{
-        FiniteSetToFinitelySupportedPermutationsStructure, SetToFiniteSubsetByOrdSignature,
-    };
+    use crate::sets::FiniteSetToFinitelySupportedPermutationsStructure;
 
     #[test]
     fn enumerate() {

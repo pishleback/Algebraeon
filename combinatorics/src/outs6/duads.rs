@@ -1,8 +1,7 @@
 use algebraeon_macros::signature_meta_trait;
 use algebraeon_sets::sets::{
-    FiniteSetToFinitelySupportedPermutationsStructure, FiniteSubsetByOrd,
-    FinitelySupportedPermutation, SetToFiniteSubsetsByOrdSignature,
-    SetToFixedSizeFiniteSubsetsByOrdSignature,
+    FiniteSetToFinitelySupportedPermutationsStructure, FinitelySupportedPermutation,
+    SetToFiniteSubsetsByOrdSignature, SetToFixedSizeFiniteSubsetsByOrdSignature,
 };
 use algebraeon_structures::*;
 use std::{cmp::Ordering, marker::PhantomData};
@@ -388,9 +387,7 @@ impl<
 #[cfg(test)]
 mod tests {
     use super::*;
-    use algebraeon_sets::sets::{
-        FiniteSetToFinitelySupportedPermutationsStructure, SetToConstSizeFiniteSubsetByOrdSignature,
-    };
+    use algebraeon_sets::sets::FiniteSetToFinitelySupportedPermutationsStructure;
     use algebraeon_structures::MetaType;
     use std::collections::HashMap;
 

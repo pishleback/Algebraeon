@@ -136,6 +136,24 @@ impl<const N: usize, DomainElem, RangeElem: Clone> From<&Function<N, DomainElem,
     }
 }
 
+impl<const N: usize, DomainElem: MetaType, RangeElem: MetaType> MetaType
+    for Function<N, DomainElem, RangeElem>
+where
+    DomainElem::Signature: ConstSizeFiniteSetSignature<N> + EnumeratedOrdFiniteSetSignature,
+{
+    type Signature = ConstSizeFunctionsStructure<
+        N,
+        DomainElem::Signature,
+        DomainElem::Signature,
+        RangeElem::Signature,
+        RangeElem::Signature,
+    >;
+
+    fn structure() -> Self::Signature {
+        ConstSizeFunctionsStructure::new(DomainElem::structure(), RangeElem::structure())
+    }
+}
+
 /// Represent all functions from `domain` to `range`
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ConstSizeFunctionsStructure<
@@ -254,9 +272,10 @@ impl<
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
-> ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>
+> FunctionsSignature<Domain, Range>
+    for ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>
 {
-    pub fn function(
+    fn function(
         &self,
         f: impl Fn(&Domain::Elem) -> Range::Elem,
     ) -> Option<Function<N, Domain::Elem, Range::Elem>> {
@@ -276,11 +295,7 @@ impl<
         Some(s.into())
     }
 
-    pub fn image<'a>(
-        &self,
-        f: &'a <Self as SetSignature>::Elem,
-        x: &Domain::Elem,
-    ) -> &'a Range::Elem {
+    fn image<'a>(&self, f: &'a <Self as SetSignature>::Elem, x: &Domain::Elem) -> &'a Range::Elem {
         debug_assert!(self.is_element(f));
         debug_assert!(self.domain().is_element(x));
         &f[TryInto::<usize>::try_into(self.domain().element_to_enumeration(x)).unwrap()]
@@ -730,9 +745,7 @@ impl<
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::sets::{
-        FiniteSetToFinitelySupportedPermutationsStructure, SetToConstSizeFiniteSubsetByOrdSignature,
-    };
+    use crate::sets::FiniteSetToFinitelySupportedPermutationsStructure;
 
     #[test]
     fn enumerate() {

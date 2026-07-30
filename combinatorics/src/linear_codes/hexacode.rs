@@ -171,6 +171,8 @@ pub fn correct_hexacodeword_from_5(given: LabelledPoints<Option<F4>>) -> Option<
 
 #[cfg(test)]
 mod tests {
+    use crate::linear_codes::ordered_syntheme::{OrderedSynthemePair, OrderedSynthemeSide};
+
     use super::*;
 
     #[test]
@@ -186,6 +188,22 @@ mod tests {
             }
         }
         assert_eq!(c, 64);
+    }
+
+    #[test]
+    fn construct_vector() {
+        let v = HexacodeVector::new(|p| match (p.pair, p.side) {
+            (OrderedSynthemePair::Left, OrderedSynthemeSide::Left) => F4::Zero,
+            (OrderedSynthemePair::Left, OrderedSynthemeSide::Right) => F4::One,
+            (OrderedSynthemePair::Middle, OrderedSynthemeSide::Left) => F4::Alpha,
+            (OrderedSynthemePair::Middle, OrderedSynthemeSide::Right) => F4::Beta,
+            (OrderedSynthemePair::Right, OrderedSynthemeSide::Left) => F4::One,
+            (OrderedSynthemePair::Right, OrderedSynthemeSide::Right) => F4::Zero,
+        });
+        assert_eq!(
+            v,
+            [F4::Zero, F4::One, F4::Alpha, F4::Beta, F4::One, F4::Zero].into()
+        );
     }
 
     #[test]

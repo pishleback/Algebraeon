@@ -1,6 +1,7 @@
-use crate::{combinatorics::all_subsets, sets::FiniteSubsetByOrd};
 use algebraeon_structures::*;
 use std::{cmp::Ordering, marker::PhantomData};
+
+use crate::combinatorics::all_subsets;
 
 /// The set of all finite subsets of a set
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -204,7 +205,7 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> FiniteSubsetsByOrdStructur
 
 #[cfg(test)]
 mod tests {
-    use crate::sets::{SetToFiniteSubsetByOrdSignature, SetToFiniteSubsetsByOrdSignature};
+    use crate::sets::SetToFiniteSubsetsByOrdSignature;
     use algebraeon_structures::*;
 
     #[test]

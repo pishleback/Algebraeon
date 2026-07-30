@@ -1,4 +1,4 @@
-use algebraeon_structures::*;
+use crate::*;
 use std::{cmp::Ordering, marker::PhantomData};
 
 /// A sized finite set from an unsized finite set
@@ -193,10 +193,22 @@ impl<
 // {
 // }
 
+impl<Elem0: MetaType, Elem1: MetaType> MetaType for (Elem0, Elem1) {
+    type Signature = CartesianProductSetStructure<
+        Elem0::Signature,
+        Elem0::Signature,
+        Elem1::Signature,
+        Elem1::Signature,
+    >;
+
+    fn structure() -> Self::Signature {
+        CartesianProductSetStructure::new(Elem0::structure(), Elem1::structure())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::sets::SetToConstSizeFiniteSubsetByOrdSignature;
 
     #[test]
     fn test() {
@@ -215,6 +227,6 @@ mod tests {
         let set_0 = i32::structure().into_const_size_finite_subset([1, 2, 3, 4, 5]);
         let set_1 = i32::structure().into_const_size_finite_subset([6, 7, 8]);
         let set_01 = CartesianProductSetStructure::new(set_0, set_1);
-        algebraeon_structures::assert_enumerated_ord_finite_set!(set_01, 15);
+        assert_enumerated_ord_finite_set!(set_01, 15);
     }
 }
