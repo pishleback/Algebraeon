@@ -25,9 +25,8 @@ Algebraeon can also be used as a Python library, though it is not fully featured
 To factor large integers using Algebraeon
 
 ```rust
-use algebraeon::structures::Natural;
+use algebraeon::structures::*;
 use algebraeon::rings::structure::{MetaFactoringMonoid, UniqueFactorizationMonoidSignature};
-use algebraeon::structures::ToStringSignature;
 use std::str::FromStr;
 
 let n = Natural::from_str("706000565581575429997696139445280900").unwrap();
