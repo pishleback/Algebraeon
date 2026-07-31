@@ -26,9 +26,13 @@ pub trait SetSignature: Signature {
 }
 
 pub trait MetaType: Clone + Debug {
-    type Signature: SetSignature<Elem = Self>;
+    type Signature: SetSignature<Elem = Self> + 'static;
 
     fn structure() -> Self::Signature;
+}
+
+pub trait MetaTypeRef: MetaType {
+    fn structure_ref() -> &'static Self::Signature;
 }
 
 #[signature_meta_trait]

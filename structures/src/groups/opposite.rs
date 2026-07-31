@@ -134,11 +134,15 @@ pub struct OppositeGroupAction<Action: Signature, ActionB: BorrowedStructure<Act
 }
 
 impl<Action: Signature, ActionB: BorrowedStructure<Action>> OppositeGroupAction<Action, ActionB> {
-    fn new(action: ActionB) -> Self {
+    pub fn new(action: ActionB) -> Self {
         Self {
             _action: PhantomData,
             action,
         }
+    }
+
+    pub fn action(&self) -> &Action {
+        self.action.borrow()
     }
 }
 
@@ -187,11 +191,11 @@ impl<
 > RightGroupActionSignature<Set, Group> for OppositeGroupAction<Action, ActionB>
 {
     fn group(&self) -> &Group {
-        self.action.borrow().group()
+        self.action().group()
     }
 
     fn set(&self) -> &Set {
-        self.action.borrow().set()
+        self.action().set()
     }
 
     fn apply(
@@ -199,7 +203,7 @@ impl<
         g: &<Group>::Elem,
         x: &<Set as SetSignature>::Elem,
     ) -> <Set as SetSignature>::Elem {
-        self.action.borrow().apply(g, x)
+        self.action().apply(&self.group().inverse(g), x)
     }
 }
 
@@ -211,11 +215,11 @@ impl<
 > LeftGroupActionSignature<Group, Set> for OppositeGroupAction<Action, ActionB>
 {
     fn group(&self) -> &Group {
-        self.action.borrow().group()
+        self.action().group()
     }
 
     fn set(&self) -> &Set {
-        self.action.borrow().set()
+        self.action().set()
     }
 
     fn apply(
@@ -223,6 +227,6 @@ impl<
         g: &<Group>::Elem,
         x: &<Set as SetSignature>::Elem,
     ) -> <Set as SetSignature>::Elem {
-        self.action.borrow().apply(g, x)
+        self.action().apply(&self.group().inverse(g), x)
     }
 }

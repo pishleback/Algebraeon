@@ -1,7 +1,8 @@
 //! The hexacode on the standard ordered syntheme
 
 use crate::linear_codes::ordered_syntheme::{
-    OrderedSynthemePoint, OrderedSynthemePointCanonicalStructure,
+    OrderedSynthemePair, OrderedSynthemePoint, OrderedSynthemePointCanonicalStructure,
+    OrderedSynthemeSide,
 };
 use algebraeon_rings::{
     finite_fields::quaternary_field::{QuaternaryField, QuaternaryFieldCanonicalStructure},
@@ -12,17 +13,87 @@ use algebraeon_rings::{
         finitely_free_submodule::FinitelyFreeSubmoduleStructure,
         finitely_free_submodules::FinitelyFreeSubmodule,
     },
-    structure::FinitelyFreeModuleSignature,
+    structure::{FinitelyFreeModuleSignature, MetaAdditionSignature},
 };
 use algebraeon_sets::sets::Function;
 use algebraeon_structures::*;
-use std::sync::OnceLock;
+use std::{ops::Add, sync::OnceLock};
 
 type F4 = QuaternaryField;
 type F4Structure = QuaternaryFieldCanonicalStructure;
 
 pub type LabelledPoints<Elem> = Function<6, OrderedSynthemePoint, Elem>;
-pub type HexacodeVector = LabelledPoints<F4>;
+
+#[derive(Clone, PartialEq, Eq)]
+pub struct HexacodeVector(LabelledPoints<F4>);
+
+impl std::fmt::Debug for HexacodeVector {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use std::fmt::Write;
+        let mut s = String::new();
+        for (i, pair) in OrderedSynthemePair::list_all_elements_ordered()
+            .into_iter()
+            .enumerate()
+        {
+            if i != 0 {
+                write!(&mut s, " ")?;
+            }
+            for side in OrderedSynthemeSide::list_all_elements_ordered() {
+                let p = OrderedSynthemePoint { side, pair };
+                write!(&mut s, "{}", self.at(&p))?;
+            }
+        }
+        f.debug_tuple("Vector")
+            .field(&format_args!("{}", s))
+            .finish()
+    }
+}
+
+impl From<LabelledPoints<F4>> for HexacodeVector {
+    fn from(value: LabelledPoints<F4>) -> Self {
+        Self(value)
+    }
+}
+
+impl From<HexacodeVector> for LabelledPoints<F4> {
+    fn from(value: HexacodeVector) -> Self {
+        value.0
+    }
+}
+
+impl<'a> From<&'a HexacodeVector> for &'a LabelledPoints<F4> {
+    fn from(value: &'a HexacodeVector) -> Self {
+        &value.0
+    }
+}
+
+impl From<[F4; 6]> for HexacodeVector {
+    fn from(value: [F4; 6]) -> Self {
+        LabelledPoints::from(value).into()
+    }
+}
+
+impl HexacodeVector {
+    pub fn new(f: impl FnMut(OrderedSynthemePoint) -> F4) -> HexacodeVector {
+        HexacodeVector(LabelledPoints::new(f))
+    }
+
+    pub fn at(&self, point: &OrderedSynthemePoint) -> &F4 {
+        &self.0[point.element_to_enumeration().try_into().unwrap()]
+    }
+
+    pub fn at_mut(&mut self, point: &OrderedSynthemePoint) -> &mut F4 {
+        &mut self.0[point.element_to_enumeration().try_into().unwrap()]
+    }
+}
+
+impl Add<&HexacodeVector> for &HexacodeVector {
+    type Output = HexacodeVector;
+
+    fn add(self, other: &HexacodeVector) -> Self::Output {
+        LabelledPoints::<F4>::new(|p| F4::add(self.0.image(&p), other.0.image(&p))).into()
+    }
+}
 
 type AmbientSpace = ConstFinitelyFreeModuleStructure<
     6,
@@ -103,8 +174,18 @@ pub fn hexacode_subspace_structure() -> &'static FinitelyFreeSubmoduleStructure<
     &cache().subspace
 }
 
-pub fn is_hexacodeword(vector: &HexacodeVector) -> bool {
-    hexacode_subspace_structure().is_element(vector)
+pub fn all_hexacodewords() -> Vec<HexacodeVector> {
+    hexacode_subspace_structure()
+        .list_all_elements()
+        .into_iter()
+        .map(HexacodeVector::from)
+        .collect()
+}
+
+impl HexacodeVector {
+    pub fn is_hexacodeword(&self) -> bool {
+        hexacode_subspace_structure().is_element(&self.0)
+    }
 }
 
 /// Given 3 coordinates find the unique completion to a hexacodeword
@@ -127,7 +208,7 @@ pub fn complete_hexacodeword_from_3(given: LabelledPoints<Option<F4>>) -> Option
                     true
                 }
             }) {
-                return Some(codeword);
+                return Some(HexacodeVector(codeword));
             }
         }
         unreachable!()
@@ -162,7 +243,7 @@ pub fn correct_hexacodeword_from_5(given: LabelledPoints<Option<F4>>) -> Option<
                 .sum::<usize>()
                 >= 4
             {
-                return Some(codeword);
+                return Some(HexacodeVector(codeword));
             }
         }
         unreachable!()
@@ -177,13 +258,17 @@ mod tests {
 
     #[test]
     fn test_is_hexacodeword() {
-        for x in hexacode_subspace_structure().list_all_elements() {
-            assert!(is_hexacodeword(&x));
+        for x in all_hexacodewords() {
+            assert!(x.is_hexacodeword());
         }
 
         let mut c = 0;
-        for x in space_structure().list_all_elements() {
-            if is_hexacodeword(&x) {
+        for x in space_structure()
+            .list_all_elements()
+            .into_iter()
+            .map(HexacodeVector)
+        {
+            if x.is_hexacodeword() {
                 c += 1;
             }
         }

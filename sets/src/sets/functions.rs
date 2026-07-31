@@ -104,9 +104,9 @@ impl<
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
-> FunctionsStructure<Domain, DomainB, Range, RangeB>
+> FunctionsSignature<Domain, Range> for FunctionsStructure<Domain, DomainB, Range, RangeB>
 {
-    pub fn function(&self, f: impl Fn(&Domain::Elem) -> Range::Elem) -> Option<Vec<Range::Elem>> {
+    fn function(&self, f: impl Fn(&Domain::Elem) -> Range::Elem) -> Option<Vec<Range::Elem>> {
         let s = self
             .domain()
             .list_all_elements_ordered()
@@ -121,7 +121,7 @@ impl<
         Some(s)
     }
 
-    pub fn image<'a>(&self, f: &'a Vec<Range::Elem>, x: &Domain::Elem) -> &'a Range::Elem {
+    fn image<'a>(&self, f: &'a Vec<Range::Elem>, x: &Domain::Elem) -> &'a Range::Elem {
         debug_assert!(self.is_element(f));
         debug_assert!(self.domain().is_element(x));
         &f[TryInto::<usize>::try_into(self.domain().element_to_enumeration(x)).unwrap()]
@@ -360,12 +360,25 @@ impl<
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
-> FunctionsStructure<Domain, DomainB, Range, RangeB>
+> FunctionsDomainPermutationActionSignature<Domain, Range>
+    for FunctionsStructure<Domain, DomainB, Range, RangeB>
 {
-    pub fn domain_permutation_action(
-        &self,
-    ) -> impl RightGroupActionSignature<Self, FinitelySupportedPermutationsStructure<Domain, &Domain>>
-    {
+    type DomainPerms = FinitelySupportedPermutationsStructure<Domain, Domain>;
+    type DomainPermsRef<'a>
+        = FinitelySupportedPermutationsStructure<Domain, &'a Domain>
+    where
+        Self: 'a;
+
+    fn into_domain_permutation_action(
+        self,
+    ) -> impl RightGroupActionSignature<Self, Self::DomainPerms> {
+        let domain_perms = self.domain().clone().into_permutations();
+        RightPermutationActionOnFunctionsStructure::new(self, domain_perms)
+    }
+
+    fn domain_permutation_action<'a>(
+        &'a self,
+    ) -> impl RightGroupActionSignature<Self, Self::DomainPermsRef<'a>> {
         RightPermutationActionOnFunctionsStructure::new(self, self.domain().permutations())
     }
 }
@@ -482,12 +495,25 @@ impl<
     DomainB: BorrowedStructure<Domain>,
     Range: EnumeratedOrdFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
-> FunctionsStructure<Domain, DomainB, Range, RangeB>
+> FunctionsRangePermutationActionSignature<Domain, Range>
+    for FunctionsStructure<Domain, DomainB, Range, RangeB>
 {
-    pub fn range_permutation_action(
-        &self,
-    ) -> impl LeftGroupActionSignature<FinitelySupportedPermutationsStructure<Range, &Range>, Self>
-    {
+    type RangePerms = FinitelySupportedPermutationsStructure<Range, Range>;
+    type RangePermsRef<'a>
+        = FinitelySupportedPermutationsStructure<Range, &'a Range>
+    where
+        Self: 'a;
+
+    fn into_range_permutation_action(
+        self,
+    ) -> impl LeftGroupActionSignature<Self::RangePerms, Self> {
+        let range_perms = self.range().clone().into_permutations();
+        LeftPermutationActionOnFunctionsStructure::new(self, range_perms)
+    }
+
+    fn range_permutation_action<'a>(
+        &'a self,
+    ) -> impl LeftGroupActionSignature<Self::RangePermsRef<'a>, Self> {
         LeftPermutationActionOnFunctionsStructure::new(self, self.range().permutations())
     }
 }

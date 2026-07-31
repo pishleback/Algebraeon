@@ -12,11 +12,11 @@ use algebraeon_rings::{
         finitely_free_submodules::FinitelyFreeSubmodule,
     },
     num_theory::modulo::const_naive::Modulo,
-    structure::FinitelyFreeModuleSignature,
+    structure::{FinitelyFreeModuleSignature, MetaAdditionSignature},
 };
 use algebraeon_sets::sets::{Function, SetToConstSizeFunctionsToSignature};
 use algebraeon_structures::*;
-use std::sync::OnceLock;
+use std::{ops::Add, sync::OnceLock};
 
 type F3 = Modulo<3>;
 pub const ZERO: F3 = F3::new(0);
@@ -24,7 +24,79 @@ pub const PLUS: F3 = F3::new(1);
 pub const MINUS: F3 = F3::new(2);
 
 pub type LabelledPoints<Elem> = Function<4, PointedOrdered3Cycle, Elem>;
-pub type TetracodeVector = LabelledPoints<F3>;
+
+#[derive(Clone, PartialEq, Eq)]
+pub struct TetracodeVector(LabelledPoints<F3>);
+
+impl std::fmt::Debug for TetracodeVector {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let f3_fmt = |x: &F3| -> &'static str {
+            if *x == ZERO {
+                "0"
+            } else if *x == PLUS {
+                "+"
+            } else {
+                debug_assert_eq!(*x, MINUS);
+                "-"
+            }
+        };
+        f.debug_tuple("Vector")
+            .field(&format_args!(
+                "{} {}{}{}",
+                f3_fmt(self.at(&PointedOrdered3Cycle::P)),
+                f3_fmt(self.at(&PointedOrdered3Cycle::C1)),
+                f3_fmt(self.at(&PointedOrdered3Cycle::C2)),
+                f3_fmt(self.at(&PointedOrdered3Cycle::C3))
+            ))
+            .finish()
+    }
+}
+
+impl From<LabelledPoints<F3>> for TetracodeVector {
+    fn from(value: LabelledPoints<F3>) -> Self {
+        Self(value)
+    }
+}
+
+impl From<TetracodeVector> for LabelledPoints<F3> {
+    fn from(value: TetracodeVector) -> Self {
+        value.0
+    }
+}
+
+impl<'a> From<&'a TetracodeVector> for &'a LabelledPoints<F3> {
+    fn from(value: &'a TetracodeVector) -> Self {
+        &value.0
+    }
+}
+
+impl From<[F3; 4]> for TetracodeVector {
+    fn from(value: [F3; 4]) -> Self {
+        LabelledPoints::from(value).into()
+    }
+}
+
+impl TetracodeVector {
+    pub fn new(f: impl FnMut(PointedOrdered3Cycle) -> F3) -> TetracodeVector {
+        TetracodeVector(LabelledPoints::new(f))
+    }
+
+    pub fn at(&self, point: &PointedOrdered3Cycle) -> &F3 {
+        &self.0[point.element_to_enumeration().try_into().unwrap()]
+    }
+
+    pub fn at_mut(&mut self, point: &PointedOrdered3Cycle) -> &mut F3 {
+        &mut self.0[point.element_to_enumeration().try_into().unwrap()]
+    }
+}
+
+impl Add<&TetracodeVector> for &TetracodeVector {
+    type Output = TetracodeVector;
+
+    fn add(self, other: &TetracodeVector) -> Self::Output {
+        LabelledPoints::<F3>::new(|p| F3::add(self.0.image(&p), other.0.image(&p))).into()
+    }
+}
 
 type AmbientSpace = ConstFinitelyFreeModuleStructure<
     4,
@@ -95,8 +167,18 @@ pub fn tetracode_subspace_structure() -> &'static FinitelyFreeSubmoduleStructure
     &cache().subspace
 }
 
-pub fn is_tetracodeword(vector: &TetracodeVector) -> bool {
-    tetracode_subspace_structure().is_element(vector)
+pub fn all_tetracodewords() -> Vec<TetracodeVector> {
+    tetracode_subspace_structure()
+        .list_all_elements()
+        .into_iter()
+        .map(TetracodeVector::from)
+        .collect()
+}
+
+impl TetracodeVector {
+    pub fn is_tetracodeword(&self) -> bool {
+        tetracode_subspace_structure().is_element(&self.0)
+    }
 }
 
 /// Given 2 coordinates find the unique completion to a tetracodeword
@@ -119,7 +201,7 @@ pub fn complete_tetracodeword_from_2(given: LabelledPoints<Option<F3>>) -> Optio
                     true
                 }
             }) {
-                return Some(codeword);
+                return Some(TetracodeVector(codeword));
             }
         }
         unreachable!()
@@ -136,7 +218,7 @@ pub fn correct_tetracodeword_from_4(given: LabelledPoints<F3>) -> TetracodeVecto
             .sum::<usize>()
             >= 3
         {
-            return codeword;
+            return TetracodeVector(codeword);
         }
     }
     unreachable!()
@@ -148,13 +230,17 @@ mod tests {
 
     #[test]
     fn test_is_tetracodeword() {
-        for x in tetracode_subspace_structure().list_all_elements() {
-            assert!(is_tetracodeword(&x));
+        for x in all_tetracodewords() {
+            assert!(x.is_tetracodeword());
         }
 
         let mut c = 0;
-        for x in space_structure().list_all_elements() {
-            if is_tetracodeword(&x) {
+        for x in space_structure()
+            .list_all_elements()
+            .into_iter()
+            .map(TetracodeVector)
+        {
+            if x.is_tetracodeword() {
                 c += 1;
             }
         }

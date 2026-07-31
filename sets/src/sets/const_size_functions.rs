@@ -549,12 +549,25 @@ impl<
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
-> ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>
+> FunctionsDomainPermutationActionSignature<Domain, Range>
+    for ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>
 {
-    pub fn domain_permutation_action(
-        &self,
-    ) -> impl RightGroupActionSignature<Self, FinitelySupportedPermutationsStructure<Domain, &Domain>>
-    {
+    type DomainPerms = FinitelySupportedPermutationsStructure<Domain, Domain>;
+    type DomainPermsRef<'a>
+        = FinitelySupportedPermutationsStructure<Domain, &'a Domain>
+    where
+        Self: 'a;
+
+    fn into_domain_permutation_action(
+        self,
+    ) -> impl RightGroupActionSignature<Self, Self::DomainPerms> {
+        let domain_perms = self.domain().clone().into_permutations();
+        RightPermutationActionOnConstSizeFunctionsStructure::new(self, domain_perms)
+    }
+
+    fn domain_permutation_action<'a>(
+        &'a self,
+    ) -> impl RightGroupActionSignature<Self, Self::DomainPermsRef<'a>> {
         RightPermutationActionOnConstSizeFunctionsStructure::new(self, self.domain().permutations())
     }
 }
@@ -684,12 +697,25 @@ impl<
     DomainB: BorrowedStructure<Domain>,
     Range: EnumeratedOrdFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
-> ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>
+> FunctionsRangePermutationActionSignature<Domain, Range>
+    for ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>
 {
-    pub fn range_permutation_action(
-        &self,
-    ) -> impl LeftGroupActionSignature<FinitelySupportedPermutationsStructure<Range, &Range>, Self>
-    {
+    type RangePerms = FinitelySupportedPermutationsStructure<Range, Range>;
+    type RangePermsRef<'a>
+        = FinitelySupportedPermutationsStructure<Range, &'a Range>
+    where
+        Self: 'a;
+
+    fn into_range_permutation_action(
+        self,
+    ) -> impl LeftGroupActionSignature<Self::RangePerms, Self> {
+        let range_perms = self.range().clone().into_permutations();
+        LeftPermutationActionOnConstSizeFunctionsStructure::new(self, range_perms)
+    }
+
+    fn range_permutation_action<'a>(
+        &'a self,
+    ) -> impl LeftGroupActionSignature<Self::RangePermsRef<'a>, Self> {
         LeftPermutationActionOnConstSizeFunctionsStructure::new(self, self.range().permutations())
     }
 }

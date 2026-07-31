@@ -310,7 +310,7 @@ impl<'f, FS: FieldSignature> DotProduct<&Vector<'f, FS>> for &Vector<'f, FS> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use algebraeon_structures::Rational;
+    use algebraeon_structures::{MetaTypeRef, Rational};
 
     #[test]
     fn vector_from_mat() {

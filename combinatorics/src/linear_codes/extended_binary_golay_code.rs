@@ -31,17 +31,40 @@ type F4 = QuaternaryField;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Finite, CanonicalStructure)]
 #[canonical_structure(eq, partial_ord, ord, finite, ord_finite)]
-pub struct MogPoint {
+pub struct Point {
     row: F4,
     col: OrderedSynthemePoint,
 }
 
-impl ConstSizeFiniteSetSignature<24> for MogPointCanonicalStructure {}
+impl ConstSizeFiniteSetSignature<24> for PointCanonicalStructure {}
 
-pub type LabelledPoints<Elem> = Function<24, MogPoint, Elem>;
+pub type LabelledPoints<Elem> = Function<24, Point, Elem>;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct Vector(LabelledPoints<F2>);
+
+impl std::fmt::Debug for Vector {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use std::fmt::Write;
+        let mut s = String::new();
+        for (i, row) in F4::list_all_elements_ordered().into_iter().enumerate() {
+            if i != 0 {
+                write!(&mut s, " ")?;
+            }
+            for col in OrderedSynthemePoint::list_all_elements_ordered() {
+                let p = Point { row, col };
+                if self.at(&p).is_zero() {
+                    write!(&mut s, "0")?;
+                } else {
+                    write!(&mut s, "1")?;
+                }
+            }
+        }
+        f.debug_tuple("Vector")
+            .field(&format_args!("{}", s))
+            .finish()
+    }
+}
 
 impl From<LabelledPoints<F2>> for Vector {
     fn from(value: LabelledPoints<F2>) -> Self {
@@ -55,9 +78,29 @@ impl From<Vector> for LabelledPoints<F2> {
     }
 }
 
+impl<'a> From<&'a Vector> for &'a LabelledPoints<F2> {
+    fn from(value: &'a Vector) -> Self {
+        &value.0
+    }
+}
+
 impl From<[F2; 24]> for Vector {
     fn from(value: [F2; 24]) -> Self {
         LabelledPoints::from(value).into()
+    }
+}
+
+impl Vector {
+    pub fn new(f: impl FnMut(Point) -> F2) -> Vector {
+        Vector(LabelledPoints::new(f))
+    }
+
+    pub fn at(&self, point: &Point) -> &F2 {
+        &self.0[point.element_to_enumeration().try_into().unwrap()]
+    }
+
+    pub fn at_mut(&mut self, point: &Point) -> &mut F2 {
+        &mut self.0[point.element_to_enumeration().try_into().unwrap()]
     }
 }
 
@@ -97,17 +140,56 @@ impl BitOr<&Vector> for &Vector {
     }
 }
 
+impl Vector {
+    pub fn is_codeword(&self) -> bool {
+        extended_binary_golay_code_subspace_structure().is_element(self.into())
+    }
+
+    pub fn weight(&self) -> usize {
+        self.0.iter().map(|x| if *x == ZERO { 0 } else { 1 }).sum()
+    }
+
+    pub fn is_octad(&self) -> bool {
+        self.is_codeword() && self.weight() == 8
+    }
+
+    pub fn is_foursome(&self) -> bool {
+        self.weight() == 4
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OrderedSextet(LabelledPoints<OrderedSynthemePoint>);
+
+impl From<LabelledPoints<OrderedSynthemePoint>> for OrderedSextet {
+    fn from(value: LabelledPoints<OrderedSynthemePoint>) -> Self {
+        Self(value)
+    }
+}
+
+impl From<OrderedSextet> for LabelledPoints<OrderedSynthemePoint> {
+    fn from(value: OrderedSextet) -> Self {
+        value.0
+    }
+}
+
+impl<'a> From<&'a OrderedSextet> for &'a LabelledPoints<OrderedSynthemePoint> {
+    fn from(value: &'a OrderedSextet) -> Self {
+        &value.0
+    }
+}
+
 type AmbientSpace = ConstFinitelyFreeModuleStructure<
     24,
-    MogPointCanonicalStructure,
-    MogPointCanonicalStructure,
+    PointCanonicalStructure,
+    PointCanonicalStructure,
     F2Structure,
     F2Structure,
 >;
 
 struct ExtendedBinaryGolayCodeCache {
     subspace: FinitelyFreeSubmoduleStructure<
-        MogPointCanonicalStructure,
+        PointCanonicalStructure,
         F2Structure,
         AmbientSpace,
         AmbientSpace,
@@ -118,7 +200,7 @@ static EXTENDED_BINARY_GOLAY_CODE_CACHE: OnceLock<ExtendedBinaryGolayCodeCache> 
 
 fn cache() -> &'static ExtendedBinaryGolayCodeCache {
     EXTENDED_BINARY_GOLAY_CODE_CACHE.get_or_init(|| {
-        let points = MogPoint::structure();
+        let points = Point::structure();
         let space = F2::structure().into_free_module(points);
         const Z: F2 = ZERO;
         const O: F2 = ONE;
@@ -205,7 +287,7 @@ pub fn extended_binary_golay_code_subspace() -> &'static FinitelyFreeSubmodule<F
 
 /// The 12 dimensional vector subspace structure given by the extended binary Golay code
 pub fn extended_binary_golay_code_subspace_structure() -> &'static FinitelyFreeSubmoduleStructure<
-    MogPointCanonicalStructure,
+    PointCanonicalStructure,
     F2Structure,
     AmbientSpace,
     AmbientSpace,
@@ -213,20 +295,18 @@ pub fn extended_binary_golay_code_subspace_structure() -> &'static FinitelyFreeS
     &cache().subspace
 }
 
-pub fn is_codeword(vector: &LabelledPoints<F2>) -> bool {
-    extended_binary_golay_code_subspace_structure().is_element(vector)
-}
-
-pub fn weight(vector: &LabelledPoints<F2>) -> usize {
-    vector.iter().map(|x| if *x == ZERO { 0 } else { 1 }).sum()
-}
-
-pub fn is_octad(vector: &LabelledPoints<F2>) -> bool {
-    is_codeword(vector) && weight(vector) == 8
+pub fn all_codewords() -> Vec<Vector> {
+    extended_binary_golay_code_subspace_structure()
+        .list_all_elements()
+        .into_iter()
+        .map(Vector::from)
+        .collect()
 }
 
 #[cfg(test)]
 mod tests {
+    use algebraeon_sets::sets::FiniteSetToFinitelySupportedPermutationsStructure;
+
     use super::*;
 
     #[test]
@@ -236,9 +316,9 @@ mod tests {
         let mut wt12 = 0;
         let mut wt16 = 0;
         let mut wt24 = 0;
-        for x in extended_binary_golay_code_subspace_structure().list_all_elements() {
-            assert_eq!(is_octad(&x), weight(&x) == 8);
-            match weight(&x) {
+        for x in all_codewords() {
+            assert_eq!(x.is_octad(), x.weight() == 8);
+            match x.weight() {
                 0 => {
                     wt0 += 1;
                 }
@@ -267,7 +347,7 @@ mod tests {
     }
 
     #[test]
-    fn test() {
+    fn vector_ops() {
         const Z: F2 = ZERO;
         const O: F2 = ONE;
 
@@ -303,6 +383,53 @@ mod tests {
                 O, O, O, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z,
             ]
             .into()
+        );
+    }
+
+    #[test]
+    fn domain_permutation_action() {
+        const Z: F2 = ZERO;
+        const O: F2 = ONE;
+
+        let a = LabelledPoints::<F2>::from([
+            O, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z,
+        ]);
+
+        let b = LabelledPoints::<F2>::from([
+            Z, O, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z,
+        ]);
+
+        let c = LabelledPoints::<F2>::from([
+            Z, Z, O, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z,
+        ]);
+
+        let cycle012 = Point::structure()
+            .into_permutations()
+            .new_cycle(vec![
+                Point::structure()
+                    .enumeration_to_element(&Natural::from(0u32))
+                    .unwrap(),
+                Point::structure()
+                    .enumeration_to_element(&Natural::from(1u32))
+                    .unwrap(),
+                Point::structure()
+                    .enumeration_to_element(&Natural::from(2u32))
+                    .unwrap(),
+            ])
+            .unwrap();
+
+        // The right action given by precomposition with domain elements moves labels according to the inverse permutation
+        assert_eq!(
+            LabelledPoints::<F2>::into_domain_permutation_action().apply(&cycle012, &a),
+            c
+        );
+
+        // The left action given by precomposition of the inverse with domain elements moves labels according to the permutation
+        assert_eq!(
+            LabelledPoints::<F2>::into_domain_permutation_action()
+                .into_opposite()
+                .apply(&cycle012, &a),
+            b
         );
     }
 }

@@ -316,7 +316,7 @@ where
 mod tests {
     use super::*;
     use crate::ambient_space::AffineSpace;
-    use algebraeon_structures::Rational;
+    use algebraeon_structures::{MetaTypeRef, Rational};
 
     #[test]
     fn something_and_null() {
