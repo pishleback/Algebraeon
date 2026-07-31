@@ -9,6 +9,7 @@ use crate::{
         SemiModuleSignature, TryNegateSignature, ZeroSignature,
     },
 };
+use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 use algebraeon_structures::*;
 use itertools::Itertools;
 
@@ -43,7 +44,7 @@ impl<ANF: AlgebraicNumberFieldSignature> SetSignature for QuaternionOrderZBasis<
     fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
         let algebra = &self.algebra;
         let submodules = Rational::structure()
-            .into_free_module(self.basis.len())
+            .into_free_module(EnumeratedFiniteSetStructure::new(self.basis.len()))
             .into_submodules();
 
         let basis_vecs: Vec<Vec<Rational>> = self

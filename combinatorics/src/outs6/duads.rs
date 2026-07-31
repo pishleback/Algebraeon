@@ -1,8 +1,7 @@
 use algebraeon_macros::signature_meta_trait;
 use algebraeon_sets::sets::{
-    FiniteSetToFinitelySupportedPermutationsStructure, FiniteSubsetByOrd,
-    FinitelySupportedPermutation, SetToFiniteSubsetsByOrdSignature,
-    SetToFixedSizeFiniteSubsetsByOrdSignature,
+    FiniteSetToFinitelySupportedPermutationsStructure, FinitelySupportedPermutation,
+    SetToFiniteSubsetsByOrdSignature, SetToFixedSizeFiniteSubsetsByOrdSignature,
 };
 use algebraeon_structures::*;
 use std::{cmp::Ordering, marker::PhantomData};
@@ -16,7 +15,7 @@ pub struct Duad<Point> {
 
 impl<Point: MetaType> MetaType for Duad<Point>
 where
-    Point::Signature: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Point::Signature: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
 {
     type Signature = DuadsStructure<Point::Signature, Point::Signature>;
 
@@ -26,10 +25,10 @@ where
     }
 }
 
-impl<Set: EnumeratedOrdFiniteSetSignature> TryFrom<FiniteSubsetByOrd<Set>> for Duad<Set::Elem> {
+impl<Elem> TryFrom<FiniteSubsetByOrd<Elem>> for Duad<Elem> {
     type Error = &'static str;
 
-    fn try_from(subset: FiniteSubsetByOrd<Set>) -> Result<Self, Self::Error> {
+    fn try_from(subset: FiniteSubsetByOrd<Elem>) -> Result<Self, Self::Error> {
         let mut elems = subset.elems.into_iter();
         // the elems of subset should be ordered and distinct already
         let duad = Self {
@@ -45,16 +44,16 @@ impl<Set: EnumeratedOrdFiniteSetSignature> TryFrom<FiniteSubsetByOrd<Set>> for D
     }
 }
 
-impl<Set: EnumeratedOrdFiniteSetSignature> From<Duad<Set::Elem>> for FiniteSubsetByOrd<Set> {
-    fn from(duad: Duad<Set::Elem>) -> Self {
+impl<Elem: Clone> From<Duad<Elem>> for FiniteSubsetByOrd<Elem> {
+    fn from(duad: Duad<Elem>) -> Self {
         FiniteSubsetByOrd {
             elems: duad.points.to_vec(),
         }
     }
 }
 
-impl<Set: EnumeratedOrdFiniteSetSignature> From<&Duad<Set::Elem>> for FiniteSubsetByOrd<Set> {
-    fn from(duad: &Duad<Set::Elem>) -> Self {
+impl<Elem: Clone> From<&Duad<Elem>> for FiniteSubsetByOrd<Elem> {
+    fn from(duad: &Duad<Elem>) -> Self {
         FiniteSubsetByOrd {
             elems: duad.points.to_vec(),
         }
@@ -64,7 +63,7 @@ impl<Set: EnumeratedOrdFiniteSetSignature> From<&Duad<Set::Elem>> for FiniteSubs
 /// The 15-element set of duads on a 6-element set
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DuadsStructure<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > {
     _set: PhantomData<Set>,
@@ -72,7 +71,7 @@ pub struct DuadsStructure<
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > DuadsStructure<Set, SetB>
 {
@@ -90,7 +89,7 @@ impl<
 }
 
 pub trait SetToDuadsSignature:
-    FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature
+    ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature
 {
     fn duads(&self) -> DuadsStructure<Self, &Self> {
         DuadsStructure::new(self)
@@ -100,20 +99,20 @@ pub trait SetToDuadsSignature:
         DuadsStructure::new(self)
     }
 }
-impl<Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature> SetToDuadsSignature
+impl<Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature> SetToDuadsSignature
     for Set
 {
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > Signature for DuadsStructure<Set, SetB>
 {
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > SetSignature for DuadsStructure<Set, SetB>
 {
@@ -128,7 +127,7 @@ impl<
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > EqSignature for DuadsStructure<Set, SetB>
 {
@@ -138,7 +137,7 @@ impl<
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > PartialOrdSignature for DuadsStructure<Set, SetB>
 {
@@ -150,7 +149,7 @@ impl<
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > OrdSignature for DuadsStructure<Set, SetB>
 {
@@ -160,7 +159,7 @@ impl<
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > CountableSetSignature for DuadsStructure<Set, SetB>
 {
@@ -178,7 +177,7 @@ impl<
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > FiniteSetSignature for DuadsStructure<Set, SetB>
 {
@@ -192,14 +191,14 @@ impl<
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
-> FiniteSetSizedSignature<15> for DuadsStructure<Set, SetB>
+> ConstSizeFiniteSetSignature<15> for DuadsStructure<Set, SetB>
 {
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > EnumeratedOrdFiniteSetSignature for DuadsStructure<Set, SetB>
 {
@@ -258,7 +257,7 @@ impl<Set: EnumeratedOrdFiniteSetSignature> DuadOverlapResult<Set> {
 }
 
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
 > DuadsStructure<Set, SetB>
 {
@@ -344,7 +343,7 @@ impl<
 
 #[signature_meta_trait]
 pub trait SetPermutationAsDuadPermutation<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
 >: PermutationsSignature<Set>
 {
     fn duad_image(&self, set_perm: &Self::Elem, duad: &Duad<Set::Elem>) -> Duad<Set::Elem> {
@@ -379,7 +378,7 @@ pub trait SetPermutationAsDuadPermutation<
     }
 }
 impl<
-    Set: FiniteSetSizedSignature<6> + EnumeratedOrdFiniteSetSignature,
+    Set: ConstSizeFiniteSetSignature<6> + EnumeratedOrdFiniteSetSignature,
     SetPerms: PermutationsSignature<Set>,
 > SetPermutationAsDuadPermutation<Set> for SetPerms
 {
@@ -387,30 +386,24 @@ impl<
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-
     use super::*;
-    use algebraeon_sets::sets::{
-        FiniteSetToFinitelySupportedPermutationsStructure, SetToFiniteSubsetByOrdSizedSignature,
-    };
+    use algebraeon_sets::sets::FiniteSetToFinitelySupportedPermutationsStructure;
     use algebraeon_structures::MetaType;
+    use std::collections::HashMap;
 
     #[test]
     fn test_enumeration() {
-        let set = i32::structure().into_finite_subset_sized([1, 2, 3, 4, 5, 6]);
-        for p in set.generate_all_elements() {
-            println!("{:?}", p);
-        }
-
-        let duads = set.duads();
-        for d in duads.generate_all_elements() {
-            println!("{:?}", d);
-        }
+        algebraeon_structures::assert_enumerated_ord_finite_set!(
+            i32::structure()
+                .into_const_size_finite_subset([1, 2, 3, 4, 5, 6])
+                .into_duads(),
+            15
+        );
     }
 
     #[test]
     fn test_permutation() {
-        let set = i32::structure().into_finite_subset_sized([1, 2, 3, 4, 5, 6]);
+        let set = i32::structure().into_const_size_finite_subset([1, 2, 3, 4, 5, 6]);
         let set_perms = set.permutations();
         let duads = set.duads();
         let duad_perms = duads.permutations();

@@ -1,6 +1,7 @@
 use crate::*;
 
 use algebraeon_macros::{signature_meta_trait, skip_meta};
+use ambassador::delegatable_trait;
 use paste::paste;
 use rand::{Rng, RngExt, SeedableRng, rngs::StdRng};
 use std::fmt::Debug;
@@ -9,6 +10,7 @@ use std::fmt::Debug;
 /// a set of elements of type `Self::Elem` with some
 /// structure, for example, the structure of a ring.
 #[signature_meta_trait]
+#[delegatable_trait]
 pub trait SetSignature: Signature {
     type Elem: Clone + Debug + Send + Sync;
 
@@ -24,20 +26,28 @@ pub trait SetSignature: Signature {
 }
 
 pub trait MetaType: Clone + Debug {
-    type Signature: SetSignature<Elem = Self>;
+    type Signature: SetSignature<Elem = Self> + 'static;
+
     fn structure() -> Self::Signature;
 }
 
+pub trait MetaTypeRef: MetaType {
+    fn structure_ref() -> &'static Self::Signature;
+}
+
 #[signature_meta_trait]
+#[delegatable_trait]
 pub trait ToStringSignature: SetSignature {
     fn to_string(&self, elem: &Self::Elem) -> String;
 }
 
 #[signature_meta_trait]
+#[delegatable_trait]
 pub trait EqSignature: SetSignature {
     fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool;
 }
 
+#[delegatable_trait]
 pub trait CountableSetSignature: SetSignature {
     /// Yield distinct elements of the set such that every element eventually appears.
     /// Always yields elements in the same order.
@@ -47,6 +57,7 @@ pub trait CountableSetSignature: SetSignature {
 
 /// A set with finitely many elements
 #[signature_meta_trait]
+#[delegatable_trait]
 pub trait FiniteSetSignature: CountableSetSignature {
     /// A list of all elements in the set.
     /// Must always return elements in the same order.
@@ -71,7 +82,7 @@ make_maybe_trait!(FiniteSet);
 
 /// A set with N elements
 #[signature_meta_trait]
-pub trait FiniteSetSizedSignature<const N: usize>: FiniteSetSignature {
+pub trait ConstSizeFiniteSetSignature<const N: usize>: FiniteSetSignature {
     fn list_all_elements_sized(&self) -> [Self::Elem; N] {
         self.list_all_elements().try_into().unwrap()
     }
@@ -81,6 +92,7 @@ pub trait FiniteSetSizedSignature<const N: usize>: FiniteSetSignature {
 /// self.list_all_elements is required to return elements in the correct order
 /// The ordering on the set must also agree with the ordering given by the enumeration
 #[signature_meta_trait]
+#[delegatable_trait]
 pub trait EnumeratedOrdFiniteSetSignature: FiniteSetSignature + OrdSignature {
     /// List all elements in the order in which they are numbered
     fn list_all_elements_ordered(&self) -> Vec<Self::Elem>;
@@ -91,6 +103,46 @@ pub trait EnumeratedOrdFiniteSetSignature: FiniteSetSignature + OrdSignature {
     /// Return the numbering of an element
     /// None iff number is too large
     fn enumeration_to_element(&self, num: &Natural) -> Option<Self::Elem>;
+}
+
+// for testing the invariants of EnumeratedOrdFiniteSetSignature
+#[macro_export]
+macro_rules! assert_enumerated_ord_finite_set {
+    (
+        $set:expr,
+        $size:expr
+    ) => {{
+        let size = $size as usize;
+        let set = $set;
+        let elements = set.list_all_elements_ordered();
+
+        assert_eq!(elements.len(), size);
+        assert_eq!(set.size(), Natural::from(size));
+
+        // all elements are valid
+        for elem in &elements {
+            println!("{:?}", elem);
+            assert!(set.validate_element(elem).is_ok());
+        }
+
+        // all elements are distinct and ordered
+        for i in 0..size {
+            for j in (i + 1)..size {
+                let si = &elements[i];
+                let sj = &elements[j];
+                assert!(set.cmp(si, sj).is_lt());
+            }
+        }
+
+        // enumeration is correct
+        for (i, s) in elements.iter().enumerate() {
+            assert_eq!(Natural::from(i), set.element_to_enumeration(s));
+            assert!(set.equal(&set.enumeration_to_element(&Natural::from(i)).unwrap(), s));
+        }
+
+        // enumeration past the end is invalid
+        assert!(set.enumeration_to_element(&Natural::from(size)).is_none());
+    }};
 }
 
 #[derive(Debug, Clone)]

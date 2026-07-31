@@ -2,11 +2,12 @@ use crate::{ambient_space::common_space, simplex::Simplex, vector::DotProduct};
 use algebraeon_rings::{
     linear::{
         finitely_free_module::FinitelyFreeModuleStructure,
-        finitely_free_submodule::FinitelyFreeSubmoduleStructure,
+        finitely_free_submodules::FinitelyFreeSubmodulesStructure,
     },
     matrix::{Matrix, MatrixStructure},
     structure::{FieldSignature, OrderedRingSignature, ZeroEqSignature},
 };
+use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 use itertools::Itertools;
 use std::collections::HashSet;
 use std::hash::Hash;
@@ -116,8 +117,11 @@ where
             // Add the normal to the sum of A and B for the degenerate case
 
             let normal_space =
-                FinitelyFreeSubmoduleStructure::new(
-                    FinitelyFreeModuleStructure::<FS, &'f FS>::new(field, space_dim),
+                FinitelyFreeSubmodulesStructure::new(
+                    FinitelyFreeModuleStructure::<_, _, FS, &'f FS>::new(
+                        EnumeratedFiniteSetStructure::new(space_dim),
+                        field,
+                    ),
                 )
                 .intersect(
                     MatrixStructure::new(space.field().clone()).col_kernel(Matrix::construct(
@@ -169,23 +173,30 @@ where
                     .map(|k| b_sub.point(k + 1) - b_sub_root)
                     .collect::<Vec<_>>();
 
-                let normal_space = FinitelyFreeSubmoduleStructure::new(
-                    FinitelyFreeModuleStructure::<FS, &'f FS>::new(field, space_dim),
-                )
-                .intersect(
-                    MatrixStructure::new(space.field().clone()).col_kernel(Matrix::construct(
-                        i + j,
-                        space_dim,
-                        |r, c| {
-                            if r < i {
-                                a_sub_vecs[r].coordinate(c).clone()
-                            } else {
-                                b_sub_vecs[r - i].coordinate(c).clone()
-                            }
-                        },
-                    )),
-                    linear_span_foo_submodule.clone(),
-                );
+                let normal_space =
+                    FinitelyFreeSubmodulesStructure::new(FinitelyFreeModuleStructure::<
+                        _,
+                        _,
+                        FS,
+                        &'f FS,
+                    >::new(
+                        EnumeratedFiniteSetStructure::new(space_dim),
+                        field,
+                    ))
+                    .intersect(
+                        MatrixStructure::new(space.field().clone()).col_kernel(Matrix::construct(
+                            i + j,
+                            space_dim,
+                            |r, c| {
+                                if r < i {
+                                    a_sub_vecs[r].coordinate(c).clone()
+                                } else {
+                                    b_sub_vecs[r - i].coordinate(c).clone()
+                                }
+                            },
+                        )),
+                        linear_span_foo_submodule.clone(),
+                    );
 
                 debug_assert!(normal_space.rank() >= 1);
 
@@ -305,7 +316,7 @@ where
 mod tests {
     use super::*;
     use crate::ambient_space::AffineSpace;
-    use algebraeon_structures::Rational;
+    use algebraeon_structures::{MetaTypeRef, Rational};
 
     #[test]
     fn something_and_null() {

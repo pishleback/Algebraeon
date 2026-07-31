@@ -5,10 +5,11 @@ use proc_macro2::Span;
 use quote::quote;
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
+use syn::token::Comma;
 use syn::visit_mut::VisitMut;
 use syn::{
     Attribute, DeriveInput, Error, FnArg, GenericArgument, GenericParam, Ident, ItemTrait, LitInt,
-    PatIdent, Receiver, Token, TraitItem, TraitItemFn, parse_macro_input,
+    PatIdent, Receiver, Token, TraitItem, TraitItemFn, parse_macro_input, parse_quote,
 };
 
 fn has_option(attrs: &[Attribute], option_name: &str) -> bool {
@@ -133,6 +134,8 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
     let has_eq = has_option(&input.attrs, "eq");
     let has_partial_ord = has_option(&input.attrs, "partial_ord");
     let has_ord = has_option(&input.attrs, "ord");
+    let has_finite = has_option(&input.attrs, "finite");
+    let has_ord_finite = has_option(&input.attrs, "ord_finite");
 
     let impl_eq_signature = if has_eq {
         quote! {
@@ -181,6 +184,67 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
         quote! {}
     };
 
+    let impl_finite_signature = if has_finite {
+        quote! {
+            impl CountableSetSignature for #newtype_name {
+                fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
+                    <#name as cantor::Finite>::iter()
+                }
+
+                fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
+                    <#name as cantor::Finite>::iter()
+                }
+            }
+
+            impl FiniteSetSignature for #newtype_name {
+                fn list_all_elements(&self) -> Vec<Self::Elem> {
+                    self.list_all_elements_ordered()
+                }
+
+                fn size(&self) -> Natural {
+                    Natural::from(<#name as cantor::Finite>::COUNT)
+                }
+            }
+        }
+    } else {
+        quote! {}
+    };
+
+    let impl_ord_finite_signature = if has_ord_finite {
+        let test_enumeration_name = Ident::new(
+            &format!("test_{name}CanonicalStructure_enumeration"),
+            name.span(),
+        );
+
+        quote! {
+            impl EnumeratedOrdFiniteSetSignature for #newtype_name {
+                fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
+                    <#name as cantor::Finite>::iter().collect()
+                }
+
+                fn element_to_enumeration(&self, elem: &Self::Elem) -> Natural {
+                    Natural::from(<#name as cantor::Finite>::index_of(elem.clone()))
+                }
+
+                fn enumeration_to_element(&self, num: &Natural) -> Option<Self::Elem> {
+                    if let Ok(num) = TryInto::<usize>::try_into(num) {
+                        <#name as cantor::Finite>::nth(num)
+                    } else {
+                        None
+                    }
+                }
+            }
+
+            #[test]
+            #[allow(non_snake_case)]
+            fn #test_enumeration_name() {
+                algebraeon_structures::assert_enumerated_ord_finite_set!(#name::structure(), <#name as cantor::Finite>::COUNT);
+            }
+        }
+    } else {
+        quote! {}
+    };
+
     let expanded = quote! {
         #[derive(Debug, Clone, PartialEq, Eq)]
         #vis struct #newtype_name {}
@@ -204,6 +268,8 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
         #impl_eq_signature
         #impl_partial_ord_signature
         #impl_ord_signature
+        #impl_finite_signature
+        #impl_ord_finite_signature
 
         impl MetaType for #name {
             type Signature = #newtype_name;
@@ -213,8 +279,8 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
             }
         }
 
-        impl #name {
-            pub fn structure_ref() -> &'static #newtype_name{
+        impl MetaTypeRef for #name {
+            fn structure_ref() -> &'static Self::Signature {
                 static CELL: std::sync::OnceLock<#newtype_name> = std::sync::OnceLock::new();
                 CELL.get_or_init(|| #newtype_name::new())
             }
@@ -243,12 +309,42 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
 ///     Self::Signature: MySignature,
 /// {
 ///     fn special_element() -> Self {
-///         Self::structure().special_element()
+///         MySignature::special_element(Self::structure())
 ///     }
 /// }
 /// ```
 #[proc_macro_attribute]
 pub fn skip_meta(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
+
+/// In a structure trait decorated with `#[proc_macro_attribute]`, decorate a method with `#[ref_meta]` when
+///  - It takes &self
+///  - You want this to get forwarded as `structure_ref()` rather than `&structure()`
+///    
+/// Requires the `MetaType` to be `MetaTypeRef`
+///
+/// # Example
+/// The decorated structure trait
+/// ```rust,ignore
+/// #[signature_meta_trait]
+/// pub trait MySignature: SetSignature {
+///     fn special_element(&self) -> Self::Elem;
+/// }
+/// ```
+/// produces the following meta structure trait.
+/// ```rust,ignore
+/// pub trait MetaMySignature: MetaType
+/// where
+///     Self::Signature: MySignature,
+/// {
+///     fn special_element() -> Self {
+///         MySignature::special_element(Self::ref_structure())
+///     }
+/// }
+/// ```
+#[proc_macro_attribute]
+pub fn ref_meta(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
 
@@ -357,6 +453,9 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
                 continue;
             }
 
+            let has_ref_meta_attr = attrs.iter().any(|attr| attr.path().is_ident("ref_meta"));
+            let mut used_ref_meta_attr = false;
+
             let mut meta_sig = sig.clone();
             // Check if the first argument is self, &self, or &mut self as only these can be forwarded to the meta type
             if let Some(first_arg) = meta_sig.inputs.first() {
@@ -374,18 +473,23 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
                             .to_compile_error(),
                         );
                     }
-                    FnArg::Receiver(_) => {
-                        meta_sig.inputs = meta_sig.inputs.into_iter().skip(1).collect();
+                    FnArg::Receiver(receiver) => {
+                        let is_ref = receiver.reference.is_some();
+
+                        let mut meta_sig_without_self = meta_sig.clone();
+                        meta_sig_without_self.inputs =
+                            meta_sig_without_self.inputs.into_iter().skip(1).collect();
                         ReplaceSelfSetSignature {
                             sig_trait_ident: sig_trait_ident.clone(),
+                            generic_arguments: generic_arguments.clone(),
                         }
-                        .visit_signature_mut(&mut meta_sig);
+                        .visit_signature_mut(&mut meta_sig_without_self);
 
-                        let ident = meta_sig.ident.clone();
+                        let ident = meta_sig_without_self.ident.clone();
 
                         let mut meta_args = Vec::new();
                         #[allow(clippy::never_loop)]
-                        for arg in &mut meta_sig.inputs {
+                        for arg in &mut meta_sig_without_self.inputs {
                             match arg {
                                 FnArg::Typed(pat_type) => match pat_type.pat.as_mut() {
                                     syn::Pat::Ident(pat_ident) => {
@@ -426,7 +530,7 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
                                                 ident: Ident::new("self", Span::call_site()),
                                                 subpat: None,
                                             };
-                                            meta_sig.inputs[0] = FnArg::Receiver(Receiver {
+                                            meta_sig_without_self.inputs[0] = FnArg::Receiver(Receiver {
                                                 attrs: vec![],
                                                 reference: Some((
                                                     syn::token::And {
@@ -470,7 +574,7 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
                                                 ident: Ident::new("self", Span::call_site()),
                                                 subpat: None,
                                             };
-                                            meta_sig.inputs[0] = FnArg::Receiver(Receiver {
+                                            meta_sig_without_self.inputs[0] = FnArg::Receiver(Receiver {
                                                 attrs: vec![],
                                                 reference: None,
                                                 mutability: None,
@@ -492,18 +596,44 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
                             }
                         }
 
-                        meta_methods.push(quote! {
-                            #(#attrs)*
-                            #meta_sig {
-                                Self::structure().#ident(#(#meta_args),*)
-                            }
-                        });
+                        let trait_ident = trait_item.ident.clone();
+
+                        if is_ref && has_ref_meta_attr {
+                            // Use structure_ref when
+                            let where_meta_type_ref =
+                                meta_sig_without_self.generics.make_where_clause();
+                            where_meta_type_ref
+                                .predicates
+                                .push(parse_quote!(Self: MetaTypeRef));
+                            meta_methods.push(quote! {
+                                #(#attrs)*
+                                #meta_sig_without_self {
+                                    #trait_ident::#ident(Self::structure_ref(), #(#meta_args),*)
+                                }
+                            });
+                            used_ref_meta_attr = true;
+                        } else if is_ref {
+                            meta_methods.push(quote! {
+                                #(#attrs)*
+                                #meta_sig_without_self {
+                                    #trait_ident::#ident(&Self::structure(), #(#meta_args),*)
+                                }
+                            });
+                        } else {
+                            meta_methods.push(quote! {
+                                #(#attrs)*
+                                #meta_sig_without_self {
+                                    #trait_ident::#ident(Self::structure(), #(#meta_args),*)
+                                }
+                            });
+                        }
                     }
                     FnArg::Typed(_) => {
                         // No self receiver: forward to the structure as an associated
                         // function with no special treatment of a receiver.
                         ReplaceSelfSetSignature {
                             sig_trait_ident: sig_trait_ident.clone(),
+                            generic_arguments: generic_arguments.clone(),
                         }
                         .visit_signature_mut(&mut meta_sig);
 
@@ -537,6 +667,14 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
                         });
                     }
                 }
+                if has_ref_meta_attr && !used_ref_meta_attr {
+                    errors.push(
+                            Error::new_spanned(
+                                meta_sig,
+                                "signature_meta_trait cannot apply #[ref_meta] to a method not taking `&self`"
+                            )
+                            .to_compile_error());
+                }
             }
         }
     }
@@ -546,6 +684,7 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
         for predicate in &mut predicates {
             ReplaceSelfSetSignature {
                 sig_trait_ident: sig_trait_ident.clone(),
+                generic_arguments: generic_arguments.clone(),
             }
             .visit_where_predicate_mut(predicate);
         }
@@ -554,7 +693,7 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
         quote!()
     };
 
-    quote! {
+    let q = quote! {
         pub trait #meta_trait_ident<#generic_params>: MetaType
         where
             Self::Signature: #sig_trait_ident<#generic_arguments>,
@@ -563,20 +702,27 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
             #(#meta_methods)*
         }
 
-        impl<T, #generic_params> #meta_trait_ident<#generic_arguments> for T
+        impl<T : MetaType, #generic_params> #meta_trait_ident<#generic_arguments> for T
         where
-            T: MetaType,
             T::Signature: #sig_trait_ident<#generic_arguments>,
-             #where_clauses
+            #where_clauses
         {
         }
 
         #(#errors)*
-    }
+    };
+
+    // if trait_item.ident == "FunctionsDomainPermutationActionSignature" {
+    //     eprintln!("{}", q);
+    //     loop {}
+    // }
+
+    q
 }
 
 struct ReplaceSelfSetSignature {
     sig_trait_ident: Ident,
+    generic_arguments: Punctuated<GenericArgument, Comma>,
 }
 impl VisitMut for ReplaceSelfSetSignature {
     fn visit_type_path_mut(&mut self, ty: &mut syn::TypePath) {
@@ -596,9 +742,10 @@ impl VisitMut for ReplaceSelfSetSignature {
             && ty.path.segments[0].ident == "Self"
             && ty.path.segments[0].arguments.is_empty()
         {
-            // Replace `Self::Foo::Bar` with `<Self::Signature as #sig_trait_ident>::Foo::Bar`
+            // Replace `Self::Foo::Bar` with `<Self::Signature as #sig_trait_ident<Generics, ...>>::Foo::Bar`
             let sig_trait_ident = &self.sig_trait_ident;
-            ty.path.segments[0] = syn::parse_quote!(#sig_trait_ident);
+            let generic_arguments = &self.generic_arguments;
+            ty.path.segments[0] = syn::parse_quote!(#sig_trait_ident<#generic_arguments>);
             ty.qself = Some(syn::QSelf {
                 lt_token: syn::token::Lt {
                     spans: [Span::call_site()],

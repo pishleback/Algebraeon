@@ -1,11 +1,12 @@
 use crate::structure::*;
 use algebraeon_macros::CanonicalStructure;
 use algebraeon_structures::*;
+use cantor::Finite;
 use std::fmt::Display;
 
 //the finite field of 4 elements
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, CanonicalStructure)]
-#[canonical_structure(eq)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Ord, Eq, Hash, CanonicalStructure, Finite)]
+#[canonical_structure(eq, partial_ord, ord)]
 pub enum QuaternaryField {
     Zero,
     One,
@@ -188,6 +189,40 @@ impl CountableSetSignature for QuaternaryFieldCanonicalStructure {
 
 impl FiniteSetSignature for QuaternaryFieldCanonicalStructure {}
 
+impl EnumeratedOrdFiniteSetSignature for QuaternaryFieldCanonicalStructure {
+    fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
+        vec![
+            QuaternaryField::Zero,
+            QuaternaryField::One,
+            QuaternaryField::Alpha,
+            QuaternaryField::Beta,
+        ]
+    }
+
+    fn element_to_enumeration(&self, elem: &Self::Elem) -> Natural {
+        Natural::from(match elem {
+            QuaternaryField::Zero => 0u8,
+            QuaternaryField::One => 1,
+            QuaternaryField::Alpha => 2,
+            QuaternaryField::Beta => 3,
+        })
+    }
+
+    fn enumeration_to_element(&self, num: &Natural) -> Option<Self::Elem> {
+        if let Ok(num) = TryInto::<usize>::try_into(num) {
+            match num {
+                0 => Some(QuaternaryField::Zero),
+                1 => Some(QuaternaryField::One),
+                2 => Some(QuaternaryField::Alpha),
+                3 => Some(QuaternaryField::Beta),
+                _ => None,
+            }
+        } else {
+            None
+        }
+    }
+}
+
 impl FiniteFieldSignature for QuaternaryFieldCanonicalStructure {
     fn characteristic_and_power(&self) -> (Natural, Natural) {
         (Natural::from(2u8), Natural::from(2u8))
@@ -197,6 +232,11 @@ impl FiniteFieldSignature for QuaternaryFieldCanonicalStructure {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn enumeration() {
+        algebraeon_structures::assert_enumerated_ord_finite_set!(QuaternaryField::structure(), 4);
+    }
 
     #[test]
     fn test_neg() {

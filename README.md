@@ -25,9 +25,8 @@ Algebraeon can also be used as a Python library, though it is not fully featured
 To factor large integers using Algebraeon
 
 ```rust
-use algebraeon::structures::Natural;
+use algebraeon::structures::*;
 use algebraeon::rings::structure::{MetaFactoringMonoid, UniqueFactorizationMonoidSignature};
-use algebraeon::structures::ToStringSignature;
 use std::str::FromStr;
 
 let n = Natural::from_str("706000565581575429997696139445280900").unwrap();
@@ -88,15 +87,17 @@ a \begin{pmatrix}3 \\ 4 \\ 1\end{pmatrix} + b \begin{pmatrix}2 \\ 1 \\ 2\end{pma
 for integers $a$, $b$ and $c$.
 
 ```rust
-use algebraeon::structures::Integer;
 use algebraeon::rings::linear::finitely_free_module::RingToFinitelyFreeModuleSignature;
 use algebraeon::rings::matrix::Matrix;
+use algebraeon::structures::Integer;
 use algebraeon::structures::MetaType;
+use algebraeon::sets::sets::EnumeratedFiniteSetStructure;
+use algebraeon::rings::structure::FinitelyFreeModuleSignature;
 
 let m = Matrix::<Integer>::from_rows(vec![vec![3, 4, 1], vec![2, 1, 2], vec![1, 3, -1]]);
 let y = vec![5.into(), 5.into(), 3.into()];
 for x in Integer::structure()
-    .free_module(3)
+    .free_module(EnumeratedFiniteSetStructure::new(3))
     .affine_subsets()
     .affine_basis(&m.row_solution_set(&y))
 {

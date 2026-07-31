@@ -1,6 +1,8 @@
 use crate::*;
+use ambassador::delegatable_trait;
 
 /// For anything which is a structure type
+#[delegatable_trait]
 pub trait Signature: Clone + Debug + Eq + Send + Sync {}
 
 pub trait BorrowedElem<S>: Borrow<S> + Clone + Debug + Send + Sync {}

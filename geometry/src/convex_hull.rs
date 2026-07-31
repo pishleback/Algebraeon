@@ -769,7 +769,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use algebraeon_structures::Rational;
+    use algebraeon_structures::{MetaTypeRef, Rational};
 
     #[test]
     fn construct_convex_hull() {

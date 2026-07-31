@@ -1,8 +1,9 @@
+mod const_size_functions;
+mod const_size_numbered_finite;
+mod disjoint_union;
 mod empty;
 mod endofunctions;
-mod finite_set_sized;
 mod finite_subset_hash;
-mod finite_subset_ord;
 mod finite_subsets_ord;
 mod fixed_size_finite_subsets_ord;
 mod functions;
@@ -11,11 +12,12 @@ mod pairs;
 mod permutations;
 mod singleton;
 
+pub use const_size_functions::*;
+pub use const_size_numbered_finite::*;
+pub use disjoint_union::*;
 pub use empty::*;
 pub use endofunctions::*;
-pub use finite_set_sized::*;
 pub use finite_subset_hash::*;
-pub use finite_subset_ord::*;
 pub use finite_subsets_ord::*;
 pub use fixed_size_finite_subsets_ord::*;
 pub use functions::*;

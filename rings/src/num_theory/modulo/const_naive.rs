@@ -451,4 +451,9 @@ mod tests {
     fn count_elements() {
         assert_eq!(Modulo::<26>::structure().list_all_elements().len(), 26);
     }
+
+    #[test]
+    fn enumeration() {
+        algebraeon_structures::assert_enumerated_ord_finite_set!(Modulo::<26>::structure(), 26);
+    }
 }

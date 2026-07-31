@@ -14,6 +14,7 @@ use crate::{
     },
     structure::{FieldSignature, OrderedRingSignature, RealRoundingSignature, RealSubsetSignature},
 };
+use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 use algebraeon_structures::*;
 
 impl<
@@ -42,7 +43,9 @@ impl<
         debug_assert!(self.rank(basis.clone()) == n);
         // 1/4 < delta <= 1
         assert!(Rational::ONE < Rational::from(4) * delta && delta <= &Rational::ONE);
-        let vs = self.ring().free_module(m);
+        let vs = self
+            .ring()
+            .free_module(EnumeratedFiniteSetStructure::new(m));
 
         if n == 0 {
             return (self.ident(0), basis);
@@ -355,7 +358,9 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>>
         // 1/4 < delta <= 1
         assert!(Rational::ONE < Rational::from(4) * delta && delta <= &Rational::ONE);
         #[cfg(debug_assertions)]
-        let vs = self.ring().free_module(m);
+        let vs = self
+            .ring()
+            .free_module(EnumeratedFiniteSetStructure::new(m));
 
         if n == 0 {
             return (self.ident(0), basis);

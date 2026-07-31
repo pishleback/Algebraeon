@@ -1,22 +1,9 @@
-use algebraeon_structures::*;
-use itertools::Itertools;
-use std::{cmp::Ordering, fmt::Debug, marker::PhantomData};
-
 use crate::sets::{
     FiniteSetToFinitelySupportedPermutationsStructure, FinitelySupportedPermutationsStructure,
 };
-
-#[derive(Debug, Clone)]
-pub struct Function<ElemTo> {
-    pub(crate) images: Vec<ElemTo>,
-}
-
-impl<ElemTo> Function<ElemTo> {
-    #[allow(clippy::len_without_is_empty)]
-    pub fn len(&self) -> usize {
-        self.images.len()
-    }
-}
+use algebraeon_structures::*;
+use itertools::Itertools;
+use std::{cmp::Ordering, fmt::Debug, marker::PhantomData};
 
 /// Represent all functions from `domain` to `range`
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -46,6 +33,10 @@ impl<
             _range: PhantomData,
             range,
         }
+    }
+
+    pub fn into_domain_and_range(self) -> (DomainB, RangeB) {
+        (self.domain, self.range)
     }
 }
 
@@ -111,23 +102,18 @@ impl<
 impl<
     Domain: EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
-    Range: EnumeratedOrdFiniteSetSignature,
+    Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
-> FunctionsStructure<Domain, DomainB, Range, RangeB>
+> FunctionsSignature<Domain, Range> for FunctionsStructure<Domain, DomainB, Range, RangeB>
 {
-    pub fn function(
-        &self,
-        f: impl Fn(&Domain::Elem) -> Range::Elem,
-    ) -> Option<Function<Range::Elem>> {
-        let s = Function {
-            images: self
-                .domain()
-                .list_all_elements_ordered()
-                .iter()
-                .map(f)
-                .collect(),
-        };
-        for y in &s.images {
+    fn function(&self, f: impl Fn(&Domain::Elem) -> Range::Elem) -> Option<Vec<Range::Elem>> {
+        let s = self
+            .domain()
+            .list_all_elements_ordered()
+            .iter()
+            .map(f)
+            .collect();
+        for y in &s {
             if !self.range().is_element(y) {
                 return None;
             }
@@ -135,27 +121,27 @@ impl<
         Some(s)
     }
 
-    pub fn image<'a>(&self, f: &'a Function<Range::Elem>, x: &Domain::Elem) -> &'a Range::Elem {
+    fn image<'a>(&self, f: &'a Vec<Range::Elem>, x: &Domain::Elem) -> &'a Range::Elem {
         debug_assert!(self.is_element(f));
         debug_assert!(self.domain().is_element(x));
-        &f.images[TryInto::<usize>::try_into(self.domain().element_to_enumeration(x)).unwrap()]
+        &f[TryInto::<usize>::try_into(self.domain().element_to_enumeration(x)).unwrap()]
     }
 }
 
 impl<
     Domain: EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
-    Range: EnumeratedOrdFiniteSetSignature,
+    Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
 > SetSignature for FunctionsStructure<Domain, DomainB, Range, RangeB>
 {
-    type Elem = Function<Range::Elem>;
+    type Elem = Vec<Range::Elem>;
 
     fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
         if Natural::from(x.len()) != self.domain().size() {
             return Err("Incorrect vector length".to_string());
         }
-        for y in &x.images {
+        for y in x {
             self.range().validate_element(y)?;
         }
         Ok(())
@@ -165,7 +151,7 @@ impl<
 impl<
     Domain: EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
-    Range: EnumeratedOrdFiniteSetSignature,
+    Range: EqSignature,
     RangeB: BorrowedStructure<Range>,
 > EqSignature for FunctionsStructure<Domain, DomainB, Range, RangeB>
 {
@@ -174,14 +160,14 @@ impl<
         debug_assert!(self.is_element(b));
         let n = a.len();
         debug_assert_eq!(n, b.len());
-        (0..n).all(|i| self.range().equal(&a.images[i], &b.images[i]))
+        (0..n).all(|i| self.range().equal(&a[i], &b[i]))
     }
 }
 
 impl<
     Domain: EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
-    Range: EnumeratedOrdFiniteSetSignature,
+    Range: OrdSignature,
     RangeB: BorrowedStructure<Range>,
 > PartialOrdSignature for FunctionsStructure<Domain, DomainB, Range, RangeB>
 {
@@ -193,7 +179,7 @@ impl<
 impl<
     Domain: EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
-    Range: EnumeratedOrdFiniteSetSignature,
+    Range: OrdSignature,
     RangeB: BorrowedStructure<Range>,
 > OrdSignature for FunctionsStructure<Domain, DomainB, Range, RangeB>
 {
@@ -203,7 +189,7 @@ impl<
         let n = a.len();
         debug_assert_eq!(n, b.len());
         for i in (0..n).rev() {
-            match self.range().cmp(&a.images[i], &b.images[i]) {
+            match self.range().cmp(&a[i], &b[i]) {
                 Ordering::Less => {
                     return Ordering::Less;
                 }
@@ -229,7 +215,6 @@ impl<
         (0..n)
             .map(|_| self.range().list_all_elements())
             .multi_cartesian_product()
-            .map(|images| Function { images })
     }
 
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
@@ -270,20 +255,18 @@ impl<
             .collect::<Vec<_>>()
             .into_iter()
             .rev()
-            .map(|images| Function {
-                images: images.into_iter().rev().collect(),
-            })
+            .map(|images| images.into_iter().rev().collect())
             .collect()
     }
 
     fn element_to_enumeration(&self, elem: &Self::Elem) -> Natural {
         debug_assert!(self.is_element(elem));
-        let d = elem.images.len();
+        let d = elem.len();
         let r = self.range().size();
         debug_assert_eq!(self.range().size(), (&r).into());
         let mut num = Natural::ZERO;
         for i in (0..d).rev() {
-            num = num * &r + self.range().element_to_enumeration(&elem.images[i]);
+            num = num * &r + self.range().element_to_enumeration(&elem[i]);
         }
         num
     }
@@ -293,15 +276,14 @@ impl<
             return None;
         }
         let d: usize = self.domain().size().try_into().unwrap();
-        let mut images = vec![];
+        let mut f = vec![];
         let r = self.range().size();
         let mut n = num.clone();
         let mut k;
         for _ in 0..d {
             (n, k) = n.div_mod(&r);
-            images.push(self.range().enumeration_to_element(&k).unwrap())
+            f.push(self.range().enumeration_to_element(&k).unwrap())
         }
-        let f = Function { images };
         debug_assert!(self.is_element(&f));
         Some(f)
     }
@@ -311,7 +293,7 @@ impl<
 struct RightPermutationActionOnFunctionsStructure<
     Domain: EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
-    Range: EnumeratedOrdFiniteSetSignature,
+    Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
     FunctionsB: BorrowedStructure<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
     DomainPerms: PermutationsSignature<Domain>,
@@ -326,7 +308,7 @@ struct RightPermutationActionOnFunctionsStructure<
 impl<
     Domain: EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
-    Range: EnumeratedOrdFiniteSetSignature,
+    Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
     FunctionsB: BorrowedStructure<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
     DomainPerms: PermutationsSignature<Domain>,
@@ -355,7 +337,7 @@ impl<
 impl<
     Domain: EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
-    Range: EnumeratedOrdFiniteSetSignature,
+    Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
     FunctionsB: BorrowedStructure<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
     DomainPerms: PermutationsSignature<Domain>,
@@ -376,14 +358,27 @@ impl<
 impl<
     Domain: EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
-    Range: EnumeratedOrdFiniteSetSignature,
+    Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
-> FunctionsStructure<Domain, DomainB, Range, RangeB>
+> FunctionsDomainPermutationActionSignature<Domain, Range>
+    for FunctionsStructure<Domain, DomainB, Range, RangeB>
 {
-    pub fn domain_permutation_action(
-        &self,
-    ) -> impl RightGroupActionSignature<Self, FinitelySupportedPermutationsStructure<Domain, &Domain>>
-    {
+    type DomainPerms = FinitelySupportedPermutationsStructure<Domain, Domain>;
+    type DomainPermsRef<'a>
+        = FinitelySupportedPermutationsStructure<Domain, &'a Domain>
+    where
+        Self: 'a;
+
+    fn into_domain_permutation_action(
+        self,
+    ) -> impl RightGroupActionSignature<Self, Self::DomainPerms> {
+        let domain_perms = self.domain().clone().into_permutations();
+        RightPermutationActionOnFunctionsStructure::new(self, domain_perms)
+    }
+
+    fn domain_permutation_action<'a>(
+        &'a self,
+    ) -> impl RightGroupActionSignature<Self, Self::DomainPermsRef<'a>> {
         RightPermutationActionOnFunctionsStructure::new(self, self.domain().permutations())
     }
 }
@@ -392,7 +387,7 @@ impl<
 impl<
     Domain: EnumeratedOrdFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
-    Range: EnumeratedOrdFiniteSetSignature,
+    Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
     FunctionsB: BorrowedStructure<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
     DomainPerms: PermutationsSignature<Domain>,
@@ -431,7 +426,7 @@ impl<
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct LeftPermutationActionOnFunctionsStructure<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: SetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: EnumeratedOrdFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -446,7 +441,7 @@ struct LeftPermutationActionOnFunctionsStructure<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: SetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: EnumeratedOrdFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -475,7 +470,7 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: SetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: EnumeratedOrdFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -500,12 +495,25 @@ impl<
     DomainB: BorrowedStructure<Domain>,
     Range: EnumeratedOrdFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
-> FunctionsStructure<Domain, DomainB, Range, RangeB>
+> FunctionsRangePermutationActionSignature<Domain, Range>
+    for FunctionsStructure<Domain, DomainB, Range, RangeB>
 {
-    pub fn range_permutation_action(
-        &self,
-    ) -> impl LeftGroupActionSignature<FinitelySupportedPermutationsStructure<Range, &Range>, Self>
-    {
+    type RangePerms = FinitelySupportedPermutationsStructure<Range, Range>;
+    type RangePermsRef<'a>
+        = FinitelySupportedPermutationsStructure<Range, &'a Range>
+    where
+        Self: 'a;
+
+    fn into_range_permutation_action(
+        self,
+    ) -> impl LeftGroupActionSignature<Self::RangePerms, Self> {
+        let range_perms = self.range().clone().into_permutations();
+        LeftPermutationActionOnFunctionsStructure::new(self, range_perms)
+    }
+
+    fn range_permutation_action<'a>(
+        &'a self,
+    ) -> impl LeftGroupActionSignature<Self::RangePermsRef<'a>, Self> {
         LeftPermutationActionOnFunctionsStructure::new(self, self.range().permutations())
     }
 }
@@ -554,28 +562,14 @@ impl<
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::sets::{
-        FiniteSetToFinitelySupportedPermutationsStructure, SetToFiniteSubsetByOrdSignature,
-    };
+    use crate::sets::FiniteSetToFinitelySupportedPermutationsStructure;
 
     #[test]
-    fn test_enumeration() {
+    fn enumerate() {
         let set_a = i32::structure().into_finite_subset(vec![1, 2, 3, 4, 5]);
         let set_b = i32::structure().into_finite_subset(vec![1, 2, 3]);
         let fns = set_a.functions_to(&set_b);
-
-        assert_eq!(fns.size(), fns.list_all_elements().len().into());
-        assert_eq!(fns.size(), fns.list_all_elements_ordered().len().into());
-
-        let all_fns = fns.list_all_elements_ordered();
-        for i in 0..(all_fns.len() - 1) {
-            assert!(fns.cmp(&all_fns[i], &all_fns[i + 1]).is_lt());
-        }
-        for (i, s) in all_fns.iter().enumerate() {
-            assert_eq!(Natural::from(i), fns.element_to_enumeration(s));
-            assert!(fns.equal(&fns.enumeration_to_element(&Natural::from(i)).unwrap(), s));
-        }
-        assert!(fns.enumeration_to_element(&fns.size()).is_none());
+        algebraeon_structures::assert_enumerated_ord_finite_set!(fns, 243);
     }
 
     #[test]

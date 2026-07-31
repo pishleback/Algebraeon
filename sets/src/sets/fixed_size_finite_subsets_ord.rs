@@ -1,7 +1,4 @@
-use crate::{
-    combinatorics::subsets_colex,
-    sets::{FiniteSubsetByOrd, SetToFiniteSubsetsByOrdSignature},
-};
+use crate::{combinatorics::subsets_colex, sets::SetToFiniteSubsetsByOrdSignature};
 use algebraeon_structures::*;
 use std::{cmp::Ordering, marker::PhantomData};
 
@@ -54,7 +51,7 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> Signature
 impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> SetSignature
     for FixedSizeFiniteSubsetsByOrdStructure<Set, SetB>
 {
-    type Elem = FiniteSubsetByOrd<Set>;
+    type Elem = FiniteSubsetByOrd<Set::Elem>;
 
     fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
         if !self.set().is_sorted_and_unique(&x.elems) {
@@ -191,121 +188,30 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>>
 
 #[cfg(test)]
 mod tests {
-    use crate::sets::{SetToFiniteSubsetByOrdSignature, SetToFixedSizeFiniteSubsetsByOrdSignature};
+    use crate::sets::SetToFixedSizeFiniteSubsetsByOrdSignature;
     use algebraeon_structures::*;
 
     #[test]
-    fn test_enumerate_0_0() {
-        let set = i32::structure().into_finite_subset(vec![]);
-        let set_subsets = set.fixed_size_finite_subsets(0);
-
-        let subsets = set_subsets.generate_all_elements().collect::<Vec<_>>();
-        assert_eq!(subsets.len(), 1);
-        assert_eq!(set_subsets.size(), Natural::from(1usize));
-
-        assert_eq!(
-            set_subsets.element_to_enumeration(&subsets[0]),
-            Natural::from(0usize)
+    fn enumerate() {
+        algebraeon_structures::assert_enumerated_ord_finite_set!(
+            i32::structure()
+                .into_finite_subset(vec![])
+                .into_fixed_size_finite_subsets(0),
+            1
         );
-        assert!(
-            set_subsets.equal(
-                &set_subsets
-                    .enumeration_to_element(&Natural::from(0usize))
-                    .unwrap(),
-                &subsets[0]
-            )
+
+        algebraeon_structures::assert_enumerated_ord_finite_set!(
+            i32::structure()
+                .into_finite_subset(vec![])
+                .into_fixed_size_finite_subsets(1),
+            0
         );
-        assert!(
-            set_subsets
-                .enumeration_to_element(&Natural::from(1usize))
-                .is_none()
+
+        algebraeon_structures::assert_enumerated_ord_finite_set!(
+            i32::structure()
+                .into_finite_subset(vec![1, 2, 3, 4, 5])
+                .into_fixed_size_finite_subsets(3),
+            10
         );
     }
-
-    #[test]
-    fn test_enumerate_0_1() {
-        let set = i32::structure().into_finite_subset(vec![]);
-        let set_subsets = set.fixed_size_finite_subsets(1);
-
-        let subsets = set_subsets.generate_all_elements().collect::<Vec<_>>();
-        assert_eq!(subsets.len(), 0);
-        assert_eq!(set_subsets.size(), Natural::from(0usize));
-
-        assert!(
-            set_subsets
-                .enumeration_to_element(&Natural::from(0usize))
-                .is_none()
-        );
-    }
-
-    #[test]
-    fn test_enumerate_5_3() {
-        let set = i32::structure().into_finite_subset(vec![1, 2, 3, 4, 5]);
-        let set_subsets = set.fixed_size_finite_subsets(3);
-
-        let subsets = set_subsets.generate_all_elements().collect::<Vec<_>>();
-        assert_eq!(subsets.len(), 10);
-        assert_eq!(Natural::from(subsets.len()), set_subsets.size());
-        for i in 0..9 {
-            assert!(set_subsets.cmp(&subsets[i], &subsets[i + 1]).is_lt());
-        }
-
-        for (idx, subset) in set_subsets.generate_all_elements().enumerate() {
-            println!(
-                "{:?} {:?} {:?} {:?}",
-                idx,
-                subset,
-                set_subsets.element_to_enumeration(&subset),
-                set_subsets.enumeration_to_element(&Natural::from(idx)),
-            );
-            assert_eq!(
-                Natural::from(idx),
-                set_subsets.element_to_enumeration(&subset)
-            );
-            assert_eq!(
-                set_subsets.enumeration_to_element(&Natural::from(idx)),
-                Some(subset)
-            );
-        }
-        assert_eq!(
-            set_subsets.enumeration_to_element(&Natural::from(10usize)),
-            None
-        );
-    }
-
-    // #[test]
-    // fn test_cmp() {
-    //     let set = i32::structure().into_finite_subset(vec![1, 2, 3, 4]);
-    //     let subsets = set.finite_subsets();
-
-    //     // eq
-    //     assert!(subsets.equal(
-    //         &subsets.subset(vec![3, 3, 3, 2, 2, 1]),
-    //         &subsets.subset(vec![1, 2, 3])
-    //     ));
-    //     assert!(subsets.equal(&subsets.subset(vec![4]), &subsets.subset(vec![4])));
-    //     assert!(subsets.equal(&subsets.subset(vec![]), &subsets.subset(vec![])));
-
-    //     // lt
-    //     assert!(
-    //         subsets
-    //             .cmp(&subsets.subset(vec![]), &subsets.subset(vec![1]))
-    //             .is_lt()
-    //     );
-    //     assert!(
-    //         subsets
-    //             .cmp(&subsets.subset(vec![]), &subsets.subset(vec![1, 2, 3, 4]))
-    //             .is_lt()
-    //     );
-    //     assert!(
-    //         subsets
-    //             .cmp(&subsets.subset(vec![2, 3]), &subsets.subset(vec![3, 4]))
-    //             .is_lt()
-    //     );
-    //     assert!(
-    //         subsets
-    //             .cmp(&subsets.subset(vec![2, 3]), &subsets.subset(vec![1, 2]))
-    //             .is_gt()
-    //     );
-    // }
 }
