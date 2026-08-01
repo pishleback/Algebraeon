@@ -54,7 +54,7 @@ impl<Set: Clone + Debug> FinitelyFreeSubmoduleAffineSubset<Set> {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FinitelyFreeSubmoduleAffineSubsetsStructure<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
     ModuleB: BorrowedStructure<Module>,
@@ -66,7 +66,7 @@ pub struct FinitelyFreeSubmoduleAffineSubsetsStructure<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
     ModuleB: BorrowedStructure<Module>,
@@ -83,7 +83,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
     ModuleB: BorrowedStructure<Module>,
@@ -92,7 +92,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
     ModuleB: BorrowedStructure<Module>,
@@ -107,7 +107,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
     ModuleB: BorrowedStructure<Module>,
@@ -267,7 +267,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring> + EqSignature,
     ModuleB: BorrowedStructure<Module>,

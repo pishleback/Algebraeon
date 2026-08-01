@@ -306,7 +306,7 @@ impl<const N: usize> FiniteSetSignature for ModuloCanonicalStructure<N> {
     }
 }
 
-impl<const N: usize> EnumeratedOrdFiniteSetSignature for ModuloCanonicalStructure<N> {
+impl<const N: usize> OrderedFiniteSetSignature for ModuloCanonicalStructure<N> {
     fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
         (0..N).map(|x| Modulo { x }).collect()
     }

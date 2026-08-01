@@ -56,7 +56,7 @@ impl FiniteSetSignature for PrimitiveI32CanonicalStructure {
     }
 }
 
-impl EnumeratedOrdFiniteSetSignature for PrimitiveI32CanonicalStructure {
+impl OrderedFiniteSetSignature for PrimitiveI32CanonicalStructure {
     fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
         self.list_all_elements()
     }
@@ -77,7 +77,7 @@ impl EnumeratedOrdFiniteSetSignature for PrimitiveI32CanonicalStructure {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::MetaEnumeratedOrdFiniteSetSignature;
+    use crate::MetaOrderedFiniteSetSignature;
 
     #[test]
     fn test_enumeration() {

@@ -6,11 +6,6 @@ use std::hash::Hash;
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct Cycle<T> {
-    pub cycle: Vec<T>,
-}
-
-#[derive(Debug, Clone)]
 struct FromAndTo {
     from: usize, // index of the thing mapping to an item
     to: usize,   // index of the thing an item maps to
@@ -308,35 +303,35 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> PermutationsSignature<Set>
 
     fn new_perm(
         &self,
-        cycle: Vec<(impl Borrow<Set::Elem>, impl Borrow<Set::Elem>)>,
+        perm: Vec<(impl Borrow<Set::Elem>, impl Borrow<Set::Elem>)>,
     ) -> Result<Self::Elem, ()> {
-        let cycle_sorted_froms = self
+        let perm_sorted_froms = self
             .set()
-            .sort_by_key(cycle.iter().collect(), &|(from, _)| from.borrow());
-        let cycle_sorted_tos = self
+            .sort_by_key(perm.iter().collect(), &|(from, _)| from.borrow());
+        let perm_sorted_tos = self
             .set()
-            .sort_by_key(cycle.iter().collect(), &|(_, to)| to.borrow());
+            .sort_by_key(perm.iter().collect(), &|(_, to)| to.borrow());
 
         if !self
             .set()
-            .is_sorted_and_unique_by_key(&cycle_sorted_froms, |(from, _)| from.borrow())
+            .is_sorted_and_unique_by_key(&perm_sorted_froms, |(from, _)| from.borrow())
         {
             return Err(());
         }
 
         if !self
             .set()
-            .is_sorted_and_unique_by_key(&cycle_sorted_tos, |(_, to)| to.borrow())
+            .is_sorted_and_unique_by_key(&perm_sorted_tos, |(_, to)| to.borrow())
         {
             return Err(());
         }
 
         for merged in self.set().merge_sorted_and_unique_by_key(
-            cycle_sorted_froms
+            perm_sorted_froms
                 .iter()
                 .map(|(from, _)| from.borrow())
                 .collect(),
-            cycle_sorted_tos.iter().map(|(_, to)| to.borrow()).collect(),
+            perm_sorted_tos.iter().map(|(_, to)| to.borrow()).collect(),
             |item| item,
         ) {
             match merged {
@@ -350,7 +345,7 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> PermutationsSignature<Set>
         }
 
         // at this point we know the input is a valid permutation
-        let elems_sorted = cycle_sorted_tos
+        let elems_sorted = perm_sorted_tos
             .iter()
             .filter(|(from, to)| !self.set().equal(from.borrow(), to.borrow()))
             .map(|(_, to)| to.borrow())
@@ -368,7 +363,7 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> PermutationsSignature<Set>
                                     &elems_sorted,
                                     self.set()
                                         .binary_search_by_key(
-                                            &cycle_sorted_tos,
+                                            &perm_sorted_tos,
                                             elem.borrow(),
                                             |item| item.1.borrow(),
                                         )
@@ -383,7 +378,7 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> PermutationsSignature<Set>
                                     &elems_sorted,
                                     self.set()
                                         .binary_search_by_key(
-                                            &cycle_sorted_froms,
+                                            &perm_sorted_froms,
                                             elem.borrow(),
                                             |item| item.0.borrow(),
                                         )
@@ -401,9 +396,9 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> PermutationsSignature<Set>
         Ok(s)
     }
 
-    fn support(&self, perm: Self::Elem) -> Vec<Set::Elem> {
-        debug_assert!(self.is_element(&perm));
-        perm.perm.into_iter().map(|(elem, _)| elem).collect()
+    fn support(&self, perm: &Self::Elem) -> Vec<Set::Elem> {
+        debug_assert!(self.is_element(perm));
+        perm.perm.iter().map(|(elem, _)| elem.clone()).collect()
     }
 
     fn support_size(&self, perm: &Self::Elem) -> usize {

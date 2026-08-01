@@ -8,9 +8,9 @@ use algebraeon_structures::*;
 // linear maps of finite rank free modules with a basis
 #[derive(Debug, Clone)]
 pub struct FreeModuleFiniteNumberedBasisLinearTransformation<
-    SetDomain: EnumeratedOrdFiniteSetSignature,
+    SetDomain: OrderedFiniteSetSignature,
     SetDomainB: BorrowedStructure<SetDomain>,
-    SetRange: EnumeratedOrdFiniteSetSignature,
+    SetRange: OrderedFiniteSetSignature,
     SetRangeB: BorrowedStructure<SetRange>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
@@ -26,9 +26,9 @@ pub struct FreeModuleFiniteNumberedBasisLinearTransformation<
 }
 
 impl<
-    SetDomain: EnumeratedOrdFiniteSetSignature,
+    SetDomain: OrderedFiniteSetSignature,
     SetDomainB: BorrowedStructure<SetDomain>,
-    SetRange: EnumeratedOrdFiniteSetSignature,
+    SetRange: OrderedFiniteSetSignature,
     SetRangeB: BorrowedStructure<SetRange>,
     Ring: BezoutDomainSignature,
     RingB: BorrowedStructure<Ring>,
@@ -95,9 +95,9 @@ impl<
 }
 
 impl<
-    SetDomain: EnumeratedOrdFiniteSetSignature,
+    SetDomain: OrderedFiniteSetSignature,
     SetDomainB: BorrowedStructure<SetDomain>,
-    SetRange: EnumeratedOrdFiniteSetSignature,
+    SetRange: OrderedFiniteSetSignature,
     SetRangeB: BorrowedStructure<SetRange>,
     Ring: BezoutDomainSignature,
     RingB: BorrowedStructure<Ring>,
@@ -128,9 +128,9 @@ impl<
 }
 
 impl<
-    SetDomain: EnumeratedOrdFiniteSetSignature,
+    SetDomain: OrderedFiniteSetSignature,
     SetDomainB: BorrowedStructure<SetDomain>,
-    SetRange: EnumeratedOrdFiniteSetSignature,
+    SetRange: OrderedFiniteSetSignature,
     SetRangeB: BorrowedStructure<SetRange>,
     Ring: BezoutDomainSignature,
     RingB: BorrowedStructure<Ring>,
@@ -161,9 +161,9 @@ impl<
 }
 
 impl<
-    SetDomain: EnumeratedOrdFiniteSetSignature,
+    SetDomain: OrderedFiniteSetSignature,
     SetDomainB: BorrowedStructure<SetDomain>,
-    SetRange: EnumeratedOrdFiniteSetSignature,
+    SetRange: OrderedFiniteSetSignature,
     SetRangeB: BorrowedStructure<SetRange>,
     Ring: BezoutDomainSignature,
     RingB: BorrowedStructure<Ring>,
@@ -194,9 +194,9 @@ impl<
 }
 
 impl<
-    SetDomain: EnumeratedOrdFiniteSetSignature,
+    SetDomain: OrderedFiniteSetSignature,
     SetDomainB: BorrowedStructure<SetDomain>,
-    SetRange: EnumeratedOrdFiniteSetSignature,
+    SetRange: OrderedFiniteSetSignature,
     SetRangeB: BorrowedStructure<SetRange>,
     Ring: BezoutDomainSignature,
     RingB: BorrowedStructure<Ring>,
@@ -227,9 +227,9 @@ impl<
 }
 
 impl<
-    SetDomain: EnumeratedOrdFiniteSetSignature,
+    SetDomain: OrderedFiniteSetSignature,
     SetDomainB: BorrowedStructure<SetDomain>,
-    SetRange: EnumeratedOrdFiniteSetSignature,
+    SetRange: OrderedFiniteSetSignature,
     SetRangeB: BorrowedStructure<SetRange>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
@@ -265,9 +265,9 @@ impl<
 }
 
 impl<
-    SetDomain: EnumeratedOrdFiniteSetSignature,
+    SetDomain: OrderedFiniteSetSignature,
     SetDomainB: BorrowedStructure<SetDomain>,
-    SetRange: EnumeratedOrdFiniteSetSignature,
+    SetRange: OrderedFiniteSetSignature,
     SetRangeB: BorrowedStructure<SetRange>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
@@ -303,9 +303,9 @@ impl<
 }
 
 impl<
-    SetDomain: EnumeratedOrdFiniteSetSignature,
+    SetDomain: OrderedFiniteSetSignature,
     SetDomainB: BorrowedStructure<SetDomain>,
-    SetRange: EnumeratedOrdFiniteSetSignature,
+    SetRange: OrderedFiniteSetSignature,
     SetRangeB: BorrowedStructure<SetRange>,
     Ring: ReducedHermiteAlgorithmSignature,
     RingB: BorrowedStructure<Ring>,
@@ -336,9 +336,9 @@ impl<
 }
 
 impl<
-    SetDomain: EnumeratedOrdFiniteSetSignature,
+    SetDomain: OrderedFiniteSetSignature,
     SetDomainB: BorrowedStructure<SetDomain>,
-    SetRange: EnumeratedOrdFiniteSetSignature,
+    SetRange: OrderedFiniteSetSignature,
     SetRangeB: BorrowedStructure<SetRange>,
     Ring: ReducedHermiteAlgorithmSignature,
     RingB: BorrowedStructure<Ring>,

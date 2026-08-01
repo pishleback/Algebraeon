@@ -40,13 +40,13 @@ pub trait PermutationsSignature<Set: SetSignature>: GroupSignature {
     fn preimage(&self, perm: &Self::Elem, elem: &Set::Elem) -> Set::Elem;
 
     /// All elements not fixed by this permutation
-    fn support(&self, perm: Self::Elem) -> Vec<Set::Elem>;
+    fn support(&self, perm: &Self::Elem) -> Vec<Set::Elem>;
 
     /// How many elements are moved by the permutation
     fn support_size(&self, perm: &Self::Elem) -> usize;
 
     /// The disjoint cycle decomposition
-    /// Cycles map appear in any order and the elements of each cycle may come in any order
+    /// Cycles may appear in any order and the elements of each cycle may come in any order
     fn disjoint_cycles(&self, perm: &Self::Elem) -> Vec<Vec<Set::Elem>>;
 
     fn cycle_shape(&self, perm: &Self::Elem) -> HashMap<usize, usize> {

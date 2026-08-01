@@ -100,7 +100,7 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: OrderedFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -129,7 +129,7 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: OrderedFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -149,7 +149,7 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: OrderedFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: EqSignature,
     RangeB: BorrowedStructure<Range>,
@@ -165,7 +165,7 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: OrderedFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: OrdSignature,
     RangeB: BorrowedStructure<Range>,
@@ -177,7 +177,7 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: OrderedFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: OrdSignature,
     RangeB: BorrowedStructure<Range>,
@@ -204,9 +204,9 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: OrderedFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
-    Range: EnumeratedOrdFiniteSetSignature,
+    Range: OrderedFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
 > CountableSetSignature for FunctionsStructure<Domain, DomainB, Range, RangeB>
 {
@@ -223,9 +223,9 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: OrderedFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
-    Range: EnumeratedOrdFiniteSetSignature,
+    Range: OrderedFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
 > FiniteSetSignature for FunctionsStructure<Domain, DomainB, Range, RangeB>
 {
@@ -235,11 +235,11 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: OrderedFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
-    Range: EnumeratedOrdFiniteSetSignature,
+    Range: OrderedFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
-> EnumeratedOrdFiniteSetSignature for FunctionsStructure<Domain, DomainB, Range, RangeB>
+> OrderedFiniteSetSignature for FunctionsStructure<Domain, DomainB, Range, RangeB>
 {
     fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
         let n: usize = self.domain().size().try_into().unwrap_or(usize::MAX);
@@ -291,7 +291,7 @@ impl<
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct RightPermutationActionOnFunctionsStructure<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: OrderedFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -306,7 +306,7 @@ struct RightPermutationActionOnFunctionsStructure<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: OrderedFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -335,7 +335,7 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: OrderedFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -356,36 +356,31 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: OrderedFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
-> FunctionsDomainPermutationActionSignature<Domain, Range>
-    for FunctionsStructure<Domain, DomainB, Range, RangeB>
+> FunctionsStructure<Domain, DomainB, Range, RangeB>
 {
-    type DomainPerms = FinitelySupportedPermutationsStructure<Domain, Domain>;
-    type DomainPermsRef<'a>
-        = FinitelySupportedPermutationsStructure<Domain, &'a Domain>
-    where
-        Self: 'a;
-
-    fn into_domain_permutation_action(
+    pub fn into_domain_finitely_supported_permutation_action(
         self,
-    ) -> impl RightGroupActionSignature<Self, Self::DomainPerms> {
+    ) -> impl RightGroupActionSignature<Self, FinitelySupportedPermutationsStructure<Domain, Domain>>
+    {
         let domain_perms = self.domain().clone().into_permutations();
         RightPermutationActionOnFunctionsStructure::new(self, domain_perms)
     }
 
-    fn domain_permutation_action<'a>(
-        &'a self,
-    ) -> impl RightGroupActionSignature<Self, Self::DomainPermsRef<'a>> {
+    pub fn domain_finitely_supported_permutation_action(
+        &self,
+    ) -> impl RightGroupActionSignature<Self, FinitelySupportedPermutationsStructure<Domain, &Domain>>
+    {
         RightPermutationActionOnFunctionsStructure::new(self, self.domain().permutations())
     }
 }
 
 /// Sym(D) has a right action on Fun(D -> R) by composition on the right
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: OrderedFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -428,7 +423,7 @@ impl<
 struct LeftPermutationActionOnFunctionsStructure<
     Domain: SetSignature,
     DomainB: BorrowedStructure<Domain>,
-    Range: EnumeratedOrdFiniteSetSignature,
+    Range: OrderedFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
     FunctionsB: BorrowedStructure<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
     RangePerms: PermutationsSignature<Range>,
@@ -443,7 +438,7 @@ struct LeftPermutationActionOnFunctionsStructure<
 impl<
     Domain: SetSignature,
     DomainB: BorrowedStructure<Domain>,
-    Range: EnumeratedOrdFiniteSetSignature,
+    Range: OrderedFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
     FunctionsB: BorrowedStructure<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
     RangePerms: PermutationsSignature<Range>,
@@ -472,7 +467,7 @@ impl<
 impl<
     Domain: SetSignature,
     DomainB: BorrowedStructure<Domain>,
-    Range: EnumeratedOrdFiniteSetSignature,
+    Range: OrderedFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
     FunctionsB: BorrowedStructure<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
     RangePerms: PermutationsSignature<Range>,
@@ -491,38 +486,33 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: OrderedFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
-    Range: EnumeratedOrdFiniteSetSignature,
+    Range: OrderedFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
-> FunctionsRangePermutationActionSignature<Domain, Range>
-    for FunctionsStructure<Domain, DomainB, Range, RangeB>
+> FunctionsStructure<Domain, DomainB, Range, RangeB>
 {
-    type RangePerms = FinitelySupportedPermutationsStructure<Range, Range>;
-    type RangePermsRef<'a>
-        = FinitelySupportedPermutationsStructure<Range, &'a Range>
-    where
-        Self: 'a;
-
-    fn into_range_permutation_action(
+    pub fn into_range_finitely_supported_permutation_action(
         self,
-    ) -> impl LeftGroupActionSignature<Self::RangePerms, Self> {
+    ) -> impl LeftGroupActionSignature<FinitelySupportedPermutationsStructure<Range, Range>, Self>
+    {
         let range_perms = self.range().clone().into_permutations();
         LeftPermutationActionOnFunctionsStructure::new(self, range_perms)
     }
 
-    fn range_permutation_action<'a>(
-        &'a self,
-    ) -> impl LeftGroupActionSignature<Self::RangePermsRef<'a>, Self> {
+    pub fn range_finitely_supported_permutation_action(
+        &self,
+    ) -> impl LeftGroupActionSignature<FinitelySupportedPermutationsStructure<Range, &Range>, Self>
+    {
         LeftPermutationActionOnFunctionsStructure::new(self, self.range().permutations())
     }
 }
 
 /// Sym(R) has a left action on Fun(D -> R) by composition on the left
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: OrderedFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
-    Range: EnumeratedOrdFiniteSetSignature,
+    Range: OrderedFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
     FunctionsB: BorrowedStructure<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
     RangePerms: PermutationsSignature<Range>,
@@ -615,7 +605,7 @@ mod tests {
 
         assert!(
             fns.equal(
-                &fns.domain_permutation_action()
+                &fns.domain_finitely_supported_permutation_action()
                     .apply(&set_a_perms.new_cycle(vec![1, 2, 3, 4, 5]).unwrap(), &x),
                 &fns.function(|i| match i {
                     1 => 2,
@@ -631,7 +621,7 @@ mod tests {
 
         assert!(
             fns.equal(
-                &fns.range_permutation_action()
+                &fns.range_finitely_supported_permutation_action()
                     .apply(&set_b_perms.new_cycle(vec![1, 2, 3]).unwrap(), &x),
                 &fns.function(|i| match i {
                     1 => 2,

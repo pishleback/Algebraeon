@@ -98,7 +98,7 @@ impl<const N: usize, Set: FiniteSetSignature> ConstSizeFiniteSetSignature<N>
 {
 }
 
-impl<const N: usize, Set: EnumeratedOrdFiniteSetSignature> EnumeratedOrdFiniteSetSignature
+impl<const N: usize, Set: OrderedFiniteSetSignature> OrderedFiniteSetSignature
     for ConstSizeFiniteSetStructure<N, Set>
 {
     fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {

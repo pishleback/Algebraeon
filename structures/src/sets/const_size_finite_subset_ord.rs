@@ -171,8 +171,8 @@ impl<const N: usize, Set: OrdSignature, SetB: BorrowedStructure<Set>> FiniteSetS
     }
 }
 
-impl<const N: usize, Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
-    EnumeratedOrdFiniteSetSignature for ConstSizeFiniteSubsetByOrdStructure<N, Set, SetB>
+impl<const N: usize, Set: OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
+    OrderedFiniteSetSignature for ConstSizeFiniteSubsetByOrdStructure<N, Set, SetB>
 {
     fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
         self.list_all_elements()
@@ -198,7 +198,7 @@ impl<const N: usize, Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructu
     }
 }
 
-impl<const N: usize, Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
+impl<const N: usize, Set: OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
     ConstSizeFiniteSetSignature<N> for ConstSizeFiniteSubsetByOrdStructure<N, Set, SetB>
 {
 }

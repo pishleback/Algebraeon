@@ -93,7 +93,7 @@ pub trait ConstSizeFiniteSetSignature<const N: usize>: FiniteSetSignature {
 /// The ordering on the set must also agree with the ordering given by the enumeration
 #[signature_meta_trait]
 #[delegatable_trait]
-pub trait EnumeratedOrdFiniteSetSignature: FiniteSetSignature + OrdSignature {
+pub trait OrderedFiniteSetSignature: FiniteSetSignature + OrdSignature {
     /// List all elements in the order in which they are numbered
     fn list_all_elements_ordered(&self) -> Vec<Self::Elem>;
 
@@ -105,7 +105,7 @@ pub trait EnumeratedOrdFiniteSetSignature: FiniteSetSignature + OrdSignature {
     fn enumeration_to_element(&self, num: &Natural) -> Option<Self::Elem>;
 }
 
-// for testing the invariants of EnumeratedOrdFiniteSetSignature
+// for testing the invariants of OrderedFiniteSetSignature
 #[macro_export]
 macro_rules! assert_enumerated_ord_finite_set {
     (

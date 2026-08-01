@@ -5,7 +5,7 @@ use std::{borrow::Cow, cmp::Ordering};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FinitelyFreeModuleStructure<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
@@ -14,7 +14,7 @@ pub struct FinitelyFreeModuleStructure<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
@@ -27,14 +27,14 @@ impl<
     }
 }
 pub trait RingToFinitelyFreeModuleSignature: RingSignature {
-    fn free_module<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>(
+    fn free_module<Set: OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>(
         &self,
         set: SetB,
     ) -> FinitelyFreeModuleStructure<Set, SetB, Self, &Self> {
         FinitelyFreeModuleStructure::new(set, self)
     }
 
-    fn into_free_module<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>(
+    fn into_free_module<Set: OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>(
         self,
         set: SetB,
     ) -> FinitelyFreeModuleStructure<Set, SetB, Self, Self> {
@@ -43,7 +43,7 @@ pub trait RingToFinitelyFreeModuleSignature: RingSignature {
 }
 impl<Ring: RingSignature> RingToFinitelyFreeModuleSignature for Ring {}
 
-pub trait SetToFinitelyFreeModuleSignature: EnumeratedOrdFiniteSetSignature {
+pub trait SetToFinitelyFreeModuleSignature: OrderedFiniteSetSignature {
     fn free_module<Ring: RingSignature, RingB: BorrowedStructure<Ring>>(
         &self,
         ring: RingB,
@@ -58,10 +58,10 @@ pub trait SetToFinitelyFreeModuleSignature: EnumeratedOrdFiniteSetSignature {
         FinitelyFreeModuleStructure::new(self, ring)
     }
 }
-impl<Set: EnumeratedOrdFiniteSetSignature> SetToFinitelyFreeModuleSignature for Set {}
+impl<Set: OrderedFiniteSetSignature> SetToFinitelyFreeModuleSignature for Set {}
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
@@ -124,7 +124,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
@@ -133,7 +133,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
@@ -147,7 +147,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature + EqSignature,
     RingB: BorrowedStructure<Ring>,
@@ -159,7 +159,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature + OrdSignature,
     RingB: BorrowedStructure<Ring>,
@@ -171,7 +171,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature + OrdSignature,
     RingB: BorrowedStructure<Ring>,
@@ -183,9 +183,9 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
-    Ring: RingSignature + EnumeratedOrdFiniteSetSignature,
+    Ring: RingSignature + OrderedFiniteSetSignature,
     RingB: BorrowedStructure<Ring>,
 > CountableSetSignature for FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>
 {
@@ -200,9 +200,9 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
-    Ring: RingSignature + EnumeratedOrdFiniteSetSignature,
+    Ring: RingSignature + OrderedFiniteSetSignature,
     RingB: BorrowedStructure<Ring>,
 > FiniteSetSignature for FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>
 {
@@ -220,11 +220,11 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
-    Ring: RingSignature + EnumeratedOrdFiniteSetSignature,
+    Ring: RingSignature + OrderedFiniteSetSignature,
     RingB: BorrowedStructure<Ring>,
-> EnumeratedOrdFiniteSetSignature for FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>
+> OrderedFiniteSetSignature for FinitelyFreeModuleStructure<Set, SetB, Ring, RingB>
 {
     fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
         self.functions_restructure().list_all_elements_ordered()
@@ -240,7 +240,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
@@ -249,7 +249,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
@@ -261,7 +261,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
@@ -277,7 +277,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
@@ -289,7 +289,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
@@ -301,7 +301,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
@@ -310,7 +310,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
@@ -331,7 +331,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,
@@ -348,7 +348,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     SetB: BorrowedStructure<Set>,
     Ring: RingSignature,
     RingB: BorrowedStructure<Ring>,

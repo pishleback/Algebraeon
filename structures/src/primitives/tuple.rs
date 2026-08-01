@@ -152,11 +152,11 @@ impl<
 }
 
 impl<
-    Set0: EnumeratedOrdFiniteSetSignature,
+    Set0: OrderedFiniteSetSignature,
     Set0B: BorrowedStructure<Set0>,
-    Set1: EnumeratedOrdFiniteSetSignature,
+    Set1: OrderedFiniteSetSignature,
     Set1B: BorrowedStructure<Set1>,
-> EnumeratedOrdFiniteSetSignature for CartesianProductSetStructure<Set0, Set0B, Set1, Set1B>
+> OrderedFiniteSetSignature for CartesianProductSetStructure<Set0, Set0B, Set1, Set1B>
 {
     fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
         self.list_all_elements()
