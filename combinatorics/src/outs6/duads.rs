@@ -70,10 +70,8 @@ pub struct DuadsStructure<
     set: SetB,
 }
 
-impl<
-    Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> DuadsStructure<Set, SetB>
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
+    DuadsStructure<Set, SetB>
 {
     pub fn new(set: SetB) -> Self {
         debug_assert_eq!(set.borrow().size(), Natural::from(6usize));
@@ -88,9 +86,7 @@ impl<
     }
 }
 
-pub trait SetToDuadsSignature:
-    ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature
-{
+pub trait SetToDuadsSignature: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature {
     fn duads(&self) -> DuadsStructure<Self, &Self> {
         DuadsStructure::new(self)
     }
@@ -99,22 +95,15 @@ pub trait SetToDuadsSignature:
         DuadsStructure::new(self)
     }
 }
-impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> SetToDuadsSignature
-    for Set
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> SetToDuadsSignature for Set {}
+
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
+    Signature for DuadsStructure<Set, SetB>
 {
 }
 
-impl<
-    Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> Signature for DuadsStructure<Set, SetB>
-{
-}
-
-impl<
-    Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> SetSignature for DuadsStructure<Set, SetB>
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
+    SetSignature for DuadsStructure<Set, SetB>
 {
     type Elem = Duad<Set::Elem>;
 
@@ -126,20 +115,16 @@ impl<
     }
 }
 
-impl<
-    Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> EqSignature for DuadsStructure<Set, SetB>
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
+    EqSignature for DuadsStructure<Set, SetB>
 {
     fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
         self.set().finite_subsets().equal(&a.into(), &b.into())
     }
 }
 
-impl<
-    Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> PartialOrdSignature for DuadsStructure<Set, SetB>
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
+    PartialOrdSignature for DuadsStructure<Set, SetB>
 {
     fn partial_cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Ordering> {
         self.set()
@@ -148,20 +133,16 @@ impl<
     }
 }
 
-impl<
-    Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> OrdSignature for DuadsStructure<Set, SetB>
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
+    OrdSignature for DuadsStructure<Set, SetB>
 {
     fn cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Ordering {
         self.set().finite_subsets().cmp(&a.into(), &b.into())
     }
 }
 
-impl<
-    Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> CountableSetSignature for DuadsStructure<Set, SetB>
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
+    CountableSetSignature for DuadsStructure<Set, SetB>
 {
     fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
         self.set()
@@ -176,10 +157,8 @@ impl<
     }
 }
 
-impl<
-    Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> FiniteSetSignature for DuadsStructure<Set, SetB>
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
+    FiniteSetSignature for DuadsStructure<Set, SetB>
 {
     fn size(&self) -> Natural {
         debug_assert_eq!(
@@ -190,17 +169,13 @@ impl<
     }
 }
 
-impl<
-    Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> ConstSizeFiniteSetSignature<15> for DuadsStructure<Set, SetB>
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
+    ConstSizeFiniteSetSignature<15> for DuadsStructure<Set, SetB>
 {
 }
 
-impl<
-    Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> OrderedFiniteSetSignature for DuadsStructure<Set, SetB>
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
+    OrderedFiniteSetSignature for DuadsStructure<Set, SetB>
 {
     fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
         self.list_all_elements()
@@ -256,10 +231,8 @@ impl<Set: OrderedFiniteSetSignature> DuadOverlapResult<Set> {
     }
 }
 
-impl<
-    Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> DuadsStructure<Set, SetB>
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
+    DuadsStructure<Set, SetB>
 {
     pub fn duad(
         &self,

@@ -17,4 +17,3 @@ algebraeon-groups = { version = "=0.0.17", path = "../groups", default-features 
 algebraeon-rings = { version = "=0.0.17", path = "../rings", default-features = false }
 algebraeon-macros = { version = "=0.0.17", path = "../macros", default-features = false }
 cantor = "0.1.3"
-ambassador = "0.5.1"

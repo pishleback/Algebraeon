@@ -1312,17 +1312,19 @@ mod tests {
                 .unwrap();
 
             // (a + b sqrt(2)) * (1 + sqrt(2)) = a(1 + sqrt(2)) + b(2 + sqrt(2))
-            assert!(roi_ideals.equal(
-                &roi_ideals.principal_ideal(&alpha),
-                &roi_ideals.from_integer_span(vec![
-                    roi.outbound_order_to_anf_inclusion()
-                        .try_preimage(&(1 + &x).into_verbose())
-                        .unwrap(),
-                    roi.outbound_order_to_anf_inclusion()
-                        .try_preimage(&(2 + &x).into_verbose())
-                        .unwrap()
-                ])
-            ));
+            assert!(
+                roi_ideals.equal(
+                    &roi_ideals.principal_ideal(&alpha),
+                    &roi_ideals.from_integer_span(vec![
+                        roi.outbound_order_to_anf_inclusion()
+                            .try_preimage(&(1 + &x).into_verbose())
+                            .unwrap(),
+                        roi.outbound_order_to_anf_inclusion()
+                            .try_preimage(&(2 + &x).into_verbose())
+                            .unwrap()
+                    ])
+                )
+            );
         }
 
         {
@@ -1345,43 +1347,49 @@ mod tests {
             let alpha_beta_mul = roi_ideals.mul(&alpha_ideal, &beta_ideal);
 
             // sum is 3
-            assert!(roi_ideals.equal(
-                &alpha_beta_add,
-                &roi_ideals.from_integer_span(vec![
-                    roi.outbound_order_to_anf_inclusion()
-                        .try_preimage(&(3 * x.pow(0)).into_verbose())
-                        .unwrap(),
-                    roi.outbound_order_to_anf_inclusion()
-                        .try_preimage(&(3 * x.pow(1)).into_verbose())
-                        .unwrap()
-                ])
-            ));
+            assert!(
+                roi_ideals.equal(
+                    &alpha_beta_add,
+                    &roi_ideals.from_integer_span(vec![
+                        roi.outbound_order_to_anf_inclusion()
+                            .try_preimage(&(3 * x.pow(0)).into_verbose())
+                            .unwrap(),
+                        roi.outbound_order_to_anf_inclusion()
+                            .try_preimage(&(3 * x.pow(1)).into_verbose())
+                            .unwrap()
+                    ])
+                )
+            );
 
             // intersection is 30
-            assert!(roi_ideals.equal(
-                &alpha_beta_intersect,
-                &roi_ideals.from_integer_span(vec![
-                    roi.outbound_order_to_anf_inclusion()
-                        .try_preimage(&(30 * x.pow(0)).into_verbose())
-                        .unwrap(),
-                    roi.outbound_order_to_anf_inclusion()
-                        .try_preimage(&(30 * x.pow(1)).into_verbose())
-                        .unwrap()
-                ])
-            ));
+            assert!(
+                roi_ideals.equal(
+                    &alpha_beta_intersect,
+                    &roi_ideals.from_integer_span(vec![
+                        roi.outbound_order_to_anf_inclusion()
+                            .try_preimage(&(30 * x.pow(0)).into_verbose())
+                            .unwrap(),
+                        roi.outbound_order_to_anf_inclusion()
+                            .try_preimage(&(30 * x.pow(1)).into_verbose())
+                            .unwrap()
+                    ])
+                )
+            );
 
             // product is 90
-            assert!(roi_ideals.equal(
-                &alpha_beta_mul,
-                &roi_ideals.from_integer_span(vec![
-                    roi.outbound_order_to_anf_inclusion()
-                        .try_preimage(&(90 * x.pow(0)).into_verbose())
-                        .unwrap(),
-                    roi.outbound_order_to_anf_inclusion()
-                        .try_preimage(&(90 * x.pow(1)).into_verbose())
-                        .unwrap()
-                ])
-            ));
+            assert!(
+                roi_ideals.equal(
+                    &alpha_beta_mul,
+                    &roi_ideals.from_integer_span(vec![
+                        roi.outbound_order_to_anf_inclusion()
+                            .try_preimage(&(90 * x.pow(0)).into_verbose())
+                            .unwrap(),
+                        roi.outbound_order_to_anf_inclusion()
+                            .try_preimage(&(90 * x.pow(1)).into_verbose())
+                            .unwrap()
+                    ])
+                )
+            );
         }
     }
 

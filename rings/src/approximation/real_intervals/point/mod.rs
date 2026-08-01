@@ -168,21 +168,19 @@ impl RealApproximatePointInterface for MulPoints {
                 Subset::Singleton(first * second)
             }
             (Subset::Singleton(rational), Subset::Interval(interval))
-            | (Subset::Interval(interval), Subset::Singleton(rational)) => {
-                match rational.cmp(&Rational::ZERO) {
-                    std::cmp::Ordering::Less => Subset::Interval(RationalInterval::new_unchecked(
-                        &rational * interval.b(),
-                        rational * interval.a(),
-                    )),
-                    std::cmp::Ordering::Equal => Subset::Singleton(Rational::ZERO),
-                    std::cmp::Ordering::Greater => {
-                        Subset::Interval(RationalInterval::new_unchecked(
-                            &rational * interval.a(),
-                            rational * interval.b(),
-                        ))
-                    }
-                }
-            }
+            | (Subset::Interval(interval), Subset::Singleton(rational)) => match rational
+                .cmp(&Rational::ZERO)
+            {
+                std::cmp::Ordering::Less => Subset::Interval(RationalInterval::new_unchecked(
+                    &rational * interval.b(),
+                    rational * interval.a(),
+                )),
+                std::cmp::Ordering::Equal => Subset::Singleton(Rational::ZERO),
+                std::cmp::Ordering::Greater => Subset::Interval(RationalInterval::new_unchecked(
+                    &rational * interval.a(),
+                    rational * interval.b(),
+                )),
+            },
             (Subset::Interval(first), Subset::Interval(second)) => {
                 Subset::Interval(RationalInterval::new_unchecked(
                     std::cmp::min(first.a() * second.b(), first.b() * second.a()),

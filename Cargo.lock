@@ -63,7 +63,6 @@ dependencies = [
  "algebraeon-rings",
  "algebraeon-sets",
  "algebraeon-structures",
- "ambassador",
  "cantor",
  "derivative",
  "itertools 0.11.0",
@@ -162,7 +161,6 @@ version = "0.0.17"
 dependencies = [
  "algebraeon-macros",
  "algebraeon-structures",
- "ambassador",
  "cantor",
  "indexmap",
  "itertools 0.15.0",
@@ -175,22 +173,9 @@ name = "algebraeon-structures"
 version = "0.0.17"
 dependencies = [
  "algebraeon-macros",
- "ambassador",
  "malachite",
  "paste",
  "rand 0.10.1",
-]
-
-[[package]]
-name = "ambassador"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cd3d4da7fddbc6567cbd7b5c30364f91313701b1857ab5b925eb3acf06162eed"
-dependencies = [
- "itertools 0.10.5",
- "proc-macro2",
- "quote",
- "syn 2.0.118",
 ]
 
 [[package]]
@@ -1057,15 +1042,6 @@ checksum = "d466e9454f08e4a911e14806c24e16fba1b4c121d1ea474396f396069cf949d9"
 dependencies = [
  "equivalent",
  "hashbrown 0.17.1",
-]
-
-[[package]]
-name = "itertools"
-version = "0.10.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b0fd2260e829bddf4cb6ea802289de2f86d6a7a690192fbe91b3f46e0f2c8473"
-dependencies = [
- "either",
 ]
 
 [[package]]

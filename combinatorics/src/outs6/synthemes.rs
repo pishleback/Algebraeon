@@ -23,10 +23,8 @@ pub struct SynthemesStructure<
     set: SetB,
 }
 
-impl<
-    Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> SynthemesStructure<Set, SetB>
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
+    SynthemesStructure<Set, SetB>
 {
     pub fn new(set: SetB) -> Self {
         debug_assert_eq!(set.borrow().size(), Natural::from(6usize));
@@ -57,17 +55,13 @@ impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> SetToSynth
 {
 }
 
-impl<
-    Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> Signature for SynthemesStructure<Set, SetB>
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
+    Signature for SynthemesStructure<Set, SetB>
 {
 }
 
-impl<
-    Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> SetSignature for SynthemesStructure<Set, SetB>
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
+    SetSignature for SynthemesStructure<Set, SetB>
 {
     type Elem = Syntheme<Set::Elem>;
 
@@ -98,10 +92,8 @@ impl<
     }
 }
 
-impl<
-    Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> EqSignature for SynthemesStructure<Set, SetB>
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
+    EqSignature for SynthemesStructure<Set, SetB>
 {
     fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
         debug_assert!(self.is_element(a));
@@ -111,20 +103,16 @@ impl<
     }
 }
 
-impl<
-    Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> PartialOrdSignature for SynthemesStructure<Set, SetB>
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
+    PartialOrdSignature for SynthemesStructure<Set, SetB>
 {
     fn partial_cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Ordering> {
         Some(self.cmp(a, b))
     }
 }
 
-impl<
-    Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> OrdSignature for SynthemesStructure<Set, SetB>
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
+    OrdSignature for SynthemesStructure<Set, SetB>
 {
     fn cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Ordering {
         debug_assert!(self.is_element(a));
@@ -136,10 +124,8 @@ impl<
     }
 }
 
-impl<
-    Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> CountableSetSignature for SynthemesStructure<Set, SetB>
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
+    CountableSetSignature for SynthemesStructure<Set, SetB>
 {
     fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
         (0usize..15).map(move |i| self.enumeration_to_element(&Natural::from(i)).unwrap())
@@ -150,27 +136,21 @@ impl<
     }
 }
 
-impl<
-    Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> FiniteSetSignature for SynthemesStructure<Set, SetB>
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
+    FiniteSetSignature for SynthemesStructure<Set, SetB>
 {
     fn size(&self) -> Natural {
         Natural::from(15usize)
     }
 }
 
-impl<
-    Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> ConstSizeFiniteSetSignature<15> for SynthemesStructure<Set, SetB>
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
+    ConstSizeFiniteSetSignature<15> for SynthemesStructure<Set, SetB>
 {
 }
 
-impl<
-    Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> OrderedFiniteSetSignature for SynthemesStructure<Set, SetB>
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
+    OrderedFiniteSetSignature for SynthemesStructure<Set, SetB>
 {
     fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
         self.list_all_elements()
@@ -444,10 +424,8 @@ impl<Set: OrderedFiniteSetSignature> SynthemeOverlapResult<Set> {
     }
 }
 
-impl<
-    Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> SynthemesStructure<Set, SetB>
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
+    SynthemesStructure<Set, SetB>
 {
     pub fn syntheme(
         &self,

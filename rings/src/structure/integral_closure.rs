@@ -107,12 +107,10 @@ pub trait IntegralClosureExtension: Debug + Clone + Send + Sync {
     type Q: FieldSignature;
     type R: IntegralDomainSignature;
     type K: FieldSignature;
-    type ZQ<BZ : BorrowedStructure<Self::Z>, BQ : BorrowedStructure<Self::Q>>: FieldOfFractionsInclusion<Self::Z, Self::Q>;
-    type ZR<BZ: BorrowedStructure<Self::Z>, BR: BorrowedStructure<Self::R>>: RingHomomorphism<Self::Z, Self::R>
-        + InjectiveFunctionMorphism<Self::Z, Self::R>;
-    type QK<BQ : BorrowedStructure<Self::Q>, BK : BorrowedStructure<Self::K>>: FiniteDimensionalFieldExtension<Self::QKBasis, Self::Q, Self::K>;
-    type RK<BR: BorrowedStructure<Self::R>, BK: BorrowedStructure<Self::K>>: RingHomomorphism<Self::R, Self::K>
-        + InjectiveFunctionMorphism<Self::R, Self::K>;
+    type ZQ<BZ: BorrowedStructure<Self::Z>, BQ: BorrowedStructure<Self::Q>>: FieldOfFractionsInclusion<Self::Z, Self::Q>;
+    type ZR<BZ: BorrowedStructure<Self::Z>, BR: BorrowedStructure<Self::R>>: RingHomomorphism<Self::Z, Self::R> + InjectiveFunctionMorphism<Self::Z, Self::R>;
+    type QK<BQ: BorrowedStructure<Self::Q>, BK: BorrowedStructure<Self::K>>: FiniteDimensionalFieldExtension<Self::QKBasis, Self::Q, Self::K>;
+    type RK<BR: BorrowedStructure<Self::R>, BK: BorrowedStructure<Self::K>>: RingHomomorphism<Self::R, Self::K> + InjectiveFunctionMorphism<Self::R, Self::K>;
 
     fn z_ring(&self) -> &Self::Z;
     fn q_field(&self) -> &Self::Q;
