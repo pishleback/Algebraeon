@@ -9,8 +9,8 @@ pub struct CartesianProductSetStructure<Set0: SetSignature, Set1: SetSignature> 
 }
 
 impl<Set0: SetSignature, Set1: SetSignature> CartesianProductSetStructure<Set0, Set1> {
-    pub fn new(set_0: Arc<Set0>, set_1: Arc<Set1>) -> Self {
-        Self { set_0, set_1 }
+    pub fn new(set_0: Arc<Set0>, set_1: Arc<Set1>) -> Arc<Self> {
+        Self { set_0, set_1 }.into()
     }
 
     pub fn set_0(&self) -> &Arc<Set0> {
@@ -143,10 +143,7 @@ impl<Elem0: MetaType, Elem1: MetaType> MetaType for (Elem0, Elem1) {
     type Signature = CartesianProductSetStructure<Elem0::Signature, Elem1::Signature>;
 
     fn structure() -> Arc<Self::Signature> {
-        Arc::new(CartesianProductSetStructure::new(
-            Elem0::structure(),
-            Elem1::structure(),
-        ))
+        CartesianProductSetStructure::new(Elem0::structure(), Elem1::structure())
     }
 }
 
@@ -156,8 +153,8 @@ mod tests {
 
     #[test]
     fn test() {
-        let set_0 = i32::structure().into_const_size_finite_subset([1, 2, 3, 4, 5]);
-        let set_1 = i32::structure().into_const_size_finite_subset([6, 7, 8]);
+        let set_0 = i32::structure().const_size_finite_subset([1, 2, 3, 4, 5]);
+        let set_1 = i32::structure().const_size_finite_subset([6, 7, 8]);
         let set_01 = CartesianProductSetStructure::new(set_0, set_1);
 
         assert!(set_01.is_element(&(1, 6)));
@@ -168,8 +165,8 @@ mod tests {
 
     #[test]
     fn enumeration() {
-        let set_0 = i32::structure().into_const_size_finite_subset([1, 2, 3, 4, 5]);
-        let set_1 = i32::structure().into_const_size_finite_subset([6, 7, 8]);
+        let set_0 = i32::structure().const_size_finite_subset([1, 2, 3, 4, 5]);
+        let set_1 = i32::structure().const_size_finite_subset([6, 7, 8]);
         let set_01 = CartesianProductSetStructure::new(set_0, set_1);
         assert_enumerated_ord_finite_set!(set_01, 15);
     }

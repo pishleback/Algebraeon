@@ -1,5 +1,5 @@
 use crate::*;
-use std::marker::PhantomData;
+use std::{marker::PhantomData, sync::Arc};
 
 /// The composition A -> B -> C of two morphisms A -> B and B -> C
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -32,17 +32,17 @@ impl<A: Signature, B: Signature, C: Signature, AB: Morphism<A, B>, BC: Morphism<
         }
     }
 
-    pub fn a(&self) -> &A {
+    pub fn a(&self) -> &Arc<A> {
         self.a_to_b.domain()
     }
 
-    pub fn b(&self) -> &B {
+    pub fn b(&self) -> &Arc<B> {
         let b = self.a_to_b.range();
         debug_assert_eq!(b, self.b_to_c.domain());
         b
     }
 
-    pub fn c(&self) -> &C {
+    pub fn c(&self) -> &Arc<C> {
         self.b_to_c.range()
     }
 
@@ -58,11 +58,11 @@ impl<A: Signature, B: Signature, C: Signature, AB: Morphism<A, B>, BC: Morphism<
 impl<A: Signature, B: Signature, C: Signature, AB: Morphism<A, B>, BC: Morphism<B, C>>
     Morphism<A, C> for CompositionMorphism<A, B, C, AB, BC>
 {
-    fn domain(&self) -> &A {
+    fn domain(&self) -> &Arc<A> {
         self.a()
     }
 
-    fn range(&self) -> &C {
+    fn range(&self) -> &Arc<C> {
         self.c()
     }
 }

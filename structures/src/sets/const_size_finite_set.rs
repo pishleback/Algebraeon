@@ -11,7 +11,7 @@ pub struct ConstSizeFiniteSetStructure<const N: usize, Set: FiniteSetSignature> 
 pub trait FiniteSetToFiniteSetSizedSignature: FiniteSetSignature {
     fn try_to_const_sized<const N: usize>(
         self: &Arc<Self>,
-    ) -> Option<ConstSizeFiniteSetStructure<N, Self>> {
+    ) -> Option<Arc<ConstSizeFiniteSetStructure<N, Self>>> {
         ConstSizeFiniteSetStructure::try_new(self.clone())
     }
 }
@@ -22,9 +22,9 @@ impl<const N: usize, Set: FiniteSetSignature> ConstSizeFiniteSetStructure<N, Set
         &self.set
     }
 
-    pub fn try_new(set: Arc<Set>) -> Option<Self> {
+    pub fn try_new(set: Arc<Set>) -> Option<Arc<Self>> {
         if set.size() == Natural::from(N) {
-            Some(Self { set })
+            Some(Self { set }.into())
         } else {
             None
         }
@@ -116,8 +116,8 @@ mod tests {
     fn enumeration() {
         assert_enumerated_ord_finite_set!(
             i32::structure()
-                .into_finite_subset(vec![1, 2, 3, 4, 5])
-                .try_into_const_sized::<5>()
+                .finite_subset(vec![1, 2, 3, 4, 5])
+                .try_to_const_sized::<5>()
                 .unwrap(),
             5
         );

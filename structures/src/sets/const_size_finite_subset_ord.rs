@@ -34,8 +34,8 @@ pub trait SetToConstSizeFiniteSubsetByOrdSignature: OrdSignature {
     fn const_size_finite_subset<const N: usize>(
         self: Arc<Self>,
         elems: [Self::Elem; N],
-    ) -> ConstSizeFiniteSubsetByOrdStructure<N, Self> {
-        ConstSizeFiniteSubsetByOrdStructure::new(self, elems)
+    ) -> Arc<ConstSizeFiniteSubsetByOrdStructure<N, Self>> {
+        ConstSizeFiniteSubsetByOrdStructure::new(self, elems).into()
     }
 }
 impl<Set: OrdSignature> SetToConstSizeFiniteSubsetByOrdSignature for Set {}
@@ -71,15 +71,15 @@ impl<const N: usize, Set: OrdSignature> Eq for ConstSizeFiniteSubsetByOrdStructu
 
 impl<const N: usize, Set: OrdSignature> ConstSizeFiniteSubsetByOrdStructure<N, Set> {
     pub fn new(set: Arc<Set>, elems: [Set::Elem; N]) -> Self {
-        debug_assert!(set.borrow().is_sorted_and_unique(&elems));
+        debug_assert!(set.is_sorted_and_unique(&elems));
         Self {
             set,
             subset: ConstSizeFiniteSubsetByOrd { elems },
         }
     }
 
-    pub fn set(&self) -> &Set {
-        self.set.borrow()
+    pub fn set(&self) -> &Arc<Set> {
+        &self.set
     }
 }
 
@@ -182,14 +182,14 @@ mod tests {
 
     #[test]
     fn test_sized() {
-        let set = i32::structure().into_const_size_finite_subset([1, 2, 3, 4, 5, 6]);
+        let set = i32::structure().const_size_finite_subset([1, 2, 3, 4, 5, 6]);
         assert_eq!(set.size(), Natural::from(6usize));
     }
 
     #[test]
     fn enumeration() {
         assert_enumerated_ord_finite_set!(
-            i32::structure().into_const_size_finite_subset([1, 2, 3, 4, 5]),
+            i32::structure().const_size_finite_subset([1, 2, 3, 4, 5]),
             5
         );
     }

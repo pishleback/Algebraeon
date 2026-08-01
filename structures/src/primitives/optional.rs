@@ -7,8 +7,8 @@ pub struct OptionalStructure<Set: SetSignature> {
 }
 
 impl<Set: SetSignature> OptionalStructure<Set> {
-    pub fn new(set: Arc<Set>) -> Self {
-        Self { set }
+    pub fn new(set: Arc<Set>) -> Arc<Self> {
+        Self { set }.into()
     }
 
     pub fn set(self: &Arc<Self>) -> &Arc<Set> {
@@ -102,7 +102,7 @@ impl<Elem: MetaType> MetaType for Option<Elem> {
     type Signature = OptionalStructure<Elem::Signature>;
 
     fn structure() -> Arc<Self::Signature> {
-        Arc::new(OptionalStructure::new(Elem::structure()))
+        OptionalStructure::new(Elem::structure())
     }
 }
 
@@ -113,7 +113,7 @@ mod tests {
     #[test]
     fn optional_enumeration() {
         assert_enumerated_ord_finite_set!(
-            OptionalStructure::new(i32::structure().into_const_size_finite_subset([1, 2, 3, 4, 5])),
+            OptionalStructure::new(i32::structure().const_size_finite_subset([1, 2, 3, 4, 5])),
             6
         );
     }

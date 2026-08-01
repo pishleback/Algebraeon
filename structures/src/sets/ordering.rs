@@ -17,7 +17,7 @@ struct VecMerger<X, O: OrdSignature, K: Fn(&X) -> &O::Elem> {
     key: K,
 }
 
-impl<'s, X, O: OrdSignature + 's, K: Fn(&X) -> &O::Elem> VecMerger<X, O, K> {
+impl<X, O: OrdSignature, K: Fn(&X) -> &O::Elem> VecMerger<X, O, K> {
     fn new(ordering: Arc<O>, a: Vec<X>, b: Vec<X>, key: K) -> Self {
         Self {
             ordering,
@@ -388,6 +388,12 @@ mod tests {
     #[derive(Debug, Clone, PartialEq, Eq)]
     struct UsizeStructure {}
 
+    impl UsizeStructure {
+        pub fn new() -> Arc<Self> {
+            Arc::new(Self {})
+        }
+    }
+
     impl Signature for UsizeStructure {}
 
     impl SetSignature for UsizeStructure {
@@ -418,7 +424,7 @@ mod tests {
 
     #[test]
     fn ordering_structure() {
-        let s = UsizeStructure {};
+        let s = UsizeStructure::new();
 
         assert_eq!(s.cmp(&2, &2), Ordering::Equal);
         assert_eq!(s.cmp(&1, &2), Ordering::Less);

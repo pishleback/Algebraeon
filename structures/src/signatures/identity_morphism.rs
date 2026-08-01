@@ -1,23 +1,24 @@
 use crate::*;
+use std::sync::Arc;
 
 /// The identity morphism X -> X
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct IdentityMorphism<X: Signature> {
-    x: X,
+    x: Arc<X>,
 }
 
 impl<X: Signature> IdentityMorphism<X> {
-    pub fn new(x: X) -> Self {
+    pub fn new(x: Arc<X>) -> Self {
         Self { x }
     }
 }
 
 impl<X: Signature> Morphism<X, X> for IdentityMorphism<X> {
-    fn domain(&self) -> &X {
+    fn domain(&self) -> &Arc<X> {
         &self.x
     }
 
-    fn range(&self) -> &X {
+    fn range(&self) -> &Arc<X> {
         &self.x
     }
 }

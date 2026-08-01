@@ -52,7 +52,7 @@ pub trait FiniteSetSignature: CountableSetSignature {
     /// A list of all elements in the set.
     /// Must always return elements in the same order.
     fn list_all_elements(self: &Arc<Self>) -> Vec<Self::Elem> {
-        self.generate_all_elements().collect()
+        self.clone().generate_all_elements().collect()
     }
 
     fn size(self: &Arc<Self>) -> Natural {

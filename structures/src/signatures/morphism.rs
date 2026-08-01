@@ -1,8 +1,9 @@
 use crate::*;
+use std::sync::Arc;
 
 pub trait Morphism<Domain: Signature, Range: Signature>: Debug + Clone + Send + Sync {
-    fn domain(&self) -> &Domain;
-    fn range(&self) -> &Range;
+    fn domain(&self) -> &Arc<Domain>;
+    fn range(&self) -> &Arc<Range>;
 }
 
 /// A morphism from an object to itself

@@ -23,8 +23,11 @@ pub struct FiniteSubsetByOrdStructure<Set: OrdSignature> {
 }
 
 pub trait SetToFiniteSubsetByOrdSignature: OrdSignature {
-    fn finite_subset(self: Arc<Self>, elems: Vec<Self::Elem>) -> FiniteSubsetByOrdStructure<Self> {
-        FiniteSubsetByOrdStructure::new(self, elems)
+    fn finite_subset(
+        self: Arc<Self>,
+        elems: Vec<Self::Elem>,
+    ) -> Arc<FiniteSubsetByOrdStructure<Self>> {
+        FiniteSubsetByOrdStructure::new(self, elems).into()
     }
 }
 impl<Set: OrdSignature> SetToFiniteSubsetByOrdSignature for Set {}
@@ -60,15 +63,15 @@ impl<Set: OrdSignature> Eq for FiniteSubsetByOrdStructure<Set> {}
 
 impl<Set: OrdSignature> FiniteSubsetByOrdStructure<Set> {
     pub fn new(set: Arc<Set>, elems: Vec<Set::Elem>) -> Self {
-        debug_assert!(set.borrow().is_sorted_and_unique(&elems));
+        debug_assert!(set.is_sorted_and_unique(&elems));
         Self {
             set,
             subset: FiniteSubsetByOrd { elems },
         }
     }
 
-    pub fn set(&self) -> &Set {
-        self.set.borrow()
+    pub fn set(&self) -> &Arc<Set> {
+        &self.set
     }
 }
 
@@ -152,15 +155,15 @@ mod tests {
 
     #[test]
     fn test_unsized() {
-        let set = i32::structure().into_finite_subset(vec![1, 2, 3, 4, 5, 6]);
+        let set = i32::structure().finite_subset(vec![1, 2, 3, 4, 5, 6]);
         assert_eq!(set.size(), Natural::from(6usize));
     }
 
     #[test]
     fn test_sized() {
         let set = i32::structure()
-            .into_finite_subset(vec![1, 2, 3, 4, 5, 6])
-            .try_into_const_sized::<6>()
+            .finite_subset(vec![1, 2, 3, 4, 5, 6])
+            .try_to_const_sized::<6>()
             .unwrap();
         assert_eq!(set.size(), Natural::from(6usize));
     }
@@ -169,8 +172,8 @@ mod tests {
     fn enumeration() {
         assert_enumerated_ord_finite_set!(
             i32::structure()
-                .into_finite_subset(vec![1, 2, 3, 4, 5])
-                .try_into_const_sized::<5>()
+                .finite_subset(vec![1, 2, 3, 4, 5])
+                .try_to_const_sized::<5>()
                 .unwrap(),
             5
         );
