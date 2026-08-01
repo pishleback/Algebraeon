@@ -217,7 +217,7 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
         );
 
         quote! {
-            impl EnumeratedOrdFiniteSetSignature for #newtype_name {
+            impl OrderedFiniteSetSignature for #newtype_name {
                 fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
                     <#name as cantor::Finite>::iter().collect()
                 }

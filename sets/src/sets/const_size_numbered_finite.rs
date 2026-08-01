@@ -57,7 +57,7 @@ impl<const N: usize> FiniteSetSignature for ConstSizeEnumeratedFiniteSetStructur
     }
 }
 
-impl<const N: usize> EnumeratedOrdFiniteSetSignature for ConstSizeEnumeratedFiniteSetStructure<N> {
+impl<const N: usize> OrderedFiniteSetSignature for ConstSizeEnumeratedFiniteSetStructure<N> {
     fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
         (0..N).collect()
     }

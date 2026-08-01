@@ -59,7 +59,7 @@ impl FiniteSetSignature for EnumeratedFiniteSetStructure {
     }
 }
 
-impl EnumeratedOrdFiniteSetSignature for EnumeratedFiniteSetStructure {
+impl OrderedFiniteSetSignature for EnumeratedFiniteSetStructure {
     fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
         (0..self.n).collect()
     }

@@ -42,7 +42,7 @@ use std::cmp::Ordering;
 /// +----+----+ +----+----+ +----+----+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExtendedBinaryGolayCodeStructure<
-    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<24>,
+    Set: OrderedFiniteSetSignature + FiniteSetSizedSignature<24>,
     SetB: BorrowedStructure<Set>,
 > {
     ebgc: FinitelyFreeSubmoduleStructure<
@@ -101,7 +101,7 @@ impl From<BinaryVector24> for Vec<Modulo<2>> {
 }
 
 pub trait SetToExtendedBinaryGolayCodeSignature:
-    EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<24>
+    OrderedFiniteSetSignature + FiniteSetSizedSignature<24>
 {
     fn extended_binary_golay_code(&self) -> ExtendedBinaryGolayCodeStructure<Self, &Self> {
         ExtendedBinaryGolayCodeStructure::new(self)
@@ -111,15 +111,13 @@ pub trait SetToExtendedBinaryGolayCodeSignature:
         ExtendedBinaryGolayCodeStructure::new(self)
     }
 }
-impl<Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<24>>
+impl<Set: OrderedFiniteSetSignature + FiniteSetSizedSignature<24>>
     SetToExtendedBinaryGolayCodeSignature for Set
 {
 }
 
-impl<
-    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<24>,
-    SetB: BorrowedStructure<Set>,
-> ExtendedBinaryGolayCodeStructure<Set, SetB>
+impl<Set: OrderedFiniteSetSignature + FiniteSetSizedSignature<24>, SetB: BorrowedStructure<Set>>
+    ExtendedBinaryGolayCodeStructure<Set, SetB>
 {
     pub fn new(set: SetB) -> Self {
         let full_space = Modulo::structure().into_free_module(set);
@@ -134,17 +132,13 @@ impl<
     }
 }
 
-impl<
-    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<24>,
-    SetB: BorrowedStructure<Set>,
-> Signature for ExtendedBinaryGolayCodeStructure<Set, SetB>
+impl<Set: OrderedFiniteSetSignature + FiniteSetSizedSignature<24>, SetB: BorrowedStructure<Set>>
+    Signature for ExtendedBinaryGolayCodeStructure<Set, SetB>
 {
 }
 
-impl<
-    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<24>,
-    SetB: BorrowedStructure<Set>,
-> SetSignature for ExtendedBinaryGolayCodeStructure<Set, SetB>
+impl<Set: OrderedFiniteSetSignature + FiniteSetSizedSignature<24>, SetB: BorrowedStructure<Set>>
+    SetSignature for ExtendedBinaryGolayCodeStructure<Set, SetB>
 {
     type Elem = Vec<Modulo<2>>;
 
@@ -153,40 +147,32 @@ impl<
     }
 }
 
-impl<
-    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<24>,
-    SetB: BorrowedStructure<Set>,
-> EqSignature for ExtendedBinaryGolayCodeStructure<Set, SetB>
+impl<Set: OrderedFiniteSetSignature + FiniteSetSizedSignature<24>, SetB: BorrowedStructure<Set>>
+    EqSignature for ExtendedBinaryGolayCodeStructure<Set, SetB>
 {
     fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
         self.ebgc.equal(a, b)
     }
 }
 
-impl<
-    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<24>,
-    SetB: BorrowedStructure<Set>,
-> PartialOrdSignature for ExtendedBinaryGolayCodeStructure<Set, SetB>
+impl<Set: OrderedFiniteSetSignature + FiniteSetSizedSignature<24>, SetB: BorrowedStructure<Set>>
+    PartialOrdSignature for ExtendedBinaryGolayCodeStructure<Set, SetB>
 {
     fn partial_cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Ordering> {
         self.ebgc.partial_cmp(a, b)
     }
 }
 
-impl<
-    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<24>,
-    SetB: BorrowedStructure<Set>,
-> OrdSignature for ExtendedBinaryGolayCodeStructure<Set, SetB>
+impl<Set: OrderedFiniteSetSignature + FiniteSetSizedSignature<24>, SetB: BorrowedStructure<Set>>
+    OrdSignature for ExtendedBinaryGolayCodeStructure<Set, SetB>
 {
     fn cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Ordering {
         self.ebgc.cmp(a, b)
     }
 }
 
-impl<
-    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<24>,
-    SetB: BorrowedStructure<Set>,
-> CountableSetSignature for ExtendedBinaryGolayCodeStructure<Set, SetB>
+impl<Set: OrderedFiniteSetSignature + FiniteSetSizedSignature<24>, SetB: BorrowedStructure<Set>>
+    CountableSetSignature for ExtendedBinaryGolayCodeStructure<Set, SetB>
 {
     fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
         self.ebgc.into_generate_all_elements()
@@ -197,10 +183,8 @@ impl<
     }
 }
 
-impl<
-    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<24>,
-    SetB: BorrowedStructure<Set>,
-> FiniteSetSignature for ExtendedBinaryGolayCodeStructure<Set, SetB>
+impl<Set: OrderedFiniteSetSignature + FiniteSetSizedSignature<24>, SetB: BorrowedStructure<Set>>
+    FiniteSetSignature for ExtendedBinaryGolayCodeStructure<Set, SetB>
 {
     fn list_all_elements(&self) -> Vec<Self::Elem> {
         self.ebgc.list_all_elements()
@@ -215,10 +199,8 @@ impl<
     }
 }
 
-impl<
-    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<24>,
-    SetB: BorrowedStructure<Set>,
-> EnumeratedOrdFiniteSetSignature for ExtendedBinaryGolayCodeStructure<Set, SetB>
+impl<Set: OrderedFiniteSetSignature + FiniteSetSizedSignature<24>, SetB: BorrowedStructure<Set>>
+    OrderedFiniteSetSignature for ExtendedBinaryGolayCodeStructure<Set, SetB>
 {
     fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
         self.ebgc.list_all_elements_ordered()
@@ -233,74 +215,59 @@ impl<
     }
 }
 
-impl<
-    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<24>,
-    SetB: BorrowedStructure<Set>,
-> RinglikeSpecializationSignature for ExtendedBinaryGolayCodeStructure<Set, SetB>
+impl<Set: OrderedFiniteSetSignature + FiniteSetSizedSignature<24>, SetB: BorrowedStructure<Set>>
+    RinglikeSpecializationSignature for ExtendedBinaryGolayCodeStructure<Set, SetB>
 {
 }
 
-impl<
-    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<24>,
-    SetB: BorrowedStructure<Set>,
-> ZeroSignature for ExtendedBinaryGolayCodeStructure<Set, SetB>
+impl<Set: OrderedFiniteSetSignature + FiniteSetSizedSignature<24>, SetB: BorrowedStructure<Set>>
+    ZeroSignature for ExtendedBinaryGolayCodeStructure<Set, SetB>
 {
     fn zero(&self) -> Self::Elem {
         self.ebgc.zero()
     }
 }
 
-impl<
-    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<24>,
-    SetB: BorrowedStructure<Set>,
-> AdditionSignature for ExtendedBinaryGolayCodeStructure<Set, SetB>
+impl<Set: OrderedFiniteSetSignature + FiniteSetSizedSignature<24>, SetB: BorrowedStructure<Set>>
+    AdditionSignature for ExtendedBinaryGolayCodeStructure<Set, SetB>
 {
     fn add(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.ebgc.add(a, b)
     }
 }
 
-impl<
-    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<24>,
-    SetB: BorrowedStructure<Set>,
-> CancellativeAdditionSignature for ExtendedBinaryGolayCodeStructure<Set, SetB>
+impl<Set: OrderedFiniteSetSignature + FiniteSetSizedSignature<24>, SetB: BorrowedStructure<Set>>
+    CancellativeAdditionSignature for ExtendedBinaryGolayCodeStructure<Set, SetB>
 {
     fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         self.ebgc.try_sub(a, b)
     }
 }
 
-impl<
-    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<24>,
-    SetB: BorrowedStructure<Set>,
-> TryNegateSignature for ExtendedBinaryGolayCodeStructure<Set, SetB>
+impl<Set: OrderedFiniteSetSignature + FiniteSetSizedSignature<24>, SetB: BorrowedStructure<Set>>
+    TryNegateSignature for ExtendedBinaryGolayCodeStructure<Set, SetB>
 {
     fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
         self.ebgc.try_neg(a)
     }
 }
 
-impl<
-    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<24>,
-    SetB: BorrowedStructure<Set>,
-> AdditiveMonoidSignature for ExtendedBinaryGolayCodeStructure<Set, SetB>
+impl<Set: OrderedFiniteSetSignature + FiniteSetSizedSignature<24>, SetB: BorrowedStructure<Set>>
+    AdditiveMonoidSignature for ExtendedBinaryGolayCodeStructure<Set, SetB>
 {
 }
 
-impl<
-    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<24>,
-    SetB: BorrowedStructure<Set>,
-> AdditiveGroupSignature for ExtendedBinaryGolayCodeStructure<Set, SetB>
+impl<Set: OrderedFiniteSetSignature + FiniteSetSizedSignature<24>, SetB: BorrowedStructure<Set>>
+    AdditiveGroupSignature for ExtendedBinaryGolayCodeStructure<Set, SetB>
 {
     fn neg(&self, a: &Self::Elem) -> Self::Elem {
         self.ebgc.neg(a)
     }
 }
 
-impl<
-    Set: EnumeratedOrdFiniteSetSignature + FiniteSetSizedSignature<24>,
-    SetB: BorrowedStructure<Set>,
-> SemiModuleSignature<ModuloCanonicalStructure<2>> for ExtendedBinaryGolayCodeStructure<Set, SetB>
+impl<Set: OrderedFiniteSetSignature + FiniteSetSizedSignature<24>, SetB: BorrowedStructure<Set>>
+    SemiModuleSignature<ModuloCanonicalStructure<2>>
+    for ExtendedBinaryGolayCodeStructure<Set, SetB>
 {
     fn ring(&self) -> &ModuloCanonicalStructure<2> {
         self.ebgc.ring()

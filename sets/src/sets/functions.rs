@@ -100,7 +100,7 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: OrderedFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -129,7 +129,7 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: OrderedFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -149,7 +149,7 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: OrderedFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: EqSignature,
     RangeB: BorrowedStructure<Range>,
@@ -165,7 +165,7 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: OrderedFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: OrdSignature,
     RangeB: BorrowedStructure<Range>,
@@ -177,7 +177,7 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: OrderedFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: OrdSignature,
     RangeB: BorrowedStructure<Range>,
@@ -204,9 +204,9 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: OrderedFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
-    Range: EnumeratedOrdFiniteSetSignature,
+    Range: OrderedFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
 > CountableSetSignature for FunctionsStructure<Domain, DomainB, Range, RangeB>
 {
@@ -223,9 +223,9 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: OrderedFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
-    Range: EnumeratedOrdFiniteSetSignature,
+    Range: OrderedFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
 > FiniteSetSignature for FunctionsStructure<Domain, DomainB, Range, RangeB>
 {
@@ -235,11 +235,11 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: OrderedFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
-    Range: EnumeratedOrdFiniteSetSignature,
+    Range: OrderedFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
-> EnumeratedOrdFiniteSetSignature for FunctionsStructure<Domain, DomainB, Range, RangeB>
+> OrderedFiniteSetSignature for FunctionsStructure<Domain, DomainB, Range, RangeB>
 {
     fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
         let n: usize = self.domain().size().try_into().unwrap_or(usize::MAX);
@@ -291,7 +291,7 @@ impl<
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct RightPermutationActionOnFunctionsStructure<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: OrderedFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -306,7 +306,7 @@ struct RightPermutationActionOnFunctionsStructure<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: OrderedFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -335,7 +335,7 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: OrderedFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -356,7 +356,7 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: OrderedFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -385,7 +385,7 @@ impl<
 
 /// Sym(D) has a right action on Fun(D -> R) by composition on the right
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: OrderedFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
@@ -428,7 +428,7 @@ impl<
 struct LeftPermutationActionOnFunctionsStructure<
     Domain: SetSignature,
     DomainB: BorrowedStructure<Domain>,
-    Range: EnumeratedOrdFiniteSetSignature,
+    Range: OrderedFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
     FunctionsB: BorrowedStructure<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
     RangePerms: PermutationsSignature<Range>,
@@ -443,7 +443,7 @@ struct LeftPermutationActionOnFunctionsStructure<
 impl<
     Domain: SetSignature,
     DomainB: BorrowedStructure<Domain>,
-    Range: EnumeratedOrdFiniteSetSignature,
+    Range: OrderedFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
     FunctionsB: BorrowedStructure<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
     RangePerms: PermutationsSignature<Range>,
@@ -472,7 +472,7 @@ impl<
 impl<
     Domain: SetSignature,
     DomainB: BorrowedStructure<Domain>,
-    Range: EnumeratedOrdFiniteSetSignature,
+    Range: OrderedFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
     FunctionsB: BorrowedStructure<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
     RangePerms: PermutationsSignature<Range>,
@@ -491,9 +491,9 @@ impl<
 }
 
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: OrderedFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
-    Range: EnumeratedOrdFiniteSetSignature,
+    Range: OrderedFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
 > FunctionsRangePermutationActionSignature<Domain, Range>
     for FunctionsStructure<Domain, DomainB, Range, RangeB>
@@ -520,9 +520,9 @@ impl<
 
 /// Sym(R) has a left action on Fun(D -> R) by composition on the left
 impl<
-    Domain: EnumeratedOrdFiniteSetSignature,
+    Domain: OrderedFiniteSetSignature,
     DomainB: BorrowedStructure<Domain>,
-    Range: EnumeratedOrdFiniteSetSignature,
+    Range: OrderedFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
     FunctionsB: BorrowedStructure<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
     RangePerms: PermutationsSignature<Range>,

@@ -134,7 +134,7 @@ pub trait FinitelyFreeModuleSignature<Basis: FiniteSetSignature, Ring: RingSigna
         submodule: FinitelyFreeSubmodule<Ring::Elem>,
     ) -> FinitelyFreeSubmoduleStructure<Basis, Ring, Self, &Self>
     where
-        Basis: EnumeratedOrdFiniteSetSignature,
+        Basis: OrderedFiniteSetSignature,
         Ring: ReducedHermiteAlgorithmSignature,
     {
         FinitelyFreeSubmoduleStructure::new(self, submodule)
@@ -142,7 +142,7 @@ pub trait FinitelyFreeModuleSignature<Basis: FiniteSetSignature, Ring: RingSigna
 
     fn submodules(&self) -> FinitelyFreeSubmodulesStructure<Basis, Ring, Self, &Self>
     where
-        Basis: EnumeratedOrdFiniteSetSignature,
+        Basis: OrderedFiniteSetSignature,
         Ring: ReducedHermiteAlgorithmSignature,
     {
         FinitelyFreeSubmodulesStructure::new(self)
@@ -150,7 +150,7 @@ pub trait FinitelyFreeModuleSignature<Basis: FiniteSetSignature, Ring: RingSigna
 
     fn into_submodules(self) -> FinitelyFreeSubmodulesStructure<Basis, Ring, Self, Self>
     where
-        Basis: EnumeratedOrdFiniteSetSignature,
+        Basis: OrderedFiniteSetSignature,
         Ring: ReducedHermiteAlgorithmSignature,
     {
         FinitelyFreeSubmodulesStructure::new(self)
@@ -158,7 +158,7 @@ pub trait FinitelyFreeModuleSignature<Basis: FiniteSetSignature, Ring: RingSigna
 
     fn cosets(&self) -> FinitelyFreeSubmoduleCosetsStructure<Basis, Ring, Self, &Self>
     where
-        Basis: EnumeratedOrdFiniteSetSignature,
+        Basis: OrderedFiniteSetSignature,
         Ring: ReducedHermiteAlgorithmSignature,
     {
         FinitelyFreeSubmoduleCosetsStructure::new(self)
@@ -166,7 +166,7 @@ pub trait FinitelyFreeModuleSignature<Basis: FiniteSetSignature, Ring: RingSigna
 
     fn into_cosets(self) -> FinitelyFreeSubmoduleCosetsStructure<Basis, Ring, Self, Self>
     where
-        Basis: EnumeratedOrdFiniteSetSignature,
+        Basis: OrderedFiniteSetSignature,
         Ring: ReducedHermiteAlgorithmSignature,
     {
         FinitelyFreeSubmoduleCosetsStructure::new(self)
@@ -176,7 +176,7 @@ pub trait FinitelyFreeModuleSignature<Basis: FiniteSetSignature, Ring: RingSigna
         &self,
     ) -> FinitelyFreeSubmoduleAffineSubsetsStructure<Basis, Ring, Self, &Self>
     where
-        Basis: EnumeratedOrdFiniteSetSignature,
+        Basis: OrderedFiniteSetSignature,
         Ring: ReducedHermiteAlgorithmSignature,
     {
         FinitelyFreeSubmoduleAffineSubsetsStructure::new(self)
@@ -186,7 +186,7 @@ pub trait FinitelyFreeModuleSignature<Basis: FiniteSetSignature, Ring: RingSigna
         self,
     ) -> FinitelyFreeSubmoduleAffineSubsetsStructure<Basis, Ring, Self, Self>
     where
-        Basis: EnumeratedOrdFiniteSetSignature,
+        Basis: OrderedFiniteSetSignature,
         Ring: ReducedHermiteAlgorithmSignature,
     {
         FinitelyFreeSubmoduleAffineSubsetsStructure::new(self)
@@ -194,7 +194,7 @@ pub trait FinitelyFreeModuleSignature<Basis: FiniteSetSignature, Ring: RingSigna
 
     fn improper_submodule(&self) -> FinitelyFreeSubmodule<Ring::Elem>
     where
-        Basis: EnumeratedOrdFiniteSetSignature,
+        Basis: OrderedFiniteSetSignature,
         Ring: ReducedHermiteAlgorithmSignature,
     {
         self.submodules()
@@ -203,7 +203,7 @@ pub trait FinitelyFreeModuleSignature<Basis: FiniteSetSignature, Ring: RingSigna
 
     fn generated_submodule(&self, generators: Vec<&Self::Elem>) -> FinitelyFreeSubmodule<Ring::Elem>
     where
-        Basis: EnumeratedOrdFiniteSetSignature,
+        Basis: OrderedFiniteSetSignature,
         Ring: ReducedHermiteAlgorithmSignature,
     {
         for generator in &generators {

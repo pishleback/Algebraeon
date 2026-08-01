@@ -148,8 +148,8 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> FiniteSetSignature
     }
 }
 
-impl<Set: EnumeratedOrdFiniteSetSignature, SetB: BorrowedStructure<Set>>
-    EnumeratedOrdFiniteSetSignature for FiniteSubsetByOrdStructure<Set, SetB>
+impl<Set: OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>> OrderedFiniteSetSignature
+    for FiniteSubsetByOrdStructure<Set, SetB>
 {
     fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
         self.list_all_elements()

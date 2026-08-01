@@ -10,12 +10,16 @@ All notable changes to this project will be documented in this file.
  - Added structure types for quotient sets.
  - Renamed `SetSignature::Set` -> `SetSignature::Elem`.
  - Added Montgomery form for modular arithmetic modulo odd integers.
- - Added `EnumeratedOrdFiniteSetSignature` for ordered enumerated finite sets.
+ - Added `OrderedFiniteSetSignature` for ordered enumerated finite sets.
  - Added duads, synthemes, and pentads.
  - Added the set of subsets of a finite set.
  - Added the set of subsets of a finite set with a fixed size.
  - Improved the finite set of functions between two finite sets.
  - Added group actions.
+ - Added const size versions of various structures on finite sets.
+ - Added methods for working with the Hexacode, Tetracode, and Extended Binary Golay Code.
+ - Added `MetaTypeRef` as a subtrait of `MetaType`. `MetaTypeRef` provides `structure_ref()`.
+ - Added optional `#[ref_meta]` attribute to fns taking `&self` of a trait decorated with `#[signature_meta_trait]`. This forwards `&self` as `Self::structure_ref()` instead of `&Self::structure()`.
 
 ## [0.0.17] - 2026-03-06
 

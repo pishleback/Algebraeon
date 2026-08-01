@@ -10,7 +10,7 @@ use std::{cmp::Ordering, marker::PhantomData};
 
 #[derive(Debug, Clone)]
 pub struct FinitelyFreeSubmoduleStructure<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
     ModuleB: BorrowedStructure<Module>,
@@ -21,7 +21,7 @@ pub struct FinitelyFreeSubmoduleStructure<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
     ModuleB: BorrowedStructure<Module>,
@@ -34,7 +34,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
     ModuleB: BorrowedStructure<Module>,
@@ -47,7 +47,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
     ModuleB: BorrowedStructure<Module>,
@@ -56,7 +56,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
     ModuleB: BorrowedStructure<Module>,
@@ -84,7 +84,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
     ModuleB: BorrowedStructure<Module>,
@@ -93,7 +93,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
     ModuleB: BorrowedStructure<Module>,
@@ -115,7 +115,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring> + EqSignature,
     ModuleB: BorrowedStructure<Module>,
@@ -127,7 +127,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring> + OrdSignature,
     ModuleB: BorrowedStructure<Module>,
@@ -139,7 +139,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring> + OrdSignature,
     ModuleB: BorrowedStructure<Module>,
@@ -151,8 +151,8 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
-    Ring: ReducedHermiteAlgorithmSignature + EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
+    Ring: ReducedHermiteAlgorithmSignature + OrderedFiniteSetSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
     ModuleB: BorrowedStructure<Module>,
 > CountableSetSignature for FinitelyFreeSubmoduleStructure<Set, Ring, Module, ModuleB>
@@ -167,8 +167,8 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
-    Ring: ReducedHermiteAlgorithmSignature + EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
+    Ring: ReducedHermiteAlgorithmSignature + OrderedFiniteSetSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
     ModuleB: BorrowedStructure<Module>,
 > FiniteSetSignature for FinitelyFreeSubmoduleStructure<Set, Ring, Module, ModuleB>
@@ -191,11 +191,11 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
-    Ring: ReducedHermiteAlgorithmSignature + EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
+    Ring: ReducedHermiteAlgorithmSignature + OrderedFiniteSetSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring> + OrdSignature,
     ModuleB: BorrowedStructure<Module>,
-> EnumeratedOrdFiniteSetSignature for FinitelyFreeSubmoduleStructure<Set, Ring, Module, ModuleB>
+> OrderedFiniteSetSignature for FinitelyFreeSubmoduleStructure<Set, Ring, Module, ModuleB>
 {
     fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
         self.sort(self.list_all_elements())
@@ -218,7 +218,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
     ModuleB: BorrowedStructure<Module>,
@@ -227,7 +227,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
     ModuleB: BorrowedStructure<Module>,
@@ -239,7 +239,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
     ModuleB: BorrowedStructure<Module>,
@@ -251,7 +251,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
     ModuleB: BorrowedStructure<Module>,
@@ -263,7 +263,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
     ModuleB: BorrowedStructure<Module>,
@@ -275,7 +275,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
     ModuleB: BorrowedStructure<Module>,
@@ -284,7 +284,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
     ModuleB: BorrowedStructure<Module>,
@@ -296,7 +296,7 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
     ModuleB: BorrowedStructure<Module>,
