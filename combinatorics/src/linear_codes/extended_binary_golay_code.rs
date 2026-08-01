@@ -305,9 +305,8 @@ pub fn all_codewords() -> Vec<Vector> {
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_sets::sets::FiniteSetToFinitelySupportedPermutationsStructure;
-
     use super::*;
+    use algebraeon_sets::sets::SetToConstSizePermutationsStructure;
 
     #[test]
     fn weight_distribution() {
@@ -404,7 +403,7 @@ mod tests {
         ]);
 
         let cycle012 = Point::structure()
-            .into_permutations()
+            .into_const_size_permutations()
             .new_cycle(vec![
                 Point::structure()
                     .enumeration_to_element(&Natural::from(0u32))
@@ -420,13 +419,16 @@ mod tests {
 
         // The right action given by precomposition with domain elements moves labels according to the inverse permutation
         assert_eq!(
-            LabelledPoints::<F2>::into_domain_permutation_action().apply(&cycle012, &a),
+            LabelledPoints::<F2>::structure()
+                .into_domain_const_size_permutation_action()
+                .apply(&cycle012, &a),
             c
         );
 
         // The left action given by precomposition of the inverse with domain elements moves labels according to the permutation
         assert_eq!(
-            LabelledPoints::<F2>::into_domain_permutation_action()
+            LabelledPoints::<F2>::structure()
+                .into_domain_const_size_permutation_action()
                 .into_opposite()
                 .apply(&cycle012, &a),
             b

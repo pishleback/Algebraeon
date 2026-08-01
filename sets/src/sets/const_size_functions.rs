@@ -1,6 +1,7 @@
 use crate::sets::{
-    FiniteSetToFinitelySupportedPermutationsStructure, FinitelySupportedPermutationsStructure,
-    FunctionsStructure,
+    ConstSizePermutationsStructure, FiniteSetToFinitelySupportedPermutationsStructure,
+    FinitelySupportedPermutationsStructure, FunctionsStructure,
+    SetToConstSizePermutationsStructure,
 };
 use algebraeon_structures::*;
 use itertools::Itertools;
@@ -414,8 +415,7 @@ impl<
     DomainB: BorrowedStructure<Domain>,
     Range: OrderedFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
-> OrderedFiniteSetSignature
-    for ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>
+> OrderedFiniteSetSignature for ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>
 {
     fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
         let n: usize = self.domain().size().try_into().unwrap_or(usize::MAX);
@@ -549,26 +549,48 @@ impl<
     DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
     RangeB: BorrowedStructure<Range>,
-> FunctionsDomainPermutationActionSignature<Domain, Range>
-    for ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>
+> ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>
 {
-    type DomainPerms = FinitelySupportedPermutationsStructure<Domain, Domain>;
-    type DomainPermsRef<'a>
-        = FinitelySupportedPermutationsStructure<Domain, &'a Domain>
-    where
-        Self: 'a;
-
-    fn into_domain_permutation_action(
+    pub fn into_domain_finitely_supported_permutation_action(
         self,
-    ) -> impl RightGroupActionSignature<Self, Self::DomainPerms> {
+    ) -> impl RightGroupActionSignature<Self, FinitelySupportedPermutationsStructure<Domain, Domain>>
+    {
         let domain_perms = self.domain().clone().into_permutations();
         RightPermutationActionOnConstSizeFunctionsStructure::new(self, domain_perms)
     }
 
-    fn domain_permutation_action<'a>(
-        &'a self,
-    ) -> impl RightGroupActionSignature<Self, Self::DomainPermsRef<'a>> {
+    pub fn domain_finitely_supported_permutation_action(
+        &self,
+    ) -> impl RightGroupActionSignature<Self, FinitelySupportedPermutationsStructure<Domain, &Domain>>
+    {
         RightPermutationActionOnConstSizeFunctionsStructure::new(self, self.domain().permutations())
+    }
+}
+
+impl<
+    const N: usize,
+    Domain: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
+    DomainB: BorrowedStructure<Domain>,
+    Range: SetSignature,
+    RangeB: BorrowedStructure<Range>,
+> ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>
+{
+    pub fn into_domain_const_size_permutation_action(
+        self,
+    ) -> impl RightGroupActionSignature<Self, ConstSizePermutationsStructure<N, Domain, Domain>>
+    {
+        let domain_perms = self.domain().clone().into_const_size_permutations();
+        RightPermutationActionOnConstSizeFunctionsStructure::new(self, domain_perms)
+    }
+
+    pub fn domain_const_size_permutation_action(
+        &self,
+    ) -> impl RightGroupActionSignature<Self, ConstSizePermutationsStructure<N, Domain, &Domain>>
+    {
+        RightPermutationActionOnConstSizeFunctionsStructure::new(
+            self,
+            self.domain().const_size_permutations(),
+        )
     }
 }
 
@@ -697,26 +719,52 @@ impl<
     DomainB: BorrowedStructure<Domain>,
     Range: OrderedFiniteSetSignature,
     RangeB: BorrowedStructure<Range>,
-> FunctionsRangePermutationActionSignature<Domain, Range>
-    for ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>
+> ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>
 {
-    type RangePerms = FinitelySupportedPermutationsStructure<Range, Range>;
-    type RangePermsRef<'a>
-        = FinitelySupportedPermutationsStructure<Range, &'a Range>
-    where
-        Self: 'a;
-
-    fn into_range_permutation_action(
+    pub fn into_range_finitely_supported_permutation_action(
         self,
-    ) -> impl LeftGroupActionSignature<Self::RangePerms, Self> {
+    ) -> impl LeftGroupActionSignature<FinitelySupportedPermutationsStructure<Range, Range>, Self>
+    {
         let range_perms = self.range().clone().into_permutations();
         LeftPermutationActionOnConstSizeFunctionsStructure::new(self, range_perms)
     }
 
-    fn range_permutation_action<'a>(
-        &'a self,
-    ) -> impl LeftGroupActionSignature<Self::RangePermsRef<'a>, Self> {
+    pub fn range_finitely_supported_permutation_action(
+        &self,
+    ) -> impl LeftGroupActionSignature<FinitelySupportedPermutationsStructure<Range, &Range>, Self>
+    {
         LeftPermutationActionOnConstSizeFunctionsStructure::new(self, self.range().permutations())
+    }
+}
+
+impl<
+    const N: usize,
+    Domain: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
+    DomainB: BorrowedStructure<Domain>,
+    Range: OrderedFiniteSetSignature,
+    RangeB: BorrowedStructure<Range>,
+> ConstSizeFunctionsStructure<N, Domain, DomainB, Range, RangeB>
+{
+    pub fn into_range_const_size_permutation_action<const M: usize>(
+        self,
+    ) -> impl LeftGroupActionSignature<ConstSizePermutationsStructure<M, Range, Range>, Self>
+    where
+        Range: ConstSizeFiniteSetSignature<M>,
+    {
+        let range_perms = self.range().clone().into_const_size_permutations();
+        LeftPermutationActionOnConstSizeFunctionsStructure::new(self, range_perms)
+    }
+
+    pub fn range_const_size_permutation_action<const M: usize>(
+        &self,
+    ) -> impl LeftGroupActionSignature<ConstSizePermutationsStructure<M, Range, &Range>, Self>
+    where
+        Range: ConstSizeFiniteSetSignature<M>,
+    {
+        LeftPermutationActionOnConstSizeFunctionsStructure::new(
+            self,
+            self.range().const_size_permutations(),
+        )
     }
 }
 
@@ -824,7 +872,7 @@ mod tests {
 
         assert!(
             fns.equal(
-                &fns.domain_permutation_action()
+                &fns.domain_finitely_supported_permutation_action()
                     .apply(&set_a_perms.new_cycle(vec![1, 2, 3, 4, 5]).unwrap(), &x),
                 &fns.function(|i| match i {
                     1 => 2,
@@ -840,7 +888,7 @@ mod tests {
 
         assert!(
             fns.equal(
-                &fns.range_permutation_action()
+                &fns.range_finitely_supported_permutation_action()
                     .apply(&set_b_perms.new_cycle(vec![1, 2, 3]).unwrap(), &x),
                 &fns.function(|i| match i {
                     1 => 2,
