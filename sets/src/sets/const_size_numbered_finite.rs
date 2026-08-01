@@ -1,6 +1,31 @@
 use algebraeon_structures::*;
 use std::fmt::Debug;
 
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct ConstSizeEnumeratedFiniteSet<const N: usize>(usize);
+
+impl<const N: usize> TryFrom<usize> for ConstSizeEnumeratedFiniteSet<N> {
+    type Error = ();
+
+    fn try_from(value: usize) -> Result<Self, Self::Error> {
+        if value < N { Ok(Self(value)) } else { Err(()) }
+    }
+}
+
+impl<const N: usize> From<ConstSizeEnumeratedFiniteSet<N>> for usize {
+    fn from(value: ConstSizeEnumeratedFiniteSet<N>) -> Self {
+        value.0
+    }
+}
+
+impl<const N: usize> MetaType for ConstSizeEnumeratedFiniteSet<N> {
+    type Signature = ConstSizeEnumeratedFiniteSetStructure<N>;
+
+    fn structure() -> Self::Signature {
+        ConstSizeEnumeratedFiniteSetStructure::new()
+    }
+}
+
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct ConstSizeEnumeratedFiniteSetStructure<const N: usize> {}
 
@@ -13,10 +38,10 @@ impl<const N: usize> ConstSizeEnumeratedFiniteSetStructure<N> {
 impl<const N: usize> Signature for ConstSizeEnumeratedFiniteSetStructure<N> {}
 
 impl<const N: usize> SetSignature for ConstSizeEnumeratedFiniteSetStructure<N> {
-    type Elem = usize;
+    type Elem = ConstSizeEnumeratedFiniteSet<N>;
 
     fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
-        if *x >= N {
+        if usize::from(*x) >= N {
             return Err("Too big to be an element".to_string());
         }
         Ok(())
@@ -43,7 +68,7 @@ impl<const N: usize> OrdSignature for ConstSizeEnumeratedFiniteSetStructure<N> {
 
 impl<const N: usize> CountableSetSignature for ConstSizeEnumeratedFiniteSetStructure<N> {
     fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
-        0..N
+        (0..N).map(|x| x.try_into().unwrap())
     }
 
     fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
@@ -59,16 +84,20 @@ impl<const N: usize> FiniteSetSignature for ConstSizeEnumeratedFiniteSetStructur
 
 impl<const N: usize> OrderedFiniteSetSignature for ConstSizeEnumeratedFiniteSetStructure<N> {
     fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
-        (0..N).collect()
+        (0..N).map(|x| x.try_into().unwrap()).collect()
     }
 
     fn element_to_enumeration(&self, elem: &Self::Elem) -> Natural {
-        Natural::from(*elem)
+        Natural::from(usize::from(*elem))
     }
 
     fn enumeration_to_element(&self, num: &Natural) -> Option<Self::Elem> {
         if let Ok(num) = TryInto::<usize>::try_into(num) {
-            if num < N { Some(num) } else { None }
+            if num < N {
+                Some(num.try_into().unwrap())
+            } else {
+                None
+            }
         } else {
             None
         }

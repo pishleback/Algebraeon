@@ -163,6 +163,7 @@ dependencies = [
  "algebraeon-macros",
  "algebraeon-structures",
  "ambassador",
+ "cantor",
  "indexmap",
  "itertools 0.15.0",
  "paste",

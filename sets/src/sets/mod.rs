@@ -1,5 +1,6 @@
 mod const_size_functions;
 mod const_size_numbered_finite;
+mod const_size_permutations;
 mod disjoint_union;
 mod empty;
 mod endofunctions;
@@ -14,6 +15,7 @@ mod singleton;
 
 pub use const_size_functions::*;
 pub use const_size_numbered_finite::*;
+pub use const_size_permutations::*;
 pub use disjoint_union::*;
 pub use empty::*;
 pub use endofunctions::*;
