@@ -1,6 +1,5 @@
 extern crate proc_macro;
 
-use malachite_base::strings::ToDebugString;
 use proc_macro::TokenStream;
 use proc_macro2::Span;
 use quote::quote;
