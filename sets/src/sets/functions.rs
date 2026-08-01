@@ -3,84 +3,46 @@ use crate::sets::{
 };
 use algebraeon_structures::*;
 use itertools::Itertools;
-use std::{cmp::Ordering, fmt::Debug, marker::PhantomData};
+use std::{cmp::Ordering, fmt::Debug, sync::Arc};
 
 /// Represent all functions from `domain` to `range`
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FunctionsStructure<
-    Domain: SetSignature,
-    DomainB: BorrowedStructure<Domain>,
-    Range: SetSignature,
-    RangeB: BorrowedStructure<Range>,
-> {
-    _domain: PhantomData<Domain>,
-    domain: DomainB,
-    _range: PhantomData<Range>,
-    range: RangeB,
+pub struct FunctionsStructure<Domain: SetSignature, Range: SetSignature> {
+    domain: Arc<Domain>,
+    range: Arc<Range>,
 }
 
-impl<
-    Domain: SetSignature,
-    DomainB: BorrowedStructure<Domain>,
-    Range: SetSignature,
-    RangeB: BorrowedStructure<Range>,
-> FunctionsStructure<Domain, DomainB, Range, RangeB>
-{
-    pub fn new(domain: DomainB, range: RangeB) -> Self {
-        Self {
-            _domain: PhantomData,
-            domain,
-            _range: PhantomData,
-            range,
-        }
+impl<Domain: SetSignature, Range: SetSignature> FunctionsStructure<Domain, Range> {
+    pub fn new(domain: Arc<Domain>, range: Arc<Range>) -> Arc<Self> {
+        Self { domain, range }.into()
     }
 
-    pub fn into_domain_and_range(self) -> (DomainB, RangeB) {
+    pub fn into_domain_and_range(self) -> (Arc<Domain>, Arc<Range>) {
         (self.domain, self.range)
     }
 }
 
 pub trait SetToFunctionsToSignature: SetSignature {
-    fn into_functions_to<Range: SetSignature>(
-        self,
-        range: Range,
-    ) -> FunctionsStructure<Self, Self, Range, Range> {
-        FunctionsStructure::new(self, range)
-    }
-
-    fn functions_to<'a, Range: SetSignature>(
-        &self,
-        range: &'a Range,
-    ) -> FunctionsStructure<Self, &Self, Range, &'a Range> {
-        FunctionsStructure::new(self, range)
+    fn functions_to<Range: SetSignature>(
+        self: &Arc<Self>,
+        range: &Arc<Range>,
+    ) -> Arc<FunctionsStructure<Self, Range>> {
+        FunctionsStructure::new(self.clone(), range.clone())
     }
 }
 impl<Set: SetSignature> SetToFunctionsToSignature for Set {}
 
 pub trait SetToFunctionsFromSignature: SetSignature {
-    fn into_functions_from<Domain: SetSignature>(
-        self,
-        domain: Domain,
-    ) -> FunctionsStructure<Domain, Domain, Self, Self> {
-        FunctionsStructure::new(domain, self)
-    }
-
     fn functions_from<'a, Domain: SetSignature>(
-        &self,
-        domain: &'a Domain,
-    ) -> FunctionsStructure<Domain, &'a Domain, Self, &Self> {
-        FunctionsStructure::new(domain, self)
+        self: &Arc<Self>,
+        domain: &Arc<Domain>,
+    ) -> Arc<FunctionsStructure<Domain, Self>> {
+        FunctionsStructure::new(domain.clone(), self.clone())
     }
 }
 impl<Set: SetSignature> SetToFunctionsFromSignature for Set {}
 
-impl<
-    Domain: SetSignature,
-    DomainB: BorrowedStructure<Domain>,
-    Range: SetSignature,
-    RangeB: BorrowedStructure<Range>,
-> FunctionsStructure<Domain, DomainB, Range, RangeB>
-{
+impl<Domain: SetSignature, Range: SetSignature> FunctionsStructure<Domain, Range> {
     pub fn domain(&self) -> &Domain {
         self.domain.borrow()
     }
@@ -90,23 +52,15 @@ impl<
     }
 }
 
-impl<
-    Domain: SetSignature,
-    DomainB: BorrowedStructure<Domain>,
-    Range: SetSignature,
-    RangeB: BorrowedStructure<Range>,
-> Signature for FunctionsStructure<Domain, DomainB, Range, RangeB>
-{
-}
+impl<Domain: SetSignature, Range: SetSignature> Signature for FunctionsStructure<Domain, Range> {}
 
-impl<
-    Domain: OrderedFiniteSetSignature,
-    DomainB: BorrowedStructure<Domain>,
-    Range: SetSignature,
-    RangeB: BorrowedStructure<Range>,
-> FunctionsSignature<Domain, Range> for FunctionsStructure<Domain, DomainB, Range, RangeB>
+impl<Domain: OrderedFiniteSetSignature, Range: SetSignature> FunctionsSignature<Domain, Range>
+    for FunctionsStructure<Domain, Range>
 {
-    fn function(&self, f: impl Fn(&Domain::Elem) -> Range::Elem) -> Option<Vec<Range::Elem>> {
+    fn function(
+        self: &Arc<Self>,
+        f: impl Fn(&Domain::Elem) -> Range::Elem,
+    ) -> Option<Vec<Range::Elem>> {
         let s = self
             .domain()
             .list_all_elements_ordered()
@@ -121,23 +75,19 @@ impl<
         Some(s)
     }
 
-    fn image<'a>(&self, f: &'a Vec<Range::Elem>, x: &Domain::Elem) -> &'a Range::Elem {
+    fn image<'a>(self: &Arc<Self>, f: &'a Vec<Range::Elem>, x: &Domain::Elem) -> &'a Range::Elem {
         debug_assert!(self.is_element(f));
         debug_assert!(self.domain().is_element(x));
         &f[TryInto::<usize>::try_into(self.domain().element_to_enumeration(x)).unwrap()]
     }
 }
 
-impl<
-    Domain: OrderedFiniteSetSignature,
-    DomainB: BorrowedStructure<Domain>,
-    Range: SetSignature,
-    RangeB: BorrowedStructure<Range>,
-> SetSignature for FunctionsStructure<Domain, DomainB, Range, RangeB>
+impl<Domain: OrderedFiniteSetSignature, Range: SetSignature> SetSignature
+    for FunctionsStructure<Domain, Range>
 {
     type Elem = Vec<Range::Elem>;
 
-    fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, x: &Self::Elem) -> Result<(), String> {
         if Natural::from(x.len()) != self.domain().size() {
             return Err("Incorrect vector length".to_string());
         }
@@ -148,14 +98,10 @@ impl<
     }
 }
 
-impl<
-    Domain: OrderedFiniteSetSignature,
-    DomainB: BorrowedStructure<Domain>,
-    Range: EqSignature,
-    RangeB: BorrowedStructure<Range>,
-> EqSignature for FunctionsStructure<Domain, DomainB, Range, RangeB>
+impl<Domain: OrderedFiniteSetSignature, Range: EqSignature> EqSignature
+    for FunctionsStructure<Domain, Range>
 {
-    fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(b));
         let n = a.len();
@@ -164,26 +110,18 @@ impl<
     }
 }
 
-impl<
-    Domain: OrderedFiniteSetSignature,
-    DomainB: BorrowedStructure<Domain>,
-    Range: OrdSignature,
-    RangeB: BorrowedStructure<Range>,
-> PartialOrdSignature for FunctionsStructure<Domain, DomainB, Range, RangeB>
+impl<Domain: OrderedFiniteSetSignature, Range: OrdSignature> PartialOrdSignature
+    for FunctionsStructure<Domain, Range>
 {
-    fn partial_cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Option<std::cmp::Ordering> {
+    fn partial_cmp(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<std::cmp::Ordering> {
         Some(self.cmp(a, b))
     }
 }
 
-impl<
-    Domain: OrderedFiniteSetSignature,
-    DomainB: BorrowedStructure<Domain>,
-    Range: OrdSignature,
-    RangeB: BorrowedStructure<Range>,
-> OrdSignature for FunctionsStructure<Domain, DomainB, Range, RangeB>
+impl<Domain: OrderedFiniteSetSignature, Range: OrdSignature> OrdSignature
+    for FunctionsStructure<Domain, Range>
 {
-    fn cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Ordering {
+    fn cmp(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Ordering {
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(b));
         let n = a.len();
@@ -203,45 +141,29 @@ impl<
     }
 }
 
-impl<
-    Domain: OrderedFiniteSetSignature,
-    DomainB: BorrowedStructure<Domain>,
-    Range: OrderedFiniteSetSignature,
-    RangeB: BorrowedStructure<Range>,
-> CountableSetSignature for FunctionsStructure<Domain, DomainB, Range, RangeB>
+impl<Domain: OrderedFiniteSetSignature, Range: OrderedFiniteSetSignature> CountableSetSignature
+    for FunctionsStructure<Domain, Range>
 {
-    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
+    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
         let n: usize = self.domain().size().try_into().unwrap_or(usize::MAX);
         (0..n)
             .map(|_| self.range().list_all_elements())
             .multi_cartesian_product()
     }
-
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
-        self.clone().into_generate_all_elements()
-    }
 }
 
-impl<
-    Domain: OrderedFiniteSetSignature,
-    DomainB: BorrowedStructure<Domain>,
-    Range: OrderedFiniteSetSignature,
-    RangeB: BorrowedStructure<Range>,
-> FiniteSetSignature for FunctionsStructure<Domain, DomainB, Range, RangeB>
+impl<Domain: OrderedFiniteSetSignature, Range: OrderedFiniteSetSignature> FiniteSetSignature
+    for FunctionsStructure<Domain, Range>
 {
-    fn size(&self) -> Natural {
+    fn size(self: &Arc<Self>) -> Natural {
         self.range().size().pow(&self.domain().size())
     }
 }
 
-impl<
-    Domain: OrderedFiniteSetSignature,
-    DomainB: BorrowedStructure<Domain>,
-    Range: OrderedFiniteSetSignature,
-    RangeB: BorrowedStructure<Range>,
-> OrderedFiniteSetSignature for FunctionsStructure<Domain, DomainB, Range, RangeB>
+impl<Domain: OrderedFiniteSetSignature, Range: OrderedFiniteSetSignature> OrderedFiniteSetSignature
+    for FunctionsStructure<Domain, Range>
 {
-    fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
+    fn list_all_elements_ordered(self: &Arc<Self>) -> Vec<Self::Elem> {
         let n: usize = self.domain().size().try_into().unwrap_or(usize::MAX);
         (0..n)
             .map(|_| {
@@ -259,7 +181,7 @@ impl<
             .collect()
     }
 
-    fn element_to_enumeration(&self, elem: &Self::Elem) -> Natural {
+    fn element_to_enumeration(self: &Arc<Self>, elem: &Self::Elem) -> Natural {
         debug_assert!(self.is_element(elem));
         let d = elem.len();
         let r = self.range().size();
@@ -271,7 +193,7 @@ impl<
         num
     }
 
-    fn enumeration_to_element(&self, num: &Natural) -> Option<Self::Elem> {
+    fn enumeration_to_element(self: &Arc<Self>, num: &Natural) -> Option<Self::Elem> {
         if *num >= self.size() {
             return None;
         }
@@ -292,125 +214,69 @@ impl<
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct RightPermutationActionOnFunctionsStructure<
     Domain: OrderedFiniteSetSignature,
-    DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
-    RangeB: BorrowedStructure<Range>,
-    FunctionsB: BorrowedStructure<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
     DomainPerms: PermutationsSignature<Domain>,
-    DomainPermsB: BorrowedStructure<DomainPerms>,
 > {
-    _functions: PhantomData<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
-    functions: FunctionsB,
-    _domain_perms: PhantomData<DomainPerms>,
-    domain_perms: DomainPermsB,
+    functions: Arc<FunctionsStructure<Domain, Range>>,
+    domain_perms: Arc<DomainPerms>,
 }
 
 impl<
     Domain: OrderedFiniteSetSignature,
-    DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
-    RangeB: BorrowedStructure<Range>,
-    FunctionsB: BorrowedStructure<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
     DomainPerms: PermutationsSignature<Domain>,
-    DomainPermsB: BorrowedStructure<DomainPerms>,
->
-    RightPermutationActionOnFunctionsStructure<
-        Domain,
-        DomainB,
-        Range,
-        RangeB,
-        FunctionsB,
-        DomainPerms,
-        DomainPermsB,
-    >
+> RightPermutationActionOnFunctionsStructure<Domain, Range, DomainPerms>
 {
-    fn new(functions: FunctionsB, domain_perms: DomainPermsB) -> Self {
+    fn new(
+        functions: Arc<FunctionsStructure<Domain, Range>>,
+        domain_perms: Arc<DomainPerms>,
+    ) -> Arc<Self> {
         Self {
-            _functions: PhantomData,
             functions,
-            _domain_perms: PhantomData,
             domain_perms,
         }
+        .into()
     }
 }
 
 impl<
     Domain: OrderedFiniteSetSignature,
-    DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
-    RangeB: BorrowedStructure<Range>,
-    FunctionsB: BorrowedStructure<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
     DomainPerms: PermutationsSignature<Domain>,
-    DomainPermsB: BorrowedStructure<DomainPerms>,
-> Signature
-    for RightPermutationActionOnFunctionsStructure<
-        Domain,
-        DomainB,
-        Range,
-        RangeB,
-        FunctionsB,
-        DomainPerms,
-        DomainPermsB,
-    >
+> Signature for RightPermutationActionOnFunctionsStructure<Domain, Range, DomainPerms>
 {
 }
 
-impl<
-    Domain: OrderedFiniteSetSignature,
-    DomainB: BorrowedStructure<Domain>,
-    Range: SetSignature,
-    RangeB: BorrowedStructure<Range>,
-> FunctionsStructure<Domain, DomainB, Range, RangeB>
-{
-    pub fn into_domain_finitely_supported_permutation_action(
-        self,
-    ) -> impl RightGroupActionSignature<Self, FinitelySupportedPermutationsStructure<Domain, Domain>>
-    {
-        let domain_perms = self.domain().clone().into_permutations();
-        RightPermutationActionOnFunctionsStructure::new(self, domain_perms)
-    }
-
+impl<Domain: OrderedFiniteSetSignature, Range: SetSignature> FunctionsStructure<Domain, Range> {
     pub fn domain_finitely_supported_permutation_action(
-        &self,
+        self: &Arc<Self>,
     ) -> impl RightGroupActionSignature<Self, FinitelySupportedPermutationsStructure<Domain, &Domain>>
     {
-        RightPermutationActionOnFunctionsStructure::new(self, self.domain().permutations())
+        RightPermutationActionOnFunctionsStructure::new(self.clone(), self.domain().permutations())
     }
 }
 
 /// Sym(D) has a right action on Fun(D -> R) by composition on the right
 impl<
     Domain: OrderedFiniteSetSignature,
-    DomainB: BorrowedStructure<Domain>,
     Range: SetSignature,
-    RangeB: BorrowedStructure<Range>,
-    FunctionsB: BorrowedStructure<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
     DomainPerms: PermutationsSignature<Domain>,
-    DomainPermsB: BorrowedStructure<DomainPerms>,
-> RightGroupActionSignature<FunctionsStructure<Domain, DomainB, Range, RangeB>, DomainPerms>
-    for RightPermutationActionOnFunctionsStructure<
-        Domain,
-        DomainB,
-        Range,
-        RangeB,
-        FunctionsB,
-        DomainPerms,
-        DomainPermsB,
-    >
+> RightGroupActionSignature<FunctionsStructure<Domain, Range>, DomainPerms>
+    for RightPermutationActionOnFunctionsStructure<Domain, Range, DomainPerms>
 {
-    fn group(&self) -> &DomainPerms {
-        self.domain_perms.borrow()
+    fn group(self: &Arc<Self>) -> &Arc<DomainPerms> {
+        &self.domain_perms
     }
 
-    fn set(&self) -> &FunctionsStructure<Domain, DomainB, Range, RangeB> {
-        self.functions.borrow()
+    fn set(self: &Arc<Self>) -> &Arc<FunctionsStructure<Domain, Range>> {
+        &self.functions
     }
 
     fn apply(
-        &self,
+        self: &Arc<Self>,
         g: &<DomainPerms>::Elem,
-        f: &<FunctionsStructure<Domain, DomainB, Range, RangeB> as SetSignature>::Elem,
-    ) -> <FunctionsStructure<Domain, DomainB, Range, RangeB> as SetSignature>::Elem {
+        f: &<FunctionsStructure<Domain, Range> as SetSignature>::Elem,
+    ) -> <FunctionsStructure<Domain, Range> as SetSignature>::Elem {
         let functions = self.functions.borrow();
         let domain_perms = self.domain_perms.borrow();
         functions
@@ -422,125 +288,71 @@ impl<
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct LeftPermutationActionOnFunctionsStructure<
     Domain: SetSignature,
-    DomainB: BorrowedStructure<Domain>,
     Range: OrderedFiniteSetSignature,
-    RangeB: BorrowedStructure<Range>,
-    FunctionsB: BorrowedStructure<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
     RangePerms: PermutationsSignature<Range>,
-    RangePermsB: BorrowedStructure<RangePerms>,
 > {
-    _functions: PhantomData<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
-    functions: FunctionsB,
-    _range_perms: PhantomData<RangePerms>,
-    range_perms: RangePermsB,
+    functions: Arc<FunctionsStructure<Domain, Range>>,
+    range_perms: Arc<RangePerms>,
 }
 
 impl<
     Domain: SetSignature,
-    DomainB: BorrowedStructure<Domain>,
     Range: OrderedFiniteSetSignature,
-    RangeB: BorrowedStructure<Range>,
-    FunctionsB: BorrowedStructure<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
     RangePerms: PermutationsSignature<Range>,
-    RangePermsB: BorrowedStructure<RangePerms>,
->
-    LeftPermutationActionOnFunctionsStructure<
-        Domain,
-        DomainB,
-        Range,
-        RangeB,
-        FunctionsB,
-        RangePerms,
-        RangePermsB,
-    >
+> LeftPermutationActionOnFunctionsStructure<Domain, Range, RangePerms>
 {
-    fn new(functions: FunctionsB, range_perms: RangePermsB) -> Self {
+    fn new(
+        functions: Arc<FunctionsStructure<Domain, Range>>,
+        range_perms: Arc<RangePerms>,
+    ) -> Arc<Self> {
         Self {
-            _functions: PhantomData,
             functions,
-            _range_perms: PhantomData,
             range_perms,
         }
+        .into()
     }
 }
 
 impl<
     Domain: SetSignature,
-    DomainB: BorrowedStructure<Domain>,
     Range: OrderedFiniteSetSignature,
-    RangeB: BorrowedStructure<Range>,
-    FunctionsB: BorrowedStructure<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
     RangePerms: PermutationsSignature<Range>,
-    RangePermsB: BorrowedStructure<RangePerms>,
-> Signature
-    for LeftPermutationActionOnFunctionsStructure<
-        Domain,
-        DomainB,
-        Range,
-        RangeB,
-        FunctionsB,
-        RangePerms,
-        RangePermsB,
-    >
+> Signature for LeftPermutationActionOnFunctionsStructure<Domain, Range, RangePerms>
 {
 }
 
-impl<
-    Domain: OrderedFiniteSetSignature,
-    DomainB: BorrowedStructure<Domain>,
-    Range: OrderedFiniteSetSignature,
-    RangeB: BorrowedStructure<Range>,
-> FunctionsStructure<Domain, DomainB, Range, RangeB>
+impl<Domain: OrderedFiniteSetSignature, Range: OrderedFiniteSetSignature>
+    FunctionsStructure<Domain, Range>
 {
-    pub fn into_range_finitely_supported_permutation_action(
-        self,
-    ) -> impl LeftGroupActionSignature<FinitelySupportedPermutationsStructure<Range, Range>, Self>
-    {
-        let range_perms = self.range().clone().into_permutations();
-        LeftPermutationActionOnFunctionsStructure::new(self, range_perms)
-    }
-
     pub fn range_finitely_supported_permutation_action(
-        &self,
+        self: &Arc<Self>,
     ) -> impl LeftGroupActionSignature<FinitelySupportedPermutationsStructure<Range, &Range>, Self>
     {
-        LeftPermutationActionOnFunctionsStructure::new(self, self.range().permutations())
+        LeftPermutationActionOnFunctionsStructure::new(self.clone(), self.range().permutations())
     }
 }
 
 /// Sym(R) has a left action on Fun(D -> R) by composition on the left
 impl<
     Domain: OrderedFiniteSetSignature,
-    DomainB: BorrowedStructure<Domain>,
     Range: OrderedFiniteSetSignature,
-    RangeB: BorrowedStructure<Range>,
-    FunctionsB: BorrowedStructure<FunctionsStructure<Domain, DomainB, Range, RangeB>>,
     RangePerms: PermutationsSignature<Range>,
-    RangePermsB: BorrowedStructure<RangePerms>,
-> LeftGroupActionSignature<RangePerms, FunctionsStructure<Domain, DomainB, Range, RangeB>>
-    for LeftPermutationActionOnFunctionsStructure<
-        Domain,
-        DomainB,
-        Range,
-        RangeB,
-        FunctionsB,
-        RangePerms,
-        RangePermsB,
-    >
+> LeftGroupActionSignature<RangePerms, FunctionsStructure<Domain, Range>>
+    for LeftPermutationActionOnFunctionsStructure<Domain, Range, RangePerms>
 {
-    fn group(&self) -> &RangePerms {
-        self.range_perms.borrow()
+    fn group(self: &Arc<Self>) -> &Arc<RangePerms> {
+        &self.range_perms
     }
 
-    fn set(&self) -> &FunctionsStructure<Domain, DomainB, Range, RangeB> {
-        self.functions.borrow()
+    fn set(self: &Arc<Self>) -> &Arc<FunctionsStructure<Domain, Range>> {
+        &self.functions
     }
 
     fn apply(
-        &self,
+        self: &Arc<Self>,
         g: &<RangePerms>::Elem,
-        f: &<FunctionsStructure<Domain, DomainB, Range, RangeB> as SetSignature>::Elem,
-    ) -> <FunctionsStructure<Domain, DomainB, Range, RangeB> as SetSignature>::Elem {
+        f: &<FunctionsStructure<Domain, Range> as SetSignature>::Elem,
+    ) -> <FunctionsStructure<Domain, Range> as SetSignature>::Elem {
         let functions = self.functions.borrow();
         let range_perms = self.range_perms.borrow();
         functions

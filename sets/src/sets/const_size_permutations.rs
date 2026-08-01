@@ -3,6 +3,7 @@ use itertools::Itertools;
 use std::borrow::Borrow;
 use std::collections::HashSet;
 use std::marker::PhantomData;
+use std::sync::Arc;
 
 #[derive(Debug, Clone)]
 pub struct ConstSizePermutation<const N: usize, Elem> {
@@ -83,43 +84,29 @@ impl<const N: usize, Elem: MetaType> MetaType for ConstSizePermutation<N, Elem>
 where
     Elem::Signature: ConstSizeFiniteSetSignature<N>,
 {
-    type Signature = ConstSizePermutationsStructure<N, Elem::Signature, Elem::Signature>;
+    type Signature = ConstSizePermutationsStructure<N, Elem::Signature>;
 
-    fn structure() -> Self::Signature {
+    fn structure() -> Arc<Self::Signature> {
         ConstSizePermutationsStructure::new(Elem::structure())
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ConstSizePermutationsStructure<
-    const N: usize,
-    Set: ConstSizeFiniteSetSignature<N>,
-    SetB: BorrowedStructure<Set>,
-> {
-    _set: PhantomData<Set>,
-    set: SetB,
+pub struct ConstSizePermutationsStructure<const N: usize, Set: ConstSizeFiniteSetSignature<N>> {
+    set: Arc<Set>,
 }
 
-impl<const N: usize, Set: ConstSizeFiniteSetSignature<N>, SetB: BorrowedStructure<Set>>
-    ConstSizePermutationsStructure<N, Set, SetB>
-{
-    pub fn new(set: SetB) -> Self {
-        Self {
-            _set: PhantomData,
-            set,
-        }
+impl<const N: usize, Set: ConstSizeFiniteSetSignature<N>> ConstSizePermutationsStructure<N, Set> {
+    pub fn new(set: Arc<Set>) -> Arc<Self> {
+        Self { set }.into()
     }
 }
 
 pub trait SetToConstSizePermutationsStructure<const N: usize>:
     ConstSizeFiniteSetSignature<N>
 {
-    fn const_size_permutations(&self) -> ConstSizePermutationsStructure<N, Self, &Self> {
-        ConstSizePermutationsStructure::new(self)
-    }
-
-    fn into_const_size_permutations(self) -> ConstSizePermutationsStructure<N, Self, Self> {
-        ConstSizePermutationsStructure::new(self)
+    fn const_size_permutations(self: &Arc<Self>) -> Arc<ConstSizePermutationsStructure<N, Self>> {
+        ConstSizePermutationsStructure::new(self.clone())
     }
 }
 impl<const N: usize, Set: ConstSizeFiniteSetSignature<N>> SetToConstSizePermutationsStructure<N>
@@ -127,40 +114,37 @@ impl<const N: usize, Set: ConstSizeFiniteSetSignature<N>> SetToConstSizePermutat
 {
 }
 
-impl<const N: usize, Set: ConstSizeFiniteSetSignature<N>, SetB: BorrowedStructure<Set>> Signature
-    for ConstSizePermutationsStructure<N, Set, SetB>
+impl<const N: usize, Set: ConstSizeFiniteSetSignature<N>> Signature
+    for ConstSizePermutationsStructure<N, Set>
 {
 }
 
-impl<const N: usize, Set: ConstSizeFiniteSetSignature<N>, SetB: BorrowedStructure<Set>> SetSignature
-    for ConstSizePermutationsStructure<N, Set, SetB>
+impl<const N: usize, Set: ConstSizeFiniteSetSignature<N>> SetSignature
+    for ConstSizePermutationsStructure<N, Set>
 {
     type Elem = ConstSizePermutation<N, Set::Elem>;
 
-    fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, x: &Self::Elem) -> Result<(), String> {
         x.validate()
     }
 }
 
-impl<const N: usize, Set: ConstSizeFiniteSetSignature<N>, SetB: BorrowedStructure<Set>> EqSignature
-    for ConstSizePermutationsStructure<N, Set, SetB>
+impl<const N: usize, Set: ConstSizeFiniteSetSignature<N>> EqSignature
+    for ConstSizePermutationsStructure<N, Set>
 {
-    fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         a == b
     }
 }
 
-impl<
-    const N: usize,
-    Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> PermutationsSignature<Set> for ConstSizePermutationsStructure<N, Set, SetB>
+impl<const N: usize, Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature>
+    PermutationsSignature<Set> for ConstSizePermutationsStructure<N, Set>
 {
-    fn set(&self) -> &Set {
-        self.set.borrow()
+    fn set(self: &Arc<Self>) -> &Arc<Set> {
+        &self.set
     }
 
-    fn new_cycle(&self, cycle: Vec<Set::Elem>) -> Result<Self::Elem, ()> {
+    fn new_cycle(self: &Arc<Self>, cycle: Vec<Set::Elem>) -> Result<Self::Elem, ()> {
         let k = cycle.len();
         if k == 0 {
             return Ok(ConstSizePermutation::identity());
@@ -194,7 +178,7 @@ impl<
     }
 
     fn new_perm(
-        &self,
+        self: &Arc<Self>,
         perm: Vec<(impl Borrow<Set::Elem>, impl Borrow<Set::Elem>)>,
     ) -> Result<Self::Elem, ()> {
         let perm_sorted_froms = self
@@ -270,7 +254,7 @@ impl<
         Ok(perm)
     }
 
-    fn support(&self, perm: &Self::Elem) -> Vec<Set::Elem> {
+    fn support(self: &Arc<Self>, perm: &Self::Elem) -> Vec<Set::Elem> {
         debug_assert!(self.is_element(perm));
         (0..N)
             .filter(|i| *i != perm.forward[*i])
@@ -282,26 +266,26 @@ impl<
             .collect()
     }
 
-    fn support_size(&self, perm: &Self::Elem) -> usize {
+    fn support_size(self: &Arc<Self>, perm: &Self::Elem) -> usize {
         debug_assert!(self.is_element(perm));
         self.support(perm).len()
     }
 
-    fn image(&self, perm: &Self::Elem, elem: &Set::Elem) -> Set::Elem {
+    fn image(self: &Arc<Self>, perm: &Self::Elem, elem: &Set::Elem) -> Set::Elem {
         let num: usize = self.set().element_to_enumeration(elem).try_into().unwrap();
         self.set()
             .enumeration_to_element(&Natural::from(perm.forward[num]))
             .unwrap()
     }
 
-    fn preimage(&self, perm: &Self::Elem, elem: &Set::Elem) -> Set::Elem {
+    fn preimage(self: &Arc<Self>, perm: &Self::Elem, elem: &Set::Elem) -> Set::Elem {
         let num: usize = self.set().element_to_enumeration(elem).try_into().unwrap();
         self.set()
             .enumeration_to_element(&Natural::from(perm.backward[num]))
             .unwrap()
     }
 
-    fn disjoint_cycles(&self, perm: &Self::Elem) -> Vec<Vec<Set::Elem>> {
+    fn disjoint_cycles(self: &Arc<Self>, perm: &Self::Elem) -> Vec<Vec<Set::Elem>> {
         debug_assert!(self.is_element(perm));
         perm.disjoint_cycles()
             .into_iter()
@@ -315,13 +299,10 @@ impl<
     }
 }
 
-impl<
-    const N: usize,
-    Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> CompositionSignature for ConstSizePermutationsStructure<N, Set, SetB>
+impl<const N: usize, Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature>
+    CompositionSignature for ConstSizePermutationsStructure<N, Set>
 {
-    fn compose(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn compose(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(b));
         let s = ConstSizePermutation {
@@ -335,106 +316,80 @@ impl<
     }
 }
 
-impl<
-    const N: usize,
-    Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> AssociativeCompositionSignature for ConstSizePermutationsStructure<N, Set, SetB>
+impl<const N: usize, Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature>
+    AssociativeCompositionSignature for ConstSizePermutationsStructure<N, Set>
 {
 }
 
-impl<
-    const N: usize,
-    Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> LeftCancellativeCompositionSignature for ConstSizePermutationsStructure<N, Set, SetB>
+impl<const N: usize, Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature>
+    LeftCancellativeCompositionSignature for ConstSizePermutationsStructure<N, Set>
 {
-    fn try_left_difference(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_left_difference(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.compose(&self.inverse(b), a))
     }
 }
 
-impl<
-    const N: usize,
-    Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> RightCancellativeCompositionSignature for ConstSizePermutationsStructure<N, Set, SetB>
+impl<const N: usize, Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature>
+    RightCancellativeCompositionSignature for ConstSizePermutationsStructure<N, Set>
 {
-    fn try_right_difference(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_right_difference(
+        self: &Arc<Self>,
+        a: &Self::Elem,
+        b: &Self::Elem,
+    ) -> Option<Self::Elem> {
         Some(self.compose(a, &self.inverse(b)))
     }
 }
 
-impl<
-    const N: usize,
-    Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> IdentitySignature for ConstSizePermutationsStructure<N, Set, SetB>
+impl<const N: usize, Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature>
+    IdentitySignature for ConstSizePermutationsStructure<N, Set>
 {
-    fn identity(&self) -> Self::Elem {
+    fn identity(self: &Arc<Self>) -> Self::Elem {
         ConstSizePermutation::identity()
     }
 }
 
-impl<
-    const N: usize,
-    Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> MonoidSignature for ConstSizePermutationsStructure<N, Set, SetB>
+impl<const N: usize, Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature>
+    MonoidSignature for ConstSizePermutationsStructure<N, Set>
 {
 }
 
-impl<
-    const N: usize,
-    Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> TryLeftInverseSignature for ConstSizePermutationsStructure<N, Set, SetB>
+impl<const N: usize, Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature>
+    TryLeftInverseSignature for ConstSizePermutationsStructure<N, Set>
 {
-    fn try_left_inverse(&self, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_left_inverse(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.inverse(a))
     }
 }
 
-impl<
-    const N: usize,
-    Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> TryRightInverseSignature for ConstSizePermutationsStructure<N, Set, SetB>
+impl<const N: usize, Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature>
+    TryRightInverseSignature for ConstSizePermutationsStructure<N, Set>
 {
-    fn try_right_inverse(&self, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_right_inverse(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.inverse(a))
     }
 }
 
-impl<
-    const N: usize,
-    Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> TryInverseSignature for ConstSizePermutationsStructure<N, Set, SetB>
+impl<const N: usize, Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature>
+    TryInverseSignature for ConstSizePermutationsStructure<N, Set>
 {
-    fn try_inverse(&self, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_inverse(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.inverse(a))
     }
 }
 
-impl<
-    const N: usize,
-    Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> GroupSignature for ConstSizePermutationsStructure<N, Set, SetB>
+impl<const N: usize, Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature> GroupSignature
+    for ConstSizePermutationsStructure<N, Set>
 {
-    fn inverse(&self, a: &Self::Elem) -> Self::Elem {
+    fn inverse(self: &Arc<Self>, a: &Self::Elem) -> Self::Elem {
         a.clone().inverse()
     }
 }
 
-impl<
-    const N: usize,
-    Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> CountableSetSignature for ConstSizePermutationsStructure<N, Set, SetB>
+impl<const N: usize, Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature>
+    CountableSetSignature for ConstSizePermutationsStructure<N, Set>
 {
-    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
+    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
         let all_elems = self.set().list_all_elements();
         let n = all_elems.len();
         (0..n)
@@ -451,17 +406,10 @@ impl<
             .collect::<Vec<_>>()
             .into_iter()
     }
-
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
-        self.clone().into_generate_all_elements()
-    }
 }
 
-impl<
-    const N: usize,
-    Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> FiniteSetSignature for ConstSizePermutationsStructure<N, Set, SetB>
+impl<const N: usize, Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature>
+    FiniteSetSignature for ConstSizePermutationsStructure<N, Set>
 {
 }
 

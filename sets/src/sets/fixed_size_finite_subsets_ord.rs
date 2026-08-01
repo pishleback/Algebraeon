@@ -1,41 +1,27 @@
 use crate::{combinatorics::subsets_colex, sets::SetToFiniteSubsetsByOrdSignature};
 use algebraeon_structures::*;
-use std::{cmp::Ordering, marker::PhantomData};
+use std::{cmp::Ordering, sync::Arc};
 
 /// The set of all k-element subsets of a set
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FixedSizeFiniteSubsetsByOrdStructure<Set: OrdSignature, SetB: BorrowedStructure<Set>> {
-    _set: PhantomData<Set>,
-    set: SetB,
+pub struct FixedSizeFiniteSubsetsByOrdStructure<Set: OrdSignature> {
+    set: Arc<Set>,
     k: usize,
 }
 
 pub trait SetToFixedSizeFiniteSubsetsByOrdSignature: OrdSignature {
     fn fixed_size_finite_subsets(
-        &self,
+        self: &Arc<Self>,
         k: usize,
-    ) -> FixedSizeFiniteSubsetsByOrdStructure<Self, &Self> {
-        FixedSizeFiniteSubsetsByOrdStructure::new(self, k)
-    }
-
-    fn into_fixed_size_finite_subsets(
-        self,
-        k: usize,
-    ) -> FixedSizeFiniteSubsetsByOrdStructure<Self, Self> {
-        FixedSizeFiniteSubsetsByOrdStructure::new(self, k)
+    ) -> Arc<FixedSizeFiniteSubsetsByOrdStructure<Self>> {
+        FixedSizeFiniteSubsetsByOrdStructure::new(self.clone(), k)
     }
 }
 impl<Set: OrdSignature> SetToFixedSizeFiniteSubsetsByOrdSignature for Set {}
 
-impl<Set: OrdSignature, SetB: BorrowedStructure<Set>>
-    FixedSizeFiniteSubsetsByOrdStructure<Set, SetB>
-{
-    pub fn new(set: SetB, k: usize) -> Self {
-        Self {
-            _set: PhantomData,
-            set,
-            k,
-        }
+impl<Set: OrdSignature> FixedSizeFiniteSubsetsByOrdStructure<Set> {
+    pub fn new(set: Arc<Set>, k: usize) -> Arc<Self> {
+        Self { set, k }.into()
     }
 
     pub fn set(&self) -> &Set {
@@ -43,17 +29,12 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>>
     }
 }
 
-impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> Signature
-    for FixedSizeFiniteSubsetsByOrdStructure<Set, SetB>
-{
-}
+impl<Set: OrdSignature> Signature for FixedSizeFiniteSubsetsByOrdStructure<Set> {}
 
-impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> SetSignature
-    for FixedSizeFiniteSubsetsByOrdStructure<Set, SetB>
-{
+impl<Set: OrdSignature> SetSignature for FixedSizeFiniteSubsetsByOrdStructure<Set> {
     type Elem = FiniteSubsetByOrd<Set::Elem>;
 
-    fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, x: &Self::Elem) -> Result<(), String> {
         if !self.set().is_sorted_and_unique(&x.elems) {
             return Err("elems is not sorted and unique".to_string());
         }
@@ -64,34 +45,28 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> SetSignature
     }
 }
 
-impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> EqSignature
-    for FixedSizeFiniteSubsetsByOrdStructure<Set, SetB>
-{
-    fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
+impl<Set: OrdSignature> EqSignature for FixedSizeFiniteSubsetsByOrdStructure<Set> {
+    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         self.set().finite_subsets().equal(a, b)
     }
 }
 
-impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> PartialOrdSignature
-    for FixedSizeFiniteSubsetsByOrdStructure<Set, SetB>
-{
-    fn partial_cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Ordering> {
+impl<Set: OrdSignature> PartialOrdSignature for FixedSizeFiniteSubsetsByOrdStructure<Set> {
+    fn partial_cmp(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Ordering> {
         self.set().finite_subsets().partial_cmp(a, b)
     }
 }
 
-impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> OrdSignature
-    for FixedSizeFiniteSubsetsByOrdStructure<Set, SetB>
-{
-    fn cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Ordering {
+impl<Set: OrdSignature> OrdSignature for FixedSizeFiniteSubsetsByOrdStructure<Set> {
+    fn cmp(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Ordering {
         self.set().finite_subsets().cmp(a, b)
     }
 }
 
-impl<Set: OrdSignature + CountableSetSignature, SetB: BorrowedStructure<Set>> CountableSetSignature
-    for FixedSizeFiniteSubsetsByOrdStructure<Set, SetB>
+impl<Set: OrdSignature + CountableSetSignature> CountableSetSignature
+    for FixedSizeFiniteSubsetsByOrdStructure<Set>
 {
-    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
+    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
         // if the set has more than 64 elements then we'll never generate subsets including anything beyond the 64th element, so this is fine
         let elems = self
             .set()
@@ -105,28 +80,24 @@ impl<Set: OrdSignature + CountableSetSignature, SetB: BorrowedStructure<Set>> Co
                 .collect(),
         })
     }
-
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
-        self.clone().into_generate_all_elements()
-    }
 }
 
-impl<Set: OrdSignature + FiniteSetSignature, SetB: BorrowedStructure<Set>> FiniteSetSignature
-    for FixedSizeFiniteSubsetsByOrdStructure<Set, SetB>
+impl<Set: OrdSignature + FiniteSetSignature> FiniteSetSignature
+    for FixedSizeFiniteSubsetsByOrdStructure<Set>
 {
-    fn size(&self) -> Natural {
+    fn size(self: &Arc<Self>) -> Natural {
         choose(self.set().size(), Natural::from(self.k))
     }
 }
 
-impl<Set: OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>> OrderedFiniteSetSignature
-    for FixedSizeFiniteSubsetsByOrdStructure<Set, SetB>
+impl<Set: OrderedFiniteSetSignature> OrderedFiniteSetSignature
+    for FixedSizeFiniteSubsetsByOrdStructure<Set>
 {
-    fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
+    fn list_all_elements_ordered(self: &Arc<Self>) -> Vec<Self::Elem> {
         self.list_all_elements()
     }
 
-    fn element_to_enumeration(&self, elem: &Self::Elem) -> Natural {
+    fn element_to_enumeration(self: &Arc<Self>, elem: &Self::Elem) -> Natural {
         // colex rank
         let mut t = Natural::ZERO;
         for i in 0..self.k {
@@ -138,7 +109,7 @@ impl<Set: OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>> OrderedFinite
         t
     }
 
-    fn enumeration_to_element(&self, num: &Natural) -> Option<Self::Elem> {
+    fn enumeration_to_element(self: &Arc<Self>, num: &Natural) -> Option<Self::Elem> {
         let n = self.set().size();
         if *num >= choose(&n, Natural::from(self.k)) {
             return None;
@@ -172,9 +143,7 @@ impl<Set: OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>> OrderedFinite
     }
 }
 
-impl<Set: OrdSignature, SetB: BorrowedStructure<Set>>
-    FixedSizeFiniteSubsetsByOrdStructure<Set, SetB>
-{
+impl<Set: OrdSignature> FixedSizeFiniteSubsetsByOrdStructure<Set> {
     pub fn subset(&self, elems: Vec<Set::Elem>) -> <Self as SetSignature>::Elem {
         #[cfg(debug_assertions)]
         for elem in &elems {
@@ -188,7 +157,6 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>>
 
 #[cfg(test)]
 mod tests {
-    use crate::sets::SetToFixedSizeFiniteSubsetsByOrdSignature;
     use algebraeon_structures::*;
 
     #[test]

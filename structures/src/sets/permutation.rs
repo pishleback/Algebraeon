@@ -5,7 +5,7 @@ use std::{collections::HashMap, sync::Arc};
 #[signature_meta_trait]
 pub trait PermutationsSignature<Set: SetSignature>: GroupSignature {
     #[skip_meta]
-    fn set(self: &Arc<Self>) -> Arc<Set>;
+    fn set(self: &Arc<Self>) -> &Arc<Set>;
 
     /// Error if a == b
     #[allow(clippy::result_unit_err)]

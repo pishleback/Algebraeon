@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use algebraeon_structures::*;
 use itertools::Itertools;
 
@@ -18,7 +20,7 @@ impl<X: FiniteSetSignature + EqSignature> Signature for FiniteSetEndofunctions<X
 impl<X: FiniteSetSignature + EqSignature> SetSignature for FiniteSetEndofunctions<X> {
     type Elem = Vec<X::Elem>;
 
-    fn validate_element(&self, f: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, f: &Self::Elem) -> Result<(), String> {
         if Natural::from(f.len()) != self.set.size() {
             return Err("Function must have one value per element in the domain.".to_string());
         }
@@ -30,15 +32,11 @@ impl<X: FiniteSetSignature + EqSignature> SetSignature for FiniteSetEndofunction
 }
 
 impl<X: FiniteSetSignature + EqSignature> CountableSetSignature for FiniteSetEndofunctions<X> {
-    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
+    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
         let n: usize = self.set.size().try_into().unwrap_or(usize::MAX);
         (0..n)
             .map(|_| self.set.list_all_elements())
             .multi_cartesian_product()
-    }
-
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
-        self.clone().into_generate_all_elements()
     }
 }
 
