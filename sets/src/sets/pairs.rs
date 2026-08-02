@@ -4,11 +4,11 @@ use std::{fmt::Debug, sync::Arc};
 /// The set of Pairs
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PairsStructure<S> {
-    set: S,
+    set: Arc<S>,
 }
 
 impl<S: SetSignature> PairsStructure<S> {
-    pub fn new(set: S) -> Arc<Self> {
+    pub fn new(set: Arc<S>) -> Arc<Self> {
         Self { set }.into()
     }
 
@@ -45,11 +45,11 @@ impl<S: SetSignature + EqSignature> EqSignature for PairsStructure<S> {
 /// The set of unordered Pairs of distinct elements
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UnorderedPairs<Set> {
-    set: Set,
+    set: Arc<Set>,
 }
 
 impl<Set: SetSignature> UnorderedPairs<Set> {
-    pub fn new(set: Set) -> Arc<Self> {
+    pub fn new(set: Arc<Set>) -> Arc<Self> {
         Self { set }.into()
     }
 }

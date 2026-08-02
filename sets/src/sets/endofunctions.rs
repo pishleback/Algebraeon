@@ -6,12 +6,12 @@ use itertools::Itertools;
 /// The set of all endofunctions on a finite set X: functions X → X
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FiniteSetEndofunctions<X: FiniteSetSignature + EqSignature> {
-    set: X,
+    set: Arc<X>,
 }
 
 impl<X: FiniteSetSignature + EqSignature> FiniteSetEndofunctions<X> {
-    pub fn new(set: X) -> Self {
-        Self { set }
+    pub fn new(set: Arc<X>) -> Arc<Self> {
+        Self { set }.into()
     }
 }
 

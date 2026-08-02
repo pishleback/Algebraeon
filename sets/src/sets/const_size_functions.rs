@@ -168,17 +168,13 @@ impl<const N: usize, Domain: ConstSizeFiniteSetSignature<N>, Range: SetSignature
         Self { domain, range }.into()
     }
 
-    pub fn into_domain_and_range(self) -> (Arc<Domain>, Arc<Range>) {
-        (self.domain, self.range)
-    }
-
-    pub fn forget_const(&self) -> Arc<FunctionsStructure<Domain, Range>> {
-        FunctionsStructure::new(self.domain.borrow(), self.range.borrow())
+    pub fn forget_const(self: &Arc<Self>) -> Arc<FunctionsStructure<Domain, Range>> {
+        FunctionsStructure::new(self.domain.clone(), self.range.clone())
     }
 }
 
 pub trait SetToConstSizeFunctionsToSignature: SetSignature {
-    fn const_size_functions_to<'a, const N: usize, Range: SetSignature>(
+    fn const_size_functions_to<const N: usize, Range: SetSignature>(
         self: &Arc<Self>,
         range: &Arc<Range>,
     ) -> Arc<ConstSizeFunctionsStructure<N, Self, Range>>
@@ -191,7 +187,7 @@ pub trait SetToConstSizeFunctionsToSignature: SetSignature {
 impl<Set: SetSignature> SetToConstSizeFunctionsToSignature for Set {}
 
 pub trait SetToConstSizeFunctionsFromSignature: SetSignature {
-    fn functions_from<'a, const N: usize, Domain: ConstSizeFiniteSetSignature<N>>(
+    fn functions_from<const N: usize, Domain: ConstSizeFiniteSetSignature<N>>(
         self: &Arc<Self>,
         domain: &Arc<Domain>,
     ) -> Arc<ConstSizeFunctionsStructure<N, Domain, Self>> {
@@ -203,12 +199,12 @@ impl<Set: SetSignature> SetToConstSizeFunctionsFromSignature for Set {}
 impl<const N: usize, Domain: ConstSizeFiniteSetSignature<N>, Range: SetSignature>
     ConstSizeFunctionsStructure<N, Domain, Range>
 {
-    pub fn domain(&self) -> &Domain {
-        self.domain.borrow()
+    pub fn domain(&self) -> &Arc<Domain> {
+        &self.domain
     }
 
-    pub fn range(&self) -> &Range {
-        self.range.borrow()
+    pub fn range(&self) -> &Arc<Range> {
+        &self.range
     }
 }
 
@@ -452,7 +448,7 @@ impl<
 {
     pub fn domain_finitely_supported_permutation_action(
         self: &Arc<Self>,
-    ) -> impl RightGroupActionSignature<Self, FinitelySupportedPermutationsStructure<Domain, &Domain>>
+    ) -> Arc<impl RightGroupActionSignature<Self, FinitelySupportedPermutationsStructure<Domain>>>
     {
         RightPermutationActionOnConstSizeFunctionsStructure::new(
             self.clone(),
@@ -469,8 +465,7 @@ impl<
 {
     pub fn domain_const_size_permutation_action(
         self: &Arc<Self>,
-    ) -> impl RightGroupActionSignature<Self, ConstSizePermutationsStructure<N, Domain, &Domain>>
-    {
+    ) -> Arc<impl RightGroupActionSignature<Self, ConstSizePermutationsStructure<N, Domain>>> {
         RightPermutationActionOnConstSizeFunctionsStructure::new(
             self.clone(),
             self.domain().const_size_permutations(),
@@ -500,10 +495,12 @@ impl<
         g: &<DomainPerms>::Elem,
         f: &<ConstSizeFunctionsStructure<N, Domain, Range> as SetSignature>::Elem,
     ) -> <ConstSizeFunctionsStructure<N, Domain, Range> as SetSignature>::Elem {
-        let functions = self.functions.borrow();
-        let domain_perms = self.domain_perms.borrow();
-        functions
-            .function(|x| functions.image(f, &domain_perms.image(g, x)).clone())
+        self.functions
+            .function(|x| {
+                self.functions
+                    .image(f, &self.domain_perms.image(g, x))
+                    .clone()
+            })
             .unwrap()
     }
 }
@@ -555,7 +552,7 @@ impl<
 {
     pub fn range_finitely_supported_permutation_action(
         self: &Arc<Self>,
-    ) -> impl LeftGroupActionSignature<FinitelySupportedPermutationsStructure<Range, &Range>, Self>
+    ) -> Arc<impl LeftGroupActionSignature<FinitelySupportedPermutationsStructure<Range>, Self>>
     {
         LeftPermutationActionOnConstSizeFunctionsStructure::new(
             self.clone(),
@@ -572,7 +569,7 @@ impl<
 {
     pub fn range_const_size_permutation_action<const M: usize>(
         self: &Arc<Self>,
-    ) -> impl LeftGroupActionSignature<ConstSizePermutationsStructure<M, Range, &Range>, Self>
+    ) -> Arc<impl LeftGroupActionSignature<ConstSizePermutationsStructure<M, Range>, Self>>
     where
         Range: ConstSizeFiniteSetSignature<M>,
     {
@@ -593,11 +590,11 @@ impl<
     for LeftPermutationActionOnConstSizeFunctionsStructure<N, Domain, Range, RangePerms>
 {
     fn group(self: &Arc<Self>) -> &Arc<RangePerms> {
-        self.range_perms.borrow()
+        &self.range_perms
     }
 
     fn set(self: &Arc<Self>) -> &Arc<ConstSizeFunctionsStructure<N, Domain, Range>> {
-        self.functions.borrow()
+        &self.functions
     }
 
     fn apply(
@@ -605,10 +602,8 @@ impl<
         g: &<RangePerms>::Elem,
         f: &<ConstSizeFunctionsStructure<N, Domain, Range> as SetSignature>::Elem,
     ) -> <ConstSizeFunctionsStructure<N, Domain, Range> as SetSignature>::Elem {
-        let functions = self.functions.borrow();
-        let range_perms = self.range_perms.borrow();
-        functions
-            .function(|x| range_perms.image(g, functions.image(f, x)))
+        self.functions
+            .function(|x| self.range_perms.image(g, self.functions.image(f, x)))
             .unwrap()
     }
 }
@@ -620,16 +615,16 @@ mod tests {
 
     #[test]
     fn enumerate() {
-        let set_a = i32::structure().into_const_size_finite_subset([1, 2, 3, 4, 5]);
-        let set_b = i32::structure().into_const_size_finite_subset([1, 2, 3]);
+        let set_a = i32::structure().const_size_finite_subset([1, 2, 3, 4, 5]);
+        let set_b = i32::structure().const_size_finite_subset([1, 2, 3]);
         let fns = set_a.const_size_functions_to(&set_b);
         algebraeon_structures::assert_enumerated_ord_finite_set!(fns, 243);
     }
 
     #[test]
     fn test_image() {
-        let set_a = i32::structure().into_const_size_finite_subset([1, 2, 3, 4, 5]);
-        let set_b = i32::structure().into_const_size_finite_subset([1, 2, 3]);
+        let set_a = i32::structure().const_size_finite_subset([1, 2, 3, 4, 5]);
+        let set_b = i32::structure().const_size_finite_subset([1, 2, 3]);
         let fns = set_a.const_size_functions_to(&set_b);
         let f = fns
             .function(|i| match i {
@@ -650,9 +645,9 @@ mod tests {
 
     #[test]
     fn test_permutation_actions() {
-        let set_a = i32::structure().into_const_size_finite_subset([1, 2, 3, 4, 5]);
+        let set_a = i32::structure().const_size_finite_subset([1, 2, 3, 4, 5]);
         let set_a_perms = set_a.permutations();
-        let set_b = i32::structure().into_const_size_finite_subset([1, 2, 3]);
+        let set_b = i32::structure().const_size_finite_subset([1, 2, 3]);
         let set_b_perms = set_b.permutations();
         let fns = set_a.const_size_functions_to(&set_b);
 

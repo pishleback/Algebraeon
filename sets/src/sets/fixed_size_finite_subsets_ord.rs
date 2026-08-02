@@ -24,8 +24,8 @@ impl<Set: OrdSignature> FixedSizeFiniteSubsetsByOrdStructure<Set> {
         Self { set, k }.into()
     }
 
-    pub fn set(&self) -> &Set {
-        self.set.borrow()
+    pub fn set(&self) -> &Arc<Set> {
+        &self.set
     }
 }
 
@@ -70,6 +70,7 @@ impl<Set: OrdSignature + CountableSetSignature> CountableSetSignature
         // if the set has more than 64 elements then we'll never generate subsets including anything beyond the 64th element, so this is fine
         let elems = self
             .set()
+            .clone()
             .generate_all_elements()
             .take(64)
             .collect::<Vec<_>>();
@@ -157,28 +158,28 @@ impl<Set: OrdSignature> FixedSizeFiniteSubsetsByOrdStructure<Set> {
 
 #[cfg(test)]
 mod tests {
-    use algebraeon_structures::*;
+    use super::*;
 
     #[test]
     fn enumerate() {
         algebraeon_structures::assert_enumerated_ord_finite_set!(
             i32::structure()
-                .into_finite_subset(vec![])
-                .into_fixed_size_finite_subsets(0),
+                .finite_subset(vec![])
+                .fixed_size_finite_subsets(0),
             1
         );
 
         algebraeon_structures::assert_enumerated_ord_finite_set!(
             i32::structure()
-                .into_finite_subset(vec![])
-                .into_fixed_size_finite_subsets(1),
+                .finite_subset(vec![])
+                .fixed_size_finite_subsets(1),
             0
         );
 
         algebraeon_structures::assert_enumerated_ord_finite_set!(
             i32::structure()
-                .into_finite_subset(vec![1, 2, 3, 4, 5])
-                .into_fixed_size_finite_subsets(3),
+                .finite_subset(vec![1, 2, 3, 4, 5])
+                .fixed_size_finite_subsets(3),
             10
         );
     }

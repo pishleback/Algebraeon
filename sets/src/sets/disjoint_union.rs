@@ -64,8 +64,8 @@ mod tests {
 
     #[test]
     fn test() {
-        let set_0 = i32::structure().into_const_size_finite_subset([1, 2, 3, 4, 5]);
-        let set_1 = i32::structure().into_const_size_finite_subset([6, 7, 8]);
+        let set_0 = i32::structure().const_size_finite_subset([1, 2, 3, 4, 5]);
+        let set_1 = i32::structure().const_size_finite_subset([6, 7, 8]);
 
         let set_01 = DisjointUnionSetStructure::new(set_0, set_1);
 

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use algebraeon_macros::CanonicalStructure;
 use algebraeon_structures::*;
 
@@ -9,7 +11,7 @@ pub enum C2 {
 }
 
 impl CompositionSignature for C2CanonicalStructure {
-    fn compose(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn compose(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         match (a, b) {
             (C2::Identity, C2::Identity) => C2::Identity,
             (C2::Identity, C2::Flip) => C2::Flip,
@@ -22,19 +24,23 @@ impl CompositionSignature for C2CanonicalStructure {
 impl AssociativeCompositionSignature for C2CanonicalStructure {}
 
 impl LeftCancellativeCompositionSignature for C2CanonicalStructure {
-    fn try_left_difference(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_left_difference(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.compose(&self.inverse(b), a))
     }
 }
 
 impl RightCancellativeCompositionSignature for C2CanonicalStructure {
-    fn try_right_difference(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_right_difference(
+        self: &Arc<Self>,
+        a: &Self::Elem,
+        b: &Self::Elem,
+    ) -> Option<Self::Elem> {
         Some(self.compose(a, &self.inverse(b)))
     }
 }
 
 impl IdentitySignature for C2CanonicalStructure {
-    fn identity(&self) -> Self::Elem {
+    fn identity(self: &Arc<Self>) -> Self::Elem {
         C2::Identity
     }
 }
@@ -42,25 +48,25 @@ impl IdentitySignature for C2CanonicalStructure {
 impl MonoidSignature for C2CanonicalStructure {}
 
 impl TryLeftInverseSignature for C2CanonicalStructure {
-    fn try_left_inverse(&self, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_left_inverse(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.inverse(a))
     }
 }
 
 impl TryRightInverseSignature for C2CanonicalStructure {
-    fn try_right_inverse(&self, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_right_inverse(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.inverse(a))
     }
 }
 
 impl TryInverseSignature for C2CanonicalStructure {
-    fn try_inverse(&self, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_inverse(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.inverse(a))
     }
 }
 
 impl GroupSignature for C2CanonicalStructure {
-    fn inverse(&self, a: &Self::Elem) -> Self::Elem {
+    fn inverse(self: &Arc<Self>, a: &Self::Elem) -> Self::Elem {
         *a
     }
 }

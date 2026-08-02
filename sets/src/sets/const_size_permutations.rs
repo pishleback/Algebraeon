@@ -420,7 +420,7 @@ mod partition_tests {
 
     #[test]
     fn test_image_and_preimage() {
-        let perms = ConstSizeEnumeratedFiniteSet::<4>::structure().into_const_size_permutations();
+        let perms = ConstSizeEnumeratedFiniteSet::<4>::structure().const_size_permutations();
 
         let x = perms
             .new_cycle(vec![
@@ -438,7 +438,7 @@ mod partition_tests {
     #[test]
     fn test_new_perm() {
         type S = ConstSizeEnumeratedFiniteSet<4>;
-        let perms = S::structure().into_const_size_permutations();
+        let perms = S::structure().const_size_permutations();
 
         let x = perms
             .new_perm(vec![
@@ -462,7 +462,7 @@ mod partition_tests {
     #[test]
     fn test_composition_and_equal() {
         type S = ConstSizeEnumeratedFiniteSet<7>;
-        let perms = S::structure().into_const_size_permutations();
+        let perms = S::structure().const_size_permutations();
 
         let a = perms
             .new_cycle(
@@ -504,7 +504,7 @@ mod partition_tests {
     #[test]
     fn test_composition_and_equal_2() {
         type S = ConstSizeEnumeratedFiniteSet<7>;
-        let perms = S::structure().into_const_size_permutations();
+        let perms = S::structure().const_size_permutations();
 
         let a = perms
             .new_perm(

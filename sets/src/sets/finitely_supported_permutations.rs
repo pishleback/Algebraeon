@@ -174,7 +174,7 @@ impl<Set: OrdSignature> EqSignature for FinitelySupportedPermutationsStructure<S
 
 impl<Set: OrdSignature> FinitelySupportedPermutationsStructure<Set> {
     pub fn map<T>(
-        &self,
+        self: &Arc<Self>,
         perm: <Self as SetSignature>::Elem,
         f: impl Fn(Set::Elem) -> T,
     ) -> FinitelySupportedPermutation<T> {
@@ -188,7 +188,7 @@ impl<Set: OrdSignature> FinitelySupportedPermutationsStructure<Set> {
     }
 
     fn image_ref<'a>(
-        &self,
+        self: &Arc<Self>,
         perm: &'a <Self as SetSignature>::Elem,
         elem: &'a Set::Elem,
     ) -> &'a Set::Elem {
@@ -204,7 +204,7 @@ impl<Set: OrdSignature> FinitelySupportedPermutationsStructure<Set> {
     }
 
     fn preimage_ref<'a>(
-        &self,
+        self: &Arc<Self>,
         perm: &'a <Self as SetSignature>::Elem,
         elem: &'a Set::Elem,
     ) -> &'a Set::Elem {

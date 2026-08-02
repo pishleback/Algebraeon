@@ -33,7 +33,7 @@ pub trait SetToFunctionsToSignature: SetSignature {
 impl<Set: SetSignature> SetToFunctionsToSignature for Set {}
 
 pub trait SetToFunctionsFromSignature: SetSignature {
-    fn functions_from<'a, Domain: SetSignature>(
+    fn functions_from<Domain: SetSignature>(
         self: &Arc<Self>,
         domain: &Arc<Domain>,
     ) -> Arc<FunctionsStructure<Domain, Self>> {
@@ -43,12 +43,12 @@ pub trait SetToFunctionsFromSignature: SetSignature {
 impl<Set: SetSignature> SetToFunctionsFromSignature for Set {}
 
 impl<Domain: SetSignature, Range: SetSignature> FunctionsStructure<Domain, Range> {
-    pub fn domain(&self) -> &Domain {
-        self.domain.borrow()
+    pub fn domain(&self) -> &Arc<Domain> {
+        &self.domain
     }
 
-    pub fn range(&self) -> &Range {
-        self.range.borrow()
+    pub fn range(&self) -> &Arc<Range> {
+        &self.range
     }
 }
 
@@ -250,7 +250,7 @@ impl<
 impl<Domain: OrderedFiniteSetSignature, Range: SetSignature> FunctionsStructure<Domain, Range> {
     pub fn domain_finitely_supported_permutation_action(
         self: &Arc<Self>,
-    ) -> impl RightGroupActionSignature<Self, FinitelySupportedPermutationsStructure<Domain, &Domain>>
+    ) -> Arc<impl RightGroupActionSignature<Self, FinitelySupportedPermutationsStructure<Domain>>>
     {
         RightPermutationActionOnFunctionsStructure::new(self.clone(), self.domain().permutations())
     }
@@ -277,10 +277,12 @@ impl<
         g: &<DomainPerms>::Elem,
         f: &<FunctionsStructure<Domain, Range> as SetSignature>::Elem,
     ) -> <FunctionsStructure<Domain, Range> as SetSignature>::Elem {
-        let functions = self.functions.borrow();
-        let domain_perms = self.domain_perms.borrow();
-        functions
-            .function(|x| functions.image(f, &domain_perms.image(g, x)).clone())
+        self.functions
+            .function(|x| {
+                self.functions
+                    .image(f, &self.domain_perms.image(g, x))
+                    .clone()
+            })
             .unwrap()
     }
 }
@@ -326,7 +328,7 @@ impl<Domain: OrderedFiniteSetSignature, Range: OrderedFiniteSetSignature>
 {
     pub fn range_finitely_supported_permutation_action(
         self: &Arc<Self>,
-    ) -> impl LeftGroupActionSignature<FinitelySupportedPermutationsStructure<Range, &Range>, Self>
+    ) -> Arc<impl LeftGroupActionSignature<FinitelySupportedPermutationsStructure<Range>, Self>>
     {
         LeftPermutationActionOnFunctionsStructure::new(self.clone(), self.range().permutations())
     }
@@ -353,10 +355,8 @@ impl<
         g: &<RangePerms>::Elem,
         f: &<FunctionsStructure<Domain, Range> as SetSignature>::Elem,
     ) -> <FunctionsStructure<Domain, Range> as SetSignature>::Elem {
-        let functions = self.functions.borrow();
-        let range_perms = self.range_perms.borrow();
-        functions
-            .function(|x| range_perms.image(g, functions.image(f, x)))
+        self.functions
+            .function(|x| self.range_perms.image(g, self.functions.image(f, x)))
             .unwrap()
     }
 }
@@ -368,16 +368,16 @@ mod tests {
 
     #[test]
     fn enumerate() {
-        let set_a = i32::structure().into_finite_subset(vec![1, 2, 3, 4, 5]);
-        let set_b = i32::structure().into_finite_subset(vec![1, 2, 3]);
+        let set_a = i32::structure().finite_subset(vec![1, 2, 3, 4, 5]);
+        let set_b = i32::structure().finite_subset(vec![1, 2, 3]);
         let fns = set_a.functions_to(&set_b);
         algebraeon_structures::assert_enumerated_ord_finite_set!(fns, 243);
     }
 
     #[test]
     fn test_image() {
-        let set_a = i32::structure().into_finite_subset(vec![1, 2, 3, 4, 5]);
-        let set_b = i32::structure().into_finite_subset(vec![1, 2, 3]);
+        let set_a = i32::structure().finite_subset(vec![1, 2, 3, 4, 5]);
+        let set_b = i32::structure().finite_subset(vec![1, 2, 3]);
         let fns = set_a.functions_to(&set_b);
         let f = fns
             .function(|i| match i {
@@ -398,9 +398,9 @@ mod tests {
 
     #[test]
     fn test_permutation_actions() {
-        let set_a = i32::structure().into_finite_subset(vec![1, 2, 3, 4, 5]);
+        let set_a = i32::structure().finite_subset(vec![1, 2, 3, 4, 5]);
         let set_a_perms = set_a.permutations();
-        let set_b = i32::structure().into_finite_subset(vec![1, 2, 3]);
+        let set_b = i32::structure().finite_subset(vec![1, 2, 3]);
         let set_b_perms = set_b.permutations();
         let fns = set_a.functions_to(&set_b);
 
