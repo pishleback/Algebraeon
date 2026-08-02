@@ -1,7 +1,7 @@
 use super::*;
 use algebraeon_structures::*;
 
-impl<FS: ComplexConjugateSignature, FSB: BorrowedStructure<FS>> MatrixStructure<FS, FSB> {
+impl<FS: ComplexConjugateSignature> MatrixStructure<FS> {
     pub fn conjugate(&self, mat: &Matrix<FS::Elem>) -> Matrix<FS::Elem> {
         mat.apply_map(|x| self.ring().conjugate(x))
     }
@@ -11,9 +11,7 @@ impl<FS: ComplexConjugateSignature, FSB: BorrowedStructure<FS>> MatrixStructure<
     }
 }
 
-impl<FS: ComplexConjugateSignature + FieldSignature + ToStringSignature, FSB: BorrowedStructure<FS>>
-    MatrixStructure<FS, FSB>
-{
+impl<FS: ComplexConjugateSignature + FieldSignature + ToStringSignature> MatrixStructure<FS> {
     /// return L and Q such that mat=L*Q where L is lower triangular and Q is row-orthogonal (not orthonormal)
     pub fn gram_schmidt_row_orthogonalization_algorithm(
         &self,
@@ -95,8 +93,7 @@ impl<FS: ComplexConjugateSignature + FieldSignature + ToStringSignature, FSB: Bo
 
 impl<
     FS: ComplexConjugateSignature + PositiveRealNthRootSignature + FieldSignature + ToStringSignature,
-    FSB: BorrowedStructure<FS>,
-> MatrixStructure<FS, FSB>
+> MatrixStructure<FS>
 {
     //return L*mat=Q where L is lower triangular and Q is orthonormal
     pub fn lq_decomposition_algorithm(

@@ -15,7 +15,7 @@ use crate::{
 };
 use algebraeon_structures::*;
 use rand::{RngExt, SeedableRng, rngs::StdRng};
-use std::{borrow::Cow, ops::Rem};
+use std::{borrow::Cow, ops::Rem, sync::Arc};
 
 fn xgcd_u64(mut x: u64, mut y: u64) -> (u64, i64, i64) {
     let mut pa = 1;
@@ -157,13 +157,13 @@ impl SetSignature for MontgomeryModuloOddStructure {
 }
 
 impl ToStringSignature for MontgomeryModuloOddStructure {
-    fn to_string(&self, elem: &Self::Elem) -> String {
+    fn to_string(self: &Arc<Self>, elem: &Self::Elem) -> String {
         format!("{}", self.from_montgomery_form(*elem))
     }
 }
 
 impl EqSignature for MontgomeryModuloOddStructure {
-    fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         #[cfg(debug_assertions)]
         {
             self.validate_element(a).unwrap();
@@ -176,13 +176,13 @@ impl EqSignature for MontgomeryModuloOddStructure {
 impl RinglikeSpecializationSignature for MontgomeryModuloOddStructure {}
 
 impl ZeroSignature for MontgomeryModuloOddStructure {
-    fn zero(&self) -> Self::Elem {
+    fn zero(self: &Arc<Self>) -> Self::Elem {
         0
     }
 }
 
 impl AdditionSignature for MontgomeryModuloOddStructure {
-    fn add(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn add(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         #[cfg(debug_assertions)]
         {
             self.validate_element(a).unwrap();
@@ -197,13 +197,13 @@ impl AdditionSignature for MontgomeryModuloOddStructure {
 }
 
 impl TryNegateSignature for MontgomeryModuloOddStructure {
-    fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_neg(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
     }
 }
 
 impl CancellativeAdditionSignature for MontgomeryModuloOddStructure {
-    fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_sub(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.add(a, &self.neg(b)))
     }
 }
@@ -211,7 +211,7 @@ impl CancellativeAdditionSignature for MontgomeryModuloOddStructure {
 impl AdditiveMonoidSignature for MontgomeryModuloOddStructure {}
 
 impl AdditiveGroupSignature for MontgomeryModuloOddStructure {
-    fn neg(&self, a: &Self::Elem) -> Self::Elem {
+    fn neg(self: &Arc<Self>, a: &Self::Elem) -> Self::Elem {
         #[cfg(debug_assertions)]
         self.validate_element(a).unwrap();
         let b = if *a == 0 { *a } else { self.n - a };
@@ -222,13 +222,13 @@ impl AdditiveGroupSignature for MontgomeryModuloOddStructure {
 }
 
 impl OneSignature for MontgomeryModuloOddStructure {
-    fn one(&self) -> Self::Elem {
+    fn one(self: &Arc<Self>) -> Self::Elem {
         self.r_mod_n
     }
 }
 
 impl MultiplicationSignature for MontgomeryModuloOddStructure {
-    fn mul(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn mul(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.montgomery_reduction(a * b)
     }
 }
@@ -244,7 +244,7 @@ impl LeftDistributiveMultiplicationOverAddition for MontgomeryModuloOddStructure
 impl MultiplicativeAbsorptionMonoidSignature for MontgomeryModuloOddStructure {}
 
 impl TryReciprocalSignature for MontgomeryModuloOddStructure {
-    fn try_reciprocal(&self, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_reciprocal(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         let b = self.montgomery_reduction(inv_mod_n_u64(*a, self.n)? * self.r_cubed_mod_n);
         debug_assert!(self.equal(&self.mul(a, &b), &self.one()));
         Some(b)
@@ -288,17 +288,13 @@ impl QuotientRingGetPrincipalIdealSignature<IntegerCanonicalStructure>
 }
 
 impl CountableSetSignature for MontgomeryModuloOddStructure {
-    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
+    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
         0..self.n
-    }
-
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
-        self.clone().into_generate_all_elements()
     }
 }
 
 impl FiniteSetSignature for MontgomeryModuloOddStructure {
-    fn generate_random_elements(&self, seed: u64) -> impl Iterator<Item = Self::Elem> {
+    fn generate_random_elements(self: &Arc<Self>, seed: u64) -> impl Iterator<Item = Self::Elem> {
         let mut rng = StdRng::seed_from_u64(seed);
         (0..).map(move |_| rng.random_range(0..self.n))
     }
@@ -361,7 +357,7 @@ impl Signature for MontgomeryModuloOddPrimeStructure {}
 impl SetSignature for MontgomeryModuloOddPrimeStructure {
     type Elem = u64; // 0 <= x < n
 
-    fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, x: &Self::Elem) -> Result<(), String> {
         let n = self.sup.n();
         if !is_prime_nat(&Natural::from(n)) {
             return Err(format!("Modulus {} is not prime", n));
@@ -372,13 +368,13 @@ impl SetSignature for MontgomeryModuloOddPrimeStructure {
 }
 
 impl ToStringSignature for MontgomeryModuloOddPrimeStructure {
-    fn to_string(&self, elem: &Self::Elem) -> String {
+    fn to_string(self: &Arc<Self>, elem: &Self::Elem) -> String {
         self.sup.to_string(elem)
     }
 }
 
 impl EqSignature for MontgomeryModuloOddPrimeStructure {
-    fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         self.sup.equal(a, b)
     }
 }
@@ -386,25 +382,25 @@ impl EqSignature for MontgomeryModuloOddPrimeStructure {
 impl RinglikeSpecializationSignature for MontgomeryModuloOddPrimeStructure {}
 
 impl ZeroSignature for MontgomeryModuloOddPrimeStructure {
-    fn zero(&self) -> Self::Elem {
+    fn zero(self: &Arc<Self>) -> Self::Elem {
         self.sup.zero()
     }
 }
 
 impl AdditionSignature for MontgomeryModuloOddPrimeStructure {
-    fn add(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn add(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.sup.add(a, b)
     }
 }
 
 impl TryNegateSignature for MontgomeryModuloOddPrimeStructure {
-    fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_neg(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         self.sup.try_neg(a)
     }
 }
 
 impl CancellativeAdditionSignature for MontgomeryModuloOddPrimeStructure {
-    fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_sub(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         self.sup.try_sub(a, b)
     }
 }
@@ -412,19 +408,19 @@ impl CancellativeAdditionSignature for MontgomeryModuloOddPrimeStructure {
 impl AdditiveMonoidSignature for MontgomeryModuloOddPrimeStructure {}
 
 impl AdditiveGroupSignature for MontgomeryModuloOddPrimeStructure {
-    fn neg(&self, a: &Self::Elem) -> Self::Elem {
+    fn neg(self: &Arc<Self>, a: &Self::Elem) -> Self::Elem {
         self.sup.neg(a)
     }
 }
 
 impl OneSignature for MontgomeryModuloOddPrimeStructure {
-    fn one(&self) -> Self::Elem {
+    fn one(self: &Arc<Self>) -> Self::Elem {
         self.sup.one()
     }
 }
 
 impl MultiplicationSignature for MontgomeryModuloOddPrimeStructure {
-    fn mul(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn mul(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.sup.mul(a, b)
     }
 }
@@ -476,7 +472,7 @@ impl QuotientRingGetPrincipalIdealSignature<IntegerCanonicalStructure>
 }
 
 impl TryReciprocalSignature for MontgomeryModuloOddPrimeStructure {
-    fn try_reciprocal(&self, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_reciprocal(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         if let Some(cache) = &self.inv_cache {
             if *a == 0 {
                 None
@@ -493,7 +489,7 @@ impl TryReciprocalSignature for MontgomeryModuloOddPrimeStructure {
 }
 
 impl CancellativeMultiplicationSignature for MontgomeryModuloOddPrimeStructure {
-    fn try_divide(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_divide(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.mul(a, &self.try_reciprocal(b)?))
     }
 }
@@ -505,44 +501,34 @@ impl IntegralDomainSignature for MontgomeryModuloOddPrimeStructure {}
 impl FieldSignature for MontgomeryModuloOddPrimeStructure {}
 
 impl CountableSetSignature for MontgomeryModuloOddPrimeStructure {
-    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
+    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
         self.sup.into_generate_all_elements()
-    }
-
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
-        self.clone().into_generate_all_elements()
     }
 }
 
 impl FiniteSetSignature for MontgomeryModuloOddPrimeStructure {
-    fn generate_random_elements(&self, seed: u64) -> impl Iterator<Item = Self::Elem> {
+    fn generate_random_elements(self: &Arc<Self>, seed: u64) -> impl Iterator<Item = Self::Elem> {
         self.sup.generate_random_elements(seed)
     }
 }
 
-impl<B: BorrowedStructure<MontgomeryModuloOddPrimeStructure>> CountableSetSignature
-    for MultiplicativeMonoidUnitsStructure<MontgomeryModuloOddPrimeStructure, B>
+impl CountableSetSignature
+    for MultiplicativeMonoidUnitsStructure<MontgomeryModuloOddPrimeStructure>
 {
-    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
+    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
         1..self.monoid().sup.n
-    }
-
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
-        self.clone().into_generate_all_elements()
     }
 }
 
-impl<B: BorrowedStructure<MontgomeryModuloOddPrimeStructure>> FiniteSetSignature
-    for MultiplicativeMonoidUnitsStructure<MontgomeryModuloOddPrimeStructure, B>
-{
-    fn generate_random_elements(&self, seed: u64) -> impl Iterator<Item = Self::Elem> {
+impl FiniteSetSignature for MultiplicativeMonoidUnitsStructure<MontgomeryModuloOddPrimeStructure> {
+    fn generate_random_elements(self: &Arc<Self>, seed: u64) -> impl Iterator<Item = Self::Elem> {
         let mut rng = StdRng::seed_from_u64(seed);
         (0..).map(move |_| rng.random_range(1..self.monoid().sup.n))
     }
 }
 
 impl FiniteFieldSignature for MontgomeryModuloOddPrimeStructure {
-    fn characteristic_and_power(&self) -> (Natural, Natural) {
+    fn characteristic_and_power(self: &Arc<Self>) -> (Natural, Natural) {
         (Natural::from(self.sup.n), Natural::ONE)
     }
 }

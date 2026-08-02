@@ -2,7 +2,7 @@ use super::{finitely_free_cosets::*, finitely_free_module::*};
 use crate::{matrix::*, structure::*};
 use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 use algebraeon_structures::*;
-use std::{borrow::Borrow, fmt::Debug, marker::PhantomData};
+use std::{borrow::Borrow, fmt::Debug, marker::PhantomData, sync::Arc};
 
 #[derive(Debug, Clone)]
 pub struct FinitelyFreeSubmodule<Elem: Clone + Debug> {
@@ -49,28 +49,25 @@ pub struct FinitelyFreeSubmodulesStructure<
     Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
-    ModuleB: BorrowedStructure<Module>,
 > {
     _set: PhantomData<Set>,
     _ring: PhantomData<Ring>,
-    _module: PhantomData<Module>,
-    module: ModuleB,
+    module: Arc<Module>,
 }
 
 impl<
     Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
-    ModuleB: BorrowedStructure<Module>,
-> FinitelyFreeSubmodulesStructure<Set, Ring, Module, ModuleB>
+> FinitelyFreeSubmodulesStructure<Set, Ring, Module>
 {
-    pub fn new(module: ModuleB) -> Self {
+    pub fn new(module: Arc<Module>) -> Arc<Self> {
         Self {
             _set: PhantomData,
             _ring: PhantomData,
-            _module: PhantomData,
             module,
         }
+        .into()
     }
 }
 
@@ -78,8 +75,7 @@ impl<
     Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
-    ModuleB: BorrowedStructure<Module>,
-> Signature for FinitelyFreeSubmodulesStructure<Set, Ring, Module, ModuleB>
+> Signature for FinitelyFreeSubmodulesStructure<Set, Ring, Module>
 {
 }
 
@@ -87,8 +83,7 @@ impl<
     Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
-    ModuleB: BorrowedStructure<Module>,
-> SetSignature for FinitelyFreeSubmodulesStructure<Set, Ring, Module, ModuleB>
+> SetSignature for FinitelyFreeSubmodulesStructure<Set, Ring, Module>
 {
     type Elem = FinitelyFreeSubmodule<Ring::Elem>;
 
@@ -105,14 +100,13 @@ impl<
     Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
-    ModuleB: BorrowedStructure<Module>,
-> FinitelyFreeSubmodulesStructure<Set, Ring, Module, ModuleB>
+> FinitelyFreeSubmodulesStructure<Set, Ring, Module>
 {
-    pub fn module(&self) -> &Module {
-        self.module.borrow()
+    pub fn module(&self) -> &Arc<Module> {
+        &self.module
     }
 
-    pub fn ring(&self) -> &Ring {
+    pub fn ring(&self) -> Arc<Ring> {
         self.module().ring()
     }
 
@@ -449,11 +443,10 @@ impl<
     Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
-    ModuleB: BorrowedStructure<Module>,
-> EqSignature for FinitelyFreeSubmodulesStructure<Set, Ring, Module, ModuleB>
+> EqSignature for FinitelyFreeSubmodulesStructure<Set, Ring, Module>
 {
     fn equal(
-        &self,
+        self: &Arc<Self>,
         x: &FinitelyFreeSubmodule<Ring::Elem>,
         y: &FinitelyFreeSubmodule<Ring::Elem>,
     ) -> bool {

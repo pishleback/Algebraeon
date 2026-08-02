@@ -53,9 +53,7 @@ fn row_to_double_poly(
     Polynomial::from_coeffs(coeffs)
 }
 
-impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
-    PolynomialStructure<AlgebraicNumberFieldPolynomialQuotientStructure, B>
-{
+impl PolynomialStructure<AlgebraicNumberFieldPolynomialQuotientStructure> {
     /*
         input:  A polynomial f(x) over an algebraic number field K, return
         output: The polynomial \prod_{i=1}^n \sigma_i(f) over \mathbb{Q}
@@ -607,8 +605,8 @@ impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
     }
 }
 
-impl<B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>> FactoringMonoidSignature
-    for PolynomialStructure<AlgebraicNumberFieldPolynomialQuotientStructure, B>
+impl FactoringMonoidSignature
+    for PolynomialStructure<AlgebraicNumberFieldPolynomialQuotientStructure>
 {
     fn factor_unchecked(&self, f: &Self::Elem) -> Factored<Self::Elem, Natural> {
         if self.is_zero(f) {

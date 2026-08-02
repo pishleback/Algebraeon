@@ -1,5 +1,5 @@
 use crate::{
-    polynomial::{Polynomial, ToPolynomialSignature},
+    polynomial::Polynomial,
     structure::{Factored, OneSignature, UniqueFactorizationMonoidSignature},
 };
 use algebraeon_structures::*;

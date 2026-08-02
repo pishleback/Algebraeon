@@ -15,17 +15,18 @@ use crate::{
 use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 use algebraeon_structures::*;
 use itertools::Itertools;
-use std::borrow::{Borrow, Cow};
+use std::{
+    borrow::{Borrow, Cow},
+    sync::Arc,
+};
 
-pub type AlgebraicNumberFieldPolynomialQuotientStructure = PolynomialQuotientRingStructure<
-    RationalCanonicalStructure,
-    RationalCanonicalStructure,
-    PolynomialStructure<RationalCanonicalStructure, RationalCanonicalStructure>,
-    true,
->;
+pub type AlgebraicNumberFieldPolynomialQuotientStructure =
+    PolynomialQuotientRingStructure<RationalCanonicalStructure, true>;
 
 impl Polynomial<Rational> {
-    pub fn algebraic_number_field(self) -> Option<AlgebraicNumberFieldPolynomialQuotientStructure> {
+    pub fn algebraic_number_field(
+        self,
+    ) -> Option<Arc<AlgebraicNumberFieldPolynomialQuotientStructure>> {
         Rational::structure()
             .into_polynomials()
             .into_quotient_field(self)
@@ -53,7 +54,7 @@ impl Polynomial<Rational> {
 }
 
 impl CharZeroFieldSignature for AlgebraicNumberFieldPolynomialQuotientStructure {
-    fn try_to_rat(&self, x: &Self::Elem) -> Option<Rational> {
+    fn try_to_rat(self: &Arc<Self>, x: &Self::Elem) -> Option<Rational> {
         let x = self.reduce(x);
         match x.degree() {
             None => Some(Rational::ZERO),
@@ -63,16 +64,14 @@ impl CharZeroFieldSignature for AlgebraicNumberFieldPolynomialQuotientStructure 
     }
 }
 
-impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
-    FreeModuleSignature<EnumeratedFiniteSetStructure, RationalCanonicalStructure>
+impl FreeModuleSignature<EnumeratedFiniteSetStructure, RationalCanonicalStructure>
     for RingHomomorphismRangeModuleStructure<
-        'h,
         RationalCanonicalStructure,
         AlgebraicNumberFieldPolynomialQuotientStructure,
-        PrincipalRationalMap<AlgebraicNumberFieldPolynomialQuotientStructure, B>,
+        PrincipalRationalMap<AlgebraicNumberFieldPolynomialQuotientStructure>,
     >
 {
-    fn basis_set(&self) -> impl std::borrow::Borrow<EnumeratedFiniteSetStructure> {
+    fn basis_set(self: &Arc<Self>) -> Arc<EnumeratedFiniteSetStructure> {
         self.module()
             .coefficient_ring_inclusion()
             .range_module_structure()
@@ -81,14 +80,18 @@ impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
             .clone()
     }
 
-    fn to_component<'a>(&self, b: &usize, v: &'a Polynomial<Rational>) -> Cow<'a, Rational> {
+    fn to_component<'a>(
+        self: &Arc<Self>,
+        b: &usize,
+        v: &'a Polynomial<Rational>,
+    ) -> Cow<'a, Rational> {
         self.module()
             .coefficient_ring_inclusion()
             .range_module_structure()
             .to_component(b, v)
     }
 
-    fn from_component(&self, b: &usize, r: &Rational) -> Polynomial<Rational> {
+    fn from_component(self: &Arc<Self>, b: &usize, r: &Rational) -> Polynomial<Rational> {
         self.module()
             .coefficient_ring_inclusion()
             .range_module_structure()
@@ -98,14 +101,10 @@ impl<'h, B: BorrowedStructure<AlgebraicNumberFieldPolynomialQuotientStructure>>
 
 impl AlgebraicNumberFieldSignature for AlgebraicNumberFieldPolynomialQuotientStructure {
     type Basis = EnumeratedFiniteSetStructure;
-    type RationalInclusion<B: BorrowedStructure<Self>> = PrincipalRationalMap<Self, B>;
+    type RationalInclusion = PrincipalRationalMap<Self>;
 
-    fn inbound_finite_dimensional_rational_extension(&self) -> Self::RationalInclusion<&Self> {
+    fn inbound_finite_dimensional_rational_extension(&self) -> Arc<Self::RationalInclusion> {
         self.inbound_principal_rational_map()
-    }
-
-    fn into_inbound_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self> {
-        self.into_inbound_principal_rational_map()
     }
 
     fn generator(&self) -> Self::Elem {
@@ -235,11 +234,7 @@ impl
     IntegralDomainExtensionAllPolynomialRoots<
         RationalCanonicalStructure,
         AlgebraicNumberFieldPolynomialQuotientStructure,
-    >
-    for PrincipalRationalMap<
-        AlgebraicNumberFieldPolynomialQuotientStructure,
-        AlgebraicNumberFieldPolynomialQuotientStructure,
-    >
+    > for PrincipalRationalMap<AlgebraicNumberFieldPolynomialQuotientStructure>
 {
     fn all_roots(
         &self,

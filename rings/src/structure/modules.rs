@@ -9,18 +9,21 @@ use crate::{
     structure::*,
 };
 use algebraeon_structures::*;
-use std::borrow::{Borrow, Cow};
+use std::{
+    borrow::{Borrow, Cow},
+    sync::Arc,
+};
 
 pub trait SemiModuleSignature<Ring: SemiRingSignature>: AdditiveMonoidSignature {
-    fn ring(&self) -> &Ring;
-    fn scalar_mul(&self, a: &Self::Elem, x: &Ring::Elem) -> Self::Elem;
+    fn ring(self: &Arc<Self>) -> Arc<Ring>;
+    fn scalar_mul(self: &Arc<Self>, a: &Self::Elem, x: &Ring::Elem) -> Self::Elem;
 }
 
 pub trait MetaSemiModule<Ring: SemiRingSignature>: MetaType
 where
     Self::Signature: SemiModuleSignature<Ring>,
 {
-    fn scalar_mul(&self, x: &Ring::Elem) -> Self {
+    fn scalar_mul(self: &Arc<Self>, x: &Ring::Elem) -> Self {
         Self::structure().scalar_mul(self, x)
     }
 }
@@ -46,11 +49,15 @@ pub trait FinitelyGeneratedModuleSignature<GeneratingSet: FiniteSetSignature, Ri
 pub trait FreeModuleSignature<Basis: SetSignature, Ring: RingSignature>:
     ModuleSignature<Ring>
 {
-    fn basis_set(&self) -> impl Borrow<Basis>;
+    fn basis_set(self: &Arc<Self>) -> Arc<Basis>;
 
-    fn to_component<'a>(&self, b: &Basis::Elem, v: &'a Self::Elem) -> Cow<'a, Ring::Elem>;
+    fn to_component<'a>(
+        self: &Arc<Self>,
+        b: &Basis::Elem,
+        v: &'a Self::Elem,
+    ) -> Cow<'a, Ring::Elem>;
 
-    fn from_component(&self, b: &Basis::Elem, r: &Ring::Elem) -> Self::Elem;
+    fn from_component(self: &Arc<Self>, b: &Basis::Elem, r: &Ring::Elem) -> Self::Elem;
 }
 
 pub trait FinitelyFreeModuleSignature<Basis: FiniteSetSignature, Ring: RingSignature>:
@@ -130,66 +137,40 @@ pub trait FinitelyFreeModuleSignature<Basis: FiniteSetSignature, Ring: RingSigna
     }
 
     fn submodule_structure(
-        &self,
-        submodule: FinitelyFreeSubmodule<Ring::Elem>,
-    ) -> FinitelyFreeSubmoduleStructure<Basis, Ring, Self, &Self>
+        self: &Arc<Self>,
+        submodule: Arc<FinitelyFreeSubmodule<Ring::Elem>>,
+    ) -> Arc<FinitelyFreeSubmoduleStructure<Basis, Ring, Self>>
     where
         Basis: OrderedFiniteSetSignature,
         Ring: ReducedHermiteAlgorithmSignature,
     {
-        FinitelyFreeSubmoduleStructure::new(self, submodule)
+        FinitelyFreeSubmoduleStructure::new(self.clone(), submodule)
     }
 
-    fn submodules(&self) -> FinitelyFreeSubmodulesStructure<Basis, Ring, Self, &Self>
+    fn submodules(self: &Arc<Self>) -> Arc<FinitelyFreeSubmodulesStructure<Basis, Ring, Self>>
     where
         Basis: OrderedFiniteSetSignature,
         Ring: ReducedHermiteAlgorithmSignature,
     {
-        FinitelyFreeSubmodulesStructure::new(self)
+        FinitelyFreeSubmodulesStructure::new(self.clone())
     }
 
-    fn into_submodules(self) -> FinitelyFreeSubmodulesStructure<Basis, Ring, Self, Self>
+    fn cosets(self: &Arc<Self>) -> Arc<FinitelyFreeSubmoduleCosetsStructure<Basis, Ring, Self>>
     where
         Basis: OrderedFiniteSetSignature,
         Ring: ReducedHermiteAlgorithmSignature,
     {
-        FinitelyFreeSubmodulesStructure::new(self)
-    }
-
-    fn cosets(&self) -> FinitelyFreeSubmoduleCosetsStructure<Basis, Ring, Self, &Self>
-    where
-        Basis: OrderedFiniteSetSignature,
-        Ring: ReducedHermiteAlgorithmSignature,
-    {
-        FinitelyFreeSubmoduleCosetsStructure::new(self)
-    }
-
-    fn into_cosets(self) -> FinitelyFreeSubmoduleCosetsStructure<Basis, Ring, Self, Self>
-    where
-        Basis: OrderedFiniteSetSignature,
-        Ring: ReducedHermiteAlgorithmSignature,
-    {
-        FinitelyFreeSubmoduleCosetsStructure::new(self)
+        FinitelyFreeSubmoduleCosetsStructure::new(self.clone())
     }
 
     fn affine_subsets(
-        &self,
-    ) -> FinitelyFreeSubmoduleAffineSubsetsStructure<Basis, Ring, Self, &Self>
+        self: &Arc<Self>,
+    ) -> Arc<FinitelyFreeSubmoduleAffineSubsetsStructure<Basis, Ring, Self>>
     where
         Basis: OrderedFiniteSetSignature,
         Ring: ReducedHermiteAlgorithmSignature,
     {
-        FinitelyFreeSubmoduleAffineSubsetsStructure::new(self)
-    }
-
-    fn into_affine_subsets(
-        self,
-    ) -> FinitelyFreeSubmoduleAffineSubsetsStructure<Basis, Ring, Self, Self>
-    where
-        Basis: OrderedFiniteSetSignature,
-        Ring: ReducedHermiteAlgorithmSignature,
-    {
-        FinitelyFreeSubmoduleAffineSubsetsStructure::new(self)
+        FinitelyFreeSubmoduleAffineSubsetsStructure::new(self.clone())
     }
 
     fn improper_submodule(&self) -> FinitelyFreeSubmodule<Ring::Elem>

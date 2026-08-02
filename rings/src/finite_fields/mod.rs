@@ -6,9 +6,7 @@ pub mod polynomial;
 pub mod quaternary_field;
 use algebraeon_structures::*;
 
-impl<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> FactoringMonoidSignature
-    for PolynomialStructure<FS, FSB>
-{
+impl<FS: FiniteFieldSignature> FactoringMonoidSignature for PolynomialStructure<FS> {
     fn factor_unchecked(&self, p: &Self::Elem) -> Factored<Self::Elem, Natural> {
         if let Some(p) = self.factorize_monic(p) {
             p.factorize_squarefree()

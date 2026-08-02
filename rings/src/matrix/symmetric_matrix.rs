@@ -1,6 +1,6 @@
 use crate::matrix::{MatOppErr, Matrix};
 use algebraeon_structures::*;
-use std::{fmt::Debug, marker::PhantomData};
+use std::{fmt::Debug, sync::Arc};
 
 #[derive(Debug, Clone)]
 pub struct SymmetricMatrix<Set: Clone> {
@@ -153,16 +153,13 @@ impl<Set: Clone> SymmetricMatrix<Option<Set>> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SymmetricMatrixStructure<RS: SetSignature, RSB: BorrowedStructure<RS>> {
-    _set: PhantomData<RS>,
-    set: RSB,
+pub struct SymmetricMatrixStructure<RS: SetSignature> {
+    set: Arc<RS>,
 }
 
-impl<RS: SetSignature, RSB: BorrowedStructure<RS>> Signature for SymmetricMatrixStructure<RS, RSB> {}
+impl<RS: SetSignature> Signature for SymmetricMatrixStructure<RS> {}
 
-impl<RS: SetSignature, RSB: BorrowedStructure<RS>> SetSignature
-    for SymmetricMatrixStructure<RS, RSB>
-{
+impl<RS: SetSignature> SetSignature for SymmetricMatrixStructure<RS> {
     type Elem = SymmetricMatrix<RS::Elem>;
 
     fn validate_element(&self, _x: &Self::Elem) -> Result<(), String> {
@@ -170,12 +167,9 @@ impl<RS: SetSignature, RSB: BorrowedStructure<RS>> SetSignature
     }
 }
 
-impl<RS: SetSignature, RSB: BorrowedStructure<RS>> SymmetricMatrixStructure<RS, RSB> {
-    pub fn new(set: RSB) -> Self {
-        Self {
-            _set: PhantomData,
-            set,
-        }
+impl<RS: SetSignature> SymmetricMatrixStructure<RS> {
+    pub fn new(set: Arc<RS>) -> Arc<Self> {
+        Self { set }.into()
     }
 
     pub fn set(&self) -> &RS {
@@ -184,17 +178,13 @@ impl<RS: SetSignature, RSB: BorrowedStructure<RS>> SymmetricMatrixStructure<RS, 
 }
 
 pub trait ToSymmetrixMatricesSignature: SetSignature {
-    fn symmetric_matrix_structure(&self) -> SymmetricMatrixStructure<Self, &Self> {
-        SymmetricMatrixStructure::new(self)
-    }
-
-    fn into_symmetric_matrix_structure(self) -> SymmetricMatrixStructure<Self, Self> {
-        SymmetricMatrixStructure::new(self)
+    fn symmetric_matrix_structure(self: &Arc<Self>) -> Arc<SymmetricMatrixStructure<Self>> {
+        SymmetricMatrixStructure::new(self.clone())
     }
 }
 impl<RS: SetSignature> ToSymmetrixMatricesSignature for RS {}
 
-impl<RS: EqSignature, RSB: BorrowedStructure<RS>> SymmetricMatrixStructure<RS, RSB> {
+impl<RS: EqSignature> SymmetricMatrixStructure<RS> {
     pub fn equal(&self, a: &SymmetricMatrix<RS::Elem>, b: &SymmetricMatrix<RS::Elem>) -> bool {
         let n = a.n();
         if n != b.n() {

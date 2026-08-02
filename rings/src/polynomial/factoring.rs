@@ -1,16 +1,14 @@
 use super::{Polynomial, polynomial_structure::*};
 use crate::structure::*;
-use algebraeon_structures::BorrowedStructure;
 use algebraeon_structures::*;
 
 impl<
     RS: UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
         + GreatestCommonDivisorSignature
         + CharZeroRingSignature,
-    RSB: BorrowedStructure<RS>,
-> PolynomialStructure<RS, RSB>
+> PolynomialStructure<RS>
 where
-    PolynomialStructure<RS, RSB>: SetSignature<Elem = Polynomial<RS::Elem>>
+    PolynomialStructure<RS>: SetSignature<Elem = Polynomial<RS::Elem>>
         + GreatestCommonDivisorSignature
         + UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
 {
@@ -54,10 +52,9 @@ impl<
     RS: UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
         + GreatestCommonDivisorSignature
         + CharZeroRingSignature,
-    RSB: BorrowedStructure<RS>,
-> PolynomialStructure<RS, RSB>
+> PolynomialStructure<RS>
 where
-    PolynomialStructure<RS, RSB>:
+    PolynomialStructure<RS>:
         SetSignature<Elem = Polynomial<RS::Elem>> + GreatestCommonDivisorSignature,
 {
     /// Reduce a factorization problem for primitive polynomials over a ring of characteristic 0 to a factorization of non-constant primitive squarefree polynomials over the ring
@@ -127,10 +124,9 @@ impl<
     RS: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
         + GreatestCommonDivisorSignature
         + FiniteUnitsSignature,
-    RSB: BorrowedStructure<RS>,
-> PolynomialStructure<RS, RSB>
+> PolynomialStructure<RS>
 where
-    PolynomialStructure<RS, RSB>: SetSignature<Elem = Polynomial<RS::Elem>>
+    PolynomialStructure<RS>: SetSignature<Elem = Polynomial<RS::Elem>>
         + UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
 {
     #[allow(unused)]
@@ -201,10 +197,9 @@ impl<
         + CharZeroRingSignature
         + FiniteUnitsSignature
         + 'static,
-    RSB: BorrowedStructure<RS>,
-> PolynomialStructure<RS, RSB>
+> PolynomialStructure<RS>
 where
-    PolynomialStructure<RS, RSB>: SetSignature<Elem = Polynomial<RS::Elem>>,
+    PolynomialStructure<RS>: SetSignature<Elem = Polynomial<RS::Elem>>,
 {
     fn find_factor_primitive_by_kroneckers_algorithm(
         &self,
@@ -298,10 +293,9 @@ impl<
         + CharZeroRingSignature
         + FiniteUnitsSignature
         + 'static,
-    RSB: BorrowedStructure<RS>,
-> PolynomialStructure<RS, RSB>
+> PolynomialStructure<RS>
 where
-    PolynomialStructure<RS, RSB>: SetSignature<Elem = Polynomial<RS::Elem>>
+    PolynomialStructure<RS>: SetSignature<Elem = Polynomial<RS::Elem>>
         + UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
 {
     pub fn factorize_by_kroneckers_method(
@@ -337,10 +331,9 @@ impl<
         + CharZeroRingSignature
         + FiniteUnitsSignature
         + 'static,
-    RSB: BorrowedStructure<RS>,
-> PolynomialStructure<RS, RSB>
+> PolynomialStructure<RS>
 where
-    PolynomialStructure<RS, RSB>: SetSignature<Elem = Polynomial<RS::Elem>>
+    PolynomialStructure<RS>: SetSignature<Elem = Polynomial<RS::Elem>>
         + GreatestCommonDivisorSignature
         + UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
 {
@@ -387,17 +380,16 @@ where
 pub fn factorize_by_factorize_primitive_part<
     Ring: RingSignature + GreatestCommonDivisorSignature,
     Field: FieldSignature,
-    FieldB: BorrowedStructure<Field>,
     Fof: FieldOfFractionsInclusion<Ring, Field>,
 >(
     fof_inclusion: &Fof,
-    poly_ring: &PolynomialStructure<Field, FieldB>,
+    poly_ring: &PolynomialStructure<Field>,
     f: &Polynomial<Field::Elem>,
 ) -> Factored<Polynomial<Field::Elem>, Natural>
 where
-    PolynomialStructure<Field, FieldB>: SetSignature<Elem = Polynomial<Field::Elem>>
+    PolynomialStructure<Field>: SetSignature<Elem = Polynomial<Field::Elem>>
         + UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
-    for<'a> PolynomialStructure<Ring, &'a Ring>: SetSignature<Elem = Polynomial<Ring::Elem>>
+    for<'a> PolynomialStructure<Ring>: SetSignature<Elem = Polynomial<Ring::Elem>>
         + FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
 {
     let (unit, prim) = factor_primitive_fof(fof_inclusion, f);
@@ -425,8 +417,7 @@ where
     }
 }
 
-impl<RS: FieldSignature + FiniteUnitsSignature, RSB: BorrowedStructure<RS>>
-    PolynomialStructure<RS, RSB>
+impl<RS: FieldSignature + FiniteUnitsSignature> PolynomialStructure<RS>
 where
     Self: SetSignature<Elem = Polynomial<RS::Elem>>
         + UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,

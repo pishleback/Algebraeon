@@ -1,59 +1,35 @@
 use crate::structure::*;
 use algebraeon_structures::*;
-use std::{borrow::Cow, marker::PhantomData};
+use std::{borrow::Cow, sync::Arc};
 
 #[derive(Debug, Clone)]
-pub struct FreeModuleOverOrderedSetStructure<
-    Set: OrdSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: SemiRingSignature,
-    RingB: BorrowedStructure<Ring>,
-> {
-    _set: PhantomData<Set>,
-    set: SetB,
-    _ring: PhantomData<Ring>,
-    ring: RingB,
+pub struct FreeModuleOverOrderedSetStructure<Set: OrdSignature, Ring: SemiRingSignature> {
+    set: Arc<Set>,
+    ring: Arc<Ring>,
 }
 
-impl<
-    Set: OrdSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: SemiRingSignature,
-    RingB: BorrowedStructure<Ring>,
-> PartialEq for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
+impl<Set: OrdSignature, Ring: SemiRingSignature> PartialEq
+    for FreeModuleOverOrderedSetStructure<Set, Ring>
 {
     fn eq(&self, other: &Self) -> bool {
         self.set == other.set && self.ring == other.ring
     }
 }
 
-impl<
-    Set: OrdSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: SemiRingSignature,
-    RingB: BorrowedStructure<Ring>,
-> Eq for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
+impl<Set: OrdSignature, Ring: SemiRingSignature> Eq
+    for FreeModuleOverOrderedSetStructure<Set, Ring>
 {
 }
 
-impl<
-    Set: OrdSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: SemiRingSignature + EqSignature,
-    RingB: BorrowedStructure<Ring>,
-> FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
+impl<Set: OrdSignature, Ring: SemiRingSignature + EqSignature>
+    FreeModuleOverOrderedSetStructure<Set, Ring>
 {
-    pub fn new(set: SetB, ring: RingB) -> Self {
-        Self {
-            _set: PhantomData,
-            set,
-            _ring: PhantomData,
-            ring,
-        }
+    pub fn new(set: Arc<Set>, ring: Arc<Ring>) -> Arc<Self> {
+        Self { set, ring }.into()
     }
 
-    pub fn set(&self) -> &Set {
-        self.set.borrow()
+    pub fn set(&self) -> &Arc<Set> {
+        &self.set
     }
 
     /// Input: vector of (Set, Ring)
@@ -116,21 +92,13 @@ impl<
     }
 }
 
-impl<
-    Set: OrdSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: SemiRingSignature,
-    RingB: BorrowedStructure<Ring>,
-> Signature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
+impl<Set: OrdSignature, Ring: SemiRingSignature> Signature
+    for FreeModuleOverOrderedSetStructure<Set, Ring>
 {
 }
 
-impl<
-    Set: OrdSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: SemiRingSignature + EqSignature,
-    RingB: BorrowedStructure<Ring>,
-> SetSignature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
+impl<Set: OrdSignature, Ring: SemiRingSignature + EqSignature> SetSignature
+    for FreeModuleOverOrderedSetStructure<Set, Ring>
 {
     // must be ordered and contain no duplicates wrt the first argument
     // all ring elements in the second argument must be non-zero
@@ -149,14 +117,10 @@ impl<
     }
 }
 
-impl<
-    Set: OrdSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: SemiRingSignature + EqSignature,
-    RingB: BorrowedStructure<Ring>,
-> EqSignature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
+impl<Set: OrdSignature, Ring: SemiRingSignature + EqSignature> EqSignature
+    for FreeModuleOverOrderedSetStructure<Set, Ring>
 {
-    fn equal(&self, v: &Self::Elem, w: &Self::Elem) -> bool {
+    fn equal(self: &Arc<Self>, v: &Self::Elem, w: &Self::Elem) -> bool {
         debug_assert!(self.validate_element(v).is_ok());
         debug_assert!(self.validate_element(w).is_ok());
         // since elements are sorted and exclude entries with zero coefficients, we just need to check if they are identically equal
@@ -173,100 +137,68 @@ impl<
     }
 }
 
-impl<
-    Set: OrdSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: SemiRingSignature + EqSignature,
-    RingB: BorrowedStructure<Ring>,
-> RinglikeSpecializationSignature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
+impl<Set: OrdSignature, Ring: SemiRingSignature + EqSignature> RinglikeSpecializationSignature
+    for FreeModuleOverOrderedSetStructure<Set, Ring>
 {
 }
 
-impl<
-    Set: OrdSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: SemiRingSignature + EqSignature,
-    RingB: BorrowedStructure<Ring>,
-> ZeroSignature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
+impl<Set: OrdSignature, Ring: SemiRingSignature + EqSignature> ZeroSignature
+    for FreeModuleOverOrderedSetStructure<Set, Ring>
 {
-    fn zero(&self) -> Self::Elem {
+    fn zero(self: &Arc<Self>) -> Self::Elem {
         vec![]
     }
 }
 
-impl<
-    Set: OrdSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: SemiRingSignature + EqSignature,
-    RingB: BorrowedStructure<Ring>,
-> AdditionSignature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
+impl<Set: OrdSignature, Ring: SemiRingSignature + EqSignature> AdditionSignature
+    for FreeModuleOverOrderedSetStructure<Set, Ring>
 {
-    fn add(&self, v: &Self::Elem, w: &Self::Elem) -> Self::Elem {
+    fn add(self: &Arc<Self>, v: &Self::Elem, w: &Self::Elem) -> Self::Elem {
         self.collapse_terms(v.iter().chain(w.iter()).cloned().collect())
     }
 }
 
-impl<
-    Set: OrdSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: SemiRingSignature + EqSignature,
-    RingB: BorrowedStructure<Ring>,
-> CancellativeAdditionSignature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
+impl<Set: OrdSignature, Ring: SemiRingSignature + EqSignature> CancellativeAdditionSignature
+    for FreeModuleOverOrderedSetStructure<Set, Ring>
 {
-    fn try_sub(&self, _a: &Self::Elem, _b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_sub(self: &Arc<Self>, _a: &Self::Elem, _b: &Self::Elem) -> Option<Self::Elem> {
         todo!()
     }
 }
 
-impl<
-    Set: OrdSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: SemiRingSignature + EqSignature,
-    RingB: BorrowedStructure<Ring>,
-> TryNegateSignature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
+impl<Set: OrdSignature, Ring: SemiRingSignature + EqSignature> TryNegateSignature
+    for FreeModuleOverOrderedSetStructure<Set, Ring>
 {
-    fn try_neg(&self, v: &Self::Elem) -> Option<Self::Elem> {
+    fn try_neg(self: &Arc<Self>, v: &Self::Elem) -> Option<Self::Elem> {
         v.iter()
             .map(|(x, a)| Some((x.clone(), self.ring().try_neg(a)?)))
             .collect::<Option<_>>()
     }
 }
 
-impl<
-    Set: OrdSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: SemiRingSignature + EqSignature,
-    RingB: BorrowedStructure<Ring>,
-> AdditiveMonoidSignature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
+impl<Set: OrdSignature, Ring: SemiRingSignature + EqSignature> AdditiveMonoidSignature
+    for FreeModuleOverOrderedSetStructure<Set, Ring>
 {
 }
 
-impl<
-    Set: OrdSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: RingSignature + EqSignature,
-    RingB: BorrowedStructure<Ring>,
-> AdditiveGroupSignature for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
+impl<Set: OrdSignature, Ring: RingSignature + EqSignature> AdditiveGroupSignature
+    for FreeModuleOverOrderedSetStructure<Set, Ring>
 {
-    fn neg(&self, v: &Self::Elem) -> Self::Elem {
+    fn neg(self: &Arc<Self>, v: &Self::Elem) -> Self::Elem {
         v.iter()
             .map(|(x, a)| (x.clone(), self.ring().neg(a)))
             .collect()
     }
 }
 
-impl<
-    Set: OrdSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: SemiRingSignature + EqSignature,
-    RingB: BorrowedStructure<Ring>,
-> SemiModuleSignature<Ring> for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
+impl<Set: OrdSignature, Ring: SemiRingSignature + EqSignature> SemiModuleSignature<Ring>
+    for FreeModuleOverOrderedSetStructure<Set, Ring>
 {
-    fn ring(&self) -> &Ring {
+    fn ring(self: &Arc<Self>) -> Arc<Ring> {
         self.ring.borrow()
     }
 
-    fn scalar_mul(&self, v: &Self::Elem, b: &Ring::Elem) -> Self::Elem {
+    fn scalar_mul(self: &Arc<Self>, v: &Self::Elem, b: &Ring::Elem) -> Self::Elem {
         v.iter()
             .map(|(x, a)| (x.clone(), self.ring().mul(a, b)))
             .filter(|(_, a)| !self.ring().is_zero(a))
@@ -274,15 +206,11 @@ impl<
     }
 }
 
-impl<
-    Set: OrdSignature,
-    SetB: BorrowedStructure<Set>,
-    Ring: RingSignature + EqSignature,
-    RingB: BorrowedStructure<Ring>,
-> FreeModuleSignature<Set, Ring> for FreeModuleOverOrderedSetStructure<Set, SetB, Ring, RingB>
+impl<Set: OrdSignature, Ring: RingSignature + EqSignature> FreeModuleSignature<Set, Ring>
+    for FreeModuleOverOrderedSetStructure<Set, Ring>
 {
-    fn basis_set(&self) -> impl std::borrow::Borrow<Set> {
-        self.set()
+    fn basis_set(self: &Arc<Self>) -> Arc<Set> {
+        self.set().clone()
     }
 
     fn to_component<'a>(&self, x: &Set::Elem, v: &'a Self::Elem) -> Cow<'a, Ring::Elem> {

@@ -4,6 +4,12 @@ use std::{fmt::Debug, sync::Arc};
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct SingletonSetStructure {}
 
+impl SingletonSetStructure {
+    pub fn new() -> Arc<Self> {
+        Self {}.into()
+    }
+}
+
 impl Signature for SingletonSetStructure {}
 
 impl SetSignature for SingletonSetStructure {

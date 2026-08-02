@@ -1,75 +1,63 @@
 use crate::structure::*;
 use algebraeon_structures::*;
+use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct IntegerIdealsStructure<B: BorrowedStructure<IntegerCanonicalStructure>> {
-    integers: B,
+pub struct IntegerIdealsStructure {}
+
+impl IntegerIdealsStructure {
+    fn new() -> Arc<Self> {
+        Self {}.into()
+    }
 }
 
 impl RingToIdealsSignature for IntegerCanonicalStructure {
-    type Ideals<SelfB: BorrowedStructure<IntegerCanonicalStructure>> =
-        IntegerIdealsStructure<SelfB>;
+    type Ideals = IntegerIdealsStructure;
 
-    fn ideals(&self) -> Self::Ideals<&Self> {
-        IntegerIdealsStructure { integers: self }
-    }
-
-    fn into_ideals(self) -> Self::Ideals<Self> {
-        IntegerIdealsStructure { integers: self }
+    fn ideals(self: &Arc<Self>) -> Arc<Self::Ideals> {
+        IntegerIdealsStructure::new()
     }
 }
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>> Signature for IntegerIdealsStructure<B> {}
+impl Signature for IntegerIdealsStructure {}
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>> SetSignature for IntegerIdealsStructure<B> {
+impl SetSignature for IntegerIdealsStructure {
     type Elem = Natural;
     fn validate_element(&self, _x: &Self::Elem) -> Result<(), String> {
         Ok(())
     }
 }
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>> IdealsSignature<IntegerCanonicalStructure, B>
-    for IntegerIdealsStructure<B>
-{
-    fn ring(&self) -> &IntegerCanonicalStructure {
-        self.integers.borrow()
+impl IdealsSignature<IntegerCanonicalStructure> for IntegerIdealsStructure {
+    fn ring(&self) -> Arc<IntegerCanonicalStructure> {
+        Integer::structure()
     }
 }
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>> EqSignature for IntegerIdealsStructure<B> {
-    fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
+impl EqSignature for IntegerIdealsStructure {
+    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         a == b
     }
 }
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>> RinglikeSpecializationSignature
-    for IntegerIdealsStructure<B>
-{
-}
+impl RinglikeSpecializationSignature for IntegerIdealsStructure {}
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>> ZeroSignature for IntegerIdealsStructure<B> {
-    fn zero(&self) -> Self::Elem {
+impl ZeroSignature for IntegerIdealsStructure {
+    fn zero(self: &Arc<Self>) -> Self::Elem {
         Natural::ZERO
     }
 }
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>> AdditionSignature
-    for IntegerIdealsStructure<B>
-{
-    fn add(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+impl AdditionSignature for IntegerIdealsStructure {
+    fn add(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         gcd(a.clone(), b.clone())
     }
 }
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>> AdditiveMonoidSignature
-    for IntegerIdealsStructure<B>
-{
-}
+impl AdditiveMonoidSignature for IntegerIdealsStructure {}
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>> TryNegateSignature
-    for IntegerIdealsStructure<B>
-{
-    fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
+impl TryNegateSignature for IntegerIdealsStructure {
+    fn try_neg(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         if self.is_zero(a) {
             Some(self.zero())
         } else {
@@ -78,53 +66,31 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>> TryNegateSignature
     }
 }
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>> OneSignature for IntegerIdealsStructure<B> {
-    fn one(&self) -> Self::Elem {
+impl OneSignature for IntegerIdealsStructure {
+    fn one(self: &Arc<Self>) -> Self::Elem {
         Natural::ONE
     }
 }
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>> MultiplicationSignature
-    for IntegerIdealsStructure<B>
-{
-    fn mul(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+impl MultiplicationSignature for IntegerIdealsStructure {
+    fn mul(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         a * b
     }
 }
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>> CommutativeMultiplicationSignature
-    for IntegerIdealsStructure<B>
-{
-}
+impl CommutativeMultiplicationSignature for IntegerIdealsStructure {}
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>> MultiplicativeMonoidSignature
-    for IntegerIdealsStructure<B>
-{
-}
+impl MultiplicativeMonoidSignature for IntegerIdealsStructure {}
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>> MultiplicativeAbsorptionMonoidSignature
-    for IntegerIdealsStructure<B>
-{
-}
+impl MultiplicativeAbsorptionMonoidSignature for IntegerIdealsStructure {}
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>> LeftDistributiveMultiplicationOverAddition
-    for IntegerIdealsStructure<B>
-{
-}
+impl LeftDistributiveMultiplicationOverAddition for IntegerIdealsStructure {}
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>> RightDistributiveMultiplicationOverAddition
-    for IntegerIdealsStructure<B>
-{
-}
+impl RightDistributiveMultiplicationOverAddition for IntegerIdealsStructure {}
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>> SemiRingSignature
-    for IntegerIdealsStructure<B>
-{
-}
+impl SemiRingSignature for IntegerIdealsStructure {}
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>>
-    IdealsArithmeticSignature<IntegerCanonicalStructure, B> for IntegerIdealsStructure<B>
-{
+impl IdealsArithmeticSignature<IntegerCanonicalStructure> for IntegerIdealsStructure {
     fn principal_ideal(&self, a: &Integer) -> Self::Elem {
         Abs::abs(a)
     }
@@ -146,45 +112,30 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>>
     }
 }
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>>
-    PrincipalIdealsSignature<IntegerCanonicalStructure, B> for IntegerIdealsStructure<B>
-{
-    fn ideal_generator(&self, ideal: &Natural) -> Integer {
+impl PrincipalIdealsSignature<IntegerCanonicalStructure> for IntegerIdealsStructure {
+    fn ideal_generator(self: &Arc<Self>, ideal: &Natural) -> Integer {
         Integer::from(ideal)
     }
 }
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>>
-    DedekindDomainIdealsSignature<IntegerCanonicalStructure, B> for IntegerIdealsStructure<B>
-{
-}
+impl DedekindDomainIdealsSignature<IntegerCanonicalStructure> for IntegerIdealsStructure {}
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>> TryReciprocalSignature
-    for IntegerIdealsStructure<B>
-{
-    fn try_reciprocal(&self, a: &Self::Elem) -> Option<Self::Elem> {
+impl TryReciprocalSignature for IntegerIdealsStructure {
+    fn try_reciprocal(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         self.factorization_exponents().try_reciprocal(a)
     }
 }
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>> FavoriteAssociateSignature
-    for IntegerIdealsStructure<B>
-{
+impl FavoriteAssociateSignature for IntegerIdealsStructure {
     fn factor_fav_assoc(&self, a: &Self::Elem) -> (Self::Elem, Self::Elem) {
         self.factorization_exponents().factor_fav_assoc(a)
     }
 }
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>> UniqueFactorizationMonoidSignature
-    for IntegerIdealsStructure<B>
-{
+impl UniqueFactorizationMonoidSignature for IntegerIdealsStructure {
     type FactoredExponent = NaturalCanonicalStructure;
 
-    fn factorization_exponents(&self) -> &Self::FactoredExponent {
-        Natural::structure_ref()
-    }
-
-    fn into_factorization_exponents(self) -> Self::FactoredExponent {
+    fn factorization_exponents(&self) -> Arc<Self::FactoredExponent> {
         Natural::structure()
     }
 
@@ -197,9 +148,7 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>> UniqueFactorizationMonoidS
     }
 }
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>> FactoringMonoidSignature
-    for IntegerIdealsStructure<B>
-{
+impl FactoringMonoidSignature for IntegerIdealsStructure {
     fn factor_unchecked(&self, ideal: &Natural) -> Factored<Natural, Natural> {
         Natural::structure().factor_unchecked(ideal)
     }

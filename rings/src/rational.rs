@@ -5,39 +5,42 @@ use algebraeon_sets::sets::*;
 use algebraeon_structures::*;
 use static_assertions::const_assert;
 use std::borrow::Cow;
+use std::sync::Arc;
 
 impl RinglikeSpecializationSignature for RationalCanonicalStructure {
-    fn try_ring_restructure(&self) -> Option<impl EqSignature<Elem = Self::Elem> + RingSignature> {
+    fn try_ring_restructure(
+        self: &Arc<Self>,
+    ) -> Option<Arc<impl EqSignature<Elem = Self::Elem> + RingSignature>> {
         Some(self.clone())
     }
 
     fn try_char_zero_ring_restructure(
-        &self,
-    ) -> Option<impl EqSignature<Elem = Self::Elem> + CharZeroRingSignature> {
+        self: &Arc<Self>,
+    ) -> Option<Arc<impl EqSignature<Elem = Self::Elem> + CharZeroRingSignature>> {
         Some(self.clone())
     }
 }
 
 impl ZeroSignature for RationalCanonicalStructure {
-    fn zero(&self) -> Self::Elem {
+    fn zero(self: &Arc<Self>) -> Self::Elem {
         Rational::ZERO
     }
 }
 
 impl AdditionSignature for RationalCanonicalStructure {
-    fn add(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn add(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         a + b
     }
 }
 
 impl CancellativeAdditionSignature for RationalCanonicalStructure {
-    fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_sub(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.sub(a, b))
     }
 }
 
 impl TryNegateSignature for RationalCanonicalStructure {
-    fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_neg(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
     }
 }
@@ -45,23 +48,23 @@ impl TryNegateSignature for RationalCanonicalStructure {
 impl AdditiveMonoidSignature for RationalCanonicalStructure {}
 
 impl AdditiveGroupSignature for RationalCanonicalStructure {
-    fn neg(&self, a: &Self::Elem) -> Self::Elem {
+    fn neg(self: &Arc<Self>, a: &Self::Elem) -> Self::Elem {
         -a
     }
 
-    fn sub(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn sub(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         a - b
     }
 }
 
 impl OneSignature for RationalCanonicalStructure {
-    fn one(&self) -> Self::Elem {
+    fn one(self: &Arc<Self>) -> Self::Elem {
         Rational::ONE
     }
 }
 
 impl MultiplicationSignature for RationalCanonicalStructure {
-    fn mul(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn mul(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         a * b
     }
 }
@@ -79,25 +82,25 @@ impl RightDistributiveMultiplicationOverAddition for RationalCanonicalStructure 
 impl SemiRingSignature for RationalCanonicalStructure {}
 
 impl RingSignature for RationalCanonicalStructure {
-    fn is_reduced(&self) -> Result<bool, String> {
+    fn is_reduced(self: &Arc<Self>) -> Result<bool, String> {
         Ok(true)
     }
 }
 
 impl CharacteristicSignature for RationalCanonicalStructure {
-    fn characteristic(&self) -> Natural {
+    fn characteristic(self: &Arc<Self>) -> Natural {
         Natural::ZERO
     }
 }
 
 impl TryReciprocalSignature for RationalCanonicalStructure {
-    fn try_reciprocal(&self, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_reciprocal(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         self.try_divide(&self.one(), a)
     }
 }
 
 impl CancellativeMultiplicationSignature for RationalCanonicalStructure {
-    fn try_divide(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_divide(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         if b == &Rational::ZERO {
             None
         } else {
@@ -115,7 +118,7 @@ impl OrderedRingSignature for RationalCanonicalStructure {}
 impl FieldSignature for RationalCanonicalStructure {}
 
 impl CharZeroRingSignature for RationalCanonicalStructure {
-    fn try_to_int(&self, x: &Rational) -> Option<Integer> {
+    fn try_to_int(self: &Arc<Self>, x: &Rational) -> Option<Integer> {
         let (n, d) = x.numerator_and_denominator();
         debug_assert_ne!(&d, &Natural::ZERO);
         if d == Natural::ONE { Some(n) } else { None }
@@ -123,56 +126,53 @@ impl CharZeroRingSignature for RationalCanonicalStructure {
 }
 
 impl CharZeroFieldSignature for RationalCanonicalStructure {
-    fn try_to_rat(&self, x: &Rational) -> Option<Rational> {
+    fn try_to_rat(self: &Arc<Self>, x: &Rational) -> Option<Rational> {
         Some(x.clone())
     }
 }
 
-impl<'h, B: BorrowedStructure<RationalCanonicalStructure>>
-    FreeModuleSignature<SingletonSetStructure, RationalCanonicalStructure>
+impl FreeModuleSignature<SingletonSetStructure, RationalCanonicalStructure>
     for RingHomomorphismRangeModuleStructure<
-        'h,
         RationalCanonicalStructure,
         RationalCanonicalStructure,
-        PrincipalRationalMap<RationalCanonicalStructure, B>,
+        PrincipalRationalMap<RationalCanonicalStructure>,
     >
 {
-    fn basis_set(&self) -> impl std::borrow::Borrow<SingletonSetStructure> {
-        SingletonSetStructure::default()
+    fn basis_set(self: &Arc<Self>) -> Arc<SingletonSetStructure> {
+        SingletonSetStructure::new()
     }
 
-    fn to_component<'a>(&self, _: &(), v: &'a Rational) -> Cow<'a, Rational> {
+    fn to_component<'a>(self: &Arc<Self>, _: &(), v: &'a Rational) -> Cow<'a, Rational> {
         Cow::Borrowed(v)
     }
 
-    fn from_component(&self, _: &(), r: &Rational) -> Rational {
+    fn from_component(self: &Arc<Self>, _: &(), r: &Rational) -> Rational {
         r.clone()
     }
 }
 
 impl ComplexSubsetSignature for RationalCanonicalStructure {
-    fn as_f32_real_and_imaginary_parts(&self, z: &Self::Elem) -> (f32, f32) {
+    fn as_f32_real_and_imaginary_parts(self: &Arc<Self>, z: &Self::Elem) -> (f32, f32) {
         (self.as_f32(z), 0.0)
     }
 
-    fn as_f64_real_and_imaginary_parts(&self, z: &Self::Elem) -> (f64, f64) {
+    fn as_f64_real_and_imaginary_parts(self: &Arc<Self>, z: &Self::Elem) -> (f64, f64) {
         (self.as_f64(z), 0.0)
     }
 }
 
 impl RealSubsetSignature for RationalCanonicalStructure {
-    fn as_f64(&self, x: &Rational) -> f64 {
+    fn as_f64(self: &Arc<Self>, x: &Rational) -> f64 {
         x.into()
     }
 
-    fn as_f32(&self, x: &Self::Elem) -> f32 {
+    fn as_f32(self: &Arc<Self>, x: &Self::Elem) -> f32 {
         x.into()
     }
 }
 
-impl<B: BorrowedStructure<RationalCanonicalStructure>>
-    FieldOfFractionsInclusion<IntegerCanonicalStructure, RationalCanonicalStructure>
-    for PrincipalIntegerMap<RationalCanonicalStructure, B>
+impl FieldOfFractionsInclusion<IntegerCanonicalStructure, RationalCanonicalStructure>
+    for PrincipalIntegerMap<RationalCanonicalStructure>
 {
     fn numerator_and_denominator(&self, a: &Rational) -> (Integer, Integer) {
         (a.numerator(), a.denominator().into())
@@ -180,32 +180,29 @@ impl<B: BorrowedStructure<RationalCanonicalStructure>>
 }
 
 impl RealRoundingSignature for RationalCanonicalStructure {
-    fn floor(&self, x: &Self::Elem) -> Integer {
+    fn floor(self: &Arc<Self>, x: &Self::Elem) -> Integer {
         Floor::floor(x)
     }
-    fn ceil(&self, x: &Self::Elem) -> Integer {
+    fn ceil(self: &Arc<Self>, x: &Self::Elem) -> Integer {
         Ceil::ceil(x)
     }
-    fn round(&self, x: &Self::Elem) -> Integer {
+    fn round(self: &Arc<Self>, x: &Self::Elem) -> Integer {
         self.floor(&(x + Rational::ONE_HALF))
     }
 }
 
 impl RealFromFloatSignature for RationalCanonicalStructure {
-    fn from_f64_approx(&self, x: f64) -> Self::Elem {
+    fn from_f64_approx(self: &Arc<Self>, x: f64) -> Self::Elem {
         Rational::try_from_float_simplest(x).unwrap()
     }
 }
 
 impl AlgebraicNumberFieldSignature for RationalCanonicalStructure {
     type Basis = SingletonSetStructure;
-    type RationalInclusion<B: BorrowedStructure<Self>> = PrincipalRationalMap<Self, B>;
+    type RationalInclusion = PrincipalRationalMap<Self>;
 
-    fn inbound_finite_dimensional_rational_extension(&self) -> Self::RationalInclusion<&Self> {
+    fn inbound_finite_dimensional_rational_extension(&self) -> Arc<Self::RationalInclusion> {
         self.inbound_principal_rational_map()
-    }
-    fn into_inbound_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self> {
-        self.into_inbound_principal_rational_map()
     }
 
     fn generator(&self) -> Rational {
@@ -229,9 +226,7 @@ const_assert!(
     impls::impls!(IntegerCanonicalStructure : AlgebraicIntegerRingSignature<RationalCanonicalStructure>)
 );
 
-impl<B: BorrowedStructure<RationalCanonicalStructure>> FactoringMonoidSignature
-    for PolynomialStructure<RationalCanonicalStructure, B>
-{
+impl FactoringMonoidSignature for PolynomialStructure<RationalCanonicalStructure> {
     fn factor_unchecked(
         &self,
         p: &Self::Elem,

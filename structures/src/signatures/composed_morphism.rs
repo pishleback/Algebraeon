@@ -32,17 +32,17 @@ impl<A: Signature, B: Signature, C: Signature, AB: Morphism<A, B>, BC: Morphism<
         }
     }
 
-    pub fn a(&self) -> &Arc<A> {
+    pub fn a(&self) -> Arc<A> {
         self.a_to_b.domain()
     }
 
-    pub fn b(&self) -> &Arc<B> {
+    pub fn b(&self) -> Arc<B> {
         let b = self.a_to_b.range();
         debug_assert_eq!(b, self.b_to_c.domain());
         b
     }
 
-    pub fn c(&self) -> &Arc<C> {
+    pub fn c(&self) -> Arc<C> {
         self.b_to_c.range()
     }
 
@@ -58,11 +58,11 @@ impl<A: Signature, B: Signature, C: Signature, AB: Morphism<A, B>, BC: Morphism<
 impl<A: Signature, B: Signature, C: Signature, AB: Morphism<A, B>, BC: Morphism<B, C>>
     Morphism<A, C> for CompositionMorphism<A, B, C, AB, BC>
 {
-    fn domain(&self) -> &Arc<A> {
+    fn domain(&self) -> Arc<A> {
         self.a()
     }
 
-    fn range(&self) -> &Arc<C> {
+    fn range(&self) -> Arc<C> {
         self.c()
     }
 }

@@ -1,7 +1,7 @@
 use super::*;
 use algebraeon_structures::*;
 
-impl<RS: GreatestCommonDivisorSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
+impl<RS: GreatestCommonDivisorSignature> MatrixStructure<RS> {
     pub fn factor_primitive(
         &self,
         mut mat: Matrix<RS::Elem>,
@@ -77,7 +77,7 @@ where
 impl<Field: MetaType> Matrix<Field>
 where
     Field::Signature: FieldSignature,
-    PrincipalIntegerMap<Field::Signature, Field::Signature>:
+    PrincipalIntegerMap<Field::Signature>:
         FieldOfFractionsInclusion<IntegerCanonicalStructure, Field::Signature>,
 {
     pub fn factor_primitive_fof(&self) -> (Field, Matrix<Integer>) {

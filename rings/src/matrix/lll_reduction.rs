@@ -23,8 +23,7 @@ impl<
         + OrderedRingSignature
         + FieldSignature
         + ToStringSignature,
-    FSB: BorrowedStructure<FS>,
-> MatrixStructure<FS, FSB>
+> MatrixStructure<FS>
 {
     /// Take the rows of M = `mat` as the basis for a lattice.
     ///
@@ -337,9 +336,7 @@ where
     }
 }
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>>
-    MatrixStructure<IntegerCanonicalStructure, B>
-{
+impl MatrixStructure<IntegerCanonicalStructure> {
     /// Take the rows of M = `mat` as the basis for a lattice.
     ///
     /// Perform an LLL reduction on the lattice, returning matricies (H, H*M) such that H is invertible the rows of H*M are an LLL reduced basis for the lattice.

@@ -19,6 +19,7 @@ use crate::structure::{
 use algebraeon_macros::CanonicalStructure;
 use algebraeon_structures::*;
 use std::borrow::Cow;
+use std::sync::Arc;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, CanonicalStructure)]
 #[canonical_structure(eq)]
@@ -28,21 +29,17 @@ pub enum QuadraticNumberFieldBasis {
 }
 
 impl CountableSetSignature for QuadraticNumberFieldBasisCanonicalStructure {
-    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
+    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
         vec![
             QuadraticNumberFieldBasis::Rational,
             QuadraticNumberFieldBasis::Algebraic,
         ]
         .into_iter()
     }
-
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
-        self.clone().into_generate_all_elements()
-    }
 }
 
 impl FiniteSetSignature for QuadraticNumberFieldBasisCanonicalStructure {
-    fn size(&self) -> Natural {
+    fn size(self: &Arc<Self>) -> Natural {
         Natural::TWO
     }
 }
@@ -83,9 +80,9 @@ impl QuadraticNumberFieldStructure<Integer> {
     /// Given a squarefree integer `d` other than 1, return the quadratic number field `QQ[sqrt(d)]`.
     ///
     /// Returns an `Err` if `d` is not squarefree or is 1
-    pub fn new(d: Integer) -> Result<Self, String> {
+    pub fn new(d: Integer) -> Result<Arc<Self>, String> {
         if d != Integer::ONE && d.is_squarefree() {
-            Ok(Self { d })
+            Ok(Self { d }.into())
         } else {
             Err(format!("`{d}` is not square-free or is equal to 1"))
         }
@@ -93,9 +90,9 @@ impl QuadraticNumberFieldStructure<Integer> {
 }
 
 impl<D: BorrowedElem<Integer>> QuadraticNumberFieldStructure<D> {
-    pub fn new_unchecked(d: D) -> Self {
+    pub fn new_unchecked(d: D) -> Arc<Self> {
         debug_assert!(d.borrow() != &Integer::ONE && d.borrow().is_squarefree());
-        Self { d }
+        Self { d }.into()
     }
 }
 
@@ -104,7 +101,7 @@ impl<D: BorrowedElem<Integer>> QuadraticNumberFieldStructure<D> {
         self.d.borrow()
     }
 
-    pub fn roi(&self) -> QuadraticRingOfIntegersStructure<&Integer> {
+    pub fn roi(&self) -> Arc<QuadraticRingOfIntegersStructure<&Integer>> {
         QuadraticRingOfIntegersStructure::new_unchecked(self.d())
     }
 }
@@ -120,7 +117,7 @@ impl<D: BorrowedElem<Integer>> SetSignature for QuadraticNumberFieldStructure<D>
 }
 
 impl<D: BorrowedElem<Integer>> EqSignature for QuadraticNumberFieldStructure<D> {
-    fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         a.rational_part == b.rational_part && a.algebraic_part == b.algebraic_part
     }
 }
@@ -128,25 +125,27 @@ impl<D: BorrowedElem<Integer>> EqSignature for QuadraticNumberFieldStructure<D> 
 impl<D: BorrowedElem<Integer>> RinglikeSpecializationSignature
     for QuadraticNumberFieldStructure<D>
 {
-    fn try_ring_restructure(&self) -> Option<impl EqSignature<Elem = Self::Elem> + RingSignature> {
+    fn try_ring_restructure(
+        self: &Arc<Self>,
+    ) -> Option<Arc<impl EqSignature<Elem = Self::Elem> + RingSignature>> {
         Some(self.clone())
     }
 
     fn try_char_zero_ring_restructure(
-        &self,
-    ) -> Option<impl EqSignature<Elem = Self::Elem> + CharZeroRingSignature> {
+        self: &Arc<Self>,
+    ) -> Option<Arc<impl EqSignature<Elem = Self::Elem> + CharZeroRingSignature>> {
         Some(self.clone())
     }
 }
 
 impl<D: BorrowedElem<Integer>> ZeroSignature for QuadraticNumberFieldStructure<D> {
-    fn zero(&self) -> Self::Elem {
+    fn zero(self: &Arc<Self>) -> Self::Elem {
         Self::Elem::ZERO
     }
 }
 
 impl<D: BorrowedElem<Integer>> AdditionSignature for QuadraticNumberFieldStructure<D> {
-    fn add(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn add(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         QuadraticNumberFieldElement {
             rational_part: &a.rational_part + &b.rational_part,
             algebraic_part: &a.algebraic_part + &b.algebraic_part,
@@ -155,13 +154,13 @@ impl<D: BorrowedElem<Integer>> AdditionSignature for QuadraticNumberFieldStructu
 }
 
 impl<D: BorrowedElem<Integer>> CancellativeAdditionSignature for QuadraticNumberFieldStructure<D> {
-    fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_sub(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.sub(a, b))
     }
 }
 
 impl<D: BorrowedElem<Integer>> TryNegateSignature for QuadraticNumberFieldStructure<D> {
-    fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_neg(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
     }
 }
@@ -169,7 +168,7 @@ impl<D: BorrowedElem<Integer>> TryNegateSignature for QuadraticNumberFieldStruct
 impl<D: BorrowedElem<Integer>> AdditiveMonoidSignature for QuadraticNumberFieldStructure<D> {}
 
 impl<D: BorrowedElem<Integer>> AdditiveGroupSignature for QuadraticNumberFieldStructure<D> {
-    fn neg(&self, a: &Self::Elem) -> Self::Elem {
+    fn neg(self: &Arc<Self>, a: &Self::Elem) -> Self::Elem {
         QuadraticNumberFieldElement {
             rational_part: -&a.rational_part,
             algebraic_part: -&a.algebraic_part,
@@ -178,13 +177,13 @@ impl<D: BorrowedElem<Integer>> AdditiveGroupSignature for QuadraticNumberFieldSt
 }
 
 impl<D: BorrowedElem<Integer>> OneSignature for QuadraticNumberFieldStructure<D> {
-    fn one(&self) -> Self::Elem {
+    fn one(self: &Arc<Self>) -> Self::Elem {
         Self::Elem::ONE
     }
 }
 
 impl<D: BorrowedElem<Integer>> MultiplicationSignature for QuadraticNumberFieldStructure<D> {
-    fn mul(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn mul(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         // (x + y sqrd(d))(z + w sqrt(d)) = (xz + dyw) + (xw + yz) sqrt(d)
         QuadraticNumberFieldElement {
             rational_part: &a.rational_part * &b.rational_part
@@ -222,7 +221,7 @@ impl<D: BorrowedElem<Integer>> SemiRingSignature for QuadraticNumberFieldStructu
 impl<D: BorrowedElem<Integer>> RingSignature for QuadraticNumberFieldStructure<D> {}
 
 impl<D: BorrowedElem<Integer>> TryReciprocalSignature for QuadraticNumberFieldStructure<D> {
-    fn try_reciprocal(&self, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_reciprocal(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         // (x + y sqrt(d))^{-1} = (a - b sqrt(d)) / (x^2 + dy^2)
         debug_assert!(!self.d().is_zero()); // it's squarefree in particular non-zero
         let d = &a.rational_part * &a.rational_part
@@ -241,7 +240,7 @@ impl<D: BorrowedElem<Integer>> TryReciprocalSignature for QuadraticNumberFieldSt
 impl<D: BorrowedElem<Integer>> CancellativeMultiplicationSignature
     for QuadraticNumberFieldStructure<D>
 {
-    fn try_divide(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_divide(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.mul(a, &self.try_reciprocal(b)?))
     }
 }
@@ -254,13 +253,13 @@ impl<D: BorrowedElem<Integer>> MultiplicativeIntegralMonoidSignature
 impl<D: BorrowedElem<Integer>> IntegralDomainSignature for QuadraticNumberFieldStructure<D> {}
 
 impl<D: BorrowedElem<Integer>> CharacteristicSignature for QuadraticNumberFieldStructure<D> {
-    fn characteristic(&self) -> Natural {
+    fn characteristic(self: &Arc<Self>) -> Natural {
         Natural::ZERO
     }
 }
 
 impl<D: BorrowedElem<Integer>> CharZeroRingSignature for QuadraticNumberFieldStructure<D> {
-    fn try_to_int(&self, x: &Self::Elem) -> Option<Integer> {
+    fn try_to_int(self: &Arc<Self>, x: &Self::Elem) -> Option<Integer> {
         if x.algebraic_part == Rational::ZERO {
             x.rational_part.try_to_int()
         } else {
@@ -272,7 +271,7 @@ impl<D: BorrowedElem<Integer>> CharZeroRingSignature for QuadraticNumberFieldStr
 impl<D: BorrowedElem<Integer>> FieldSignature for QuadraticNumberFieldStructure<D> {}
 
 impl<D: BorrowedElem<Integer>> CharZeroFieldSignature for QuadraticNumberFieldStructure<D> {
-    fn try_to_rat(&self, x: &Self::Elem) -> Option<Rational> {
+    fn try_to_rat(self: &Arc<Self>, x: &Self::Elem) -> Option<Rational> {
         if x.algebraic_part == Rational::ZERO {
             Some(x.rational_part.clone())
         } else {
@@ -284,11 +283,11 @@ impl<D: BorrowedElem<Integer>> CharZeroFieldSignature for QuadraticNumberFieldSt
 impl<D: BorrowedElem<Integer>> SemiModuleSignature<RationalCanonicalStructure>
     for QuadraticNumberFieldStructure<D>
 {
-    fn ring(&self) -> &RationalCanonicalStructure {
+    fn ring(self: &Arc<Self>) -> Arc<RationalCanonicalStructure> {
         Rational::structure_ref()
     }
 
-    fn scalar_mul(&self, a: &Self::Elem, x: &Rational) -> Self::Elem {
+    fn scalar_mul(self: &Arc<Self>, a: &Self::Elem, x: &Rational) -> Self::Elem {
         QuadraticNumberFieldElement {
             rational_part: x * &a.rational_part,
             algebraic_part: x * &a.algebraic_part,
@@ -296,21 +295,20 @@ impl<D: BorrowedElem<Integer>> SemiModuleSignature<RationalCanonicalStructure>
     }
 }
 
-impl<'h, D: BorrowedElem<Integer>, B: BorrowedStructure<QuadraticNumberFieldStructure<D>>>
+impl<D: BorrowedElem<Integer>>
     FreeModuleSignature<QuadraticNumberFieldBasisCanonicalStructure, RationalCanonicalStructure>
     for RingHomomorphismRangeModuleStructure<
-        'h,
         RationalCanonicalStructure,
         QuadraticNumberFieldStructure<D>,
-        PrincipalRationalMap<QuadraticNumberFieldStructure<D>, B>,
+        PrincipalRationalMap<QuadraticNumberFieldStructure<D>>,
     >
 {
-    fn basis_set(&self) -> impl std::borrow::Borrow<QuadraticNumberFieldBasisCanonicalStructure> {
+    fn basis_set(self: &Arc<Self>) -> Arc<QuadraticNumberFieldBasisCanonicalStructure> {
         QuadraticNumberFieldBasis::structure()
     }
 
     fn to_component<'a>(
-        &self,
+        self: &Arc<Self>,
         b: &QuadraticNumberFieldBasis,
         v: &'a QuadraticNumberFieldElement,
     ) -> Cow<'a, Rational> {
@@ -320,7 +318,7 @@ impl<'h, D: BorrowedElem<Integer>, B: BorrowedStructure<QuadraticNumberFieldStru
         }
     }
 
-    fn from_component(&self, b: &QuadraticNumberFieldBasis, r: &Rational) -> Self::Elem {
+    fn from_component(self: &Arc<Self>, b: &QuadraticNumberFieldBasis, r: &Rational) -> Self::Elem {
         match b {
             QuadraticNumberFieldBasis::Rational => QuadraticNumberFieldElement {
                 rational_part: r.clone(),
@@ -349,25 +347,19 @@ impl<'h, D: BorrowedElem<Integer>, B: BorrowedStructure<QuadraticNumberFieldStru
 // }
 
 impl<D: BorrowedElem<Integer>> QuadraticNumberFieldStructure<D> {
-    pub fn into_ring_of_integers(self) -> QuadraticRingOfIntegersStructure<D> {
-        QuadraticRingOfIntegersStructure::new_unchecked(self.d)
-    }
-
-    pub fn ring_of_integers(&self) -> QuadraticRingOfIntegersStructure<&Integer> {
+    pub fn ring_of_integers(self: &Arc<Self>) -> Arc<QuadraticRingOfIntegersStructure<&Integer>> {
         QuadraticRingOfIntegersStructure::new_unchecked(self.d.borrow())
     }
 }
 
 impl<D: BorrowedElem<Integer>> AlgebraicNumberFieldSignature for QuadraticNumberFieldStructure<D> {
     type Basis = QuadraticNumberFieldBasisCanonicalStructure;
-    type RationalInclusion<B: BorrowedStructure<Self>> = PrincipalRationalMap<Self, B>;
+    type RationalInclusion = PrincipalRationalMap<Self>;
 
-    fn inbound_finite_dimensional_rational_extension(&self) -> Self::RationalInclusion<&Self> {
-        PrincipalRationalMap::new(self)
-    }
-
-    fn into_inbound_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self> {
-        PrincipalRationalMap::new(self)
+    fn inbound_finite_dimensional_rational_extension(
+        self: &Arc<Self>,
+    ) -> Arc<Self::RationalInclusion> {
+        PrincipalRationalMap::new(self.clone())
     }
 
     fn generator(&self) -> Self::Elem {

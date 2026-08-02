@@ -12,15 +12,15 @@ use crate::{
 use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 use algebraeon_structures::*;
 use std::marker::PhantomData;
+use std::sync::Arc;
 
 /// An algebraic number field is a field of characteristic zero such that
 /// the inclusion of its rational subfield is finite dimensional
 pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
     type Basis: FiniteSetSignature;
-    type RationalInclusion<B: BorrowedStructure<Self>>: FiniteDimensionalFieldExtension<Self::Basis, RationalCanonicalStructure, Self>;
+    type RationalInclusion: FiniteDimensionalFieldExtension<Self::Basis, RationalCanonicalStructure, Self>;
 
-    fn inbound_finite_dimensional_rational_extension(&self) -> Self::RationalInclusion<&Self>;
-    fn into_inbound_finite_dimensional_rational_extension(self) -> Self::RationalInclusion<Self>;
+    fn inbound_finite_dimensional_rational_extension(&self) -> Arc<Self::RationalInclusion>;
 
     /// The dimension of this algebraic number field as a vector space over the rational numbers
     fn n(&self) -> usize {

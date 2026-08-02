@@ -8,7 +8,7 @@ use crate::structure::{
 };
 use algebraeon_structures::*;
 use std::fmt::{Debug, Display};
-use std::marker::PhantomData;
+use std::sync::Arc;
 
 #[derive(Debug, Clone)]
 pub struct NonZeroFactored<ObjectSet: Debug + Clone, ExponentSet: Debug + Clone> {
@@ -162,48 +162,35 @@ impl<ObjectSet: Debug + Clone, ExponentSet: Debug + Clone> Factored<ObjectSet, E
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FactoringStructure<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
-    ObjectB: BorrowedStructure<Object>,
     Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
-    ExponentB: BorrowedStructure<Exponent>,
 > {
-    _objects: PhantomData<Object>,
-    objects: ObjectB,
-    _exponents: PhantomData<Exponent>,
-    exponents: ExponentB,
+    objects: Arc<Object>,
+    exponents: Arc<Exponent>,
 }
 
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
-    ObjectB: BorrowedStructure<Object>,
     Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
-    ExponentB: BorrowedStructure<Exponent>,
-> FactoringStructure<Object, ObjectB, Exponent, ExponentB>
+> FactoringStructure<Object, Exponent>
 {
-    pub fn new(objects: ObjectB, exponents: ExponentB) -> Self {
-        Self {
-            _objects: PhantomData,
-            objects,
-            _exponents: PhantomData,
-            exponents,
-        }
+    pub fn new(objects: Arc<Object>, exponents: Arc<Exponent>) -> Arc<Self> {
+        Self { objects, exponents }.into()
     }
 
-    pub fn objects(&self) -> &Object {
-        self.objects.borrow()
+    pub fn objects(&self) -> &Arc<Object> {
+        &self.objects
     }
 
-    pub fn exponents(&self) -> &Exponent {
-        self.exponents.borrow()
+    pub fn exponents(&self) -> &Arc<Exponent> {
+        &self.exponents
     }
 }
 
 // These methods are all completely unchecked, to be used by things which construct factorizations.
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
-    ObjectB: BorrowedStructure<Object>,
     Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
-    ExponentB: BorrowedStructure<Exponent>,
-> FactoringStructure<Object, ObjectB, Exponent, ExponentB>
+> FactoringStructure<Object, Exponent>
 {
     pub(crate) fn mul_mut_impl(
         &self,
@@ -356,23 +343,19 @@ impl<
 
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
-    ObjectB: BorrowedStructure<Object>,
     Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
-    ExponentB: BorrowedStructure<Exponent>,
-> Signature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
+> Signature for FactoringStructure<Object, Exponent>
 {
 }
 
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
-    ObjectB: BorrowedStructure<Object>,
     Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
-    ExponentB: BorrowedStructure<Exponent>,
-> SetSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
+> SetSignature for FactoringStructure<Object, Exponent>
 {
     type Elem = Factored<Object::Elem, Exponent::Elem>;
 
-    fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, x: &Self::Elem) -> Result<(), String> {
         match x {
             Factored::Zero => Ok(()),
             Factored::NonZero(x) => {
@@ -408,12 +391,10 @@ impl<
 
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
-    ObjectB: BorrowedStructure<Object>,
     Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
-    ExponentB: BorrowedStructure<Exponent>,
-> EqSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
+> EqSignature for FactoringStructure<Object, Exponent>
 {
-    fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         #[cfg(debug_assertions)]
         {
             self.validate_element(a).unwrap();
@@ -425,33 +406,27 @@ impl<
 
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
-    ObjectB: BorrowedStructure<Object>,
     Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
-    ExponentB: BorrowedStructure<Exponent>,
-> RinglikeSpecializationSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
+> RinglikeSpecializationSignature for FactoringStructure<Object, Exponent>
 {
 }
 
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
-    ObjectB: BorrowedStructure<Object>,
     Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
-    ExponentB: BorrowedStructure<Exponent>,
-> ZeroSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
+> ZeroSignature for FactoringStructure<Object, Exponent>
 {
-    fn zero(&self) -> Self::Elem {
+    fn zero(self: &Arc<Self>) -> Self::Elem {
         Factored::Zero
     }
 }
 
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
-    ObjectB: BorrowedStructure<Object>,
     Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
-    ExponentB: BorrowedStructure<Exponent>,
-> OneSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
+> OneSignature for FactoringStructure<Object, Exponent>
 {
-    fn one(&self) -> Self::Elem {
+    fn one(self: &Arc<Self>) -> Self::Elem {
         Factored::NonZero(NonZeroFactored {
             unit: self.objects().one(),
             powers: vec![],
@@ -461,12 +436,10 @@ impl<
 
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
-    ObjectB: BorrowedStructure<Object>,
     Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
-    ExponentB: BorrowedStructure<Exponent>,
-> MultiplicationSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
+> MultiplicationSignature for FactoringStructure<Object, Exponent>
 {
-    fn mul(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn mul(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         #[cfg(debug_assertions)]
         {
             self.validate_element(a).unwrap();
@@ -480,30 +453,24 @@ impl<
 
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
-    ObjectB: BorrowedStructure<Object>,
     Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
-    ExponentB: BorrowedStructure<Exponent>,
-> CommutativeMultiplicationSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
+> CommutativeMultiplicationSignature for FactoringStructure<Object, Exponent>
 {
 }
 
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
-    ObjectB: BorrowedStructure<Object>,
     Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
-    ExponentB: BorrowedStructure<Exponent>,
-> MultiplicativeMonoidSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
+> MultiplicativeMonoidSignature for FactoringStructure<Object, Exponent>
 {
 }
 
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
-    ObjectB: BorrowedStructure<Object>,
     Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
-    ExponentB: BorrowedStructure<Exponent>,
-> TryReciprocalSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
+> TryReciprocalSignature for FactoringStructure<Object, Exponent>
 {
-    fn try_reciprocal(&self, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_reciprocal(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         #[cfg(debug_assertions)]
         self.validate_element(a).unwrap();
         match a {
@@ -522,12 +489,10 @@ impl<
 
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
-    ObjectB: BorrowedStructure<Object>,
     Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
-    ExponentB: BorrowedStructure<Exponent>,
-> CancellativeMultiplicationSignature for FactoringStructure<Object, ObjectB, Exponent, ExponentB>
+> CancellativeMultiplicationSignature for FactoringStructure<Object, Exponent>
 {
-    fn try_divide(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_divide(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         let mut s = Some(a.clone());
         self.try_divide_mut_impl(&mut s, b);
         s
@@ -536,10 +501,8 @@ impl<
 
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent>,
-    ObjectB: BorrowedStructure<Object>,
     Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
-    ExponentB: BorrowedStructure<Exponent>,
-> FactoringStructure<Object, ObjectB, Exponent, ExponentB>
+> FactoringStructure<Object, Exponent>
 {
     pub fn new_irreducible_unchecked(
         &self,
@@ -673,11 +636,8 @@ impl<
     }
 }
 
-impl<
-    Object: UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
-    ObjectB: BorrowedStructure<Object>,
-    ExponentB: BorrowedStructure<NaturalCanonicalStructure>,
-> FactoringStructure<Object, ObjectB, NaturalCanonicalStructure, ExponentB>
+impl<Object: UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>>
+    FactoringStructure<Object, NaturalCanonicalStructure>
 {
     /// Return an iterator over all divisors of a factorization
     pub fn divisors<'a>(
@@ -765,9 +725,7 @@ impl<
 impl<
     Object: UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
         + MultiplicativeMonoidSquareOpsSignature,
-    ObjectB: BorrowedStructure<Object>,
-    ExponentB: BorrowedStructure<NaturalCanonicalStructure>,
-> FactoringStructure<Object, ObjectB, NaturalCanonicalStructure, ExponentB>
+> FactoringStructure<Object, NaturalCanonicalStructure>
 {
     /// Return the element whose square equals the input, if it exists.
     #[allow(unused)]
@@ -805,18 +763,10 @@ pub trait UniqueFactorizationMonoidSignature:
 {
     type FactoredExponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature;
 
-    fn factorization_exponents(&self) -> &Self::FactoredExponent;
-    fn into_factorization_exponents(self) -> Self::FactoredExponent;
+    fn factorization_exponents(&self) -> Arc<Self::FactoredExponent>;
 
-    fn factorizations(
-        &self,
-    ) -> FactoringStructure<Self, &Self, Self::FactoredExponent, &Self::FactoredExponent> {
-        FactoringStructure::new(self, self.factorization_exponents())
-    }
-    fn into_factorizations(
-        self,
-    ) -> FactoringStructure<Self, Self, Self::FactoredExponent, Self::FactoredExponent> {
-        FactoringStructure::new(self.clone(), self.into_factorization_exponents())
+    fn factorizations(self: &Arc<Self>) -> Arc<FactoringStructure<Self, Self::FactoredExponent>> {
+        FactoringStructure::new(self.clone(), self.factorization_exponents())
     }
 
     fn factorization_pow(
@@ -934,11 +884,7 @@ impl<R: MetaType> MetaFactoringMonoidNaturalExponent for R where
 impl<FS: FieldSignature> UniqueFactorizationMonoidSignature for FS {
     type FactoredExponent = NaturalCanonicalStructure;
 
-    fn factorization_exponents(&self) -> &Self::FactoredExponent {
-        Natural::structure_ref()
-    }
-
-    fn into_factorization_exponents(self) -> Self::FactoredExponent {
+    fn factorization_exponents(&self) -> Arc<Self::FactoredExponent> {
         Natural::structure()
     }
 
@@ -977,7 +923,7 @@ pub fn factorize_by_find_factor<
     Exponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature,
     RS: UniqueFactorizationMonoidSignature<FactoredExponent = Exponent> + ZeroEqSignature,
 >(
-    ring: &RS,
+    ring: &Arc<RS>,
     elem: RS::Elem,
     partial_factor: &impl Fn(RS::Elem) -> FindFactorResult<RS::Elem>,
 ) -> Factored<RS::Elem, Exponent::Elem> {

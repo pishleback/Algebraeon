@@ -232,7 +232,7 @@ pub trait ToSimpleContinuedFractionSignature: RealRoundingSignature + RingUnitsS
     /// `value` should be irrational.
     /// If `value` is not irrational then calls to `.next()` on the resulting `SimpleContinuedFraction` may panic.
     fn simple_continued_fraction(
-        &self,
+        self: &Arc<Self>,
         value: Self::Elem,
     ) -> SimpleContinuedFractionFromRealStructure<Self> {
         SimpleContinuedFractionFromRealStructure::new(self.clone(), value)

@@ -187,7 +187,7 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
     let impl_finite_signature = if has_finite {
         quote! {
             impl CountableSetSignature for #newtype_name {
-                fn generate_all_elements(self: &std::sync::Arc<Self>) -> impl Iterator<Item = Self::Elem> {
+                fn generate_all_elements(self: std::sync::Arc<Self>) -> impl Iterator<Item = Self::Elem> {
                     <#name as cantor::Finite>::iter()
                 }
             }
@@ -374,6 +374,7 @@ pub fn signature_meta_trait(_args: TokenStream, input: TokenStream) -> TokenStre
     .into()
 }
 
+// check for `self: &Arc<Self>`
 fn is_ref_arc_self(arg: &FnArg) -> bool {
     let expected: Type = parse_quote!(&Arc<Self>);
 
@@ -384,6 +385,7 @@ fn is_ref_arc_self(arg: &FnArg) -> bool {
     receiver.colon_token.is_some() && receiver.ty.as_ref() == &expected
 }
 
+// check for `self: Arc<Self>`
 fn is_arc_self(arg: &FnArg) -> bool {
     let expected: Type = parse_quote!(Arc<Self>);
 
@@ -392,6 +394,15 @@ fn is_arc_self(arg: &FnArg) -> bool {
     };
 
     receiver.colon_token.is_some() && receiver.ty.as_ref() == &expected
+}
+
+// check for `&self`
+#[allow(unused)]
+fn is_ref_self(arg: &FnArg) -> bool {
+    match arg {
+        FnArg::Receiver(receiver) => receiver.reference.is_some() && receiver.mutability.is_none(),
+        FnArg::Typed(_) => false,
+    }
 }
 
 /// Expand MetaTrait + impl
@@ -432,65 +443,75 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
                 continue;
             }
 
-            let mut is_ref = false;
+            enum ReceiverType {
+                RefArcSelf,
+                ArcSelf,
+            }
+
             let meta_sig = sig.clone();
-            if !if let Some(first_arg) = meta_sig.inputs.first()
-                && (is_ref_arc_self(first_arg) || is_arc_self(first_arg))
-            {
+
+            let receiver_type = if let Some(first_arg) = meta_sig.inputs.first() {
                 if is_ref_arc_self(first_arg) {
-                    is_ref = true;
+                    Some(ReceiverType::RefArcSelf)
+                } else if is_arc_self(first_arg) {
+                    Some(ReceiverType::ArcSelf)
+                } else {
+                    None
                 }
-                true
             } else {
-                false
-            } {
-                errors.push(
+                None
+            };
+
+            match receiver_type {
+                None => {
+                    errors.push(
                     Error::new_spanned(
                         meta_sig,
-                        "signature_meta_trait method must start `self: &Arc<Self>` or `self: Arc<Self>`",
+                        "signature_meta_trait method must start `&self`, `self: &Arc<Self>` or `self: Arc<Self>`",
                     )
                     .to_compile_error(),
                 );
-            } else {
-                // Receiver is `self: Arc<Self>`
-                let mut meta_sig_without_self = meta_sig.clone();
-                meta_sig_without_self.inputs =
-                    meta_sig_without_self.inputs.into_iter().skip(1).collect();
-                ReplaceSelfSetSignature {
-                    sig_trait_ident: sig_trait_ident.clone(),
-                    generic_arguments: generic_arguments.clone(),
                 }
-                .visit_signature_mut(&mut meta_sig_without_self);
+                Some(receiver_type) => {
+                    // Receiver is `self: Arc<Self>`
+                    let mut meta_sig_without_self = meta_sig.clone();
+                    meta_sig_without_self.inputs =
+                        meta_sig_without_self.inputs.into_iter().skip(1).collect();
+                    ReplaceSelfSetSignature {
+                        sig_trait_ident: sig_trait_ident.clone(),
+                        generic_arguments: generic_arguments.clone(),
+                    }
+                    .visit_signature_mut(&mut meta_sig_without_self);
 
-                let ident = meta_sig_without_self.ident.clone();
+                    let ident = meta_sig_without_self.ident.clone();
 
-                let mut meta_args = Vec::new();
-                #[allow(clippy::never_loop)]
-                for arg in &mut meta_sig_without_self.inputs {
-                    match arg {
-                        FnArg::Typed(pat_type) => match pat_type.pat.as_mut() {
-                            syn::Pat::Ident(pat_ident) => {
-                                pat_ident.mutability = None;
-                                meta_args.push(pat_ident.clone());
+                    let mut meta_args = Vec::new();
+                    #[allow(clippy::never_loop)]
+                    for arg in &mut meta_sig_without_self.inputs {
+                        match arg {
+                            FnArg::Typed(pat_type) => match pat_type.pat.as_mut() {
+                                syn::Pat::Ident(pat_ident) => {
+                                    pat_ident.mutability = None;
+                                    meta_args.push(pat_ident.clone());
+                                }
+                                _ => {
+                                    return Error::new_spanned(
+                                        trait_item,
+                                        "Invalid pattern in argument list. Must be a plain Ident.",
+                                    )
+                                    .to_compile_error();
+                                }
+                            },
+                            FnArg::Receiver(_) => {
+                                panic!();
                             }
-                            _ => {
-                                return Error::new_spanned(
-                                    trait_item,
-                                    "Invalid pattern in argument list. Must be a plain Ident.",
-                                )
-                                .to_compile_error();
-                            }
-                        },
-                        FnArg::Receiver(_) => {
-                            panic!();
                         }
                     }
-                }
 
-                if let Some(first) = sig.inputs.iter().nth(1) {
-                    match first {
-                        FnArg::Receiver(_) => {}
-                        FnArg::Typed(pat_type) => match pat_type.ty.as_ref() {
+                    if let Some(first) = sig.inputs.iter().nth(1) {
+                        match first {
+                            FnArg::Receiver(_) => {}
+                            FnArg::Typed(pat_type) => match pat_type.ty.as_ref() {
                             syn::Type::Reference(type_reference) => {
                                 if let syn::Type::Path(type_path) =
                                     type_reference.elem.as_ref()
@@ -570,24 +591,29 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
                                 }
                             _ => {}
                         },
+                        }
                     }
-                }
 
-                let trait_ident = trait_item.ident.clone();
-                if is_ref {
-                    meta_methods.push(quote! {
-                        #(#attrs)*
-                        #meta_sig_without_self {
-                            #trait_ident::#ident(&Self::structure(), #(#meta_args),*)
+                    let trait_ident = trait_item.ident.clone();
+
+                    match receiver_type {
+                        ReceiverType::RefArcSelf => {
+                            meta_methods.push(quote! {
+                                #(#attrs)*
+                                #meta_sig_without_self {
+                                    #trait_ident::#ident(&Self::structure(), #(#meta_args),*)
+                                }
+                            });
                         }
-                    });
-                } else {
-                    meta_methods.push(quote! {
-                        #(#attrs)*
-                        #meta_sig_without_self {
-                            #trait_ident::#ident(Self::structure(), #(#meta_args),*)
+                        ReceiverType::ArcSelf => {
+                            meta_methods.push(quote! {
+                                #(#attrs)*
+                                #meta_sig_without_self {
+                                    #trait_ident::#ident(Self::structure(), #(#meta_args),*)
+                                }
+                            });
                         }
-                    });
+                    }
                 }
             }
         }

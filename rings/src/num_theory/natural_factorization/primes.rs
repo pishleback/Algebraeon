@@ -5,7 +5,7 @@ use crate::{
     },
     structure::{
         MetaMultiplicativeMonoidSignature, MultiplicationSignature, MultiplicativeMonoidSignature,
-        RingToQuotientRingSignature, UniqueFactorizationMonoidSignature,
+        UniqueFactorizationMonoidSignature,
     },
 };
 use algebraeon_structures::*;

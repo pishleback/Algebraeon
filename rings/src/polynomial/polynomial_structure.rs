@@ -5,12 +5,11 @@ use crate::{
 };
 use algebraeon_structures::*;
 use itertools::Itertools;
-use std::hash::Hash;
 use std::{
     borrow::{Borrow, Cow},
     fmt::Display,
-    marker::PhantomData,
 };
+use std::{hash::Hash, sync::Arc};
 
 #[derive(Debug, Clone)]
 pub struct Polynomial<Set> {
@@ -91,62 +90,50 @@ impl PolynomialFromStr for Polynomial<Rational> {
 }
 
 #[derive(Debug, Clone)]
-pub struct PolynomialStructure<RS: Signature, RSB: BorrowedStructure<RS>> {
-    _coeff_ring: PhantomData<RS>,
-    coeff_ring: RSB,
+pub struct PolynomialStructure<RS: Signature> {
+    coeff_ring: Arc<RS>,
 }
 
-impl<RS: Signature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, RSB> {
-    pub fn new(coeff_ring: RSB) -> Self {
-        Self {
-            _coeff_ring: PhantomData,
-            coeff_ring,
-        }
+impl<RS: Signature> PolynomialStructure<RS> {
+    pub fn new(coeff_ring: Arc<RS>) -> Arc<Self> {
+        Self { coeff_ring }.into()
     }
 
-    pub fn coeff_ring(&self) -> &RS {
-        self.coeff_ring.borrow()
-    }
-
-    pub fn into_coeff_ring(self) -> RSB {
-        self.coeff_ring
+    pub fn coeff_ring(&self) -> Arc<RS> {
+        self.coeff_ring.clone()
     }
 }
 
 pub trait ToPolynomialSignature: Signature {
-    fn polynomials(&self) -> PolynomialStructure<Self, &Self> {
-        PolynomialStructure::new(self)
-    }
-
-    fn into_polynomials(self) -> PolynomialStructure<Self, Self> {
-        PolynomialStructure::new(self)
+    fn polynomials(self: &Arc<Self>) -> Arc<PolynomialStructure<Self>> {
+        PolynomialStructure::new(self.clone())
     }
 }
 
 impl<RS: Signature> ToPolynomialSignature for RS {}
 
-impl<RS: Signature, RSB: BorrowedStructure<RS>> Signature for PolynomialStructure<RS, RSB> {}
+impl<RS: Signature> Signature for PolynomialStructure<RS> {}
 
-impl<RS: SetSignature, RSB: BorrowedStructure<RS>> SetSignature for PolynomialStructure<RS, RSB> {
+impl<RS: SetSignature> SetSignature for PolynomialStructure<RS> {
     type Elem = Polynomial<RS::Elem>;
 
-    fn validate_element(&self, _x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, _x: &Self::Elem) -> Result<(), String> {
         Ok(())
     }
 }
 
-impl<RS: Signature, RSB: BorrowedStructure<RS>> PartialEq for PolynomialStructure<RS, RSB> {
+impl<RS: Signature> PartialEq for PolynomialStructure<RS> {
     fn eq(&self, other: &Self) -> bool {
         self.coeff_ring == other.coeff_ring
     }
 }
 
-impl<RS: Signature, RSB: BorrowedStructure<RS>> Eq for PolynomialStructure<RS, RSB> {}
+impl<RS: Signature> Eq for PolynomialStructure<RS> {}
 
-impl<RS: SemiRingSignature + EqSignature + ToStringSignature, RSB: BorrowedStructure<RS>>
-    ToStringSignature for PolynomialStructure<RS, RSB>
+impl<RS: SemiRingSignature + EqSignature + ToStringSignature> ToStringSignature
+    for PolynomialStructure<RS>
 {
-    fn to_string(&self, elem: &Self::Elem) -> String {
+    fn to_string(self: &Arc<Self>, elem: &Self::Elem) -> String {
         if self.num_coeffs(elem) == 0 {
             "0".into()
         } else {
@@ -197,10 +184,8 @@ impl<RS: SemiRingSignature + EqSignature + ToStringSignature, RSB: BorrowedStruc
     }
 }
 
-impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> EqSignature
-    for PolynomialStructure<RS, RSB>
-{
-    fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
+impl<RS: SemiRingEqSignature> EqSignature for PolynomialStructure<RS> {
+    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         for i in 0..std::cmp::max(a.coeffs.len(), b.coeffs.len()) {
             if !self
                 .coeff_ring()
@@ -213,9 +198,9 @@ impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> EqSignature
     }
 }
 
-impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, RSB> {
+impl<RS: SemiRingEqSignature> PolynomialStructure<RS> {
     pub fn add_impl<'a, C: Borrow<RS::Elem>>(
-        &self,
+        self: &Arc<Self>,
         mut a: &'a Polynomial<C>,
         mut b: &'a Polynomial<C>,
     ) -> Polynomial<RS::Elem> {
@@ -264,7 +249,7 @@ impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS
     }
 }
 
-impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, RSB> {
+impl<RS: RingEqSignature> PolynomialStructure<RS> {
     /*
     The idea behind Karatsuba is to reduce the number of multiplications needed
 
@@ -360,36 +345,32 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, RS
     }
 }
 
-impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> RinglikeSpecializationSignature
-    for PolynomialStructure<RS, RSB>
-{
-    fn try_ring_restructure(&self) -> Option<impl EqSignature<Elem = Self::Elem> + RingSignature> {
+impl<RS: SemiRingEqSignature> RinglikeSpecializationSignature for PolynomialStructure<RS> {
+    fn try_ring_restructure(
+        self: &Arc<Self>,
+    ) -> Option<Arc<impl EqSignature<Elem = Self::Elem> + RingSignature>> {
         self.coeff_ring()
             .try_ring_restructure()
             .map(|coeff_ring| coeff_ring.into_polynomials())
     }
 }
 
-impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> ZeroSignature
-    for PolynomialStructure<RS, RSB>
-{
-    fn zero(&self) -> Self::Elem {
+impl<RS: SemiRingEqSignature> ZeroSignature for PolynomialStructure<RS> {
+    fn zero(self: &Arc<Self>) -> Self::Elem {
         Polynomial { coeffs: vec![] }
     }
 }
 
-impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> AdditionSignature
-    for PolynomialStructure<RS, RSB>
-{
-    fn add(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+impl<RS: SemiRingEqSignature> AdditionSignature for PolynomialStructure<RS> {
+    fn add(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.add_impl(a, b)
     }
 }
 
-impl<RS: SemiRingEqSignature + CancellativeAdditionSignature, RSB: BorrowedStructure<RS>>
-    CancellativeAdditionSignature for PolynomialStructure<RS, RSB>
+impl<RS: SemiRingEqSignature + CancellativeAdditionSignature> CancellativeAdditionSignature
+    for PolynomialStructure<RS>
 {
-    fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_sub(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(Polynomial::from_coeffs(
             (0..std::cmp::max(a.coeffs.len(), b.coeffs.len()))
                 .map(|i| {
@@ -401,10 +382,8 @@ impl<RS: SemiRingEqSignature + CancellativeAdditionSignature, RSB: BorrowedStruc
     }
 }
 
-impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> TryNegateSignature
-    for PolynomialStructure<RS, RSB>
-{
-    fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
+impl<RS: SemiRingEqSignature> TryNegateSignature for PolynomialStructure<RS> {
+    fn try_neg(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         Some(Polynomial::from_coeffs(
             a.coeffs
                 .iter()
@@ -414,19 +393,14 @@ impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> TryNegateSignature
     }
 }
 
-impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> AdditiveMonoidSignature
-    for PolynomialStructure<RS, RSB>
-{
-}
+impl<RS: SemiRingEqSignature> AdditiveMonoidSignature for PolynomialStructure<RS> {}
 
-impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> AdditiveGroupSignature
-    for PolynomialStructure<RS, RSB>
-{
-    fn neg(&self, a: &Self::Elem) -> Self::Elem {
+impl<RS: RingEqSignature> AdditiveGroupSignature for PolynomialStructure<RS> {
+    fn neg(self: &Arc<Self>, a: &Self::Elem) -> Self::Elem {
         Polynomial::from_coeffs(a.coeffs.iter().map(|c| self.coeff_ring().neg(c)).collect())
     }
 
-    fn sub(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn sub(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.reduce_poly(Polynomial::from_coeffs(
             (0..std::cmp::max(a.coeffs.len(), b.coeffs.len()))
                 .map(|i| {
@@ -438,18 +412,14 @@ impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> AdditiveGroupSignature
     }
 }
 
-impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> OneSignature
-    for PolynomialStructure<RS, RSB>
-{
-    fn one(&self) -> Self::Elem {
+impl<RS: SemiRingEqSignature> OneSignature for PolynomialStructure<RS> {
+    fn one(self: &Arc<Self>) -> Self::Elem {
         Polynomial::from_coeffs(vec![self.coeff_ring().one()])
     }
 }
 
-impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> MultiplicationSignature
-    for PolynomialStructure<RS, RSB>
-{
-    fn mul(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+impl<RS: SemiRingEqSignature> MultiplicationSignature for PolynomialStructure<RS> {
+    fn mul(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         if let Some(coeff_ring) = self.coeff_ring().try_ring_restructure() {
             coeff_ring.polynomials().mul_karatsuba(a, b)
         } else {
@@ -458,44 +428,30 @@ impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> MultiplicationSignatur
     }
 }
 
-impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> CommutativeMultiplicationSignature
-    for PolynomialStructure<RS, RSB>
+impl<RS: SemiRingEqSignature> CommutativeMultiplicationSignature for PolynomialStructure<RS> {}
+
+impl<RS: SemiRingEqSignature> MultiplicativeMonoidSignature for PolynomialStructure<RS> {}
+
+impl<RS: SemiRingEqSignature> MultiplicativeAbsorptionMonoidSignature for PolynomialStructure<RS> {}
+
+impl<RS: SemiRingEqSignature> LeftDistributiveMultiplicationOverAddition
+    for PolynomialStructure<RS>
 {
 }
 
-impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> MultiplicativeMonoidSignature
-    for PolynomialStructure<RS, RSB>
+impl<RS: SemiRingEqSignature> RightDistributiveMultiplicationOverAddition
+    for PolynomialStructure<RS>
 {
 }
 
-impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> MultiplicativeAbsorptionMonoidSignature
-    for PolynomialStructure<RS, RSB>
-{
-}
+impl<RS: SemiRingEqSignature> SemiRingSignature for PolynomialStructure<RS> {}
 
-impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> LeftDistributiveMultiplicationOverAddition
-    for PolynomialStructure<RS, RSB>
-{
-}
-
-impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>>
-    RightDistributiveMultiplicationOverAddition for PolynomialStructure<RS, RSB>
-{
-}
-
-impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> SemiRingSignature
-    for PolynomialStructure<RS, RSB>
-{
-}
-
-impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> SemiModuleSignature<RS>
-    for PolynomialStructure<RS, RSB>
-{
-    fn ring(&self) -> &RS {
+impl<RS: SemiRingEqSignature> SemiModuleSignature<RS> for PolynomialStructure<RS> {
+    fn ring(self: &Arc<Self>) -> Arc<RS> {
         self.coeff_ring()
     }
 
-    fn scalar_mul(&self, p: &Self::Elem, x: &RS::Elem) -> Self::Elem {
+    fn scalar_mul(self: &Arc<Self>, p: &Self::Elem, x: &RS::Elem) -> Self::Elem {
         self.reduce_poly(Polynomial::from_coeffs(
             p.coeffs
                 .iter()
@@ -505,23 +461,17 @@ impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> SemiModuleSignature<RS
     }
 }
 
-impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> AlgebraSignature<RS>
-    for PolynomialStructure<RS, RSB>
-{
-}
+impl<RS: RingEqSignature> AlgebraSignature<RS> for PolynomialStructure<RS> {}
 
-impl<RS: SemiRingEqSignature + CharacteristicSignature, RSB: BorrowedStructure<RS>>
-    CharacteristicSignature for PolynomialStructure<RS, RSB>
+impl<RS: SemiRingEqSignature + CharacteristicSignature> CharacteristicSignature
+    for PolynomialStructure<RS>
 {
-    fn characteristic(&self) -> Natural {
+    fn characteristic(self: &Arc<Self>) -> Natural {
         self.coeff_ring().characteristic()
     }
 }
 
-impl<RS: RingEqSignature, RSB: BorrowedStructure<RS>> RingSignature
-    for PolynomialStructure<RS, RSB>
-{
-}
+impl<RS: RingEqSignature> RingSignature for PolynomialStructure<RS> {}
 
 impl<R: MetaType> Polynomial<R>
 where
@@ -536,7 +486,7 @@ where
     }
 }
 
-impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, RSB> {
+impl<RS: SemiRingEqSignature> PolynomialStructure<RS> {
     fn structure_into_coeffs(self, a: &Polynomial<RS::Elem>) -> impl Iterator<Item = &RS::Elem> {
         (0..self.num_coeffs(a)).map(|i| &a.coeffs[i])
     }
@@ -649,7 +599,7 @@ impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS
 
     //find p(q(x))
     pub fn compose(
-        &self,
+        self: &Arc<Self>,
         p: &Polynomial<RS::Elem>,
         q: &Polynomial<RS::Elem>,
     ) -> Polynomial<RS::Elem> {
@@ -756,7 +706,7 @@ impl<RS: SemiRingEqSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS
     }
 }
 
-impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, RSB> {
+impl<RS: IntegralDomainSignature> PolynomialStructure<RS> {
     pub fn try_quorem(
         &self,
         a: &Polynomial<RS::Elem>,
@@ -973,31 +923,24 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
     }
 }
 
-impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> TryReciprocalSignature
-    for PolynomialStructure<RS, RSB>
-{
-    fn try_reciprocal(&self, a: &Self::Elem) -> Option<Self::Elem> {
+impl<RS: IntegralDomainSignature> TryReciprocalSignature for PolynomialStructure<RS> {
+    fn try_reciprocal(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         self.try_divide(&self.one(), a)
     }
 }
 
-impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> CancellativeMultiplicationSignature
-    for PolynomialStructure<RS, RSB>
-{
-    fn try_divide(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+impl<RS: IntegralDomainSignature> CancellativeMultiplicationSignature for PolynomialStructure<RS> {
+    fn try_divide(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         self.div_impl(a, b)
     }
 }
 
-impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> MultiplicativeIntegralMonoidSignature
-    for PolynomialStructure<RS, RSB>
+impl<RS: IntegralDomainSignature> MultiplicativeIntegralMonoidSignature
+    for PolynomialStructure<RS>
 {
 }
 
-impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> IntegralDomainSignature
-    for PolynomialStructure<RS, RSB>
-{
-}
+impl<RS: IntegralDomainSignature> IntegralDomainSignature for PolynomialStructure<RS> {}
 
 // #[derive(Debug, Clone, PartialEq, Eq)]
 // pub struct PolynomialFactorOrderingStructure<Ring: RingSignature, RingB: BorrowedStructure<Ring>> {
@@ -1051,16 +994,12 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> IntegralDomainSign
 //     }
 // }
 
-impl<RS: UniqueFactorizationMonoidSignature + IntegralDomainSignature, RSB: BorrowedStructure<RS>>
-    UniqueFactorizationMonoidSignature for PolynomialStructure<RS, RSB>
+impl<RS: UniqueFactorizationMonoidSignature + IntegralDomainSignature>
+    UniqueFactorizationMonoidSignature for PolynomialStructure<RS>
 {
     type FactoredExponent = NaturalCanonicalStructure;
 
-    fn factorization_exponents(&self) -> &Self::FactoredExponent {
-        Natural::structure_ref()
-    }
-
-    fn into_factorization_exponents(self) -> Self::FactoredExponent {
+    fn factorization_exponents(&self) -> Arc<Self::FactoredExponent> {
         Natural::structure()
     }
 
@@ -1073,7 +1012,7 @@ impl<RS: UniqueFactorizationMonoidSignature + IntegralDomainSignature, RSB: Borr
     }
 }
 
-impl<RS: GreatestCommonDivisorSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, RSB> {
+impl<RS: GreatestCommonDivisorSignature> PolynomialStructure<RS> {
     pub fn factor_primitive(
         &self,
         mut p: Polynomial<RS::Elem>,
@@ -1122,25 +1061,23 @@ impl<RS: GreatestCommonDivisorSignature, RSB: BorrowedStructure<RS>> PolynomialS
     }
 }
 
-impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> GreatestCommonDivisorSignature
-    for PolynomialStructure<FS, FSB>
-{
-    fn gcd(&self, x: &Self::Elem, y: &Self::Elem) -> Self::Elem {
+impl<FS: FieldSignature> GreatestCommonDivisorSignature for PolynomialStructure<FS> {
+    fn gcd(self: &Arc<Self>, x: &Self::Elem, y: &Self::Elem) -> Self::Elem {
         self.euclidean_gcd(x.clone(), y.clone())
     }
 }
 
-impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> BezoutDomainSignature
-    for PolynomialStructure<FS, FSB>
-{
-    fn xgcd(&self, x: &Self::Elem, y: &Self::Elem) -> (Self::Elem, Self::Elem, Self::Elem) {
+impl<FS: FieldSignature> BezoutDomainSignature for PolynomialStructure<FS> {
+    fn xgcd(
+        self: &Arc<Self>,
+        x: &Self::Elem,
+        y: &Self::Elem,
+    ) -> (Self::Elem, Self::Elem, Self::Elem) {
         self.euclidean_xgcd(x.clone(), y.clone())
     }
 }
 
-impl<RS: GreatestCommonDivisorSignature + CharZeroRingSignature, RSB: BorrowedStructure<RS>>
-    PolynomialStructure<RS, RSB>
-{
+impl<RS: GreatestCommonDivisorSignature + CharZeroRingSignature> PolynomialStructure<RS> {
     #[allow(clippy::let_and_return)]
     pub fn primitive_squarefree_part(&self, f: Polynomial<RS::Elem>) -> Polynomial<RS::Elem> {
         if self.is_zero(&f) {
@@ -1155,8 +1092,8 @@ impl<RS: GreatestCommonDivisorSignature + CharZeroRingSignature, RSB: BorrowedSt
     }
 }
 
-impl<RS: FavoriteAssociateSignature + IntegralDomainSignature, RSB: BorrowedStructure<RS>>
-    FavoriteAssociateSignature for PolynomialStructure<RS, RSB>
+impl<RS: FavoriteAssociateSignature + IntegralDomainSignature> FavoriteAssociateSignature
+    for PolynomialStructure<RS>
 {
     fn factor_fav_assoc(
         &self,
@@ -1177,40 +1114,28 @@ impl<RS: FavoriteAssociateSignature + IntegralDomainSignature, RSB: BorrowedStru
     }
 }
 
-impl<RS: CharZeroRingSignature + EqSignature, RSB: BorrowedStructure<RS>> CharZeroRingSignature
-    for PolynomialStructure<RS, RSB>
-{
-    fn try_to_int(&self, x: &Self::Elem) -> Option<Integer> {
+impl<RS: CharZeroRingSignature + EqSignature> CharZeroRingSignature for PolynomialStructure<RS> {
+    fn try_to_int(self: &Arc<Self>, x: &Self::Elem) -> Option<Integer> {
         self.coeff_ring().try_to_int(&self.as_constant(x)?)
     }
 }
 
-impl<
-    RS: IntegralDomainSignature + TryReciprocalSignature,
-    RSB: BorrowedStructure<RS>,
-    B: BorrowedStructure<PolynomialStructure<RS, RSB>>,
-> CountableSetSignature for MultiplicativeMonoidUnitsStructure<PolynomialStructure<RS, RSB>, B>
+impl<RS: IntegralDomainSignature + TryReciprocalSignature> CountableSetSignature
+    for MultiplicativeMonoidUnitsStructure<PolynomialStructure<RS>>
 where
-    for<'a> MultiplicativeMonoidUnitsStructure<RS, &'a RS>: FiniteSetSignature<Elem = RS::Elem>,
+    MultiplicativeMonoidUnitsStructure<RS>: FiniteSetSignature<Elem = RS::Elem>,
 {
-    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
+    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
         self.list_all_elements().into_iter()
-    }
-
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
-        self.clone().into_generate_all_elements()
     }
 }
 
-impl<
-    RS: IntegralDomainSignature + TryReciprocalSignature,
-    RSB: BorrowedStructure<RS>,
-    B: BorrowedStructure<PolynomialStructure<RS, RSB>>,
-> FiniteSetSignature for MultiplicativeMonoidUnitsStructure<PolynomialStructure<RS, RSB>, B>
+impl<RS: IntegralDomainSignature + TryReciprocalSignature> FiniteSetSignature
+    for MultiplicativeMonoidUnitsStructure<PolynomialStructure<RS>>
 where
-    for<'a> MultiplicativeMonoidUnitsStructure<RS, &'a RS>: FiniteSetSignature<Elem = RS::Elem>,
+    MultiplicativeMonoidUnitsStructure<RS>: FiniteSetSignature<Elem = RS::Elem>,
 {
-    fn list_all_elements(&self) -> Vec<Self::Elem> {
+    fn list_all_elements(self: &Arc<Self>) -> Vec<Self::Elem> {
         self.monoid()
             .coeff_ring()
             .units()
@@ -1225,14 +1150,16 @@ where
 //     fn interpolate(points: &Vec<(Self::ElemT, Self::ElemT)>) -> Option<Polynomial<Self>>;
 // }
 
-impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> EuclideanDivisionSignature
-    for PolynomialStructure<FS, FSB>
-{
-    fn norm(&self, elem: &Self::Elem) -> Option<Natural> {
+impl<FS: FieldSignature> EuclideanDivisionSignature for PolynomialStructure<FS> {
+    fn norm(self: &Arc<Self>, elem: &Self::Elem) -> Option<Natural> {
         Some(Natural::from(self.degree(elem)?))
     }
 
-    fn quorem(&self, a: &Self::Elem, b: &Self::Elem) -> Option<(Self::Elem, Self::Elem)> {
+    fn quorem(
+        self: &Arc<Self>,
+        a: &Self::Elem,
+        b: &Self::Elem,
+    ) -> Option<(Self::Elem, Self::Elem)> {
         if self.is_zero(b) {
             None
         } else {
@@ -1241,7 +1168,7 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> EuclideanDivisionSignature
     }
 }
 
-impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructure<RS, RSB> {
+impl<RS: IntegralDomainSignature> PolynomialStructure<RS> {
     pub fn interpolate_by_lagrange_basis(
         &self,
         points: &[(RS::Elem, RS::Elem)],
@@ -1331,9 +1258,7 @@ impl<RS: IntegralDomainSignature, RSB: BorrowedStructure<RS>> PolynomialStructur
     }
 }
 
-impl<RS: ReducedHermiteAlgorithmSignature, RSB: BorrowedStructure<RS>>
-    PolynomialStructure<RS, RSB>
-{
+impl<RS: ReducedHermiteAlgorithmSignature> PolynomialStructure<RS> {
     pub fn interpolate_by_linear_system(
         &self,
         points: &[(RS::Elem, RS::Elem)],
@@ -1413,9 +1338,8 @@ pub fn factor_primitive_fof<
 impl<Field: MetaType> Polynomial<Field>
 where
     Field::Signature: FieldSignature,
-    Polynomial<Field>:
-        MetaType<Signature = PolynomialStructure<Field::Signature, Field::Signature>>,
-    PrincipalIntegerMap<Field::Signature, Field::Signature>:
+    Polynomial<Field>: MetaType<Signature = PolynomialStructure<Field::Signature>>,
+    PrincipalIntegerMap<Field::Signature>:
         FieldOfFractionsInclusion<IntegerCanonicalStructure, Field::Signature>,
 {
     pub fn factor_primitive_fof(&self) -> (Field, Polynomial<Integer>) {
@@ -1431,9 +1355,9 @@ where
 }
 
 impl<R: MetaType> MetaType for Polynomial<R> {
-    type Signature = PolynomialStructure<R::Signature, R::Signature>;
+    type Signature = PolynomialStructure<R::Signature>;
 
-    fn structure() -> Self::Signature {
+    fn structure() -> Arc<Self::Signature> {
         PolynomialStructure::new(R::structure())
     }
 }

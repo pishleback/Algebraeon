@@ -7,15 +7,12 @@ use crate::structure::{
 };
 use algebraeon_structures::*;
 use itertools::Itertools;
+use std::sync::Arc;
 
 impl UniqueFactorizationMonoidSignature for NaturalCanonicalStructure {
     type FactoredExponent = NaturalCanonicalStructure;
 
-    fn factorization_exponents(&self) -> &Self::FactoredExponent {
-        Natural::structure_ref()
-    }
-
-    fn into_factorization_exponents(self) -> Self::FactoredExponent {
+    fn factorization_exponents(&self) -> Arc<Self::FactoredExponent> {
         Natural::structure()
     }
 
@@ -41,11 +38,7 @@ impl FactoringMonoidSignature for NaturalCanonicalStructure {
     }
 }
 
-impl<
-    ObjectB: BorrowedStructure<NaturalCanonicalStructure>,
-    ExponentB: BorrowedStructure<NaturalCanonicalStructure>,
-> FactoringStructure<NaturalCanonicalStructure, ObjectB, NaturalCanonicalStructure, ExponentB>
-{
+impl FactoringStructure<NaturalCanonicalStructure, NaturalCanonicalStructure> {
     pub fn euler_totient(&self, a: &Factored<Natural, Natural>) -> Natural {
         #[cfg(debug_assertions)]
         self.validate_element(a).unwrap();
@@ -77,11 +70,7 @@ pub enum IsPrimitiveRootResult {
     Yes,
 }
 
-impl<
-    PowersB: BorrowedStructure<NaturalCanonicalStructure>,
-    ExponentB: BorrowedStructure<NaturalCanonicalStructure>,
-> FactoringStructure<NaturalCanonicalStructure, PowersB, NaturalCanonicalStructure, ExponentB>
-{
+impl FactoringStructure<NaturalCanonicalStructure, NaturalCanonicalStructure> {
     /// Return whether x is a primitive root modulo the factorized value
     pub fn is_primitive_root(
         &self,
@@ -108,13 +97,10 @@ impl<
     }
 }
 
-impl<
-    PowersB: BorrowedStructure<NaturalCanonicalStructure>,
-    ExponentB: BorrowedStructure<NaturalCanonicalStructure>,
-> ToStringSignature
-    for FactoringStructure<NaturalCanonicalStructure, PowersB, NaturalCanonicalStructure, ExponentB>
+impl ToStringSignature
+    for FactoringStructure<NaturalCanonicalStructure, NaturalCanonicalStructure>
 {
-    fn to_string(&self, elem: &Self::Elem) -> String {
+    fn to_string(self: &Arc<Self>, elem: &Self::Elem) -> String {
         use std::fmt::Write;
         let mut f = String::new();
         if let Some(powers) = elem.powers() {

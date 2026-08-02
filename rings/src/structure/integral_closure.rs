@@ -107,20 +107,20 @@ pub trait IntegralClosureExtension: Debug + Clone + Send + Sync {
     type Q: FieldSignature;
     type R: IntegralDomainSignature;
     type K: FieldSignature;
-    type ZQ<BZ: BorrowedStructure<Self::Z>, BQ: BorrowedStructure<Self::Q>>: FieldOfFractionsInclusion<Self::Z, Self::Q>;
-    type ZR<BZ: BorrowedStructure<Self::Z>, BR: BorrowedStructure<Self::R>>: RingHomomorphism<Self::Z, Self::R> + InjectiveFunctionMorphism<Self::Z, Self::R>;
-    type QK<BQ: BorrowedStructure<Self::Q>, BK: BorrowedStructure<Self::K>>: FiniteDimensionalFieldExtension<Self::QKBasis, Self::Q, Self::K>;
-    type RK<BR: BorrowedStructure<Self::R>, BK: BorrowedStructure<Self::K>>: RingHomomorphism<Self::R, Self::K> + InjectiveFunctionMorphism<Self::R, Self::K>;
+    type ZQ: FieldOfFractionsInclusion<Self::Z, Self::Q>;
+    type ZR: RingHomomorphism<Self::Z, Self::R> + InjectiveFunctionMorphism<Self::Z, Self::R>;
+    type QK: FiniteDimensionalFieldExtension<Self::QKBasis, Self::Q, Self::K>;
+    type RK: RingHomomorphism<Self::R, Self::K> + InjectiveFunctionMorphism<Self::R, Self::K>;
 
     fn z_ring(&self) -> &Self::Z;
     fn q_field(&self) -> &Self::Q;
     fn r_ring(&self) -> &Self::R;
     fn k_field(&self) -> &Self::K;
 
-    fn z_to_q<'a>(&'a self) -> Cow<'a, Self::ZQ<&'a Self::Z, &'a Self::Q>>;
-    fn z_to_r<'a>(&'a self) -> Cow<'a, Self::ZR<&'a Self::Z, &'a Self::R>>;
-    fn q_to_k<'a>(&'a self) -> Cow<'a, Self::QK<&'a Self::Q, &'a Self::K>>;
-    fn r_to_k<'a>(&'a self) -> Cow<'a, Self::RK<&'a Self::R, &'a Self::K>>;
+    fn z_to_q<'a>(&'a self) -> Cow<'a, Self::ZQ>;
+    fn z_to_r<'a>(&'a self) -> Cow<'a, Self::ZR>;
+    fn q_to_k<'a>(&'a self) -> Cow<'a, Self::QK>;
+    fn r_to_k<'a>(&'a self) -> Cow<'a, Self::RK>;
 
     /// The square should commute, so this should be both
     /// - `z_to_q` followed by `q_to_k`
@@ -208,14 +208,13 @@ pub trait IntegralClosureExtension: Debug + Clone + Send + Sync {
 ///  - Z and R are Dedekind domains
 ///
 /// This trait allows the ideal pR of R to be factored into prime ideals in R for each prime ideal p of Z
-pub trait DedekindDomainExtension<ZB: BorrowedStructure<Self::Z>, RB: BorrowedStructure<Self::R>>:
-    IntegralClosureExtension
+pub trait DedekindDomainExtension: IntegralClosureExtension
 where
     Self::Z: DedekindDomainSignature,
     Self::R: DedekindDomainSignature,
 {
-    type IdealsZ: DedekindDomainIdealsSignature<Self::Z, ZB>;
-    type IdealsR: DedekindDomainIdealsSignature<Self::R, RB>;
+    type IdealsZ: DedekindDomainIdealsSignature<Self::Z>;
+    type IdealsR: DedekindDomainIdealsSignature<Self::R>;
 
     fn z_ideals(&self) -> &Self::IdealsZ;
 

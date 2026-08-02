@@ -5,6 +5,7 @@ use algebraeon_structures::*;
 use std::borrow::Borrow;
 use std::fmt::Debug;
 use std::marker::PhantomData;
+use std::sync::Arc;
 
 #[derive(Debug, Clone)]
 pub enum FinitelyFreeSubmoduleAffineSubset<Set: Clone + Debug> {
@@ -57,28 +58,25 @@ pub struct FinitelyFreeSubmoduleAffineSubsetsStructure<
     Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
-    ModuleB: BorrowedStructure<Module>,
 > {
     _set: PhantomData<Set>,
     _ring: PhantomData<Ring>,
-    _module: PhantomData<Module>,
-    module: ModuleB,
+    module: Arc<Module>,
 }
 
 impl<
     Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
-    ModuleB: BorrowedStructure<Module>,
-> FinitelyFreeSubmoduleAffineSubsetsStructure<Set, Ring, Module, ModuleB>
+> FinitelyFreeSubmoduleAffineSubsetsStructure<Set, Ring, Module>
 {
-    pub fn new(module: ModuleB) -> Self {
+    pub fn new(module: Arc<Module>) -> Arc<Self> {
         Self {
             _set: PhantomData,
             _ring: PhantomData,
-            _module: PhantomData,
             module,
         }
+        .into()
     }
 }
 
@@ -86,8 +84,7 @@ impl<
     Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
-    ModuleB: BorrowedStructure<Module>,
-> Signature for FinitelyFreeSubmoduleAffineSubsetsStructure<Set, Ring, Module, ModuleB>
+> Signature for FinitelyFreeSubmoduleAffineSubsetsStructure<Set, Ring, Module>
 {
 }
 
@@ -95,12 +92,11 @@ impl<
     Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
-    ModuleB: BorrowedStructure<Module>,
-> SetSignature for FinitelyFreeSubmoduleAffineSubsetsStructure<Set, Ring, Module, ModuleB>
+> SetSignature for FinitelyFreeSubmoduleAffineSubsetsStructure<Set, Ring, Module>
 {
     type Elem = FinitelyFreeSubmoduleAffineSubset<Ring::Elem>;
 
-    fn validate_element(&self, _x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, _x: &Self::Elem) -> Result<(), String> {
         //TODO: better checks
         Ok(())
     }
@@ -110,15 +106,14 @@ impl<
     Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
-    ModuleB: BorrowedStructure<Module>,
-> FinitelyFreeSubmoduleAffineSubsetsStructure<Set, Ring, Module, ModuleB>
+> FinitelyFreeSubmoduleAffineSubsetsStructure<Set, Ring, Module>
 {
-    pub fn ring(&self) -> &Ring {
+    pub fn ring(&self) -> Arc<Ring> {
         self.module().ring()
     }
 
-    pub fn module(&self) -> &Module {
-        self.module.borrow()
+    pub fn module(&self) -> &Arc<Module> {
+        &self.module
     }
 
     pub fn from_affine_span(
@@ -270,11 +265,10 @@ impl<
     Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring> + EqSignature,
-    ModuleB: BorrowedStructure<Module>,
-> EqSignature for FinitelyFreeSubmoduleAffineSubsetsStructure<Set, Ring, Module, ModuleB>
+> EqSignature for FinitelyFreeSubmoduleAffineSubsetsStructure<Set, Ring, Module>
 {
     fn equal(
-        &self,
+        self: &Arc<Self>,
         x: &FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
         y: &FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
     ) -> bool {

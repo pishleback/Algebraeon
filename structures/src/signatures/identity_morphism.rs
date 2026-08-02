@@ -14,12 +14,12 @@ impl<X: Signature> IdentityMorphism<X> {
 }
 
 impl<X: Signature> Morphism<X, X> for IdentityMorphism<X> {
-    fn domain(&self) -> &Arc<X> {
-        &self.x
+    fn domain(&self) -> Arc<X> {
+        self.x.clone()
     }
 
-    fn range(&self) -> &Arc<X> {
-        &self.x
+    fn range(&self) -> Arc<X> {
+        self.x.clone()
     }
 }
 

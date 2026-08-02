@@ -87,7 +87,7 @@ pub struct HenselFactorization<
     RingMod: QuotientRingGetPrincipalIdealSignature<Ring> + EqSignature,
 > {
     make_ring_mod: Arc<dyn Fn(&Ring::Elem) -> RingMod + Send + Sync>,
-    polys: PolynomialStructure<Ring, Ring>,
+    polys: Arc<PolynomialStructure<Ring>>,
     p: Ring::Elem, // An irreducible element of Ring
     k: Natural,
     h: Polynomial<Ring::Elem>, // A polynomial over Ring
@@ -356,16 +356,11 @@ impl<
     /// If the polynomial is squarefree return a hensel factorization, otherwise return None
     pub fn from_mod_field_factorization<
         FieldModP: QuotientRingGetPrincipalIdealSignature<Ring> + FieldSignature,
-        RingModPB: BorrowedStructure<FieldModP>,
-        RingModPPolyB: BorrowedStructure<PolynomialStructure<FieldModP, RingModPB>>,
-        NatB: BorrowedStructure<NaturalCanonicalStructure>,
     >(
         make_ring_mod: impl Fn(&Ring::Elem) -> RingMod + Send + Sync + 'static,
         fs_structure: &FactoringStructure<
-            PolynomialStructure<FieldModP, RingModPB>,
-            RingModPPolyB,
+            PolynomialStructure<FieldModP>,
             NaturalCanonicalStructure,
-            NatB,
         >,
         fs: NonZeroFactored<Polynomial<FieldModP::Elem>, Natural>,
         h: Polynomial<Ring::Elem>,
@@ -649,7 +644,7 @@ mod tests {
     use super::*;
     use crate::structure::{
         MetaEuclideanDivisionSignature, MetaMultiplicationSignature,
-        MetaMultiplicativeMonoidSignature, RingToQuotientFieldSignature,
+        MetaMultiplicativeMonoidSignature,
     };
 
     #[test]

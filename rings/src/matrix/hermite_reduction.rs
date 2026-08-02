@@ -26,7 +26,7 @@ pub trait UniqueReducedHermiteAlgorithmSignature: ReducedHermiteAlgorithmSignatu
 impl UniqueReducedHermiteAlgorithmSignature for IntegerCanonicalStructure {}
 impl<Field: FieldSignature> UniqueReducedHermiteAlgorithmSignature for Field {}
 
-impl<Ring: HermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> MatrixStructure<Ring, RingB> {
+impl<Ring: HermiteAlgorithmSignature> MatrixStructure<Ring> {
     /// Return (H, U, u_det, pivots) such that
     /// - H is in row hermite normal form, meaning
     /// - U is invertible
@@ -178,9 +178,7 @@ impl<Ring: HermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> MatrixStru
     }
 }
 
-impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
-    MatrixStructure<Ring, RingB>
-{
+impl<Ring: ReducedHermiteAlgorithmSignature> MatrixStructure<Ring> {
     /// Returns (H, U, u_det, pivots) such that
     /// - H is in row reduced hermite normal form, meaning entries above pivots have euclidean norm strictly less than the pivot
     /// - U is invertible
@@ -500,8 +498,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::linear::finitely_free_module::RingToFinitelyFreeModuleSignature;
-
     use super::*;
 
     #[test]

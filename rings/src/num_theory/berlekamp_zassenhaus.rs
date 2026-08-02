@@ -69,6 +69,7 @@ use algebraeon_structures::*;
 use itertools::Itertools;
 use std::collections::BTreeSet;
 use std::ops::Rem;
+use std::sync::Arc;
 
 fn compute_polynomial_factor_bound(poly: &Polynomial<Integer>) -> Natural {
     poly.mignotte_factor_coefficient_bound().unwrap()
@@ -248,7 +249,7 @@ mod dminusone_test {
         }
     }
     impl CompositionSignature for DMinusOneTestSemigroup {
-        fn compose(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+        fn compose(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
             DMinusOneTestSemigroupElem {
                 approx_coeff_lower_bound: a
                     .approx_coeff_lower_bound
@@ -348,20 +349,10 @@ mod dminusone_test {
 }
 
 // Polynomial division test. This test is never wrong.
-type ModularFactorMultSemigrp = PolynomialStructure<
-    EuclideanRemainderQuotientStructure<
-        IntegerCanonicalStructure,
-        IntegerCanonicalStructure,
-        false,
-    >,
-    EuclideanRemainderQuotientStructure<
-        IntegerCanonicalStructure,
-        IntegerCanonicalStructure,
-        false,
-    >,
->;
+type ModularFactorMultSemigrp =
+    PolynomialStructure<EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, false>>;
 impl CompositionSignature for ModularFactorMultSemigrp {
-    fn compose(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn compose(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.mul(a, b)
     }
 }
@@ -373,12 +364,12 @@ struct ModularFactorDegreeSumSemigrp {}
 impl Signature for ModularFactorDegreeSumSemigrp {}
 impl SetSignature for ModularFactorDegreeSumSemigrp {
     type Elem = usize;
-    fn validate_element(&self, _x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, _x: &Self::Elem) -> Result<(), String> {
         Ok(())
     }
 }
 impl CompositionSignature for ModularFactorDegreeSumSemigrp {
-    fn compose(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn compose(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         a + b
     }
 }

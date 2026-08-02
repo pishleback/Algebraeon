@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fmt::Display;
 use std::hash::Hash;
+use std::sync::Arc;
 use std::sync::atomic::AtomicUsize;
 
 #[derive(Debug, Clone)]
@@ -162,7 +163,7 @@ impl Monomial {
     }
 
     pub fn evaluate<RS: RingSignature>(
-        &self,
+        self: &Arc<Self>,
         ring: &RS,
         values: &HashMap<Variable, impl Borrow<RS::Elem>>,
     ) -> RS::Elem {
