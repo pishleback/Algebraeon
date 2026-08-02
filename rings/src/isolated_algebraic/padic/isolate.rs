@@ -1,5 +1,4 @@
 use super::*;
-use algebraeon_structures::*;
 use std::collections::HashSet;
 
 // Some algorithms here on p-adic root isolation can be found in

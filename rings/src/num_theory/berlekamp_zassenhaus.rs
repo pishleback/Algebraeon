@@ -95,7 +95,7 @@ impl<'a> StateAtGoodPrime<'a> {
         }
         let p_nat = Natural::from(p);
         debug_assert!(is_prime_nat(&p_nat));
-        let mut mod_p = MontgomeryModuloOddPrimeStructure::new_unchecked(p as u64);
+        let mod_p = MontgomeryModuloOddPrimeStructure::new_unchecked(p as u64);
         mod_p.populate_inv_cache();
         let poly_mod_p = mod_p.polynomials();
         let sqfree_prim_poly_mod_p = sqfree_prim_poly.apply_map(|c| mod_p.project_ref(c));

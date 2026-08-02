@@ -1,6 +1,13 @@
+{ pkgs, ... }:
+
 {
   languages.rust = {
-    enable = true; 
+    enable = true;
     channel = "stable";
   };
+
+  packages = with pkgs; [
+    clang
+    llvmPackages.bintools
+  ];
 }

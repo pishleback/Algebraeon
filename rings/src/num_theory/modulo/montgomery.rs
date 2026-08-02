@@ -332,7 +332,7 @@ impl MontgomeryModuloOddPrimeStructure {
         if inv_cache.is_none() {
             *inv_cache = Some(
                 (0..self.sup.n)
-                    .map(|a| self.try_reciprocal_impl(&a).unwrap_or(0))
+                    .map(|a| self.reciprocal_impl(&a).unwrap_or(0))
                     .collect::<Vec<_>>(),
             )
         }
@@ -479,10 +479,16 @@ impl QuotientRingGetPrincipalIdealSignature<IntegerCanonicalStructure>
 }
 
 impl MontgomeryModuloOddPrimeStructure {
-    fn try_reciprocal_impl(
+    fn reciprocal_impl(
         &self,
         a: &<Self as SetSignature>::Elem,
     ) -> Option<<Self as SetSignature>::Elem> {
+        Some(self.montgomery_reduction(inv_mod_n_u64(*a, self.sup.n)? * self.sup.r_cubed_mod_n))
+    }
+}
+
+impl TryReciprocalSignature for MontgomeryModuloOddPrimeStructure {
+    fn try_reciprocal(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         if let Some(cache) = self.inv_cache.lock().unwrap().as_ref() {
             if *a == 0 {
                 None
@@ -490,20 +496,7 @@ impl MontgomeryModuloOddPrimeStructure {
                 Some(cache[*a as usize])
             }
         } else {
-            let b =
-                self.montgomery_reduction(inv_mod_n_u64(*a, self.sup.n)? * self.sup.r_cubed_mod_n);
-            Some(b)
-        }
-    }
-}
-
-impl TryReciprocalSignature for MontgomeryModuloOddPrimeStructure {
-    fn try_reciprocal(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
-        if let Some(b) = self.try_reciprocal_impl(a) {
-            debug_assert!(self.equal(&self.mul(a, &b), &self.one()));
-            Some(b)
-        } else {
-            None
+            self.reciprocal_impl(a)
         }
     }
 }
@@ -587,7 +580,7 @@ mod tests {
 
     #[test]
     fn odd_prime_arithmetic() {
-        let mut ring = MontgomeryModuloOddPrimeStructure::new_unchecked(13);
+        let ring = MontgomeryModuloOddPrimeStructure::new_unchecked(13);
 
         assert!(ring.equal(&ring.zero(), &0));
         assert!(ring.equal(&ring.add(&1, &2), &3));

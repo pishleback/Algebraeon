@@ -1,9 +1,7 @@
 use crate::{
     algebraic_number_field::{AlgebraicNumberFieldSignature, anf_multi_primitive_element_theorem},
     matrix::Matrix,
-    polynomial::{
-        Polynomial, PolynomialQuotientRingStructure, PolynomialStructure, ToPolynomialSignature,
-    },
+    polynomial::{Polynomial, PolynomialQuotientRingStructure, ToPolynomialSignature},
     structure::{
         AdditiveGroupSignature, CancellativeMultiplicationSignature, CharZeroFieldSignature,
         FactoringMonoidSignature, FiniteDimensionalFieldExtension, FreeModuleSignature,
@@ -15,10 +13,7 @@ use crate::{
 use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 use algebraeon_structures::*;
 use itertools::Itertools;
-use std::{
-    borrow::{Borrow, Cow},
-    sync::Arc,
-};
+use std::{borrow::Cow, sync::Arc};
 
 pub type AlgebraicNumberFieldPolynomialQuotientStructure =
     PolynomialQuotientRingStructure<RationalCanonicalStructure, true>;

@@ -5,7 +5,6 @@ use crate::{
         RealSubsetSignature, RingSignature,
     },
 };
-use algebraeon_structures::*;
 use std::{borrow::Borrow, sync::Arc};
 
 pub trait ComplexInnerProduct<Ring: ComplexSubsetSignature> {
@@ -136,10 +135,3 @@ impl<Ring: RealSubsetSignature + RingSignature> RealInnerProduct<Ring>
     for RealSymmetricInnerProduct<Ring>
 {
 }
-
-// struct ComplexHermitianInnerProduct {
-//     // Hermitian and positive-definite
-//     mat: Matrix,
-// }
-
-// impl InnerProduct for ComplexHermitianInnerProduct {}

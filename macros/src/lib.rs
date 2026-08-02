@@ -374,26 +374,54 @@ pub fn signature_meta_trait(_args: TokenStream, input: TokenStream) -> TokenStre
     .into()
 }
 
+fn is_arc_self_type(ty: &Type) -> bool {
+    let Type::Path(tp) = ty else {
+        return false;
+    };
+
+    let Some(seg) = tp.path.segments.last() else {
+        return false;
+    };
+
+    if seg.ident != "Arc" {
+        return false;
+    }
+
+    let syn::PathArguments::AngleBracketed(args) = &seg.arguments else {
+        return false;
+    };
+
+    matches!(
+        args.args.first(),
+        Some(syn::GenericArgument::Type(Type::Path(inner)))
+            if inner.path.is_ident("Self")
+    )
+}
+
 // check for `self: &Arc<Self>`
 fn is_ref_arc_self(arg: &FnArg) -> bool {
-    let expected: Type = parse_quote!(&Arc<Self>);
-
     let FnArg::Receiver(receiver) = arg else {
         return false;
     };
 
-    receiver.colon_token.is_some() && receiver.ty.as_ref() == &expected
+    if receiver.colon_token.is_none() {
+        return false;
+    }
+
+    let Type::Reference(r) = receiver.ty.as_ref() else {
+        return false;
+    };
+
+    is_arc_self_type(r.elem.as_ref())
 }
 
 // check for `self: Arc<Self>`
 fn is_arc_self(arg: &FnArg) -> bool {
-    let expected: Type = parse_quote!(Arc<Self>);
-
     let FnArg::Receiver(receiver) = arg else {
         return false;
     };
 
-    receiver.colon_token.is_some() && receiver.ty.as_ref() == &expected
+    receiver.colon_token.is_some() && is_arc_self_type(receiver.ty.as_ref())
 }
 
 // check for `&self`
