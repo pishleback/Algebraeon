@@ -114,7 +114,7 @@ impl<Set: OrdSignature> OrdSignature for FiniteSubsetByOrdStructure<Set> {
 
 impl<Set: OrdSignature> CountableSetSignature for FiniteSubsetByOrdStructure<Set> {
     fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
-        self.list_all_elements().into_iter()
+        self.subset.elems.clone().into_iter()
     }
 }
 
