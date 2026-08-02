@@ -20,8 +20,8 @@ use algebraeon_sets::combinatorics::num_partitions_part_pool;
 use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 use algebraeon_structures::*;
 use itertools::Itertools;
+use std::borrow::Cow;
 use std::sync::Arc;
-use std::{borrow::Cow, marker::PhantomData};
 
 type FinitelyFreeIntegerSubmodulesStructure = FinitelyFreeSubmodulesStructure<
     EnumeratedFiniteSetStructure,
@@ -920,11 +920,11 @@ impl<K: AlgebraicNumberFieldSignature> DedekindDomainExtension
     type IdealsR = OrderIdealsStructure<K, true>;
 
     fn z_ideals(self: &Arc<Self>) -> Arc<Self::IdealsZ> {
-        self.z_ideals()
+        self.z_ideals().clone()
     }
 
     fn r_ideals(self: &Arc<Self>) -> Arc<Self::IdealsR> {
-        self.r_ideals()
+        self.r_ideals().clone()
     }
 
     fn ideal_norm(self: &Arc<Self>, ideal: &<Self::IdealsR as SetSignature>::Elem) -> Natural {

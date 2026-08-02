@@ -143,11 +143,11 @@ impl<
         .into()
     }
 
-    pub fn z_ideals(&self) -> &Arc<IdealsZ> {
+    pub fn z_ideals(self: &Arc<Self>) -> &Arc<IdealsZ> {
         &self.ideals_z
     }
 
-    pub fn r_ideals(&self) -> &Arc<IdealsR> {
+    pub fn r_ideals(self: &Arc<Self>) -> &Arc<IdealsR> {
         &self.ideals_r
     }
 }

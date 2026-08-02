@@ -199,7 +199,7 @@ where
         let (subspace, embedded_pts) = spx.into_affine_span();
         let embedded_spx = subspace.embedded_space().simplex(embedded_pts).unwrap();
         Self {
-            ambient_space: ambient_space,
+            ambient_space,
             subspace,
             facets: embedded_spx.oriented_facets(),
             interior: vec![embedded_spx],

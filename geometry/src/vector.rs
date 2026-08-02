@@ -1,8 +1,6 @@
-use crate::ambient_space::{AffineSpace, common_space};
-
 use super::*;
+use crate::ambient_space::{AffineSpace, common_space};
 use algebraeon_rings::matrix::{Matrix, MatrixStructure};
-use std::borrow::Borrow;
 use std::hash::Hash;
 
 #[derive(Clone)]
@@ -66,7 +64,7 @@ impl<FS: FieldSignature> Vector<FS> {
         ambient_space: &AffineSpace<FS>,
         coordinate_func: impl FnMut(usize) -> FS::Elem,
     ) -> Self {
-        let coordinates = (0..ambient_space.borrow().linear_dimension().unwrap())
+        let coordinates = (0..ambient_space.linear_dimension().unwrap())
             .map(coordinate_func)
             .collect();
         Self {
@@ -76,7 +74,7 @@ impl<FS: FieldSignature> Vector<FS> {
     }
 
     pub fn zero(ambient_space: &AffineSpace<FS>) -> Self {
-        let field = ambient_space.borrow().field().clone();
+        let field = ambient_space.field().clone();
         Self::construct(ambient_space, |_i| field.zero())
     }
 
@@ -111,7 +109,7 @@ impl<FS: FieldSignature> Vector<FS> {
 
 impl<FS: FieldSignature> AffineSpace<FS> {
     pub fn vector(&self, coordinates: impl IntoIterator<Item = impl Into<FS::Elem>>) -> Vector<FS> {
-        Vector::new(&self, coordinates)
+        Vector::new(self, coordinates)
     }
 
     pub fn rows_from_vectors(&self, vecs: Vec<&Vector<FS>>) -> Matrix<FS::Elem> {
@@ -130,12 +128,7 @@ impl<FS: FieldSignature> AffineSpace<FS> {
     pub fn vectors_from_rows(&self, mat: &Matrix<FS::Elem>) -> Vec<Vector<FS>> {
         assert_eq!(mat.cols(), self.linear_dimension().unwrap());
         (0..mat.rows())
-            .map(|r| {
-                Vector::new(
-                    &self,
-                    (0..mat.cols()).map(|c| mat.at(r, c).unwrap().clone()),
-                )
-            })
+            .map(|r| Vector::new(self, (0..mat.cols()).map(|c| mat.at(r, c).unwrap().clone())))
             .collect()
     }
 

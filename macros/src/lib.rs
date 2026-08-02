@@ -9,7 +9,7 @@ use syn::token::Comma;
 use syn::visit_mut::VisitMut;
 use syn::{
     Attribute, DeriveInput, Error, FnArg, GenericArgument, GenericParam, Ident, ItemTrait, LitInt,
-    PatIdent, Receiver, Token, TraitItem, TraitItemFn, Type, parse_macro_input, parse_quote,
+    PatIdent, Receiver, Token, TraitItem, TraitItemFn, Type, parse_macro_input,
 };
 
 fn has_option(attrs: &[Attribute], option_name: &str) -> bool {

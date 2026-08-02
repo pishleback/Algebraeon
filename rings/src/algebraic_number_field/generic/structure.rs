@@ -482,7 +482,6 @@ mod anf_inclusion {
                 RingToIdealsSignature,
             },
         };
-        use std::borrow::Cow;
 
         /// Q -> K
         /// ↑    ↑
@@ -629,11 +628,11 @@ mod anf_inclusion {
                 .into()
             }
 
-            pub fn z_ideals(&self) -> &IdealsZ {
+            pub fn z_ideals(self: &Arc<Self>) -> &Arc<IdealsZ> {
                 &self.ideals_z
             }
 
-            pub fn r_ideals(&self) -> &IdealsR {
+            pub fn r_ideals(self: &Arc<Self>) -> &Arc<IdealsR> {
                 &self.ideals_r
             }
         }

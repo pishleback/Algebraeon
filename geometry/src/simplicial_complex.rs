@@ -292,7 +292,7 @@ where
     FS::Elem: Hash,
 {
     let labelled_interior =
-        LabelledSimplicialDisjointUnion::new_labelled_unchecked(&space, labelled_interior);
+        LabelledSimplicialDisjointUnion::new_labelled_unchecked(space, labelled_interior);
 
     let interior_uniform_label = {
         let labels = labelled_interior
@@ -347,7 +347,7 @@ where
             }
 
             let labelled_new_interior = LabelledSimplicialDisjointUnion::new_labelled_unchecked(
-                &space,
+                space,
                 nonadjacent_simplexes
                     .into_iter()
                     .enumerate()
@@ -485,7 +485,7 @@ where
             };
 
             let nbd_affine_subspace = EmbeddedAffineSubspace::new_affine_span(
-                &self.ambient_space(),
+                self.ambient_space(),
                 nbd_points.iter().collect(),
             );
 
@@ -516,7 +516,7 @@ where
                 .collect::<HashSet<_>>();
 
             let nbd = LabelledSimplicialComplex::<FS, T>::try_new(
-                &nbd_affine_subspace.embedded_space(),
+                nbd_affine_subspace.embedded_space(),
                 {
                     let mut simplexes = HashSet::new();
                     simplexes.extend(star_img.keys().cloned());

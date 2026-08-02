@@ -51,10 +51,7 @@ where
             assert_eq!(ambient_space, point.ambient_space());
         }
         points.sort_unstable();
-        if ambient_space
-            .borrow()
-            .are_points_affine_independent(points.iter().collect())
-        {
+        if ambient_space.are_points_affine_independent(points.iter().collect()) {
             Ok(Self {
                 ambient_space: ambient_space.clone(),
                 points,

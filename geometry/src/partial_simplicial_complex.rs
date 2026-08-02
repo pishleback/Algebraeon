@@ -49,7 +49,7 @@ where
         ambient_space: &AffineSpace<FS>,
         simplexes: std::collections::HashMap<Simplex<FS>, T>,
     ) -> Self {
-        Self::try_new_labelled(&ambient_space, simplexes).unwrap()
+        Self::try_new_labelled(ambient_space, simplexes).unwrap()
     }
 
     fn ambient_space(&self) -> &AffineSpace<FS> {

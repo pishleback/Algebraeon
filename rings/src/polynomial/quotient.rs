@@ -47,7 +47,7 @@ impl<FS: FieldSignature, const IS_FIELD: bool> PolynomialQuotientRingStructure<F
 where
     PolynomialStructure<FS>: SetSignature<Elem = Polynomial<FS::Elem>>,
 {
-    pub fn generator(&self) -> Polynomial<FS::Elem> {
+    pub fn generator(self: &Arc<Self>) -> Polynomial<FS::Elem> {
         self.ring().var()
     }
 
