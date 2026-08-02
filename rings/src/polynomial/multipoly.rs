@@ -163,8 +163,8 @@ impl Monomial {
     }
 
     pub fn evaluate<RS: RingSignature>(
-        self: &Arc<Self>,
-        ring: &RS,
+        &self,
+        ring: &Arc<RS>,
         values: &HashMap<Variable, impl Borrow<RS::Elem>>,
     ) -> RS::Elem {
         ring.product(

@@ -122,7 +122,7 @@ impl<'a> StateAtGoodPrime<'a> {
                         "Modulus lifted too far for this implementation of Montgomery form",
                     ))
                 },
-                &poly_mod_p.factorizations(),
+                poly_mod_p.factorizations(),
                 fs,
                 sqfree_prim_poly.clone(),
             )
@@ -151,7 +151,7 @@ impl<'a> StateAtGoodPrime<'a> {
 }
 
 struct MemoryStack<SG: AssociativeCompositionSignature> {
-    semigroup: SG,
+    semigroup: Arc<SG>,
     modular_factor_values: Vec<SG::Elem>,
     // Store the partial products of a previous calculation
     // Since subsets are visited in lexcographic order, if a test is performed frequently, values towards the right will need to be updated
@@ -167,7 +167,7 @@ struct MemoryStack<SG: AssociativeCompositionSignature> {
 }
 
 impl<SG: AssociativeCompositionSignature> MemoryStack<SG> {
-    fn new(semigroup: SG, modular_factor_values: Vec<SG::Elem>) -> Self {
+    fn new(semigroup: Arc<SG>, modular_factor_values: Vec<SG::Elem>) -> Self {
         Self {
             semigroup,
             modular_factor_values,
@@ -244,7 +244,7 @@ mod dminusone_test {
     impl SetSignature for DMinusOneTestSemigroup {
         type Elem = DMinusOneTestSemigroupElem;
 
-        fn validate_element(&self, _x: &Self::Elem) -> Result<(), String> {
+        fn validate_element(self: &Arc<Self>, _x: &Self::Elem) -> Result<(), String> {
             Ok(())
         }
     }
@@ -298,7 +298,7 @@ mod dminusone_test {
                         .try_into()
                         .unwrap_or(usize::MAX),
                 memory_stack: MemoryStack::new(
-                    DMinusOneTestSemigroup {},
+                    DMinusOneTestSemigroup {}.into(),
                     modular_factors
                         .iter()
                         .map(|g| {
@@ -392,13 +392,13 @@ impl<'a> StateAtGoodPrime<'a> {
             dminusone_test::DMinusOneTest::new(modulus, self.sqfree_prim_poly, modular_factors);
         let mut modular_factor_product_memory_stack = MemoryStack::new(
             Integer::structure()
-                .into_euclidean_quotient_ring(modulus.clone())
+                .euclidean_quotient_ring(modulus.clone())
                 .unwrap()
-                .into_polynomials(),
+                .polynomials(),
             modular_factors.clone(),
         );
         let mut modular_factor_degree_memory_stack = MemoryStack::new(
-            ModularFactorDegreeSumSemigrp {},
+            ModularFactorDegreeSumSemigrp {}.into(),
             modular_factors
                 .iter()
                 .map(|mf| mf.degree().unwrap())
@@ -606,8 +606,7 @@ pub fn factorize_by_berlekamp_zassenhaus_algorithm(
                 #[cfg(debug_assertions)]
                 let disc = poly.clone().discriminant().unwrap();
                 for p in SQUARE_FREE_TEST_PRIMES {
-                    let mod_p =
-                        Integer::structure().into_quotient_field_unchecked(Integer::from(p));
+                    let mod_p = Integer::structure().quotient_field_unchecked(Integer::from(p));
                     let poly_mod_p = mod_p.polynomials();
 
                     if Integer::structure()
@@ -658,7 +657,7 @@ fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
     } else {
         let prime_gen = primes();
         for p in prime_gen {
-            let mod_p = Integer::structure().into_quotient_field_unchecked(Integer::from(p));
+            let mod_p = Integer::structure().quotient_field_unchecked(Integer::from(p));
             let poly_mod_p = mod_p.polynomials();
             if poly_mod_p.degree(&f).unwrap() == f_deg {
                 let facotred_f_mod_p = poly_mod_p.factor(&f).unwrap_nonzero();

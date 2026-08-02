@@ -222,11 +222,11 @@ pub struct FiniteSubgroup<Set> {
 }
 
 impl<Set> FiniteSubgroup<Set> {
-    pub fn size(self: &Arc<Self>) -> usize {
+    pub fn size(&self) -> usize {
         self.elems.len()
     }
 
-    pub fn elements(self: &Arc<Self>) -> impl Iterator<Item = &Set> {
+    pub fn elements(&self) -> impl Iterator<Item = &Set> {
         self.elems.iter()
     }
 }

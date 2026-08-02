@@ -111,7 +111,7 @@ impl<D: BorrowedElem<Integer>> Signature for QuadraticNumberFieldStructure<D> {}
 impl<D: BorrowedElem<Integer>> SetSignature for QuadraticNumberFieldStructure<D> {
     type Elem = QuadraticNumberFieldElement;
 
-    fn validate_element(&self, _: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, _: &Self::Elem) -> Result<(), String> {
         Ok(())
     }
 }
@@ -126,15 +126,15 @@ impl<D: BorrowedElem<Integer>> RinglikeSpecializationSignature
     for QuadraticNumberFieldStructure<D>
 {
     fn try_ring_restructure(
-        self: &Arc<Self>,
+        self: Arc<Self>,
     ) -> Option<Arc<impl EqSignature<Elem = Self::Elem> + RingSignature>> {
-        Some(self.clone())
+        Some(self)
     }
 
     fn try_char_zero_ring_restructure(
-        self: &Arc<Self>,
+        self: Arc<Self>,
     ) -> Option<Arc<impl EqSignature<Elem = Self::Elem> + CharZeroRingSignature>> {
-        Some(self.clone())
+        Some(self)
     }
 }
 
@@ -284,7 +284,7 @@ impl<D: BorrowedElem<Integer>> SemiModuleSignature<RationalCanonicalStructure>
     for QuadraticNumberFieldStructure<D>
 {
     fn ring(self: &Arc<Self>) -> Arc<RationalCanonicalStructure> {
-        Rational::structure_ref()
+        Rational::structure()
     }
 
     fn scalar_mul(self: &Arc<Self>, a: &Self::Elem, x: &Rational) -> Self::Elem {
@@ -362,14 +362,14 @@ impl<D: BorrowedElem<Integer>> AlgebraicNumberFieldSignature for QuadraticNumber
         PrincipalRationalMap::new(self.clone())
     }
 
-    fn generator(&self) -> Self::Elem {
+    fn generator(self: &Arc<Self>) -> Self::Elem {
         QuadraticNumberFieldElement {
             rational_part: Rational::ZERO,
             algebraic_part: Rational::ONE,
         }
     }
 
-    fn discriminant(&self) -> Integer {
+    fn discriminant(self: &Arc<Self>) -> Integer {
         let d_mod_4 = self.d() % Integer::from(4);
         if d_mod_4 == Integer::from(1) {
             // d if d = 1 (mod 4)
@@ -383,11 +383,11 @@ impl<D: BorrowedElem<Integer>> AlgebraicNumberFieldSignature for QuadraticNumber
         }
     }
 
-    fn integral_basis(&self) -> Vec<Self::Elem> {
+    fn integral_basis(self: &Arc<Self>) -> Vec<Self::Elem> {
         todo!()
     }
 
-    fn is_algebraic_integer(&self, a: &Self::Elem) -> bool {
+    fn is_algebraic_integer(self: &Arc<Self>, a: &Self::Elem) -> bool {
         self.ring_of_integers()
             .outbound_roi_to_anf_inclusion()
             .try_preimage(a)

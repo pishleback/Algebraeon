@@ -1,5 +1,6 @@
 use super::*;
 use algebraeon_structures::*;
+use std::sync::Arc;
 
 impl<RS: GreatestCommonDivisorSignature> MatrixStructure<RS> {
     pub fn factor_primitive(
@@ -31,7 +32,7 @@ pub fn factor_primitive_fof<
     Field: FieldSignature,
     Fof: FieldOfFractionsInclusion<Ring, Field>,
 >(
-    fof_inclusion: &Fof,
+    fof_inclusion: &Arc<Fof>,
     mat: &Matrix<Field::Elem>,
 ) -> (Field::Elem, Matrix<Ring::Elem>) {
     let ring = fof_inclusion.domain();

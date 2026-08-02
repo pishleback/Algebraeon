@@ -17,7 +17,7 @@ pub trait RingToIdealsSignature: RingSignature {
 #[signature_meta_trait]
 pub trait IdealsSignature<Ring: RingSignature>: SetSignature {
     #[skip_meta]
-    fn ring(&self) -> Arc<Ring>;
+    fn ring(self: &Arc<Self>) -> Arc<Ring>;
 }
 
 #[signature_meta_trait]

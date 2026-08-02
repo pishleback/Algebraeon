@@ -371,7 +371,7 @@ where
     // }
 
     fn factorize_monic_squarefree_by_berlekamps(
-        &self,
+        self: &Arc<Self>,
         f: &Polynomial<FS::Elem>,
     ) -> Factored<Polynomial<FS::Elem>, Natural> {
         debug_assert!(self.is_monic(f));
@@ -864,7 +864,7 @@ mod tests {
     fn test_factorize_over_f5_example1() {
         let x = &Polynomial::<Modulo<5>>::var().into_ergonomic();
         let p = (1 + x.pow(4)).pow(5).into_verbose();
-        let fs = Polynomial::<Modulo<5>>::structure().into_factorizations();
+        let fs = Polynomial::<Modulo<5>>::structure().factorizations();
         let ans = fs.new_unit_and_powers_unchecked(
             Polynomial::one(),
             vec![

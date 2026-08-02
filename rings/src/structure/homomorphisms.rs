@@ -182,19 +182,19 @@ mod principal_subring_inclusion {
     }
 
     impl<Ring: RingSignature> Morphism<IntegerCanonicalStructure, Ring> for PrincipalIntegerMap<Ring> {
-        fn domain(&self) -> &IntegerCanonicalStructure {
-            Integer::structure_ref()
+        fn domain(self: &Arc<Self>) -> Arc<IntegerCanonicalStructure> {
+            Integer::structure()
         }
 
-        fn range(&self) -> &Ring {
-            self.ring.borrow()
+        fn range(self: &Arc<Self>) -> Arc<Ring> {
+            self.ring.clone()
         }
     }
 
     impl<Ring: RingSignature> FunctionMorphism<IntegerCanonicalStructure, Ring>
         for PrincipalIntegerMap<Ring>
     {
-        fn image(&self, x: &Integer) -> <Ring as SetSignature>::Elem {
+        fn image(self: &Arc<Self>, x: &Integer) -> <Ring as SetSignature>::Elem {
             self.range().from_int(x)
         }
     }
@@ -202,7 +202,7 @@ mod principal_subring_inclusion {
     impl<Ring: CharZeroRingSignature> InjectiveFunctionMorphism<IntegerCanonicalStructure, Ring>
         for PrincipalIntegerMap<Ring>
     {
-        fn try_preimage(&self, x: &<Ring as SetSignature>::Elem) -> Option<Integer> {
+        fn try_preimage(self: &Arc<Self>, x: &<Ring as SetSignature>::Elem) -> Option<Integer> {
             self.range().try_to_int(x)
         }
     }
@@ -227,11 +227,11 @@ mod principal_subring_inclusion {
     impl<Field: CharZeroFieldSignature> Morphism<RationalCanonicalStructure, Field>
         for PrincipalRationalMap<Field>
     {
-        fn domain(&self) -> Arc<RationalCanonicalStructure> {
+        fn domain(self: &Arc<Self>) -> Arc<RationalCanonicalStructure> {
             Rational::structure()
         }
 
-        fn range(&self) -> Arc<Field> {
+        fn range(self: &Arc<Self>) -> Arc<Field> {
             self.field.clone()
         }
     }
@@ -239,7 +239,7 @@ mod principal_subring_inclusion {
     impl<Field: CharZeroFieldSignature> FunctionMorphism<RationalCanonicalStructure, Field>
         for PrincipalRationalMap<Field>
     {
-        fn image(&self, x: &Rational) -> <Field as SetSignature>::Elem {
+        fn image(self: &Arc<Self>, x: &Rational) -> <Field as SetSignature>::Elem {
             self.range().try_from_rat(x).unwrap()
         }
     }
@@ -247,7 +247,7 @@ mod principal_subring_inclusion {
     impl<Field: CharZeroFieldSignature> InjectiveFunctionMorphism<RationalCanonicalStructure, Field>
         for PrincipalRationalMap<Field>
     {
-        fn try_preimage(&self, x: &<Field as SetSignature>::Elem) -> Option<Rational> {
+        fn try_preimage(self: &Arc<Self>, x: &<Field as SetSignature>::Elem) -> Option<Rational> {
             self.range().try_to_rat(x)
         }
     }
@@ -263,11 +263,11 @@ pub use principal_subring_inclusion::*;
 pub trait FieldOfFractionsInclusion<Ring: RingSignature, Field: FieldSignature>:
     RingHomomorphism<Ring, Field> + InjectiveFunctionMorphism<Ring, Field>
 {
-    fn numerator_and_denominator(&self, a: &Field::Elem) -> (Ring::Elem, Ring::Elem);
-    fn numerator(&self, a: &Field::Elem) -> Ring::Elem {
+    fn numerator_and_denominator(self: &Arc<Self>, a: &Field::Elem) -> (Ring::Elem, Ring::Elem);
+    fn numerator(self: &Arc<Self>, a: &Field::Elem) -> Ring::Elem {
         self.numerator_and_denominator(a).0
     }
-    fn denominator(&self, a: &Field::Elem) -> Ring::Elem {
+    fn denominator(self: &Arc<Self>, a: &Field::Elem) -> Ring::Elem {
         self.numerator_and_denominator(a).1
     }
 }
@@ -279,7 +279,7 @@ pub trait IntegralDomainExtensionAllPolynomialRoots<
 >: RingHomomorphism<A, B> + InjectiveFunctionMorphism<A, B>
 {
     /// Return all roots of the polynomial in B with duplicate elements according to multiplicity
-    fn all_roots(&self, polynomial: &Polynomial<A::Elem>) -> Vec<B::Elem>;
+    fn all_roots(self: &Arc<Self>, polynomial: &Polynomial<A::Elem>) -> Vec<B::Elem>;
 }
 
 /// A ring extension Z -> R such that R is a finitely free Z-module
@@ -287,19 +287,19 @@ pub trait FiniteRankFreeRingExtension<Basis: FiniteSetSignature, Z: RingSignatur
     RingHomomorphism<Z, R> + InjectiveFunctionMorphism<Z, R>
 {
     // things inherited from the finitely free domain-module structure on the range
-    fn degree(&self) -> usize;
-    fn to_vec(&self, a: &R::Elem) -> Vec<Z::Elem>;
-    fn from_vec(&self, v: Vec<impl Borrow<Z::Elem>>) -> R::Elem;
-    fn to_col(&self, a: &R::Elem) -> Matrix<Z::Elem>;
-    fn from_col(&self, v: Matrix<Z::Elem>) -> R::Elem;
-    fn to_row(&self, a: &R::Elem) -> Matrix<Z::Elem>;
-    fn from_row(&self, v: Matrix<Z::Elem>) -> R::Elem;
+    fn degree(self: &Arc<Self>) -> usize;
+    fn to_vec(self: &Arc<Self>, a: &R::Elem) -> Vec<Z::Elem>;
+    fn from_vec(self: &Arc<Self>, v: Vec<impl Borrow<Z::Elem>>) -> R::Elem;
+    fn to_col(self: &Arc<Self>, a: &R::Elem) -> Matrix<Z::Elem>;
+    fn from_col(self: &Arc<Self>, v: Matrix<Z::Elem>) -> R::Elem;
+    fn to_row(self: &Arc<Self>, a: &R::Elem) -> Matrix<Z::Elem>;
+    fn from_row(self: &Arc<Self>, v: Matrix<Z::Elem>) -> R::Elem;
 
     /// matrix representing column vector multiplication by `a` on the left
-    fn col_multiplication_matrix(&self, a: &R::Elem) -> Matrix<Z::Elem>;
+    fn col_multiplication_matrix(self: &Arc<Self>, a: &R::Elem) -> Matrix<Z::Elem>;
 
     /// matrix representing row vector multiplication by `a` on the right
-    fn row_multiplication_matrix(&self, a: &R::Elem) -> Matrix<Z::Elem>;
+    fn row_multiplication_matrix(self: &Arc<Self>, a: &R::Elem) -> Matrix<Z::Elem>;
 }
 
 impl<
@@ -312,29 +312,29 @@ where
     for<'h> RingHomomorphismRangeModuleStructure<Z, R, Self>:
         FinitelyFreeModuleSignature<Basis, Z, Elem = R::Elem>,
 {
-    fn degree(&self) -> usize {
+    fn degree(self: &Arc<Self>) -> usize {
         self.range_module_structure().rank()
     }
-    fn to_vec(&self, a: &R::Elem) -> Vec<Z::Elem> {
+    fn to_vec(self: &Arc<Self>, a: &R::Elem) -> Vec<Z::Elem> {
         self.range_module_structure().to_vec(a)
     }
-    fn from_vec(&self, v: Vec<impl Borrow<Z::Elem>>) -> R::Elem {
+    fn from_vec(self: &Arc<Self>, v: Vec<impl Borrow<Z::Elem>>) -> R::Elem {
         self.range_module_structure().from_vec(v)
     }
-    fn to_col(&self, a: &R::Elem) -> Matrix<Z::Elem> {
+    fn to_col(self: &Arc<Self>, a: &R::Elem) -> Matrix<Z::Elem> {
         self.range_module_structure().to_col(a)
     }
-    fn from_col(&self, v: Matrix<Z::Elem>) -> R::Elem {
+    fn from_col(self: &Arc<Self>, v: Matrix<Z::Elem>) -> R::Elem {
         self.range_module_structure().from_col(v)
     }
-    fn to_row(&self, a: &R::Elem) -> Matrix<Z::Elem> {
+    fn to_row(self: &Arc<Self>, a: &R::Elem) -> Matrix<Z::Elem> {
         self.range_module_structure().to_row(a)
     }
-    fn from_row(&self, v: Matrix<Z::Elem>) -> R::Elem {
+    fn from_row(self: &Arc<Self>, v: Matrix<Z::Elem>) -> R::Elem {
         self.range_module_structure().from_row(v)
     }
 
-    fn col_multiplication_matrix(&self, a: &R::Elem) -> Matrix<Z::Elem> {
+    fn col_multiplication_matrix(self: &Arc<Self>, a: &R::Elem) -> Matrix<Z::Elem> {
         let basis = self.range_module_structure().basis_vecs();
         Matrix::from_cols(
             (0..self.degree())
@@ -346,7 +346,7 @@ where
         )
     }
 
-    fn row_multiplication_matrix(&self, a: &R::Elem) -> Matrix<Z::Elem> {
+    fn row_multiplication_matrix(self: &Arc<Self>, a: &R::Elem) -> Matrix<Z::Elem> {
         self.col_multiplication_matrix(a).transpose()
     }
 }
@@ -359,14 +359,14 @@ pub trait FiniteDimensionalFieldExtension<
 >:
     RingHomomorphism<F, K> + InjectiveFunctionMorphism<F, K> + FiniteRankFreeRingExtension<Basis, F, K>
 {
-    fn norm(&self, a: &K::Elem) -> F::Elem;
+    fn norm(self: &Arc<Self>, a: &K::Elem) -> F::Elem;
 
-    fn trace(&self, a: &K::Elem) -> F::Elem;
+    fn trace(self: &Arc<Self>, a: &K::Elem) -> F::Elem;
 
     /// The monic minimal polynomial of a
-    fn min_poly(&self, a: &K::Elem) -> Polynomial<F::Elem>;
+    fn min_poly(self: &Arc<Self>, a: &K::Elem) -> Polynomial<F::Elem>;
 
-    fn trace_form_matrix(&self, elems: &[K::Elem]) -> Matrix<F::Elem> {
+    fn trace_form_matrix(self: &Arc<Self>, elems: &[K::Elem]) -> Matrix<F::Elem> {
         let n = self.degree();
         assert_eq!(n, elems.len());
         Matrix::construct(n, n, |r, c| {
@@ -374,7 +374,7 @@ pub trait FiniteDimensionalFieldExtension<
         })
     }
 
-    fn discriminant(&self, elems: &[K::Elem]) -> F::Elem {
+    fn discriminant(self: &Arc<Self>, elems: &[K::Elem]) -> F::Elem {
         MatrixStructure::new(self.domain().clone())
             .det(self.trace_form_matrix(elems))
             .unwrap()
@@ -391,19 +391,19 @@ where
     for<'h> RingHomomorphismRangeModuleStructure<F, K, Self>:
         FinitelyFreeModuleSignature<Basis, F, Elem = K::Elem>,
 {
-    fn norm(&self, a: &K::Elem) -> F::Elem {
+    fn norm(self: &Arc<Self>, a: &K::Elem) -> F::Elem {
         MatrixStructure::new(self.domain().clone())
             .det(self.col_multiplication_matrix(a))
             .unwrap()
     }
 
-    fn trace(&self, a: &K::Elem) -> F::Elem {
+    fn trace(self: &Arc<Self>, a: &K::Elem) -> F::Elem {
         MatrixStructure::new(self.domain().clone())
             .trace(&self.col_multiplication_matrix(a))
             .unwrap()
     }
 
-    fn min_poly(&self, a: &K::Elem) -> Polynomial<F::Elem> {
+    fn min_poly(self: &Arc<Self>, a: &K::Elem) -> Polynomial<F::Elem> {
         MatrixStructure::new(self.domain().clone())
             .minimal_polynomial(self.col_multiplication_matrix(a))
             .unwrap()
@@ -413,12 +413,12 @@ where
 /// Represent all ring homomorphisms from `domain` to `range`
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RingHomomorphisms<Domain: RingSignature, Range: RingSignature> {
-    domain: Domain,
-    range: Range,
+    domain: Arc<Domain>,
+    range: Arc<Range>,
 }
 
 impl<Domain: RingSignature, Range: RingSignature> RingHomomorphisms<Domain, Range> {
-    pub fn new(domain: Domain, range: Range) -> Self {
+    pub fn new(domain: Arc<Domain>, range: Arc<Range>) -> Self {
         Self { domain, range }
     }
 }

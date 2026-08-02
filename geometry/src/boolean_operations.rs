@@ -19,10 +19,10 @@ enum VennLabel {
     Right,
 }
 
-fn simplex_venn<'f, FS: OrderedRingSignature + FieldSignature>(
-    left_simplex: &Simplex<'f, FS>,
-    right_simplex: &Simplex<'f, FS>,
-) -> LabelledPartialSimplicialComplex<'f, FS, VennLabel>
+fn simplex_venn< FS: OrderedRingSignature + FieldSignature>(
+    left_simplex: &Simplex< FS>,
+    right_simplex: &Simplex< FS>,
+) -> LabelledPartialSimplicialComplex< FS, VennLabel>
 where
     FS::Elem: Hash,
 {
@@ -31,7 +31,7 @@ where
 
     // optimization
     if !simplex_interior_overlap(left_simplex, right_simplex) {
-        return LabelledPartialSimplicialComplex::<'f, FS, VennLabel>::new_labelled_unchecked(
+        return LabelledPartialSimplicialComplex::< FS, VennLabel>::new_labelled_unchecked(
             ambient_space,
             HashMap::from([
                 (left_simplex.clone(), VennLabel::Left),
@@ -52,7 +52,7 @@ where
         .simplexes()
         .is_empty()
     {
-        return LabelledPartialSimplicialComplex::<'f, FS, VennLabel>::new_labelled_unchecked(
+        return LabelledPartialSimplicialComplex::< FS, VennLabel>::new_labelled_unchecked(
             ambient_space,
             HashMap::from([
                 (left_simplex.clone(), VennLabel::Left),
@@ -77,7 +77,7 @@ where
         .into_simplexes();
 
     let all_parts = self_parts.union(&other_parts);
-    LabelledPartialSimplicialComplex::<'f, FS, VennLabel>::new_labelled_unchecked(
+    LabelledPartialSimplicialComplex::< FS, VennLabel>::new_labelled_unchecked(
         ambient_space,
         all_parts
             .into_iter()
@@ -96,15 +96,15 @@ where
     )
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone + Send + Sync>
-    LabelledSimplicialDisjointUnion<'f, FS, T>
+impl< FS: OrderedRingSignature + FieldSignature, T: Eq + Clone + Send + Sync>
+    LabelledSimplicialDisjointUnion< FS, T>
 where
     FS::Elem: Hash,
 {
     pub(crate) fn subtract_raw<S: Eq + Clone + Send + Sync>(
         &self,
-        other: &LabelledSimplicialDisjointUnion<'f, FS, S>,
-    ) -> LabelledSimplicialDisjointUnion<'f, FS, T> {
+        other: &LabelledSimplicialDisjointUnion< FS, S>,
+    ) -> LabelledSimplicialDisjointUnion< FS, T> {
         let ambient_space = common_space(self.ambient_space(), other.ambient_space()).unwrap();
 
         Self::new_labelled_unchecked(
@@ -137,8 +137,8 @@ where
 
     pub(crate) fn intersect_raw<S: Eq + Clone + Send + Sync>(
         &self,
-        other: &LabelledSimplicialDisjointUnion<'f, FS, S>,
-    ) -> LabelledSimplicialDisjointUnion<'f, FS, (T, S)> {
+        other: &LabelledSimplicialDisjointUnion< FS, S>,
+    ) -> LabelledSimplicialDisjointUnion< FS, (T, S)> {
         let ambient_space = common_space(self.ambient_space(), other.ambient_space()).unwrap();
         LabelledSimplicialDisjointUnion::new_labelled_unchecked(ambient_space, {
             let mut simplexes = HashMap::new();
@@ -156,7 +156,7 @@ where
         })
     }
 
-    pub(crate) fn union_raw(&self, other: &Self) -> SimplicialDisjointUnion<'f, FS> {
+    pub(crate) fn union_raw(&self, other: &Self) -> SimplicialDisjointUnion< FS> {
         let ambient_space = common_space(self.ambient_space(), other.ambient_space()).unwrap();
         let mut simplexes = HashSet::new();
         for spx in Self::subtract_raw(other, self).into_simplexes() {
@@ -185,18 +185,18 @@ pub trait Union<Other> {
 }
 
 impl<
-    'f,
+    
     FS: OrderedRingSignature + FieldSignature,
     T: Eq + Clone + Send + Sync,
     S: Eq + Clone + Send + Sync,
-> Difference<LabelledSimplicialDisjointUnion<'f, FS, S>>
-    for LabelledSimplicialDisjointUnion<'f, FS, T>
+> Difference<LabelledSimplicialDisjointUnion< FS, S>>
+    for LabelledSimplicialDisjointUnion< FS, T>
 where
     FS::Elem: Hash,
 {
-    type Output = LabelledPartialSimplicialComplex<'f, FS, T>;
+    type Output = LabelledPartialSimplicialComplex< FS, T>;
 
-    fn difference(&self, other: &LabelledSimplicialDisjointUnion<'f, FS, S>) -> Self::Output {
+    fn difference(&self, other: &LabelledSimplicialDisjointUnion< FS, S>) -> Self::Output {
         self.subtract_raw(other)
             .refine_into_partial_simplicial_complex()
             .simplify()
@@ -204,35 +204,35 @@ where
 }
 
 impl<
-    'f,
+    
     FS: OrderedRingSignature + FieldSignature,
     T: Eq + Clone + Send + Sync,
     S: Eq + Clone + Send + Sync,
-> Difference<LabelledPartialSimplicialComplex<'f, FS, S>>
-    for LabelledSimplicialDisjointUnion<'f, FS, T>
+> Difference<LabelledPartialSimplicialComplex< FS, S>>
+    for LabelledSimplicialDisjointUnion< FS, T>
 where
     FS::Elem: Hash,
 {
-    type Output = LabelledPartialSimplicialComplex<'f, FS, T>;
+    type Output = LabelledPartialSimplicialComplex< FS, T>;
 
-    fn difference(&self, other: &LabelledPartialSimplicialComplex<'f, FS, S>) -> Self::Output {
+    fn difference(&self, other: &LabelledPartialSimplicialComplex< FS, S>) -> Self::Output {
         self.difference(&other.clone().into_simplicial_disjoint_union())
     }
 }
 
 impl<
-    'f,
+    
     FS: OrderedRingSignature + FieldSignature,
     T: Eq + Clone + Send + Sync,
     S: Eq + Clone + Send + Sync,
-> Difference<LabelledSimplicialDisjointUnion<'f, FS, S>>
-    for LabelledPartialSimplicialComplex<'f, FS, T>
+> Difference<LabelledSimplicialDisjointUnion< FS, S>>
+    for LabelledPartialSimplicialComplex< FS, T>
 where
     FS::Elem: Hash,
 {
-    type Output = LabelledPartialSimplicialComplex<'f, FS, T>;
+    type Output = LabelledPartialSimplicialComplex< FS, T>;
 
-    fn difference(&self, other: &LabelledSimplicialDisjointUnion<'f, FS, S>) -> Self::Output {
+    fn difference(&self, other: &LabelledSimplicialDisjointUnion< FS, S>) -> Self::Output {
         self.clone()
             .into_simplicial_disjoint_union()
             .difference(other)
@@ -240,18 +240,18 @@ where
 }
 
 impl<
-    'f,
+    
     FS: OrderedRingSignature + FieldSignature,
     T: Eq + Clone + Send + Sync,
     S: Eq + Clone + Send + Sync,
-> Difference<LabelledPartialSimplicialComplex<'f, FS, S>>
-    for LabelledPartialSimplicialComplex<'f, FS, T>
+> Difference<LabelledPartialSimplicialComplex< FS, S>>
+    for LabelledPartialSimplicialComplex< FS, T>
 where
     FS::Elem: Hash,
 {
-    type Output = LabelledPartialSimplicialComplex<'f, FS, T>;
+    type Output = LabelledPartialSimplicialComplex< FS, T>;
 
-    fn difference(&self, other: &LabelledPartialSimplicialComplex<'f, FS, S>) -> Self::Output {
+    fn difference(&self, other: &LabelledPartialSimplicialComplex< FS, S>) -> Self::Output {
         self.clone()
             .into_simplicial_disjoint_union()
             .difference(&other.clone().into_simplicial_disjoint_union())
@@ -259,33 +259,33 @@ where
 }
 
 impl<
-    'f,
+    
     FS: OrderedRingSignature + FieldSignature,
     T: Eq + Clone + Send + Sync,
     S: Eq + Clone + Send + Sync,
-> Difference<LabelledSimplicialComplex<'f, FS, S>> for LabelledSimplicialDisjointUnion<'f, FS, T>
+> Difference<LabelledSimplicialComplex< FS, S>> for LabelledSimplicialDisjointUnion< FS, T>
 where
     FS::Elem: Hash,
 {
-    type Output = LabelledPartialSimplicialComplex<'f, FS, T>;
+    type Output = LabelledPartialSimplicialComplex< FS, T>;
 
-    fn difference(&self, other: &LabelledSimplicialComplex<'f, FS, S>) -> Self::Output {
+    fn difference(&self, other: &LabelledSimplicialComplex< FS, S>) -> Self::Output {
         self.difference(&other.clone().into_simplicial_disjoint_union())
     }
 }
 
 impl<
-    'f,
+    
     FS: OrderedRingSignature + FieldSignature,
     T: Eq + Clone + Send + Sync,
     S: Eq + Clone + Send + Sync,
-> Difference<LabelledSimplicialComplex<'f, FS, S>> for LabelledPartialSimplicialComplex<'f, FS, T>
+> Difference<LabelledSimplicialComplex< FS, S>> for LabelledPartialSimplicialComplex< FS, T>
 where
     FS::Elem: Hash,
 {
-    type Output = LabelledPartialSimplicialComplex<'f, FS, T>;
+    type Output = LabelledPartialSimplicialComplex< FS, T>;
 
-    fn difference(&self, other: &LabelledSimplicialComplex<'f, FS, S>) -> Self::Output {
+    fn difference(&self, other: &LabelledSimplicialComplex< FS, S>) -> Self::Output {
         self.clone()
             .into_simplicial_disjoint_union()
             .difference(&other.clone().into_simplicial_disjoint_union())
@@ -293,17 +293,17 @@ where
 }
 
 impl<
-    'f,
+    
     FS: OrderedRingSignature + FieldSignature,
     T: Eq + Clone + Send + Sync,
     S: Eq + Clone + Send + Sync,
-> Difference<LabelledSimplicialDisjointUnion<'f, FS, S>> for LabelledSimplicialComplex<'f, FS, T>
+> Difference<LabelledSimplicialDisjointUnion< FS, S>> for LabelledSimplicialComplex< FS, T>
 where
     FS::Elem: Hash,
 {
-    type Output = LabelledPartialSimplicialComplex<'f, FS, T>;
+    type Output = LabelledPartialSimplicialComplex< FS, T>;
 
-    fn difference(&self, other: &LabelledSimplicialDisjointUnion<'f, FS, S>) -> Self::Output {
+    fn difference(&self, other: &LabelledSimplicialDisjointUnion< FS, S>) -> Self::Output {
         self.clone()
             .into_simplicial_disjoint_union()
             .difference(other)
@@ -311,17 +311,17 @@ where
 }
 
 impl<
-    'f,
+    
     FS: OrderedRingSignature + FieldSignature,
     T: Eq + Clone + Send + Sync,
     S: Eq + Clone + Send + Sync,
-> Difference<LabelledPartialSimplicialComplex<'f, FS, S>> for LabelledSimplicialComplex<'f, FS, T>
+> Difference<LabelledPartialSimplicialComplex< FS, S>> for LabelledSimplicialComplex< FS, T>
 where
     FS::Elem: Hash,
 {
-    type Output = LabelledPartialSimplicialComplex<'f, FS, T>;
+    type Output = LabelledPartialSimplicialComplex< FS, T>;
 
-    fn difference(&self, other: &LabelledPartialSimplicialComplex<'f, FS, S>) -> Self::Output {
+    fn difference(&self, other: &LabelledPartialSimplicialComplex< FS, S>) -> Self::Output {
         self.clone()
             .into_simplicial_disjoint_union()
             .difference(&other.clone().into_simplicial_disjoint_union())
@@ -329,31 +329,31 @@ where
 }
 
 impl<
-    'f,
+    
     FS: OrderedRingSignature + FieldSignature,
     T: Eq + Clone + Send + Sync,
     S: Eq + Clone + Send + Sync,
-> Difference<LabelledSimplicialComplex<'f, FS, S>> for LabelledSimplicialComplex<'f, FS, T>
+> Difference<LabelledSimplicialComplex< FS, S>> for LabelledSimplicialComplex< FS, T>
 where
     FS::Elem: Hash,
 {
-    type Output = LabelledPartialSimplicialComplex<'f, FS, T>;
+    type Output = LabelledPartialSimplicialComplex< FS, T>;
 
-    fn difference(&self, other: &LabelledSimplicialComplex<'f, FS, S>) -> Self::Output {
+    fn difference(&self, other: &LabelledSimplicialComplex< FS, S>) -> Self::Output {
         self.clone()
             .into_simplicial_disjoint_union()
             .difference(&other.clone().into_simplicial_disjoint_union())
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature> Intersect<SimplicialDisjointUnion<'f, FS>>
-    for SimplicialDisjointUnion<'f, FS>
+impl< FS: OrderedRingSignature + FieldSignature> Intersect<SimplicialDisjointUnion< FS>>
+    for SimplicialDisjointUnion< FS>
 where
     FS::Elem: Hash,
 {
-    type Output = PartialSimplicialComplex<'f, FS>;
+    type Output = PartialSimplicialComplex< FS>;
 
-    fn intersect(&self, other: &SimplicialDisjointUnion<'f, FS>) -> Self::Output {
+    fn intersect(&self, other: &SimplicialDisjointUnion< FS>) -> Self::Output {
         self.intersect_raw(other)
             .forget_labels()
             .refine_into_partial_simplicial_complex()
@@ -361,108 +361,108 @@ where
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature> Intersect<PartialSimplicialComplex<'f, FS>>
-    for SimplicialDisjointUnion<'f, FS>
+impl< FS: OrderedRingSignature + FieldSignature> Intersect<PartialSimplicialComplex< FS>>
+    for SimplicialDisjointUnion< FS>
 where
     FS::Elem: Hash,
 {
-    type Output = PartialSimplicialComplex<'f, FS>;
+    type Output = PartialSimplicialComplex< FS>;
 
-    fn intersect(&self, other: &PartialSimplicialComplex<'f, FS>) -> Self::Output {
+    fn intersect(&self, other: &PartialSimplicialComplex< FS>) -> Self::Output {
         self.intersect(&other.clone().into_simplicial_disjoint_union())
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature> Intersect<SimplicialDisjointUnion<'f, FS>>
-    for PartialSimplicialComplex<'f, FS>
+impl< FS: OrderedRingSignature + FieldSignature> Intersect<SimplicialDisjointUnion< FS>>
+    for PartialSimplicialComplex< FS>
 where
     FS::Elem: Hash,
 {
-    type Output = PartialSimplicialComplex<'f, FS>;
+    type Output = PartialSimplicialComplex< FS>;
 
-    fn intersect(&self, other: &SimplicialDisjointUnion<'f, FS>) -> Self::Output {
+    fn intersect(&self, other: &SimplicialDisjointUnion< FS>) -> Self::Output {
         self.clone()
             .into_simplicial_disjoint_union()
             .intersect(other)
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature> Intersect<PartialSimplicialComplex<'f, FS>>
-    for PartialSimplicialComplex<'f, FS>
+impl< FS: OrderedRingSignature + FieldSignature> Intersect<PartialSimplicialComplex< FS>>
+    for PartialSimplicialComplex< FS>
 where
     FS::Elem: Hash,
 {
-    type Output = PartialSimplicialComplex<'f, FS>;
+    type Output = PartialSimplicialComplex< FS>;
 
-    fn intersect(&self, other: &PartialSimplicialComplex<'f, FS>) -> Self::Output {
+    fn intersect(&self, other: &PartialSimplicialComplex< FS>) -> Self::Output {
         self.clone()
             .into_simplicial_disjoint_union()
             .intersect(&other.clone().into_simplicial_disjoint_union())
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature> Intersect<SimplicialDisjointUnion<'f, FS>>
-    for SimplicialComplex<'f, FS>
+impl< FS: OrderedRingSignature + FieldSignature> Intersect<SimplicialDisjointUnion< FS>>
+    for SimplicialComplex< FS>
 where
     FS::Elem: Hash,
 {
-    type Output = PartialSimplicialComplex<'f, FS>;
+    type Output = PartialSimplicialComplex< FS>;
 
-    fn intersect(&self, other: &SimplicialDisjointUnion<'f, FS>) -> Self::Output {
+    fn intersect(&self, other: &SimplicialDisjointUnion< FS>) -> Self::Output {
         self.clone()
             .into_simplicial_disjoint_union()
             .intersect(other)
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature> Intersect<PartialSimplicialComplex<'f, FS>>
-    for SimplicialComplex<'f, FS>
+impl< FS: OrderedRingSignature + FieldSignature> Intersect<PartialSimplicialComplex< FS>>
+    for SimplicialComplex< FS>
 where
     FS::Elem: Hash,
 {
-    type Output = PartialSimplicialComplex<'f, FS>;
+    type Output = PartialSimplicialComplex< FS>;
 
-    fn intersect(&self, other: &PartialSimplicialComplex<'f, FS>) -> Self::Output {
+    fn intersect(&self, other: &PartialSimplicialComplex< FS>) -> Self::Output {
         self.clone()
             .into_simplicial_disjoint_union()
             .intersect(&other.clone().into_simplicial_disjoint_union())
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature> Intersect<SimplicialComplex<'f, FS>>
-    for SimplicialDisjointUnion<'f, FS>
+impl< FS: OrderedRingSignature + FieldSignature> Intersect<SimplicialComplex< FS>>
+    for SimplicialDisjointUnion< FS>
 where
     FS::Elem: Hash,
 {
-    type Output = PartialSimplicialComplex<'f, FS>;
+    type Output = PartialSimplicialComplex< FS>;
 
-    fn intersect(&self, other: &SimplicialComplex<'f, FS>) -> Self::Output {
+    fn intersect(&self, other: &SimplicialComplex< FS>) -> Self::Output {
         self.intersect(&other.clone().into_simplicial_disjoint_union())
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature> Intersect<SimplicialComplex<'f, FS>>
-    for PartialSimplicialComplex<'f, FS>
+impl< FS: OrderedRingSignature + FieldSignature> Intersect<SimplicialComplex< FS>>
+    for PartialSimplicialComplex< FS>
 where
     FS::Elem: Hash,
 {
-    type Output = PartialSimplicialComplex<'f, FS>;
+    type Output = PartialSimplicialComplex< FS>;
 
-    fn intersect(&self, other: &SimplicialComplex<'f, FS>) -> Self::Output {
+    fn intersect(&self, other: &SimplicialComplex< FS>) -> Self::Output {
         self.clone()
             .into_simplicial_disjoint_union()
             .intersect(&other.clone().into_simplicial_disjoint_union())
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature> Intersect<SimplicialComplex<'f, FS>>
-    for SimplicialComplex<'f, FS>
+impl< FS: OrderedRingSignature + FieldSignature> Intersect<SimplicialComplex< FS>>
+    for SimplicialComplex< FS>
 where
     FS::Elem: Hash,
 {
-    type Output = SimplicialComplex<'f, FS>;
+    type Output = SimplicialComplex< FS>;
 
-    fn intersect(&self, other: &SimplicialComplex<'f, FS>) -> Self::Output {
+    fn intersect(&self, other: &SimplicialComplex< FS>) -> Self::Output {
         self.clone()
             .into_simplicial_disjoint_union()
             .intersect(&other.clone().into_simplicial_disjoint_union())
@@ -471,118 +471,118 @@ where
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature> Union<SimplicialDisjointUnion<'f, FS>>
-    for SimplicialDisjointUnion<'f, FS>
+impl< FS: OrderedRingSignature + FieldSignature> Union<SimplicialDisjointUnion< FS>>
+    for SimplicialDisjointUnion< FS>
 where
     FS::Elem: Hash,
 {
-    type Output = PartialSimplicialComplex<'f, FS>;
+    type Output = PartialSimplicialComplex< FS>;
 
-    fn union(&self, other: &SimplicialDisjointUnion<'f, FS>) -> Self::Output {
+    fn union(&self, other: &SimplicialDisjointUnion< FS>) -> Self::Output {
         self.union_raw(other)
             .refine_into_partial_simplicial_complex()
             .simplify()
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature> Union<PartialSimplicialComplex<'f, FS>>
-    for SimplicialDisjointUnion<'f, FS>
+impl< FS: OrderedRingSignature + FieldSignature> Union<PartialSimplicialComplex< FS>>
+    for SimplicialDisjointUnion< FS>
 where
     FS::Elem: Hash,
 {
-    type Output = PartialSimplicialComplex<'f, FS>;
+    type Output = PartialSimplicialComplex< FS>;
 
-    fn union(&self, other: &PartialSimplicialComplex<'f, FS>) -> Self::Output {
+    fn union(&self, other: &PartialSimplicialComplex< FS>) -> Self::Output {
         self.union(&other.clone().into_simplicial_disjoint_union())
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature> Union<SimplicialDisjointUnion<'f, FS>>
-    for PartialSimplicialComplex<'f, FS>
+impl< FS: OrderedRingSignature + FieldSignature> Union<SimplicialDisjointUnion< FS>>
+    for PartialSimplicialComplex< FS>
 where
     FS::Elem: Hash,
 {
-    type Output = PartialSimplicialComplex<'f, FS>;
+    type Output = PartialSimplicialComplex< FS>;
 
-    fn union(&self, other: &SimplicialDisjointUnion<'f, FS>) -> Self::Output {
+    fn union(&self, other: &SimplicialDisjointUnion< FS>) -> Self::Output {
         self.clone().into_simplicial_disjoint_union().union(other)
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature> Union<PartialSimplicialComplex<'f, FS>>
-    for PartialSimplicialComplex<'f, FS>
+impl< FS: OrderedRingSignature + FieldSignature> Union<PartialSimplicialComplex< FS>>
+    for PartialSimplicialComplex< FS>
 where
     FS::Elem: Hash,
 {
-    type Output = PartialSimplicialComplex<'f, FS>;
+    type Output = PartialSimplicialComplex< FS>;
 
-    fn union(&self, other: &PartialSimplicialComplex<'f, FS>) -> Self::Output {
+    fn union(&self, other: &PartialSimplicialComplex< FS>) -> Self::Output {
         self.clone()
             .into_simplicial_disjoint_union()
             .union(&other.clone().into_simplicial_disjoint_union())
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature> Union<SimplicialDisjointUnion<'f, FS>>
-    for SimplicialComplex<'f, FS>
+impl< FS: OrderedRingSignature + FieldSignature> Union<SimplicialDisjointUnion< FS>>
+    for SimplicialComplex< FS>
 where
     FS::Elem: Hash,
 {
-    type Output = PartialSimplicialComplex<'f, FS>;
+    type Output = PartialSimplicialComplex< FS>;
 
-    fn union(&self, other: &SimplicialDisjointUnion<'f, FS>) -> Self::Output {
+    fn union(&self, other: &SimplicialDisjointUnion< FS>) -> Self::Output {
         self.clone().into_simplicial_disjoint_union().union(other)
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature> Union<PartialSimplicialComplex<'f, FS>>
-    for SimplicialComplex<'f, FS>
+impl< FS: OrderedRingSignature + FieldSignature> Union<PartialSimplicialComplex< FS>>
+    for SimplicialComplex< FS>
 where
     FS::Elem: Hash,
 {
-    type Output = PartialSimplicialComplex<'f, FS>;
+    type Output = PartialSimplicialComplex< FS>;
 
-    fn union(&self, other: &PartialSimplicialComplex<'f, FS>) -> Self::Output {
+    fn union(&self, other: &PartialSimplicialComplex< FS>) -> Self::Output {
         self.clone()
             .into_simplicial_disjoint_union()
             .union(&other.clone().into_simplicial_disjoint_union())
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature> Union<SimplicialComplex<'f, FS>>
-    for SimplicialDisjointUnion<'f, FS>
+impl< FS: OrderedRingSignature + FieldSignature> Union<SimplicialComplex< FS>>
+    for SimplicialDisjointUnion< FS>
 where
     FS::Elem: Hash,
 {
-    type Output = PartialSimplicialComplex<'f, FS>;
+    type Output = PartialSimplicialComplex< FS>;
 
-    fn union(&self, other: &SimplicialComplex<'f, FS>) -> Self::Output {
+    fn union(&self, other: &SimplicialComplex< FS>) -> Self::Output {
         self.union(&other.clone().into_simplicial_disjoint_union())
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature> Union<SimplicialComplex<'f, FS>>
-    for PartialSimplicialComplex<'f, FS>
+impl< FS: OrderedRingSignature + FieldSignature> Union<SimplicialComplex< FS>>
+    for PartialSimplicialComplex< FS>
 where
     FS::Elem: Hash,
 {
-    type Output = PartialSimplicialComplex<'f, FS>;
+    type Output = PartialSimplicialComplex< FS>;
 
-    fn union(&self, other: &SimplicialComplex<'f, FS>) -> Self::Output {
+    fn union(&self, other: &SimplicialComplex< FS>) -> Self::Output {
         self.clone()
             .into_simplicial_disjoint_union()
             .union(&other.clone().into_simplicial_disjoint_union())
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature> Union<SimplicialComplex<'f, FS>>
-    for SimplicialComplex<'f, FS>
+impl< FS: OrderedRingSignature + FieldSignature> Union<SimplicialComplex< FS>>
+    for SimplicialComplex< FS>
 where
     FS::Elem: Hash,
 {
-    type Output = SimplicialComplex<'f, FS>;
+    type Output = SimplicialComplex< FS>;
 
-    fn union(&self, other: &SimplicialComplex<'f, FS>) -> Self::Output {
+    fn union(&self, other: &SimplicialComplex< FS>) -> Self::Output {
         self.clone()
             .into_simplicial_disjoint_union()
             .union(&other.clone().into_simplicial_disjoint_union())
@@ -591,7 +591,7 @@ where
     }
 }
 
-// impl<'f, FS: OrderedRingSignature + FieldSignature> SimplicialComplex<'f, FS>
+// impl< FS: OrderedRingSignature + FieldSignature> SimplicialComplex< FS>
 // where
 //     FS::Elem: Hash,
 // {

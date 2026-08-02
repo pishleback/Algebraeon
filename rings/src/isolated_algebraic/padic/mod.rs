@@ -106,7 +106,7 @@ pub enum PAdicAlgebraic {
 }
 
 impl PAdicAlgebraic {
-    pub fn structure(p: Natural) -> PAdicAlgebraicStructure {
+    pub fn structure(p: Natural) -> Arc<PAdicAlgebraicStructure> {
         PAdicAlgebraicStructure::new(p)
     }
 }
@@ -725,9 +725,9 @@ pub struct PAdicAlgebraicStructure {
 }
 
 impl PAdicAlgebraicStructure {
-    pub fn new(p: Natural) -> Self {
+    pub fn new(p: Natural) -> Arc<Self> {
         assert!(p.is_irreducible(), "{} is not prime", p);
-        Self { p }
+        Self { p }.into()
     }
 
     pub fn p(&self) -> &Natural {
@@ -935,7 +935,7 @@ impl CharZeroFieldSignature for PAdicAlgebraicStructure {
 impl IntegralDomainExtensionAllPolynomialRoots<IntegerCanonicalStructure, PAdicAlgebraicStructure>
     for PrincipalIntegerMap<PAdicAlgebraicStructure>
 {
-    fn all_roots(&self, polynomial: &Polynomial<Integer>) -> Vec<PAdicAlgebraic> {
+    fn all_roots(self: &Arc<Self>, polynomial: &Polynomial<Integer>) -> Vec<PAdicAlgebraic> {
         polynomial.all_padic_roots(&self.range().p)
     }
 }
@@ -943,13 +943,13 @@ impl IntegralDomainExtensionAllPolynomialRoots<IntegerCanonicalStructure, PAdicA
 impl IntegralDomainExtensionAllPolynomialRoots<RationalCanonicalStructure, PAdicAlgebraicStructure>
     for PrincipalRationalMap<PAdicAlgebraicStructure>
 {
-    fn all_roots(&self, polynomial: &Polynomial<Rational>) -> Vec<PAdicAlgebraic> {
+    fn all_roots(self: &Arc<Self>, polynomial: &Polynomial<Rational>) -> Vec<PAdicAlgebraic> {
         polynomial.all_padic_roots(&self.range().p)
     }
 }
 
 impl PAdicAlgebraicStructure {
-    pub fn nth_roots(&self, a: &PAdicAlgebraic, n: usize) -> Vec<PAdicAlgebraic> {
+    pub fn nth_roots(self: &Arc<Self>, a: &PAdicAlgebraic, n: usize) -> Vec<PAdicAlgebraic> {
         let mut roots = vec![];
         for root in a
             .min_poly()
@@ -963,7 +963,10 @@ impl PAdicAlgebraicStructure {
         roots
     }
 
-    pub fn square_roots(&self, a: &PAdicAlgebraic) -> Option<(PAdicAlgebraic, PAdicAlgebraic)> {
+    pub fn square_roots(
+        self: &Arc<Self>,
+        a: &PAdicAlgebraic,
+    ) -> Option<(PAdicAlgebraic, PAdicAlgebraic)> {
         let square_roots = self.nth_roots(a, 2);
         if square_roots.is_empty() {
             None
@@ -976,7 +979,7 @@ impl PAdicAlgebraicStructure {
         }
     }
 
-    pub fn is_square(&self, a: &PAdicAlgebraic) -> bool {
+    pub fn is_square(self: &Arc<Self>, a: &PAdicAlgebraic) -> bool {
         self.square_roots(a).is_some()
     }
 }

@@ -44,8 +44,8 @@ impl<ANF: AlgebraicNumberFieldSignature> SetSignature for QuaternionOrderZBasis<
     fn validate_element(self: &Arc<Self>, x: &Self::Elem) -> Result<(), String> {
         let algebra = &self.algebra;
         let submodules = Rational::structure()
-            .into_free_module(EnumeratedFiniteSetStructure::new(self.basis.len()))
-            .into_submodules();
+            .free_module(EnumeratedFiniteSetStructure::new(self.basis.len()))
+            .submodules();
 
         let basis_vecs: Vec<Vec<Rational>> = self
             .basis
@@ -150,7 +150,7 @@ impl<ANF: AlgebraicNumberFieldSignature> SemiModuleSignature<IntegerCanonicalStr
 
 impl<ANF: AlgebraicNumberFieldSignature> QuaternionOrderZBasis<ANF> {
     #[allow(unused)]
-    fn check_basis(self) -> bool {
+    fn check_basis(self: &Arc<Self>) -> bool {
         // 1. Check that the basis has 4n elements
         let expected_len = 4 * self.algebra.base_field().n();
 
@@ -204,10 +204,10 @@ mod tests {
         let k = h.k();
 
         // Lipschitz order <1, i, j, k>_QQ
-        let order = QuaternionOrderZBasis {
+        let order = Arc::new(QuaternionOrderZBasis {
             algebra: h,
             basis: vec![one.clone(), i.clone(), j.clone(), k.clone()],
-        };
+        });
 
         for b in order.basis.iter() {
             assert!(order.validate_element(b).is_ok(),);

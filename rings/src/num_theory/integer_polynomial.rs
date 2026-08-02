@@ -15,7 +15,10 @@ impl GreatestCommonDivisorSignature for PolynomialStructure<IntegerCanonicalStru
 }
 
 impl FactoringMonoidSignature for PolynomialStructure<IntegerCanonicalStructure> {
-    fn factor_unchecked(&self, p: &Self::Elem) -> Factored<Polynomial<Integer>, Natural> {
+    fn factor_unchecked(
+        self: &Arc<Self>,
+        p: &Self::Elem,
+    ) -> Factored<Polynomial<Integer>, Natural> {
         // self.factorize_by_kroneckers_method(p)
         factorize_by_berlekamp_zassenhaus_algorithm(p.clone())
     }
@@ -58,7 +61,7 @@ impl Polynomial<Integer> {
 }
 
 impl FactoringMonoidSignature for MultiPolynomialStructure<IntegerCanonicalStructure> {
-    fn factor_unchecked(&self, p: &Self::Elem) -> Factored<Self::Elem, Natural> {
+    fn factor_unchecked(self: &Arc<Self>, p: &Self::Elem) -> Factored<Self::Elem, Natural> {
         self.factor_by_yuns_and_kroneckers_inductively(
             Rc::new(Integer::factor),
             Rc::new(Polynomial::factor),

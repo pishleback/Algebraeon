@@ -12,26 +12,26 @@ use std::sync::Arc;
 impl UniqueFactorizationMonoidSignature for NaturalCanonicalStructure {
     type FactoredExponent = NaturalCanonicalStructure;
 
-    fn factorization_exponents(&self) -> Arc<Self::FactoredExponent> {
+    fn factorization_exponents(self: &Arc<Self>) -> Arc<Self::FactoredExponent> {
         Natural::structure()
     }
 
-    fn try_is_irreducible(&self, a: &Self::Elem) -> Option<bool> {
+    fn try_is_irreducible(self: &Arc<Self>, a: &Self::Elem) -> Option<bool> {
         Some(is_prime_nat(a))
     }
 
-    fn factorization_pow(&self, a: &Self::Elem, k: &Natural) -> Self::Elem {
+    fn factorization_pow(self: &Arc<Self>, a: &Self::Elem, k: &Natural) -> Self::Elem {
         self.nat_pow(a, k)
     }
 }
 
 impl FactoringMonoidSignature for NaturalCanonicalStructure {
-    fn is_irreducible(&self, a: &Self::Elem) -> bool {
+    fn is_irreducible(self: &Arc<Self>, a: &Self::Elem) -> bool {
         is_prime_nat(a)
     }
 
     fn factor_unchecked(
-        &self,
+        self: &Arc<Self>,
         a: &Self::Elem,
     ) -> Factored<Self::Elem, <Self::FactoredExponent as SetSignature>::Elem> {
         factor_nat(a.clone())
@@ -39,7 +39,7 @@ impl FactoringMonoidSignature for NaturalCanonicalStructure {
 }
 
 impl FactoringStructure<NaturalCanonicalStructure, NaturalCanonicalStructure> {
-    pub fn euler_totient(&self, a: &Factored<Natural, Natural>) -> Natural {
+    pub fn euler_totient(self: &Arc<Self>, a: &Factored<Natural, Natural>) -> Natural {
         #[cfg(debug_assertions)]
         self.validate_element(a).unwrap();
         match a {
@@ -73,14 +73,14 @@ pub enum IsPrimitiveRootResult {
 impl FactoringStructure<NaturalCanonicalStructure, NaturalCanonicalStructure> {
     /// Return whether x is a primitive root modulo the factorized value
     pub fn is_primitive_root(
-        &self,
+        self: &Arc<Self>,
         x: &Natural,
         n_factored: &Factored<Natural, Natural>,
     ) -> IsPrimitiveRootResult {
         #[cfg(debug_assertions)]
         self.validate_element(n_factored).unwrap();
 
-        let factorizations = Natural::structure_ref().factorizations();
+        let factorizations = Natural::structure().factorizations();
         let n = factorizations.expand(n_factored);
         if gcd(x.clone(), n.clone()) != Natural::ONE {
             IsPrimitiveRootResult::NonUnit

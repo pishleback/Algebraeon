@@ -63,20 +63,16 @@ pub trait FreeModuleSignature<Basis: SetSignature, Ring: RingSignature>:
 pub trait FinitelyFreeModuleSignature<Basis: FiniteSetSignature, Ring: RingSignature>:
     FreeModuleSignature<Basis, Ring> + FinitelyGeneratedModuleSignature<Basis, Ring>
 {
-    fn basis(&self) -> Vec<Basis::Elem> {
-        self.basis_set().borrow().list_all_elements()
+    fn basis(self: &Arc<Self>) -> Vec<Basis::Elem> {
+        self.basis_set().list_all_elements()
     }
 
-    fn rank(&self) -> usize {
-        self.basis_set()
-            .borrow()
-            .size()
-            .try_into()
-            .expect("too large")
+    fn rank(self: &Arc<Self>) -> usize {
+        self.basis_set().size().try_into().expect("too large")
     }
 
     /// The elementary basis vectors
-    fn basis_vecs(&self) -> Vec<Self::Elem> {
+    fn basis_vecs(self: &Arc<Self>) -> Vec<Self::Elem> {
         let zero = self.ring().zero();
         let one = self.ring().one();
         (0..self.rank())
@@ -90,14 +86,14 @@ pub trait FinitelyFreeModuleSignature<Basis: FiniteSetSignature, Ring: RingSigna
             .collect()
     }
 
-    fn to_vec(&self, a: &Self::Elem) -> Vec<Ring::Elem> {
+    fn to_vec(self: &Arc<Self>, a: &Self::Elem) -> Vec<Ring::Elem> {
         self.basis()
             .iter()
             .map(|b| self.to_component(b, a).as_ref().clone())
             .collect()
     }
 
-    fn from_vec(&self, v: Vec<impl Borrow<Ring::Elem>>) -> Self::Elem {
+    fn from_vec(self: &Arc<Self>, v: Vec<impl Borrow<Ring::Elem>>) -> Self::Elem {
         let n = self.rank();
         debug_assert_eq!(v.len(), n);
         let basis = self.basis();
@@ -115,30 +111,30 @@ pub trait FinitelyFreeModuleSignature<Basis: FiniteSetSignature, Ring: RingSigna
         t
     }
 
-    fn to_col(&self, a: &Self::Elem) -> Matrix<Ring::Elem> {
+    fn to_col(self: &Arc<Self>, a: &Self::Elem) -> Matrix<Ring::Elem> {
         let basis = self.basis();
         Matrix::construct(self.rank(), 1, |r, _c| {
             self.to_component(&basis[r], a).into_owned()
         })
     }
 
-    fn from_col(&self, v: Matrix<Ring::Elem>) -> Self::Elem {
+    fn from_col(self: &Arc<Self>, v: Matrix<Ring::Elem>) -> Self::Elem {
         assert_eq!(v.cols(), 1);
         assert_eq!(v.rows(), self.rank());
         self.from_vec((0..self.rank()).map(|r| v.at(r, 0).unwrap()).collect())
     }
 
-    fn to_row(&self, a: &Self::Elem) -> Matrix<Ring::Elem> {
+    fn to_row(self: &Arc<Self>, a: &Self::Elem) -> Matrix<Ring::Elem> {
         self.to_col(a).transpose()
     }
 
-    fn from_row(&self, v: Matrix<Ring::Elem>) -> Self::Elem {
+    fn from_row(self: &Arc<Self>, v: Matrix<Ring::Elem>) -> Self::Elem {
         self.from_col(v.transpose())
     }
 
     fn submodule_structure(
         self: &Arc<Self>,
-        submodule: Arc<FinitelyFreeSubmodule<Ring::Elem>>,
+        submodule: FinitelyFreeSubmodule<Ring::Elem>,
     ) -> Arc<FinitelyFreeSubmoduleStructure<Basis, Ring, Self>>
     where
         Basis: OrderedFiniteSetSignature,
@@ -173,7 +169,7 @@ pub trait FinitelyFreeModuleSignature<Basis: FiniteSetSignature, Ring: RingSigna
         FinitelyFreeSubmoduleAffineSubsetsStructure::new(self.clone())
     }
 
-    fn improper_submodule(&self) -> FinitelyFreeSubmodule<Ring::Elem>
+    fn improper_submodule(self: &Arc<Self>) -> FinitelyFreeSubmodule<Ring::Elem>
     where
         Basis: OrderedFiniteSetSignature,
         Ring: ReducedHermiteAlgorithmSignature,
@@ -182,7 +178,10 @@ pub trait FinitelyFreeModuleSignature<Basis: FiniteSetSignature, Ring: RingSigna
             .matrix_row_span(MatrixStructure::new(self.ring().clone()).ident(self.rank()))
     }
 
-    fn generated_submodule(&self, generators: Vec<&Self::Elem>) -> FinitelyFreeSubmodule<Ring::Elem>
+    fn generated_submodule(
+        self: &Arc<Self>,
+        generators: Vec<&Self::Elem>,
+    ) -> FinitelyFreeSubmodule<Ring::Elem>
     where
         Basis: OrderedFiniteSetSignature,
         Ring: ReducedHermiteAlgorithmSignature,

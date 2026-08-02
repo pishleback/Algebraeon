@@ -49,17 +49,17 @@ impl<Set: OrderedFiniteSetSignature, Ring: RingSignature> FinitelyFreeModuleStru
         &self.functions
     }
 
-    pub fn to_col(&self, v: &<Self as SetSignature>::Elem) -> Matrix<Ring::Elem> {
+    pub fn to_col(self: &Arc<Self>, v: &<Self as SetSignature>::Elem) -> Matrix<Ring::Elem> {
         debug_assert!(self.validate_element(v).is_ok());
         Matrix::construct(self.rank(), 1, |r, _| v[r].clone())
     }
 
-    pub fn to_row(&self, v: &<Self as SetSignature>::Elem) -> Matrix<Ring::Elem> {
+    pub fn to_row(self: &Arc<Self>, v: &<Self as SetSignature>::Elem) -> Matrix<Ring::Elem> {
         debug_assert!(self.validate_element(v).is_ok());
         Matrix::construct(1, self.rank(), |_, c| v[c].clone())
     }
 
-    pub fn from_row(&self, m: &Matrix<Ring::Elem>) -> <Self as SetSignature>::Elem {
+    pub fn from_row(self: &Arc<Self>, m: &Matrix<Ring::Elem>) -> <Self as SetSignature>::Elem {
         debug_assert_eq!(m.rows(), 1);
         debug_assert_eq!(m.cols(), self.rank());
         (0..self.rank())
@@ -67,7 +67,7 @@ impl<Set: OrderedFiniteSetSignature, Ring: RingSignature> FinitelyFreeModuleStru
             .collect()
     }
 
-    pub fn from_col(&self, m: &Matrix<Ring::Elem>) -> <Self as SetSignature>::Elem {
+    pub fn from_col(self: &Arc<Self>, m: &Matrix<Ring::Elem>) -> <Self as SetSignature>::Elem {
         debug_assert_eq!(m.cols(), 1);
         debug_assert_eq!(m.rows(), self.rank());
         (0..self.rank())
@@ -75,7 +75,7 @@ impl<Set: OrderedFiniteSetSignature, Ring: RingSignature> FinitelyFreeModuleStru
             .collect()
     }
 
-    pub fn basis_element(&self, i: usize) -> <Self as SetSignature>::Elem {
+    pub fn basis_element(self: &Arc<Self>, i: usize) -> <Self as SetSignature>::Elem {
         debug_assert!(i < self.rank());
         (0..self.rank())
             .map(|j| {
@@ -99,7 +99,7 @@ impl<Set: OrderedFiniteSetSignature, Ring: RingSignature> SetSignature
 {
     type Elem = Vec<Ring::Elem>;
 
-    fn validate_element(&self, v: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, v: &Self::Elem) -> Result<(), String> {
         self.functions_restructure().validate_element(v)
     }
 }
@@ -132,8 +132,7 @@ impl<Set: OrderedFiniteSetSignature, Ring: RingSignature + OrderedFiniteSetSigna
     CountableSetSignature for FinitelyFreeModuleStructure<Set, Ring>
 {
     fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
-        self.into_functions_restructure()
-            .into_generate_all_elements()
+        self.functions_restructure().clone().generate_all_elements()
     }
 }
 
@@ -148,8 +147,10 @@ impl<Set: OrderedFiniteSetSignature, Ring: RingSignature + OrderedFiniteSetSigna
         self.functions_restructure().size()
     }
 
-    fn generate_random_elements(self: &Arc<Self>, seed: u64) -> impl Iterator<Item = Self::Elem> {
-        self.functions_restructure().generate_random_elements(seed)
+    fn generate_random_elements(self: Arc<Self>, seed: u64) -> impl Iterator<Item = Self::Elem> {
+        self.functions_restructure()
+            .clone()
+            .generate_random_elements(seed)
     }
 }
 
@@ -252,13 +253,13 @@ impl<Set: OrderedFiniteSetSignature, Ring: RingSignature> FreeModuleSignature<Se
         self.set().clone()
     }
 
-    fn to_component<'a>(&self, b: &Set::Elem, v: &'a Self::Elem) -> Cow<'a, Ring::Elem> {
+    fn to_component<'a>(self: &Arc<Self>, b: &Set::Elem, v: &'a Self::Elem) -> Cow<'a, Ring::Elem> {
         let b: usize = self.set().element_to_enumeration(b).try_into().unwrap();
         debug_assert!(b < self.rank());
         Cow::Borrowed(&v[b])
     }
 
-    fn from_component(&self, b: &Set::Elem, r: &<Ring>::Elem) -> Self::Elem {
+    fn from_component(self: &Arc<Self>, b: &Set::Elem, r: &<Ring>::Elem) -> Self::Elem {
         let b: usize = self.set().element_to_enumeration(b).try_into().unwrap();
         debug_assert!(b < self.rank());
         let mut element = self.zero();

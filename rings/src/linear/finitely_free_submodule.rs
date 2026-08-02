@@ -16,15 +16,14 @@ pub struct FinitelyFreeSubmoduleStructure<
 > {
     _phantom: PhantomData<(Set, Ring, Module)>,
     module: Arc<Module>,
-    submodule: Arc<FinitelyFreeSubmodule<Ring::Elem>>,
+    submodule: FinitelyFreeSubmodule<Ring::Elem>,
 }
 
 impl<
     Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
-> From<FinitelyFreeSubmoduleStructure<Set, Ring, Module>>
-    for Arc<FinitelyFreeSubmodule<Ring::Elem>>
+> From<FinitelyFreeSubmoduleStructure<Set, Ring, Module>> for FinitelyFreeSubmodule<Ring::Elem>
 {
     fn from(val: FinitelyFreeSubmoduleStructure<Set, Ring, Module>) -> Self {
         val.submodule
@@ -38,7 +37,7 @@ impl<
 > PartialEq for FinitelyFreeSubmoduleStructure<Set, Ring, Module>
 {
     fn eq(&self, other: &Self) -> bool {
-        let module = self.module.borrow();
+        let module = self.module.clone();
         self.module == other.module && module.submodules().equal(&self.submodule, &other.submodule)
     }
 }
@@ -57,10 +56,7 @@ impl<
     Module: FinitelyFreeModuleSignature<Set, Ring>,
 > FinitelyFreeSubmoduleStructure<Set, Ring, Module>
 {
-    pub fn new(
-        module: Arc<Module>,
-        submodule: Arc<FinitelyFreeSubmodule<Ring::Elem>>,
-    ) -> Arc<Self> {
+    pub fn new(module: Arc<Module>, submodule: FinitelyFreeSubmodule<Ring::Elem>) -> Arc<Self> {
         Self {
             _phantom: PhantomData,
             module,
@@ -98,7 +94,7 @@ impl<
 {
     type Elem = Module::Elem;
 
-    fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, x: &Self::Elem) -> Result<(), String> {
         self.module().validate_element(x)?;
         if !self
             .module()

@@ -458,15 +458,15 @@ impl ToStringSignature for RealAlgebraicCanonicalStructure {
 
 impl RinglikeSpecializationSignature for RealAlgebraicCanonicalStructure {
     fn try_ring_restructure(
-        self: &Arc<Self>,
+        self: Arc<Self>,
     ) -> Option<Arc<impl EqSignature<Elem = Self::Elem> + RingSignature>> {
-        Some(self.clone())
+        Some(self)
     }
 
     fn try_char_zero_ring_restructure(
-        self: &Arc<Self>,
+        self: Arc<Self>,
     ) -> Option<Arc<impl EqSignature<Elem = Self::Elem> + CharZeroRingSignature>> {
-        Some(self.clone())
+        Some(self)
     }
 }
 
@@ -880,7 +880,7 @@ impl
         RealAlgebraicCanonicalStructure,
     > for PrincipalIntegerMap<RealAlgebraicCanonicalStructure>
 {
-    fn all_roots(&self, polynomial: &Polynomial<Integer>) -> Vec<RealAlgebraic> {
+    fn all_roots(self: &Arc<Self>, polynomial: &Polynomial<Integer>) -> Vec<RealAlgebraic> {
         polynomial.all_real_roots()
     }
 }
@@ -891,7 +891,7 @@ impl
         RealAlgebraicCanonicalStructure,
     > for PrincipalRationalMap<RealAlgebraicCanonicalStructure>
 {
-    fn all_roots(&self, polynomial: &Polynomial<Rational>) -> Vec<RealAlgebraic> {
+    fn all_roots(self: &Arc<Self>, polynomial: &Polynomial<Rational>) -> Vec<RealAlgebraic> {
         polynomial.all_real_roots()
     }
 }

@@ -26,12 +26,11 @@ impl QuadraticNumberFieldIsomorphism {
     fn new(
         anf_polyquo: Arc<AlgebraicNumberFieldPolynomialQuotientStructure>,
     ) -> Result<Arc<Self>, ()> {
-        let anf_polyquo_borrowed = anf_polyquo.borrow();
-        if anf_polyquo_borrowed.degree() == 2 {
+        if anf_polyquo.degree() == 2 {
             // let g be the generator of this ANF, so we are QQ[g]
             // g is a root of an integer polynomial
             // ax^2 + bx + c
-            let poly = anf_polyquo_borrowed.modulus().as_ref().primitive_part_fof();
+            let poly = anf_polyquo.modulus().as_ref().primitive_part_fof();
             let poly_coeffs = poly.clone().into_coeffs();
             debug_assert_eq!(poly_coeffs.len(), 3);
             let two_a = Integer::TWO * &poly_coeffs[2];
@@ -77,12 +76,12 @@ impl
         QuadraticNumberFieldStructure<Integer>,
     > for QuadraticNumberFieldIsomorphism
 {
-    fn domain(&self) -> &AlgebraicNumberFieldPolynomialQuotientStructure {
-        self.anf_polyquo.borrow()
+    fn domain(self: &Arc<Self>) -> Arc<AlgebraicNumberFieldPolynomialQuotientStructure> {
+        self.anf_polyquo.clone()
     }
 
-    fn range(&self) -> &QuadraticNumberFieldStructure<Integer> {
-        &self.anf_quadratic
+    fn range(self: &Arc<Self>) -> Arc<QuadraticNumberFieldStructure<Integer>> {
+        self.anf_quadratic.clone()
     }
 }
 
@@ -92,8 +91,8 @@ impl
         QuadraticNumberFieldStructure<Integer>,
     > for QuadraticNumberFieldIsomorphism
 {
-    fn image(&self, x: &Polynomial<Rational>) -> QuadraticNumberFieldElement {
-        let x = self.anf_polyquo.borrow().to_vec(x);
+    fn image(self: &Arc<Self>, x: &Polynomial<Rational>) -> QuadraticNumberFieldElement {
+        let x = self.anf_polyquo.to_vec(x);
         debug_assert!(x.len() == 2);
         self.anf_quadratic.add(
             &self.anf_quadratic.from_rat(&x[0]),
@@ -112,7 +111,10 @@ impl
         QuadraticNumberFieldStructure<Integer>,
     > for QuadraticNumberFieldIsomorphism
 {
-    fn try_preimage(&self, y: &QuadraticNumberFieldElement) -> Option<Polynomial<Rational>> {
+    fn try_preimage(
+        self: &Arc<Self>,
+        y: &QuadraticNumberFieldElement,
+    ) -> Option<Polynomial<Rational>> {
         Some(self.preimage(y))
     }
 }
@@ -123,7 +125,7 @@ impl
         QuadraticNumberFieldStructure<Integer>,
     > for QuadraticNumberFieldIsomorphism
 {
-    fn preimage(&self, y: &QuadraticNumberFieldElement) -> Polynomial<Rational> {
+    fn preimage(self: &Arc<Self>, y: &QuadraticNumberFieldElement) -> Polynomial<Rational> {
         let gen_coeff = &y.algebraic_part / &self.generator_image.algebraic_part;
         let rat_coeff = &y.rational_part - &gen_coeff * &self.generator_image.rational_part;
         Polynomial::from_coeffs(vec![rat_coeff, gen_coeff])
@@ -143,7 +145,7 @@ impl AlgebraicNumberFieldPolynomialQuotientStructure {
     /// Returns `Err` if this number field is not quadratic.
     pub fn quadratic_anf_isomorphism(
         self: &Arc<Self>,
-    ) -> Result<Arc<QuadraticNumberFieldIsomorphism<&Self>>, ()> {
+    ) -> Result<Arc<QuadraticNumberFieldIsomorphism>, ()> {
         QuadraticNumberFieldIsomorphism::new(self.clone())
     }
 }

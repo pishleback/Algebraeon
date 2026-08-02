@@ -69,7 +69,7 @@ impl<D: BorrowedElem<Integer>> Signature for QuadraticRingOfIntegersStructure<D>
 impl<D: BorrowedElem<Integer>> SetSignature for QuadraticRingOfIntegersStructure<D> {
     type Elem = QuadraticNumberFieldElement;
 
-    fn validate_element(&self, a: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, a: &Self::Elem) -> Result<(), String> {
         if self.anf().is_algebraic_integer(a) {
             Ok(())
         } else {
@@ -88,15 +88,15 @@ impl<D: BorrowedElem<Integer>> RinglikeSpecializationSignature
     for QuadraticRingOfIntegersStructure<D>
 {
     fn try_ring_restructure(
-        self: &Arc<Self>,
+        self: Arc<Self>,
     ) -> Option<Arc<impl EqSignature<Elem = Self::Elem> + RingSignature>> {
-        Some(self.clone())
+        Some(self)
     }
 
     fn try_char_zero_ring_restructure(
-        self: &Arc<Self>,
+        self: Arc<Self>,
     ) -> Option<Arc<impl EqSignature<Elem = Self::Elem> + CharZeroRingSignature>> {
-        Some(self.clone())
+        Some(self)
     }
 }
 
@@ -223,11 +223,14 @@ impl<D: BorrowedElem<Integer>> DedekindDomainSignature for QuadraticRingOfIntege
 impl<D: BorrowedElem<Integer>> AlgebraicIntegerRingSignature<QuadraticNumberFieldStructure<D>>
     for QuadraticRingOfIntegersStructure<D>
 {
-    fn anf(&self) -> &QuadraticNumberFieldStructure<D> {
-        &self.qanf
+    fn anf(self: &Arc<Self>) -> Arc<QuadraticNumberFieldStructure<D>> {
+        self.qanf.clone()
     }
 
-    fn try_from_anf(&self, y: &QuadraticNumberFieldElement) -> Option<QuadraticNumberFieldElement> {
+    fn try_from_anf(
+        self: &Arc<Self>,
+        y: &QuadraticNumberFieldElement,
+    ) -> Option<QuadraticNumberFieldElement> {
         let d_mod_4 = self.d() % Integer::from(4);
         if d_mod_4 == Integer::from(1) {
             // if d = 1 mod 4 then the ring of integers is {a + b * (1/2 + 1/2 sqrt(d)) : a, b in ZZ}
@@ -252,11 +255,11 @@ impl<D: BorrowedElem<Integer>> AlgebraicIntegerRingSignature<QuadraticNumberFiel
         }
     }
 
-    fn to_anf(&self, x: &QuadraticNumberFieldElement) -> QuadraticNumberFieldElement {
+    fn to_anf(self: &Arc<Self>, x: &QuadraticNumberFieldElement) -> QuadraticNumberFieldElement {
         x.clone()
     }
 
-    fn integral_basis(&self) -> Vec<Self::Elem> {
+    fn integral_basis(self: &Arc<Self>) -> Vec<Self::Elem> {
         todo!()
     }
 }

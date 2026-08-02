@@ -12,7 +12,7 @@ pub trait ComplexInnerProduct<Ring: ComplexSubsetSignature> {
     /// # Panics
     /// If the dimensions of `a` and `b` do not match.
     fn inner_product(
-        &self,
+        self: &Arc<Self>,
         a: &[impl Borrow<Ring::Elem>],
         b: &[impl Borrow<Ring::Elem>],
     ) -> Ring::Elem;
@@ -29,8 +29,8 @@ impl<Ring: ComplexSubsetSignature + ComplexConjugateSignature> StandardInnerProd
         Self { ring }.into()
     }
 
-    pub fn ring(&self) -> &Ring {
-        self.ring.borrow()
+    pub fn ring(&self) -> &Arc<Ring> {
+        &self.ring
     }
 }
 
@@ -38,7 +38,7 @@ impl<Ring: ComplexSubsetSignature + ComplexConjugateSignature + RingSignature>
     ComplexInnerProduct<Ring> for StandardInnerProduct<Ring>
 {
     fn inner_product(
-        &self,
+        self: &Arc<Self>,
         a: &[impl Borrow<Ring::Elem>],
         b: &[impl Borrow<Ring::Elem>],
     ) -> Ring::Elem {
@@ -68,7 +68,7 @@ pub struct RealSymmetricInnerProduct<Ring: RealSubsetSignature> {
 }
 
 fn is_positive_definite<Ring: OrderedRingSignature + RealSubsetSignature>(
-    ring: &Ring,
+    ring: &Arc<Ring>,
     mat: &SymmetricMatrix<Ring::Elem>,
 ) -> bool {
     let ring_mat = ring.matrix_structure();
@@ -95,12 +95,12 @@ impl<Ring: RealSubsetSignature> RealSymmetricInnerProduct<Ring> {
     where
         Ring: OrderedRingSignature,
     {
-        debug_assert!(is_positive_definite(ring.borrow(), &mat));
+        debug_assert!(is_positive_definite(&ring, &mat));
         Self { ring, mat }.into()
     }
 
-    pub fn ring(&self) -> &Ring {
-        self.ring.borrow()
+    pub fn ring(&self) -> &Arc<Ring> {
+        &self.ring
     }
 }
 
@@ -108,7 +108,7 @@ impl<Ring: RingSignature + RealSubsetSignature> ComplexInnerProduct<Ring>
     for RealSymmetricInnerProduct<Ring>
 {
     fn inner_product(
-        &self,
+        self: &Arc<Self>,
         a: &[impl Borrow<Ring::Elem>],
         b: &[impl Borrow<Ring::Elem>],
     ) -> <Ring>::Elem {

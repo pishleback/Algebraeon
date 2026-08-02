@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use super::polynomial_quotient_number_field::AlgebraicNumberFieldPolynomialQuotientStructure;
 use crate::{matrix::Matrix, polynomial::*, structure::*};
 use algebraeon_structures::*;
@@ -10,7 +12,7 @@ fn double_poly_to_row(
     a: Polynomial<Polynomial<Rational>>,
 ) -> Matrix<Rational> {
     // let n = outer_poly_len * inner_poly_len;
-    let rat_poly_poly = Rational::structure().into_polynomials().into_polynomials();
+    let rat_poly_poly = Rational::structure().polynomials().polynomials();
 
     debug_assert!(rat_poly_poly.num_coeffs(&a) <= outer_poly_len);
     #[cfg(debug_assertions)]
@@ -85,7 +87,7 @@ impl PolynomialStructure<AlgebraicNumberFieldPolynomialQuotientStructure> {
                 The elementary symmetric polynomials in σ₀(θ) σ₁(θ) σ₂(θ) are (up to sign flips) the (rational) coefficients of the minimal polynomial of θ
     */
     pub fn polynomial_norm_by_symmetric_polynomials(
-        &self,
+        self: &Arc<Self>,
         f: &Polynomial<Polynomial<Rational>>,
     ) -> Polynomial<Rational> {
         // println!("f = {}", f);
@@ -102,8 +104,8 @@ impl PolynomialStructure<AlgebraicNumberFieldPolynomialQuotientStructure> {
         // println!("embeddings = {:?}", embedding_vars);
 
         let rational_poly_multipoly_structure = Rational::structure()
-            .into_multivariable_polynomials()
-            .into_polynomials();
+            .multivariable_polynomials()
+            .polynomials();
 
         let norm_f_sym = rational_poly_multipoly_structure.product(
             &embedding_vars
@@ -124,7 +126,8 @@ impl PolynomialStructure<AlgebraicNumberFieldPolynomialQuotientStructure> {
         // }
 
         let e_vals = {
-            let modulus = self.coeff_ring().modulus();
+            let coeff_ring = self.coeff_ring();
+            let modulus = coeff_ring.modulus();
             let mut min_poly_coeffs = modulus.as_ref().coeffs().collect::<Vec<_>>();
 
             let lc = min_poly_coeffs.pop().unwrap();
@@ -162,7 +165,7 @@ impl PolynomialStructure<AlgebraicNumberFieldPolynomialQuotientStructure> {
     }
 
     pub fn factor_monic_sqfree_by_polynomial_norm(
-        &self,
+        self: &Arc<Self>,
         p: &<Self as SetSignature>::Elem,
     ) -> Factored<<Self as SetSignature>::Elem, Natural> {
         // See
@@ -254,7 +257,7 @@ impl PolynomialStructure<AlgebraicNumberFieldPolynomialQuotientStructure> {
     }
 
     pub fn factor_primitive_sqfree_by_reduced_ring(
-        &self,
+        self: &Arc<Self>,
         p: &<Self as SetSignature>::Elem,
     ) -> Factored<<Self as SetSignature>::Elem, Natural> {
         debug_assert!(!self.is_zero(p));
@@ -472,8 +475,8 @@ impl PolynomialStructure<AlgebraicNumberFieldPolynomialQuotientStructure> {
 
                     // Q[y]/qi(y)
                     let lai_reduced_ring = Rational::structure()
-                        .into_polynomials()
-                        .into_quotient_field_unchecked(qi.clone());
+                        .polynomials()
+                        .quotient_field_unchecked(qi.clone());
 
                     //pi(x) can now be computed as the degree d minimal polynomial of x in K[x]/pi(x) = Q[y]/qi(y)
                     //this is done by writing x^d as a linear combination of smaller powers of x and powers of the generator t of K
@@ -564,7 +567,7 @@ impl PolynomialStructure<AlgebraicNumberFieldPolynomialQuotientStructure> {
 
     //factor over the rationals first, then factor each irreducible rational factor over the anf
     pub fn factorize_rational_factorize_first(
-        &self,
+        self: &Arc<Self>,
         f: &<Self as SetSignature>::Elem,
         factorize: &impl Fn(
             &<Self as SetSignature>::Elem,
@@ -608,7 +611,7 @@ impl PolynomialStructure<AlgebraicNumberFieldPolynomialQuotientStructure> {
 impl FactoringMonoidSignature
     for PolynomialStructure<AlgebraicNumberFieldPolynomialQuotientStructure>
 {
-    fn factor_unchecked(&self, f: &Self::Elem) -> Factored<Self::Elem, Natural> {
+    fn factor_unchecked(self: &Arc<Self>, f: &Self::Elem) -> Factored<Self::Elem, Natural> {
         if self.is_zero(f) {
             Factored::Zero
         } else {

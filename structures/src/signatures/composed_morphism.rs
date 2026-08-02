@@ -14,14 +14,14 @@ pub struct CompositionMorphism<
     b: PhantomData<B>,
     c: PhantomData<C>,
     // required to satisfy ab.range() == bc.domain()
-    a_to_b: AB,
-    b_to_c: BC,
+    a_to_b: Arc<AB>,
+    b_to_c: Arc<BC>,
 }
 
 impl<A: Signature, B: Signature, C: Signature, AB: Morphism<A, B>, BC: Morphism<B, C>>
     CompositionMorphism<A, B, C, AB, BC>
 {
-    pub fn new(a_to_b: AB, b_to_c: BC) -> Self {
+    pub fn new(a_to_b: Arc<AB>, b_to_c: Arc<BC>) -> Arc<Self> {
         assert_eq!(a_to_b.range(), b_to_c.domain());
         Self {
             a: PhantomData,
@@ -30,6 +30,7 @@ impl<A: Signature, B: Signature, C: Signature, AB: Morphism<A, B>, BC: Morphism<
             a_to_b,
             b_to_c,
         }
+        .into()
     }
 
     pub fn a(&self) -> Arc<A> {
@@ -58,11 +59,11 @@ impl<A: Signature, B: Signature, C: Signature, AB: Morphism<A, B>, BC: Morphism<
 impl<A: Signature, B: Signature, C: Signature, AB: Morphism<A, B>, BC: Morphism<B, C>>
     Morphism<A, C> for CompositionMorphism<A, B, C, AB, BC>
 {
-    fn domain(&self) -> Arc<A> {
+    fn domain(self: &Arc<Self>) -> Arc<A> {
         self.a()
     }
 
-    fn range(&self) -> Arc<C> {
+    fn range(self: &Arc<Self>) -> Arc<C> {
         self.c()
     }
 }
@@ -75,7 +76,7 @@ impl<
     BC: FunctionMorphism<B, C>,
 > FunctionMorphism<A, C> for CompositionMorphism<A, B, C, AB, BC>
 {
-    fn image(&self, x: &A::Elem) -> C::Elem {
+    fn image(self: &Arc<Self>, x: &A::Elem) -> C::Elem {
         self.b_to_c.image(&self.a_to_b.image(x))
     }
 }
@@ -88,7 +89,7 @@ impl<
     BC: InjectiveFunctionMorphism<B, C>,
 > InjectiveFunctionMorphism<A, C> for CompositionMorphism<A, B, C, AB, BC>
 {
-    fn try_preimage(&self, x: &C::Elem) -> Option<A::Elem> {
+    fn try_preimage(self: &Arc<Self>, x: &C::Elem) -> Option<A::Elem> {
         self.a_to_b.try_preimage(&self.b_to_c.try_preimage(x)?)
     }
 }
@@ -101,7 +102,7 @@ impl<
     BC: BijectiveFunctionMorphism<B, C>,
 > BijectiveFunctionMorphism<A, C> for CompositionMorphism<A, B, C, AB, BC>
 {
-    fn preimage(&self, x: &C::Elem) -> A::Elem {
+    fn preimage(self: &Arc<Self>, x: &C::Elem) -> A::Elem {
         self.a_to_b.preimage(&self.b_to_c.preimage(x))
     }
 }

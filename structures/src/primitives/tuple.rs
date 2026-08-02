@@ -94,9 +94,9 @@ impl<Set0: FiniteSetSignature, Set1: FiniteSetSignature> FiniteSetSignature
         self.set_0().size() * self.set_1().size()
     }
 
-    fn generate_random_elements(self: &Arc<Self>, seed: u64) -> impl Iterator<Item = Self::Elem> {
-        let mut set0_rand = self.set_0().generate_random_elements(seed);
-        let mut set1_rand = self.set_1().generate_random_elements(seed + 1);
+    fn generate_random_elements(self: Arc<Self>, seed: u64) -> impl Iterator<Item = Self::Elem> {
+        let mut set0_rand = self.set_0().clone().generate_random_elements(seed);
+        let mut set1_rand = self.set_1().clone().generate_random_elements(seed + 1);
         (0usize..).map(move |_| (set0_rand.next().unwrap(), set1_rand.next().unwrap()))
     }
 }

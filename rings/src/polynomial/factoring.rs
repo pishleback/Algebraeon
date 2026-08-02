@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use super::{Polynomial, polynomial_structure::*};
 use crate::structure::*;
 use algebraeon_structures::*;
@@ -14,7 +16,7 @@ where
 {
     /// Reduce a factorization problem for polynomials over a ring of characteristic 0 to a factorization of non-constant primitive polynomials
     pub fn factorize_by_primitive_factorize(
-        &self,
+        self: &Arc<Self>,
         f: Polynomial<RS::Elem>,
         factor_coeff: impl Fn(&RS::Elem) -> Factored<RS::Elem, Natural>,
         primitive_factorize: &impl Fn(Polynomial<RS::Elem>) -> Factored<Polynomial<RS::Elem>, Natural>,
@@ -60,7 +62,7 @@ where
     /// Reduce a factorization problem for primitive polynomials over a ring of characteristic 0 to a factorization of non-constant primitive squarefree polynomials over the ring
     //https://en.wikipedia.org/wiki/Square-free_polynomial#Yun's_algorithm
     pub fn factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(
-        &self,
+        self: &Arc<Self>,
         mut f: Polynomial<RS::Elem>,
         primitive_sqfree_factorize: &impl Fn(
             Polynomial<RS::Elem>,
@@ -131,7 +133,7 @@ where
 {
     #[allow(unused)]
     fn factor_primitive_linear_part(
-        &self,
+        self: &Arc<Self>,
         mut f: Polynomial<RS::Elem>,
     ) -> (
         Factored<Polynomial<RS::Elem>, Natural>,
@@ -202,7 +204,7 @@ where
     PolynomialStructure<RS>: SetSignature<Elem = Polynomial<RS::Elem>>,
 {
     fn find_factor_primitive_by_kroneckers_algorithm(
-        &self,
+        self: &Arc<Self>,
         f: &Polynomial<RS::Elem>,
         factor_coeff: impl Fn(&RS::Elem) -> Factored<RS::Elem, Natural>,
     ) -> FindFactorResult<Polynomial<RS::Elem>> {
@@ -299,7 +301,7 @@ where
         + UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
 {
     pub fn factorize_by_kroneckers_method(
-        &self,
+        self: &Arc<Self>,
         f: Polynomial<RS::Elem>,
         factor_coeff: impl Fn(&RS::Elem) -> Factored<RS::Elem, Natural>,
     ) -> Factored<Polynomial<RS::Elem>, Natural> {
@@ -338,7 +340,7 @@ where
         + UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
 {
     pub fn factorize_by_yuns_and_kroneckers_method(
-        &self,
+        self: &Arc<Self>,
         f: &Polynomial<RS::Elem>,
         factor_coeff: impl Fn(&RS::Elem) -> Factored<RS::Elem, Natural>,
     ) -> Factored<Polynomial<RS::Elem>, Natural> {
@@ -358,32 +360,13 @@ where
     }
 }
 
-// impl<R: MetaType> Polynomial<R>
-// where
-//     R::Signature: UniqueFactorizationDomainSignature
-//         + GreatestCommonDivisorSignature
-//         + CharZeroRingSignature
-//         + FiniteUnitsSignature
-//         + 'static,
-//     PolynomialStructure<R::Signature, R::Signature>: SetSignature<Set = Polynomial<R>>
-//         + GreatestCommonDivisorSignature
-//         + UniqueFactorizationDomainSignature,
-// {
-//     pub fn factorize_by_kroneckers_method(
-//         &self,
-//         factor_coeff: impl Fn(&R) -> Option<FactoredRingElement<R>>,
-//     ) -> Option<FactoredRingElement<Polynomial<R>>> {
-//         Self::structure().factorize_by_yuns_and_kroneckers_method(self, factor_coeff)
-//     }
-// }
-
 pub fn factorize_by_factorize_primitive_part<
     Ring: RingSignature + GreatestCommonDivisorSignature,
     Field: FieldSignature,
     Fof: FieldOfFractionsInclusion<Ring, Field>,
 >(
-    fof_inclusion: &Fof,
-    poly_ring: &PolynomialStructure<Field>,
+    fof_inclusion: &Arc<Fof>,
+    poly_ring: &Arc<PolynomialStructure<Field>>,
     f: &Polynomial<Field::Elem>,
 ) -> Factored<Polynomial<Field::Elem>, Natural>
 where
@@ -423,7 +406,7 @@ where
         + UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
 {
     fn find_factor_by_trying_all_factors(
-        &self,
+        self: &Arc<Self>,
         f: Polynomial<RS::Elem>,
     ) -> FindFactorResult<Polynomial<RS::Elem>> {
         let f_deg = self.degree(&f).unwrap();
@@ -446,7 +429,7 @@ where
     }
 
     pub fn factorize_by_trying_all_factors(
-        &self,
+        self: &Arc<Self>,
         f: Polynomial<RS::Elem>,
     ) -> Factored<Polynomial<RS::Elem>, Natural> {
         if self.is_zero(&f) {
@@ -457,17 +440,6 @@ where
     }
 }
 
-// impl<F: MetaType> Polynomial<F>
-// where
-//     F::Signature: FieldSignature + FiniteUnitsSignature,
-//     PolynomialStructure<F::Signature, F::Signature>:
-//         SetSignature<Set = Polynomial<F>> + UniqueFactorizationDomainSignature,
-// {
-//     pub fn factorize_by_trying_all_factors(&self) -> Option<FactoredRingElement<Polynomial<F>>> {
-//         Self::structure().factorize_by_trying_all_factors(self.clone())
-//     }
-// }
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -477,9 +449,7 @@ mod tests {
     fn test_factor_by_kroneckers_method_over_integers() {
         let x = &Polynomial::<Integer>::var().into_ergonomic();
 
-        let int_poly_fs = Integer::structure()
-            .into_polynomials()
-            .into_factorizations();
+        let int_poly_fs = Integer::structure().polynomials().factorizations();
 
         //primitive cases
         let f = ((1 + x).pow(2)).into_verbose();
@@ -602,9 +572,7 @@ mod tests {
         let x = &Polynomial::<Rational>::var().into_ergonomic();
         let f = (6 * (x.pow(4) + x + 1) * (x.pow(3) + x + 1)).into_verbose();
         let fs = f.factor();
-        let rat_poly_fs = Rational::structure()
-            .into_polynomials()
-            .into_factorizations();
+        let rat_poly_fs = Rational::structure().polynomials().factorizations();
 
         println!("fs = {}", fs);
 

@@ -21,16 +21,17 @@ pub struct ConwayFiniteFieldStructure {
 }
 
 impl ConwayFiniteFieldStructure {
-    pub fn new(p: usize, n: usize) -> Result<Self, ()> {
+    pub fn new(p: usize, n: usize) -> Result<Arc<Self>, ()> {
         let f = conway_polynomial(p, n)?;
         Ok(Self {
             p,
             n,
             structure: Integer::structure()
-                .into_quotient_field_unchecked(Integer::from(p))
-                .into_polynomials()
-                .into_quotient_field_unchecked(f.clone()),
-        })
+                .quotient_field_unchecked(Integer::from(p))
+                .polynomials()
+                .quotient_field_unchecked(f.clone()),
+        }
+        .into())
     }
 
     pub fn reduce(&self, f: &Polynomial<Integer>) -> Polynomial<Integer> {
@@ -198,9 +199,9 @@ pub struct ConwayFiniteFieldInclusion {
     #[allow(unused)]
     p: usize,
     // finite field of order p^m
-    domain: ConwayFiniteFieldStructure,
+    domain: Arc<ConwayFiniteFieldStructure>,
     // finite field of order p^n
-    range: ConwayFiniteFieldStructure,
+    range: Arc<ConwayFiniteFieldStructure>,
     // n/m
     #[allow(unused)]
     degree: usize,
@@ -212,7 +213,7 @@ pub struct ConwayFiniteFieldInclusion {
 }
 
 impl ConwayFiniteFieldInclusion {
-    pub fn new(p: usize, m: usize, n: usize) -> Result<Self, &'static str> {
+    pub fn new(p: usize, m: usize, n: usize) -> Result<Arc<Self>, &'static str> {
         if n.is_multiple_of(m) {
             let degree = n / m;
 
@@ -239,9 +240,10 @@ impl ConwayFiniteFieldInclusion {
                 degree,
                 inclusion,
                 mat_mod_p: MatrixStructure::new(
-                    Integer::structure().into_quotient_field(p.into()).unwrap(),
+                    Integer::structure().quotient_field(p.into()).unwrap(),
                 ),
-            })
+            }
+            .into())
         } else {
             Err("m must divide n")
         }
@@ -251,19 +253,19 @@ impl ConwayFiniteFieldInclusion {
 impl Morphism<ConwayFiniteFieldStructure, ConwayFiniteFieldStructure>
     for ConwayFiniteFieldInclusion
 {
-    fn domain(&self) -> &ConwayFiniteFieldStructure {
-        &self.domain
+    fn domain(self: &Arc<Self>) -> Arc<ConwayFiniteFieldStructure> {
+        self.domain.clone()
     }
 
-    fn range(&self) -> &ConwayFiniteFieldStructure {
-        &self.range
+    fn range(self: &Arc<Self>) -> Arc<ConwayFiniteFieldStructure> {
+        self.range.clone()
     }
 }
 
 impl FunctionMorphism<ConwayFiniteFieldStructure, ConwayFiniteFieldStructure>
     for ConwayFiniteFieldInclusion
 {
-    fn image(&self, x: &Polynomial<Integer>) -> Polynomial<Integer> {
+    fn image(self: &Arc<Self>, x: &Polynomial<Integer>) -> Polynomial<Integer> {
         self.range().from_col_vector(
             self.mat_mod_p
                 .mul(&self.inclusion, &self.domain().to_col_vector(x))
@@ -275,7 +277,7 @@ impl FunctionMorphism<ConwayFiniteFieldStructure, ConwayFiniteFieldStructure>
 impl InjectiveFunctionMorphism<ConwayFiniteFieldStructure, ConwayFiniteFieldStructure>
     for ConwayFiniteFieldInclusion
 {
-    fn try_preimage(&self, x: &Polynomial<Integer>) -> Option<Polynomial<Integer>> {
+    fn try_preimage(self: &Arc<Self>, x: &Polynomial<Integer>) -> Option<Polynomial<Integer>> {
         Some(
             self.domain().from_vector(
                 self.inclusion

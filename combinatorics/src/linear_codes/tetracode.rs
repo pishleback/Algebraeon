@@ -16,7 +16,10 @@ use algebraeon_rings::{
 };
 use algebraeon_sets::sets::{Function, SetToConstSizeFunctionsToSignature};
 use algebraeon_structures::*;
-use std::{ops::Add, sync::OnceLock};
+use std::{
+    ops::Add,
+    sync::{Arc, OnceLock},
+};
 
 type F3 = Modulo<3>;
 pub const ZERO: F3 = F3::new(0);
@@ -101,17 +104,16 @@ impl Add<&TetracodeVector> for &TetracodeVector {
 type AmbientSpace = ConstFinitelyFreeModuleStructure<
     4,
     PointedOrdered3CycleCanonicalStructure,
-    PointedOrdered3CycleCanonicalStructure,
-    <F3 as MetaType>::Signature,
     <F3 as MetaType>::Signature,
 >;
 
 struct TetracodeCache {
-    subspace: FinitelyFreeSubmoduleStructure<
-        PointedOrdered3CycleCanonicalStructure,
-        <F3 as MetaType>::Signature,
-        AmbientSpace,
-        AmbientSpace,
+    subspace: Arc<
+        FinitelyFreeSubmoduleStructure<
+            PointedOrdered3CycleCanonicalStructure,
+            <F3 as MetaType>::Signature,
+            AmbientSpace,
+        >,
     >,
 }
 
@@ -119,7 +121,7 @@ static TETRACODE_CACHE: OnceLock<TetracodeCache> = OnceLock::new();
 
 fn cache() -> &'static TetracodeCache {
     TETRACODE_CACHE.get_or_init(|| {
-        let space = F3::structure().into_free_module(PointedOrdered3Cycle::structure());
+        let space = F3::structure().free_module(PointedOrdered3Cycle::structure());
         let subspace = space.generated_submodule(vec![
             &PointedOrdered3Cycle::structure()
                 .const_size_functions_to(&F3::structure())
@@ -148,8 +150,8 @@ fn cache() -> &'static TetracodeCache {
 }
 
 /// The 4 dimensional vector space structure over F3 with basis given by the points of a pointed ordered 3-cycle
-pub fn space_structure() -> &'static AmbientSpace {
-    cache().subspace.module()
+pub fn space_structure() -> Arc<AmbientSpace> {
+    cache().subspace.module().clone()
 }
 
 /// The 2 dimensional vector subspace given by the tetracode
@@ -158,13 +160,14 @@ pub fn tetracode_subspace() -> &'static FinitelyFreeSubmodule<F3> {
 }
 
 /// The 2 dimensional vector subspace structure given by the tetracode
-pub fn tetracode_subspace_structure() -> &'static FinitelyFreeSubmoduleStructure<
-    PointedOrdered3CycleCanonicalStructure,
-    <F3 as MetaType>::Signature,
-    AmbientSpace,
-    AmbientSpace,
+pub fn tetracode_subspace_structure() -> Arc<
+    FinitelyFreeSubmoduleStructure<
+        PointedOrdered3CycleCanonicalStructure,
+        <F3 as MetaType>::Signature,
+        AmbientSpace,
+    >,
 > {
-    &cache().subspace
+    cache().subspace.clone()
 }
 
 pub fn all_tetracodewords() -> Vec<TetracodeVector> {

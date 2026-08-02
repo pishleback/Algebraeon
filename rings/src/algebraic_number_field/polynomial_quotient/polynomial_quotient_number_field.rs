@@ -27,24 +27,22 @@ impl Polynomial<Rational> {
     pub fn algebraic_number_field(
         self,
     ) -> Option<Arc<AlgebraicNumberFieldPolynomialQuotientStructure>> {
-        Rational::structure()
-            .into_polynomials()
-            .into_quotient_field(self)
+        Rational::structure().polynomials().quotient_field(self)
     }
 
     pub fn algebraic_number_field_unchecked(
         self,
-    ) -> AlgebraicNumberFieldPolynomialQuotientStructure {
+    ) -> Arc<AlgebraicNumberFieldPolynomialQuotientStructure> {
         Rational::structure()
-            .into_polynomials()
-            .into_quotient_field_unchecked(self)
+            .polynomials()
+            .quotient_field_unchecked(self)
     }
 
     //return the splitting field and the roots of f in the splitting field
     pub fn splitting_field(
         &self,
     ) -> (
-        AlgebraicNumberFieldPolynomialQuotientStructure,
+        Arc<AlgebraicNumberFieldPolynomialQuotientStructure>,
         Vec<Polynomial<Rational>>,
     ) {
         let roots = self.primitive_part_fof().all_complex_roots();
@@ -76,7 +74,6 @@ impl FreeModuleSignature<EnumeratedFiniteSetStructure, RationalCanonicalStructur
             .coefficient_ring_inclusion()
             .range_module_structure()
             .basis_set()
-            .borrow()
             .clone()
     }
 
@@ -103,23 +100,25 @@ impl AlgebraicNumberFieldSignature for AlgebraicNumberFieldPolynomialQuotientStr
     type Basis = EnumeratedFiniteSetStructure;
     type RationalInclusion = PrincipalRationalMap<Self>;
 
-    fn inbound_finite_dimensional_rational_extension(&self) -> Arc<Self::RationalInclusion> {
+    fn inbound_finite_dimensional_rational_extension(
+        self: &Arc<Self>,
+    ) -> Arc<Self::RationalInclusion> {
         self.inbound_principal_rational_map()
     }
 
-    fn generator(&self) -> Self::Elem {
+    fn generator(self: &Arc<Self>) -> Self::Elem {
         self.generator()
     }
 
-    fn discriminant(&self) -> Integer {
+    fn discriminant(self: &Arc<Self>) -> Integer {
         self.compute_integral_basis_and_discriminant().1
     }
 
-    fn integral_basis(&self) -> Vec<Self::Elem> {
+    fn integral_basis(self: &Arc<Self>) -> Vec<Self::Elem> {
         self.compute_integral_basis_and_discriminant().0
     }
 
-    fn is_algebraic_integer(&self, a: &Polynomial<Rational>) -> bool {
+    fn is_algebraic_integer(self: &Arc<Self>, a: &Polynomial<Rational>) -> bool {
         if self.trace(a).denominator() != Natural::ONE {
             return false;
         }
@@ -133,7 +132,9 @@ impl AlgebraicNumberFieldSignature for AlgebraicNumberFieldPolynomialQuotientStr
 }
 
 impl AlgebraicNumberFieldPolynomialQuotientStructure {
-    pub fn compute_integral_basis_and_discriminant(&self) -> (Vec<Polynomial<Rational>>, Integer) {
+    pub fn compute_integral_basis_and_discriminant(
+        self: &Arc<Self>,
+    ) -> (Vec<Polynomial<Rational>>, Integer) {
         //https://www.ucl.ac.uk/~ucahmki/intbasis.pdf
         // println!("compute_basis_ring_of_integers");
         let n = self.degree();
@@ -237,7 +238,7 @@ impl
     > for PrincipalRationalMap<AlgebraicNumberFieldPolynomialQuotientStructure>
 {
     fn all_roots(
-        &self,
+        self: &Arc<Self>,
         polynomial: &Polynomial<Rational>,
     ) -> Vec<<AlgebraicNumberFieldPolynomialQuotientStructure as SetSignature>::Elem> {
         let anf = self.range();

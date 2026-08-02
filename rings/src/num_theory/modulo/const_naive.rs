@@ -126,7 +126,7 @@ impl<const N: usize> Signature for ModuloCanonicalStructure<N> {}
 impl<const N: usize> SetSignature for ModuloCanonicalStructure<N> {
     type Elem = Modulo<N>;
 
-    fn validate_element(&self, _x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, _x: &Self::Elem) -> Result<(), String> {
         Ok(())
     }
 }
@@ -134,8 +134,8 @@ impl<const N: usize> SetSignature for ModuloCanonicalStructure<N> {
 impl<const N: usize> MetaType for Modulo<N> {
     type Signature = ModuloCanonicalStructure<N>;
 
-    fn structure() -> Self::Signature {
-        ModuloCanonicalStructure {}
+    fn structure() -> Arc<Self::Signature> {
+        ModuloCanonicalStructure {}.into()
     }
 }
 
@@ -256,23 +256,23 @@ impl<const N: usize> TryReciprocalSignature for ModuloCanonicalStructure<N> {
 impl<const N: usize> QuotientSetSignature<IntegerCanonicalStructure>
     for ModuloCanonicalStructure<N>
 {
-    fn pre_quotient_set(&self) -> &IntegerCanonicalStructure {
-        Integer::structure_ref()
+    fn pre_quotient_set(self: &Arc<Self>) -> Arc<IntegerCanonicalStructure> {
+        Integer::structure()
     }
 
-    fn project(&self, x: Integer) -> Self::Elem {
+    fn project(self: &Arc<Self>, x: Integer) -> Self::Elem {
         x.into()
     }
 
-    fn project_ref(&self, x: &Integer) -> Self::Elem {
+    fn project_ref(self: &Arc<Self>, x: &Integer) -> Self::Elem {
         x.into()
     }
 
-    fn unproject(&self, x: Self::Elem) -> Integer {
+    fn unproject(self: &Arc<Self>, x: Self::Elem) -> Integer {
         x.lift_int()
     }
 
-    fn unproject_ref(&self, x: &Self::Elem) -> Integer {
+    fn unproject_ref(self: &Arc<Self>, x: &Self::Elem) -> Integer {
         x.lift_int()
     }
 }

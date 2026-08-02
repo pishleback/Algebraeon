@@ -159,7 +159,7 @@ impl<
     }
 
     pub fn add(
-        &self,
+        self: &Arc<Self>,
         x: FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
         y: FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
     ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Elem> {
@@ -180,7 +180,7 @@ impl<
     }
 
     pub fn intersect(
-        &self,
+        self: &Arc<Self>,
         x: &FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
         y: &FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
     ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Elem> {
@@ -199,7 +199,7 @@ impl<
     }
 
     pub fn intersect_list(
-        &self,
+        self: &Arc<Self>,
         xs: Vec<impl Borrow<FinitelyFreeSubmoduleAffineSubset<Ring::Elem>>>,
     ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Elem> {
         for x in &xs {
@@ -218,7 +218,7 @@ impl<
     }
 
     pub fn contains_element(
-        &self,
+        self: &Arc<Self>,
         x: &FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
         p: &Module::Elem,
     ) -> bool {
@@ -233,7 +233,7 @@ impl<
     }
 
     pub fn equal_slow(
-        &self,
+        self: &Arc<Self>,
         x: &FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
         y: &FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
     ) -> bool {

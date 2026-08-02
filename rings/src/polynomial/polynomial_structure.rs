@@ -283,7 +283,7 @@ impl<RS: RingEqSignature> PolynomialStructure<RS> {
     So a(x) * b(x) can be found with 3 multiplications
     */
     fn mul_karatsuba<'a, C: Borrow<RS::Elem>>(
-        &self,
+        self: &Arc<Self>,
         a: &'a Polynomial<C>,
         b: &'a Polynomial<C>,
     ) -> Polynomial<RS::Elem> {
@@ -347,11 +347,11 @@ impl<RS: RingEqSignature> PolynomialStructure<RS> {
 
 impl<RS: SemiRingEqSignature> RinglikeSpecializationSignature for PolynomialStructure<RS> {
     fn try_ring_restructure(
-        self: &Arc<Self>,
+        self: Arc<Self>,
     ) -> Option<Arc<impl EqSignature<Elem = Self::Elem> + RingSignature>> {
         self.coeff_ring()
             .try_ring_restructure()
-            .map(|coeff_ring| coeff_ring.into_polynomials())
+            .map(|coeff_ring| coeff_ring.polynomials())
     }
 }
 
@@ -487,7 +487,10 @@ where
 }
 
 impl<RS: SemiRingEqSignature> PolynomialStructure<RS> {
-    fn structure_into_coeffs(self, a: &Polynomial<RS::Elem>) -> impl Iterator<Item = &RS::Elem> {
+    fn structure_into_coeffs(
+        self: Arc<Self>,
+        a: &Polynomial<RS::Elem>,
+    ) -> impl Iterator<Item = &RS::Elem> {
         (0..self.num_coeffs(a)).map(|i| &a.coeffs[i])
     }
 
@@ -648,15 +651,6 @@ impl<RS: SemiRingEqSignature> PolynomialStructure<RS> {
         }
     }
 
-    // pub fn mul_scalar(&self, p: &Polynomial<RS::Elem>, x: &RS::Elem) -> Polynomial<RS::Elem> {
-    //     self.reduce_poly(Polynomial::from_coeffs(
-    //         p.coeffs
-    //             .iter()
-    //             .map(|c| self.coeff_ring().mul(c, x))
-    //             .collect(),
-    //     ))
-    // }
-
     //zero -> None
     //const -> 0
     //linear -> 1
@@ -708,7 +702,7 @@ impl<RS: SemiRingEqSignature> PolynomialStructure<RS> {
 
 impl<RS: IntegralDomainSignature> PolynomialStructure<RS> {
     pub fn try_quorem(
-        &self,
+        self: &Arc<Self>,
         a: &Polynomial<RS::Elem>,
         b: &Polynomial<RS::Elem>,
     ) -> Option<(Polynomial<RS::Elem>, Polynomial<RS::Elem>)> {
@@ -752,7 +746,7 @@ impl<RS: IntegralDomainSignature> PolynomialStructure<RS> {
     }
 
     pub fn div_impl(
-        &self,
+        self: &Arc<Self>,
         a: &Polynomial<RS::Elem>,
         b: &Polynomial<RS::Elem>,
     ) -> Option<Polynomial<RS::Elem>> {
@@ -768,7 +762,7 @@ impl<RS: IntegralDomainSignature> PolynomialStructure<RS> {
     //None if b = 0
     //error if deg(a) < deg(b)
     pub fn pseudorem(
-        &self,
+        self: &Arc<Self>,
         mut a: Polynomial<RS::Elem>,
         b: &Polynomial<RS::Elem>,
     ) -> Option<Result<Polynomial<RS::Elem>, &'static str>> {
@@ -800,7 +794,7 @@ impl<RS: IntegralDomainSignature> PolynomialStructure<RS> {
     ///     r is the pseudo remainder sequence
     ///     s is the scalar subresultants
     pub fn pseudo_remainder_subresultant_sequence(
-        &self,
+        self: &Arc<Self>,
         mut a: Polynomial<RS::Elem>,
         mut b: Polynomial<RS::Elem>,
     ) -> (Vec<Polynomial<RS::Elem>>, Vec<RS::Elem>) {
@@ -871,7 +865,7 @@ impl<RS: IntegralDomainSignature> PolynomialStructure<RS> {
 
     // efficiently compute the gcd of a and b up to scalar multipication using pseudo-remainder subresultant sequence
     pub fn subresultant_gcd(
-        &self,
+        self: &Arc<Self>,
         a: Polynomial<RS::Elem>,
         b: Polynomial<RS::Elem>,
     ) -> Polynomial<RS::Elem> {
@@ -880,7 +874,11 @@ impl<RS: IntegralDomainSignature> PolynomialStructure<RS> {
         prs.pop().unwrap()
     }
 
-    pub fn resultant(&self, a: Polynomial<RS::Elem>, b: Polynomial<RS::Elem>) -> RS::Elem {
+    pub fn resultant(
+        self: &Arc<Self>,
+        a: Polynomial<RS::Elem>,
+        b: Polynomial<RS::Elem>,
+    ) -> RS::Elem {
         if self.is_zero(&a) || self.is_zero(&b) {
             self.coeff_ring().zero()
         } else {
@@ -893,12 +891,15 @@ impl<RS: IntegralDomainSignature> PolynomialStructure<RS> {
         }
     }
 
-    pub fn is_squarefree(&self, p: &Polynomial<RS::Elem>) -> bool {
+    pub fn is_squarefree(self: &Arc<Self>, p: &Polynomial<RS::Elem>) -> bool {
         let dp = self.derivative(p.clone());
         self.degree(&self.subresultant_gcd(p.clone(), dp)).unwrap() == 0
     }
 
-    pub fn discriminant(&self, p: Polynomial<RS::Elem>) -> Result<RS::Elem, &'static str> {
+    pub fn discriminant(
+        self: &Arc<Self>,
+        p: Polynomial<RS::Elem>,
+    ) -> Result<RS::Elem, &'static str> {
         match self.degree(&p) {
             Some(n) => {
                 if n == 0 {
@@ -942,79 +943,27 @@ impl<RS: IntegralDomainSignature> MultiplicativeIntegralMonoidSignature
 
 impl<RS: IntegralDomainSignature> IntegralDomainSignature for PolynomialStructure<RS> {}
 
-// #[derive(Debug, Clone, PartialEq, Eq)]
-// pub struct PolynomialFactorOrderingStructure<Ring: RingSignature, RingB: BorrowedStructure<Ring>> {
-//     _coeff_ring: PhantomData<Ring>,
-//     coeff_ring: RingB,
-// }
-
-// impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>>
-//     PolynomialFactorOrderingStructure<Ring, RingB>
-// {
-//     fn new(coeff_ring: RingB) -> Self {
-//         Self {
-//             _coeff_ring: PhantomData::default(),
-//             coeff_ring,
-//         }
-//     }
-
-//     fn coeff_ring(&self) -> &Ring {
-//         self.coeff_ring.borrow()
-//     }
-// }
-
-// impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> Signature
-//     for PolynomialFactorOrderingStructure<Ring, RingB>
-// {
-// }
-
-// impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> SetSignature
-//     for PolynomialFactorOrderingStructure<Ring, RingB>
-// {
-//     type Set = Polynomial<Ring::Elem>;
-
-//     fn is_element(&self, x: &Self::Elem) -> bool {
-//         self.coeff_ring().polynomial_ring().is_element(x)
-//     }
-// }
-
-// impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> EqSignature
-//     for PolynomialFactorOrderingStructure<Ring, RingB>
-// {
-//     fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
-//         self.coeff_ring().polynomial_ring().equal(a, b)
-//     }
-// }
-
-// impl<Ring: RingSignature, RingB: BorrowedStructure<Ring>> OrdSignature
-//     for PolynomialFactorOrderingStructure<Ring, RingB>
-// {
-//     fn cmp(&self, a: &Self::Elem, b: &Self::Elem) -> std::cmp::Ordering {
-//         std::cmp::Ordering::Equal
-//     }
-// }
-
 impl<RS: UniqueFactorizationMonoidSignature + IntegralDomainSignature>
     UniqueFactorizationMonoidSignature for PolynomialStructure<RS>
 {
     type FactoredExponent = NaturalCanonicalStructure;
 
-    fn factorization_exponents(&self) -> Arc<Self::FactoredExponent> {
+    fn factorization_exponents(self: &Arc<Self>) -> Arc<Self::FactoredExponent> {
         Natural::structure()
     }
 
-    fn try_is_irreducible(&self, _a: &Self::Elem) -> Option<bool> {
+    fn try_is_irreducible(self: &Arc<Self>, _a: &Self::Elem) -> Option<bool> {
         None
     }
 
-    fn factorization_pow(&self, a: &Self::Elem, k: &Natural) -> Self::Elem {
+    fn factorization_pow(self: &Arc<Self>, a: &Self::Elem, k: &Natural) -> Self::Elem {
         self.nat_pow(a, k)
     }
 }
 
 impl<RS: GreatestCommonDivisorSignature> PolynomialStructure<RS> {
     pub fn factor_primitive(
-        &self,
+        self: &Arc<Self>,
         mut p: Polynomial<RS::Elem>,
     ) -> Option<(RS::Elem, Polynomial<RS::Elem>)> {
         if self.is_zero(&p) {
@@ -1028,19 +977,22 @@ impl<RS: GreatestCommonDivisorSignature> PolynomialStructure<RS> {
         }
     }
 
-    pub fn is_primitive(&self, p: Polynomial<RS::Elem>) -> bool {
+    pub fn is_primitive(self: &Arc<Self>, p: Polynomial<RS::Elem>) -> bool {
         match self.factor_primitive(p) {
             Some((unit, _)) => self.coeff_ring().is_unit(&unit),
             None => false,
         }
     }
 
-    pub fn primitive_part(&self, p: Polynomial<RS::Elem>) -> Option<Polynomial<RS::Elem>> {
+    pub fn primitive_part(
+        self: &Arc<Self>,
+        p: Polynomial<RS::Elem>,
+    ) -> Option<Polynomial<RS::Elem>> {
         self.factor_primitive(p).map(|(_unit, prim)| prim)
     }
 
     pub fn gcd_by_primitive_subresultant(
-        &self,
+        self: &Arc<Self>,
         a: Polynomial<RS::Elem>,
         b: Polynomial<RS::Elem>,
     ) -> Polynomial<RS::Elem> {
@@ -1079,7 +1031,10 @@ impl<FS: FieldSignature> BezoutDomainSignature for PolynomialStructure<FS> {
 
 impl<RS: GreatestCommonDivisorSignature + CharZeroRingSignature> PolynomialStructure<RS> {
     #[allow(clippy::let_and_return)]
-    pub fn primitive_squarefree_part(&self, f: Polynomial<RS::Elem>) -> Polynomial<RS::Elem> {
+    pub fn primitive_squarefree_part(
+        self: &Arc<Self>,
+        f: Polynomial<RS::Elem>,
+    ) -> Polynomial<RS::Elem> {
         if self.is_zero(&f) {
             f
         } else {
@@ -1096,7 +1051,7 @@ impl<RS: FavoriteAssociateSignature + IntegralDomainSignature> FavoriteAssociate
     for PolynomialStructure<RS>
 {
     fn factor_fav_assoc(
-        &self,
+        self: &Arc<Self>,
         a: &Polynomial<RS::Elem>,
     ) -> (Polynomial<RS::Elem>, Polynomial<RS::Elem>) {
         if self.is_zero(a) {
@@ -1170,7 +1125,7 @@ impl<FS: FieldSignature> EuclideanDivisionSignature for PolynomialStructure<FS> 
 
 impl<RS: IntegralDomainSignature> PolynomialStructure<RS> {
     pub fn interpolate_by_lagrange_basis(
-        &self,
+        self: &Arc<Self>,
         points: &[(RS::Elem, RS::Elem)],
     ) -> Option<Polynomial<RS::Elem>> {
         /*
@@ -1305,7 +1260,7 @@ pub fn factor_primitive_fof<
     Field: FieldSignature,
     Fof: FieldOfFractionsInclusion<Ring, Field>,
 >(
-    fof_inclusion: &Fof,
+    fof_inclusion: &Arc<Fof>,
     p: &Polynomial<Field::Elem>,
 ) -> (Field::Elem, Polynomial<Ring::Elem>) {
     let ring = fof_inclusion.domain();

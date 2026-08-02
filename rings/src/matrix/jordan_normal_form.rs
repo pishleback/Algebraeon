@@ -23,7 +23,7 @@ where
     PolynomialStructure<FS::BFS>: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
         + SetSignature<Elem = Polynomial<<FS::BFS as SetSignature>::Elem>>,
 {
-    pub fn matrix(&self, field: &FS) -> Matrix<FS::Elem> {
+    pub fn matrix(&self, field: &Arc<FS>) -> Matrix<FS::Elem> {
         // let base_field = field.base_field();
         Matrix::construct(self.blocksize, self.blocksize, |r, c| {
             if r == c {
@@ -251,9 +251,9 @@ where
                         .collect_vec();
                     // ker(S) in ker(S^2) in ker(S^3) in ...
 
-                    let module = FinitelyFreeModuleStructure::<_, _, FS, _>::new(
+                    let module = FinitelyFreeModuleStructure::<_, FS>::new(
                         EnumeratedFiniteSetStructure::new(m),
-                        ac_field,
+                        ac_field.clone(),
                     );
                     let mut accounted = module.submodules().zero_submodule();
 

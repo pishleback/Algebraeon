@@ -1,5 +1,5 @@
 use crate::{
-    polynomial::Polynomial,
+    polynomial::{Polynomial, ToPolynomialSignature},
     structure::{Factored, OneSignature, UniqueFactorizationMonoidSignature},
 };
 use algebraeon_structures::*;
@@ -57,7 +57,7 @@ pub fn trial_divideision(mut n: Natural, max_d: usize) -> Vec<Factor> {
 pub fn pollard_rho(n: Natural, mut x: Natural, max_steps: usize) -> Vec<Factor> {
     debug_assert!(!is_prime_nat(&n));
 
-    let nat_polys = Natural::structure().into_polynomials();
+    let nat_polys = Natural::structure().polynomials();
 
     // g(x) = x^2 + 1
     let g1 = Polynomial::<Natural>::from_coeffs(vec![Natural::ONE, Natural::ZERO, Natural::ONE]);
@@ -124,7 +124,7 @@ impl Factorizer {
     }
 
     fn partially_factor_by_method(&mut self, algorithm: impl Fn(ToFactor) -> (Vec<Factor>, bool)) {
-        let factorizations = Natural::structure_ref().factorizations();
+        let factorizations = Natural::structure().factorizations();
         let mut to_factor_now = self.to_factor.clone();
         self.to_factor = vec![];
         #[allow(clippy::manual_while_let_some)]
@@ -213,7 +213,7 @@ pub(super) fn factor_nat(n: Natural) -> Factored<Natural, Natural> {
     if n == Natural::ZERO {
         Factored::Zero
     } else if n == Natural::ONE {
-        Natural::structure_ref().factorizations().one()
+        Natural::structure().factorizations().one()
     } else {
         let mut f = Factorizer::new(n);
         // Trial division
@@ -277,7 +277,7 @@ mod tests {
 
     #[test]
     fn test_is_primitive_root() {
-        let factorizations = Natural::structure_ref().factorizations();
+        let factorizations = Natural::structure().factorizations();
         assert_eq!(
             factorizations
                 .is_primitive_root(&Natural::from(0usize), &factor_nat(Natural::from(761usize))),

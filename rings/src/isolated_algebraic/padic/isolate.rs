@@ -385,9 +385,9 @@ fn isorefine(
     let vdfi = padic_int_valuation(
         p,
         Integer::structure()
-            .into_euclidean_quotient_ring(Integer::from(&p_tothe_beta))
+            .euclidean_quotient_ring(Integer::from(&p_tothe_beta))
             .unwrap()
-            .into_polynomials()
+            .polynomials()
             .evaluate(df, &Integer::from(i)),
     );
     if vdfi < Valuation::Finite(Integer::from(beta)) {

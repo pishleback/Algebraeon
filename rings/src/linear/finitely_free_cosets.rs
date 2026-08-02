@@ -93,16 +93,16 @@ impl<
     Module: FinitelyFreeModuleSignature<Set, Ring>,
 > FinitelyFreeSubmoduleCosetsStructure<Set, Ring, Module>
 {
-    pub fn ring(&self) -> &Ring {
+    pub fn ring(self: &Arc<Self>) -> Arc<Ring> {
         self.module().ring()
     }
 
-    pub fn module(&self) -> &Module {
-        self.module.borrow()
+    pub fn module(self: &Arc<Self>) -> &Arc<Module> {
+        &self.module
     }
 
     pub fn from_offset_and_submodule(
-        &self,
+        self: &Arc<Self>,
         offset: &Module::Elem,
         submodule: FinitelyFreeSubmodule<Ring::Elem>,
     ) -> FinitelyFreeSubmoduleCoset<Ring::Elem> {
@@ -124,7 +124,7 @@ impl<
     }
 
     pub fn from_submodule(
-        &self,
+        self: &Arc<Self>,
         submodule: FinitelyFreeSubmodule<Ring::Elem>,
     ) -> FinitelyFreeSubmoduleCoset<Ring::Elem> {
         FinitelyFreeSubmoduleCoset {
@@ -134,7 +134,7 @@ impl<
     }
 
     pub fn equal_slow(
-        &self,
+        self: &Arc<Self>,
         x: &FinitelyFreeSubmoduleCoset<Ring::Elem>,
         y: &FinitelyFreeSubmoduleCoset<Ring::Elem>,
     ) -> bool {
@@ -157,7 +157,7 @@ impl<
     }
 
     pub fn add(
-        &self,
+        self: &Arc<Self>,
         x: FinitelyFreeSubmoduleCoset<Ring::Elem>,
         y: FinitelyFreeSubmoduleCoset<Ring::Elem>,
     ) -> FinitelyFreeSubmoduleCoset<Ring::Elem> {
@@ -173,7 +173,7 @@ impl<
     }
 
     pub fn intersect(
-        &self,
+        self: &Arc<Self>,
         x: &FinitelyFreeSubmoduleCoset<Ring::Elem>,
         y: &FinitelyFreeSubmoduleCoset<Ring::Elem>,
     ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Elem> {
@@ -292,7 +292,7 @@ impl<
     }
 
     pub fn contains_element(
-        &self,
+        self: &Arc<Self>,
         x: &FinitelyFreeSubmoduleCoset<Ring::Elem>,
         p: &Module::Elem,
     ) -> bool {
@@ -329,7 +329,7 @@ mod tests {
 
     #[test]
     fn test_cosets() {
-        let module = Integer::structure().into_free_module(EnumeratedFiniteSetStructure::new(2));
+        let module = Integer::structure().free_module(EnumeratedFiniteSetStructure::new(2));
 
         let coset1 = module.submodules().coset(
             &Matrix::<Integer>::from_rows(vec![vec![15, 0], vec![0, 10]]).row_span(),
@@ -375,7 +375,7 @@ mod tests {
 
     #[test]
     fn test_cosets_intersect() {
-        let module = Integer::structure().into_free_module(EnumeratedFiniteSetStructure::new(2));
+        let module = Integer::structure().free_module(EnumeratedFiniteSetStructure::new(2));
 
         let coset1 = module.submodules().coset(
             &Matrix::<Integer>::from_rows(vec![vec![6, 4], vec![0, 3]]).row_span(),

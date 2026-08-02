@@ -76,8 +76,8 @@ impl<
         self.functions.range()
     }
 
-    pub fn functions_restructure(&self) -> &Arc<ConstSizeFunctionsStructure<N, Set, Ring>> {
-        &self.functions
+    pub fn functions_restructure(&self) -> Arc<ConstSizeFunctionsStructure<N, Set, Ring>> {
+        self.functions.clone()
     }
 
     pub fn to_col(&self, v: &<Self as SetSignature>::Elem) -> Matrix<Ring::Elem> {
@@ -88,11 +88,11 @@ impl<
         self.forget_const().to_row(&v.into())
     }
 
-    pub fn from_row(&self, m: &Matrix<Ring::Elem>) -> <Self as SetSignature>::Elem {
+    pub fn from_row(self: &Arc<Self>, m: &Matrix<Ring::Elem>) -> <Self as SetSignature>::Elem {
         self.forget_const().from_row(m).try_into().unwrap()
     }
 
-    pub fn from_col(&self, m: &Matrix<Ring::Elem>) -> <Self as SetSignature>::Elem {
+    pub fn from_col(self: &Arc<Self>, m: &Matrix<Ring::Elem>) -> <Self as SetSignature>::Elem {
         self.forget_const().from_col(m).try_into().unwrap()
     }
 
@@ -162,8 +162,7 @@ impl<
 > CountableSetSignature for ConstFinitelyFreeModuleStructure<N, Set, Ring>
 {
     fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
-        self.into_functions_restructure()
-            .into_generate_all_elements()
+        self.functions_restructure().generate_all_elements()
     }
 }
 
@@ -181,8 +180,10 @@ impl<
         self.functions_restructure().size()
     }
 
-    fn generate_random_elements(self: &Arc<Self>, seed: u64) -> impl Iterator<Item = Self::Elem> {
-        self.functions_restructure().generate_random_elements(seed)
+    fn generate_random_elements(self: Arc<Self>, seed: u64) -> impl Iterator<Item = Self::Elem> {
+        self.functions_restructure()
+            .clone()
+            .generate_random_elements(seed)
     }
 }
 

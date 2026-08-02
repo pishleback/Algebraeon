@@ -4,7 +4,7 @@ use algebraeon_sets::sets::{
     FiniteSetToFinitelySupportedPermutationsStructure, FinitelySupportedPermutation,
 };
 use algebraeon_structures::*;
-use std::{cmp::Ordering, marker::PhantomData};
+use std::{cmp::Ordering, marker::PhantomData, sync::Arc};
 
 #[derive(Debug, Clone)]
 pub struct Pentad<Elem> {
@@ -14,39 +14,26 @@ pub struct Pentad<Elem> {
 
 /// The 15-element set of duads on a 6-element set
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct PentadsStructure<
-    Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature,
-    SetB: BorrowedStructure<Set>,
-> {
-    _set: PhantomData<Set>,
-    set: SetB,
+pub struct PentadsStructure<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> {
+    set: Arc<Set>,
 }
 
-impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
-    PentadsStructure<Set, SetB>
-{
-    pub fn new(set: SetB) -> Self {
-        debug_assert_eq!(set.borrow().size(), Natural::from(6usize));
-        Self {
-            _set: PhantomData,
-            set,
-        }
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> PentadsStructure<Set> {
+    pub fn new(set: Arc<Set>) -> Arc<Self> {
+        debug_assert_eq!(set.size(), Natural::from(6usize));
+        Self { set }.into()
     }
 
-    pub fn set(&self) -> &Set {
-        self.set.borrow()
+    pub fn set(&self) -> &Arc<Set> {
+        &self.set
     }
 }
 
 pub trait SetToPentadsSignature:
     ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature
 {
-    fn pentads(&self) -> PentadsStructure<Self, &Self> {
-        PentadsStructure::new(self)
-    }
-
-    fn into_pentads(self) -> PentadsStructure<Self, Self> {
-        PentadsStructure::new(self)
+    fn pentads(self: &Arc<Self>) -> Arc<PentadsStructure<Self>> {
+        PentadsStructure::new(self.clone())
     }
 }
 impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> SetToPentadsSignature
@@ -54,17 +41,17 @@ impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> SetToPenta
 {
 }
 
-impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
-    Signature for PentadsStructure<Set, SetB>
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> Signature
+    for PentadsStructure<Set>
 {
 }
 
-impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
-    SetSignature for PentadsStructure<Set, SetB>
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> SetSignature
+    for PentadsStructure<Set>
 {
     type Elem = Pentad<Set::Elem>;
 
-    fn validate_element(&self, p: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, p: &Self::Elem) -> Result<(), String> {
         let synthemes = self.set().synthemes();
         for s in &p.synthemes {
             synthemes.validate_element(s)?;
@@ -86,26 +73,26 @@ impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: Borr
     }
 }
 
-impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
-    EqSignature for PentadsStructure<Set, SetB>
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> EqSignature
+    for PentadsStructure<Set>
 {
-    fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         self.cmp(a, b).is_eq()
     }
 }
 
-impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
-    PartialOrdSignature for PentadsStructure<Set, SetB>
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> PartialOrdSignature
+    for PentadsStructure<Set>
 {
-    fn partial_cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Ordering> {
+    fn partial_cmp(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Ordering> {
         Some(self.cmp(a, b))
     }
 }
 
-impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
-    OrdSignature for PentadsStructure<Set, SetB>
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> OrdSignature
+    for PentadsStructure<Set>
 {
-    fn cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Ordering {
+    fn cmp(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Ordering {
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(b));
         Natural::cmp(
@@ -115,35 +102,31 @@ impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: Borr
     }
 }
 
-impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
-    CountableSetSignature for PentadsStructure<Set, SetB>
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> CountableSetSignature
+    for PentadsStructure<Set>
 {
-    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
+    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
         self.list_all_elements_ordered().into_iter()
-    }
-
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
-        self.clone().into_generate_all_elements()
     }
 }
 
-impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
-    FiniteSetSignature for PentadsStructure<Set, SetB>
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> FiniteSetSignature
+    for PentadsStructure<Set>
 {
-    fn size(&self) -> Natural {
+    fn size(self: &Arc<Self>) -> Natural {
         Natural::from(6usize)
     }
 }
 
-impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
-    ConstSizeFiniteSetSignature<6> for PentadsStructure<Set, SetB>
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> ConstSizeFiniteSetSignature<6>
+    for PentadsStructure<Set>
 {
 }
 
-impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
-    OrderedFiniteSetSignature for PentadsStructure<Set, SetB>
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> OrderedFiniteSetSignature
+    for PentadsStructure<Set>
 {
-    fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
+    fn list_all_elements_ordered(self: &Arc<Self>) -> Vec<Self::Elem> {
         // the ordering here is arbitrary but must be the same every time
         let synthemes_set = self.set().synthemes();
 
@@ -238,7 +221,7 @@ impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: Borr
         pentads
     }
 
-    fn element_to_enumeration(&self, elem: &Self::Elem) -> Natural {
+    fn element_to_enumeration(self: &Arc<Self>, elem: &Self::Elem) -> Natural {
         assert!(self.validate_element(elem).is_ok());
         // found by printing the pentads produced by self.list_all_elements_ordered() and extracting sufficient information to enumerate them
         let x: usize = self
@@ -262,7 +245,7 @@ impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: Borr
         } as usize)
     }
 
-    fn enumeration_to_element(&self, num: &Natural) -> Option<Self::Elem> {
+    fn enumeration_to_element(self: &Arc<Self>, num: &Natural) -> Option<Self::Elem> {
         if num < &Natural::from(6usize) {
             let num: usize = num.try_into().unwrap();
             Some(
@@ -277,11 +260,9 @@ impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: Borr
     }
 }
 
-impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature, SetB: BorrowedStructure<Set>>
-    PentadsStructure<Set, SetB>
-{
+impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> PentadsStructure<Set> {
     pub fn pentad(
-        &self,
+        self: &Arc<Self>,
         synthemes: [Syntheme<Set::Elem>; 5],
     ) -> Result<Pentad<Set::Elem>, &'static str> {
         let synthemes_set = self.set().synthemes();
@@ -308,7 +289,11 @@ pub trait SetPermutationAsPentadPermutation<
     Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature,
 >: PermutationsSignature<Set>
 {
-    fn pentad_image(&self, set_perm: &Self::Elem, pentad: &Pentad<Set::Elem>) -> Pentad<Set::Elem> {
+    fn pentad_image(
+        self: &Arc<Self>,
+        set_perm: &Self::Elem,
+        pentad: &Pentad<Set::Elem>,
+    ) -> Pentad<Set::Elem> {
         let set = self.set();
         debug_assert_eq!(set.size(), Natural::from(6usize));
         let pentads = set.pentads();
@@ -326,7 +311,7 @@ pub trait SetPermutationAsPentadPermutation<
     }
 
     fn pentad_action(
-        &self,
+        self: &Arc<Self>,
         set_perm: &Self::Elem,
     ) -> FinitelySupportedPermutation<Pentad<Set::Elem>> {
         let set = self.set();
@@ -364,15 +349,15 @@ mod tests {
     fn test_enumeration() {
         algebraeon_structures::assert_enumerated_ord_finite_set!(
             i32::structure()
-                .into_const_size_finite_subset([1, 2, 3, 4, 5, 6])
-                .into_pentads(),
+                .const_size_finite_subset([1, 2, 3, 4, 5, 6])
+                .pentads(),
             6
         );
     }
 
     #[test]
     fn test_permutation() {
-        let set = i32::structure().into_const_size_finite_subset([1, 2, 3, 4, 5, 6]);
+        let set = i32::structure().const_size_finite_subset([1, 2, 3, 4, 5, 6]);
         let set_perms = set.permutations();
         let pentads = set.pentads();
         let pentad_perms = pentads.permutations();

@@ -25,7 +25,7 @@ fn main() {
         std::env::set_var("RUST_BACKTRACE", "1");
     }
 
-    let space = AffineSpace::new_linear(Rational::structure_ref(), 2);
+    let space = AffineSpace::new_linear(Rational::structure(), 2);
 
     let a = space
         .convex_hull(vec![

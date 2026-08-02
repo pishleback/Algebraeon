@@ -60,7 +60,7 @@ pub trait FiniteSetSignature: CountableSetSignature {
     }
 
     #[skip_meta]
-    fn generate_random_elements(self: &Arc<Self>, seed: u64) -> impl Iterator<Item = Self::Elem> {
+    fn generate_random_elements(self: Arc<Self>, seed: u64) -> impl Iterator<Item = Self::Elem> {
         let rng = StdRng::seed_from_u64(seed);
         FiniteSetRandomElementGenerator::<Self, StdRng> {
             all_elements: self.list_all_elements(),
@@ -156,14 +156,14 @@ impl<S: FiniteSetSignature, R: Rng> Iterator for FiniteSetRandomElementGenerator
 /// Instances of a type implementing this trait represent
 /// a set formed by a quotient of another set.
 pub trait QuotientSetSignature<PreQuoSet: SetSignature>: SetSignature {
-    fn pre_quotient_set(&self) -> &PreQuoSet;
+    fn pre_quotient_set(self: &Arc<Self>) -> Arc<PreQuoSet>;
 
-    fn project(&self, x: PreQuoSet::Elem) -> Self::Elem;
-    fn project_ref(&self, x: &PreQuoSet::Elem) -> Self::Elem;
+    fn project(self: &Arc<Self>, x: PreQuoSet::Elem) -> Self::Elem;
+    fn project_ref(self: &Arc<Self>, x: &PreQuoSet::Elem) -> Self::Elem;
 
     /// Return an element of the pre-quotient set which projects to the given element.
-    fn unproject(&self, x: Self::Elem) -> PreQuoSet::Elem;
-    fn unproject_ref(&self, x: &Self::Elem) -> PreQuoSet::Elem;
+    fn unproject(self: &Arc<Self>, x: Self::Elem) -> PreQuoSet::Elem;
+    fn unproject_ref(self: &Arc<Self>, x: &Self::Elem) -> PreQuoSet::Elem;
 }
 
 /// A quotient set where elements are represented using representative elements of the pre-quotient set
@@ -171,7 +171,7 @@ pub trait QuotientSetRepresentativesSignature<PreQuoSet: SetSignature<Elem = Sel
     QuotientSetSignature<PreQuoSet>
 {
     /// Must satisfy x = y in the quotient set iff reduced_representative(x) = reduced_representative(y) in the pre quotient set.
-    fn reduced_representative(&self, x: &Self::Elem) -> Self::Elem;
+    fn reduced_representative(self: &Arc<Self>, x: &Self::Elem) -> Self::Elem;
 }
 
 #[cfg(test)]

@@ -28,7 +28,7 @@ mod unconstructable_universal_structure {
     unsafe impl<Set> Sync for UnconstructableStructure<Set> {}
 
     impl<Set> Debug for UnconstructableStructure<Set> {
-        fn fmt(self: &Arc<Self>, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             unreachable!()
         }
     }
@@ -40,7 +40,7 @@ mod unconstructable_universal_structure {
     }
 
     impl<Set> PartialEq for UnconstructableStructure<Set> {
-        fn eq(self: &Arc<Self>, _other: &Self) -> bool {
+        fn eq(&self, _other: &Self) -> bool {
             unreachable!()
         }
     }
@@ -176,7 +176,7 @@ pub trait RinglikeSpecializationSignature: SetSignature + ToOwned<Owned = Self> 
      - Polynomial rings to determine whether the karatsuba is usable.
      */
     fn try_ring_restructure(
-        self: &Arc<Self>,
+        self: Arc<Self>,
     ) -> Option<Arc<impl EqSignature<Elem = Self::Elem> + RingSignature>> {
         Option::<Arc<unconstructable_universal_structure::UnconstructableStructure<Self::Elem>>>::None
     }
@@ -186,7 +186,7 @@ pub trait RinglikeSpecializationSignature: SetSignature + ToOwned<Owned = Self> 
      - Formatting polynomials as strings: If the set of coefficients has this structure then it's possible to call .try_to_int(..) which can allow for nicer formatting at integer coefficients.
      */
     fn try_char_zero_ring_restructure(
-        self: &Arc<Self>,
+        self: Arc<Self>,
     ) -> Option<Arc<impl EqSignature<Elem = Self::Elem> + CharZeroRingSignature>> {
         Option::<Arc<unconstructable_universal_structure::UnconstructableStructure<Self::Elem>>>::None
     }
@@ -835,7 +835,7 @@ impl<RS: CharZeroRingSignature + 'static> InfiniteSignature for RS {
         self: &Arc<Self>,
     ) -> Box<dyn Iterator<Item = <Self as SetSignature>::Elem>> {
         struct IntegerIterator<RS: CharZeroRingSignature> {
-            ring: RS,
+            ring: Arc<RS>,
             next: Integer,
         }
 
@@ -961,7 +961,7 @@ where
         self: &Arc<Self>,
         poly: &Polynomial<<Self::BFS as SetSignature>::Elem>,
     ) -> Option<Vec<Self::Elem>> {
-        let base_field_poly = self.base_field().into_polynomials();
+        let base_field_poly = self.base_field().polynomials();
         self.all_roots_list(
             &base_field_poly
                 .factorizations()
@@ -974,7 +974,7 @@ where
         poly: &Polynomial<<Self::BFS as SetSignature>::Elem>,
     ) -> Option<Vec<(Self::Elem, usize)>> {
         let mut root_powers = vec![];
-        let base_field_poly = self.base_field().into_polynomials();
+        let base_field_poly = self.base_field().polynomials();
         for (factor, k) in base_field_poly.factor(poly).into_powers()? {
             for root in self.all_roots_list(&factor).unwrap() {
                 root_powers.push((root, (&k).try_into().unwrap()));

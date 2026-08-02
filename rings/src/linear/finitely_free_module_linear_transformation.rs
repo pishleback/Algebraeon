@@ -25,7 +25,7 @@ pub struct FreeModuleFiniteNumberedBasisLinearTransformation<
 impl<
     SetDomain: OrderedFiniteSetSignature,
     SetRange: OrderedFiniteSetSignature,
-    Ring: RingSignature,
+    Ring: BezoutDomainSignature,
     const INJECTIVE: bool,
     const SURJECTIVE: bool,
 >
@@ -43,16 +43,19 @@ impl<
         range: Arc<FinitelyFreeModuleStructure<SetRange, Ring>>,
         matrix: Matrix<Ring::Elem>,
     ) -> Arc<Self> {
-        debug_assert_eq!(ring.borrow(), domain.ring());
-        debug_assert_eq!(ring.borrow(), range.ring());
+        debug_assert_eq!(ring, domain.ring());
+        debug_assert_eq!(ring, range.ring());
         debug_assert_eq!(domain.rank(), matrix.cols());
         debug_assert_eq!(range.rank(), matrix.rows());
-        let rank = MatrixStructure::<Ring, _>::new(ring.borrow()).rank(matrix.clone());
-        if INJECTIVE {
-            debug_assert_eq!(rank, domain.rank());
-        }
-        if SURJECTIVE {
-            debug_assert_eq!(rank, range.rank());
+        #[cfg(debug_assertions)]
+        {
+            let rank = MatrixStructure::<Ring>::new(ring.clone()).rank(matrix.clone());
+            if INJECTIVE {
+                assert_eq!(rank, domain.rank());
+            }
+            if SURJECTIVE {
+                assert_eq!(rank, range.rank());
+            }
         }
         Self {
             ring,
@@ -82,8 +85,11 @@ impl<
     }
 }
 
-impl<SetDomain: OrderedFiniteSetSignature, SetRange: OrderedFiniteSetSignature, Ring: RingSignature>
-    FreeModuleFiniteNumberedBasisLinearTransformation<SetDomain, SetRange, Ring, false, false>
+impl<
+    SetDomain: OrderedFiniteSetSignature,
+    SetRange: OrderedFiniteSetSignature,
+    Ring: BezoutDomainSignature,
+> FreeModuleFiniteNumberedBasisLinearTransformation<SetDomain, SetRange, Ring, false, false>
 {
     pub fn construct(
         ring: Arc<Ring>,
@@ -162,12 +168,12 @@ impl<
         SURJECTIVE,
     >
 {
-    fn domain(&self) -> &FinitelyFreeModuleStructure<SetDomain, Ring> {
-        &self.domain
+    fn domain(self: &Arc<Self>) -> Arc<FinitelyFreeModuleStructure<SetDomain, Ring>> {
+        self.domain.clone()
     }
 
-    fn range(&self) -> &FinitelyFreeModuleStructure<SetRange, Ring> {
-        &self.range
+    fn range(self: &Arc<Self>) -> Arc<FinitelyFreeModuleStructure<SetRange, Ring>> {
+        self.range.clone()
     }
 }
 
@@ -190,7 +196,7 @@ impl<
         SURJECTIVE,
     >
 {
-    fn image(&self, x: &Vec<Ring::Elem>) -> Vec<Ring::Elem> {
+    fn image(self: &Arc<Self>, x: &Vec<Ring::Elem>) -> Vec<Ring::Elem> {
         self.range.from_col(
             &MatrixStructure::new(self.ring.clone())
                 .mul(&self.matrix, &self.domain.to_col(x))
@@ -217,7 +223,7 @@ impl<
         SURJECTIVE,
     >
 {
-    fn try_preimage(&self, y: &Vec<Ring::Elem>) -> Option<Vec<Ring::Elem>> {
+    fn try_preimage(self: &Arc<Self>, y: &Vec<Ring::Elem>) -> Option<Vec<Ring::Elem>> {
         MatrixStructure::new(self.ring.clone()).col_solve(self.matrix.clone(), y)
     }
 }
@@ -232,7 +238,7 @@ impl<
         FinitelyFreeModuleStructure<SetRange, Ring>,
     > for FreeModuleFiniteNumberedBasisLinearTransformation<SetDomain, SetRange, Ring, true, true>
 {
-    fn preimage(&self, y: &Vec<Ring::Elem>) -> Vec<Ring::Elem> {
+    fn preimage(self: &Arc<Self>, y: &Vec<Ring::Elem>) -> Vec<Ring::Elem> {
         self.try_preimage(y).unwrap()
     }
 }

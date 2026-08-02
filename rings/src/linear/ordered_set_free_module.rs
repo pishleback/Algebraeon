@@ -39,7 +39,10 @@ impl<Set: OrdSignature, Ring: SemiRingSignature + EqSignature>
     ///  - has no ring elements equal to 0
     ///
     /// and is equal to the sum of the input vectors terms. In other words, the returned vector will pass self.is_element(..)
-    pub fn collapse_terms(&self, v: <Self as SetSignature>::Elem) -> <Self as SetSignature>::Elem {
+    pub fn collapse_terms(
+        self: &Arc<Self>,
+        v: <Self as SetSignature>::Elem,
+    ) -> <Self as SetSignature>::Elem {
         let mut v = self.set().sort_by_key(v, &|(x, _)| x).into_iter();
 
         let mut current_x = None;
@@ -104,7 +107,7 @@ impl<Set: OrdSignature, Ring: SemiRingSignature + EqSignature> SetSignature
     // all ring elements in the second argument must be non-zero
     type Elem = Vec<(Set::Elem, Ring::Elem)>;
 
-    fn validate_element(&self, v: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, v: &Self::Elem) -> Result<(), String> {
         if !self.set().is_sorted_and_unique_by_key(v, |(x, _)| x) {
             return Err("not sorted or has duplicate".to_string());
         }
@@ -195,7 +198,7 @@ impl<Set: OrdSignature, Ring: SemiRingSignature + EqSignature> SemiModuleSignatu
     for FreeModuleOverOrderedSetStructure<Set, Ring>
 {
     fn ring(self: &Arc<Self>) -> Arc<Ring> {
-        self.ring.borrow()
+        self.ring.clone()
     }
 
     fn scalar_mul(self: &Arc<Self>, v: &Self::Elem, b: &Ring::Elem) -> Self::Elem {
@@ -213,7 +216,7 @@ impl<Set: OrdSignature, Ring: RingSignature + EqSignature> FreeModuleSignature<S
         self.set().clone()
     }
 
-    fn to_component<'a>(&self, x: &Set::Elem, v: &'a Self::Elem) -> Cow<'a, Ring::Elem> {
+    fn to_component<'a>(self: &Arc<Self>, x: &Set::Elem, v: &'a Self::Elem) -> Cow<'a, Ring::Elem> {
         if let Some((_, a)) = self.set().binary_search_by_key(v, x, |(x, _)| x) {
             Cow::Borrowed(a)
         } else {
@@ -221,7 +224,7 @@ impl<Set: OrdSignature, Ring: RingSignature + EqSignature> FreeModuleSignature<S
         }
     }
 
-    fn from_component(&self, x: &Set::Elem, a: &Ring::Elem) -> Self::Elem {
+    fn from_component(self: &Arc<Self>, x: &Set::Elem, a: &Ring::Elem) -> Self::Elem {
         if self.ring().is_zero(a) {
             vec![]
         } else {

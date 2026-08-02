@@ -103,9 +103,9 @@ impl<Field: FieldSignature> SetSignature for QuaternionAlgebraStructure<Field> {
 
 impl<Field: FieldSignature> RinglikeSpecializationSignature for QuaternionAlgebraStructure<Field> {
     fn try_ring_restructure(
-        self: &Arc<Self>,
+        self: Arc<Self>,
     ) -> Option<Arc<impl EqSignature<Elem = Self::Elem> + RingSignature>> {
-        Some(self.clone())
+        Some(self)
     }
 }
 

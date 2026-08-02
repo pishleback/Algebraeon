@@ -19,7 +19,7 @@ use algebraeon_structures::*;
 use cantor::Finite;
 use std::{
     ops::{Add, BitAnd, BitOr},
-    sync::OnceLock,
+    sync::{Arc, OnceLock},
 };
 
 type F2 = Modulo<2>;
@@ -179,21 +179,11 @@ impl<'a> From<&'a OrderedSextet> for &'a LabelledPoints<OrderedSynthemePoint> {
     }
 }
 
-type AmbientSpace = ConstFinitelyFreeModuleStructure<
-    24,
-    PointCanonicalStructure,
-    PointCanonicalStructure,
-    F2Structure,
-    F2Structure,
->;
+type AmbientSpace = ConstFinitelyFreeModuleStructure<24, PointCanonicalStructure, F2Structure>;
 
 struct ExtendedBinaryGolayCodeCache {
-    subspace: FinitelyFreeSubmoduleStructure<
-        PointCanonicalStructure,
-        F2Structure,
-        AmbientSpace,
-        AmbientSpace,
-    >,
+    subspace:
+        Arc<FinitelyFreeSubmoduleStructure<PointCanonicalStructure, F2Structure, AmbientSpace>>,
 }
 
 static EXTENDED_BINARY_GOLAY_CODE_CACHE: OnceLock<ExtendedBinaryGolayCodeCache> = OnceLock::new();
@@ -201,7 +191,7 @@ static EXTENDED_BINARY_GOLAY_CODE_CACHE: OnceLock<ExtendedBinaryGolayCodeCache> 
 fn cache() -> &'static ExtendedBinaryGolayCodeCache {
     EXTENDED_BINARY_GOLAY_CODE_CACHE.get_or_init(|| {
         let points = Point::structure();
-        let space = F2::structure().into_free_module(points);
+        let space = F2::structure().free_module(points);
         const Z: F2 = ZERO;
         const O: F2 = ONE;
         #[rustfmt::skip]
@@ -286,13 +276,9 @@ pub fn extended_binary_golay_code_subspace() -> &'static FinitelyFreeSubmodule<F
 }
 
 /// The 12 dimensional vector subspace structure given by the extended binary Golay code
-pub fn extended_binary_golay_code_subspace_structure() -> &'static FinitelyFreeSubmoduleStructure<
-    PointCanonicalStructure,
-    F2Structure,
-    AmbientSpace,
-    AmbientSpace,
-> {
-    &cache().subspace
+pub fn extended_binary_golay_code_subspace_structure()
+-> Arc<FinitelyFreeSubmoduleStructure<PointCanonicalStructure, F2Structure, AmbientSpace>> {
+    cache().subspace.clone()
 }
 
 pub fn all_codewords() -> Vec<Vector> {
@@ -403,7 +389,7 @@ mod tests {
         ]);
 
         let cycle012 = Point::structure()
-            .into_const_size_permutations()
+            .const_size_permutations()
             .new_cycle(vec![
                 Point::structure()
                     .enumeration_to_element(&Natural::from(0u32))
@@ -420,7 +406,7 @@ mod tests {
         // The right action given by precomposition with domain elements moves labels according to the inverse permutation
         assert_eq!(
             LabelledPoints::<F2>::structure()
-                .into_domain_const_size_permutation_action()
+                .domain_const_size_permutation_action()
                 .apply(&cycle012, &a),
             c
         );
@@ -428,8 +414,8 @@ mod tests {
         // The left action given by precomposition of the inverse with domain elements moves labels according to the permutation
         assert_eq!(
             LabelledPoints::<F2>::structure()
-                .into_domain_const_size_permutation_action()
-                .into_opposite()
+                .domain_const_size_permutation_action()
+                .opposite()
                 .apply(&cycle012, &a),
             b
         );

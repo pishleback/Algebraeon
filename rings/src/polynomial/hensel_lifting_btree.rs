@@ -1,6 +1,7 @@
 use super::{Polynomial, polynomial_structure::*};
 use crate::structure::*;
 use algebraeon_structures::*;
+use std::sync::Arc;
 
 #[derive(Debug, Clone)]
 enum HenselFactorizationNodeCases<
@@ -35,7 +36,7 @@ pub struct HenselFactorization<
     const LIFTED_BEZOUT_COEFFS: bool,
     RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature,
 > {
-    ring: RS,
+    ring: Arc<RS>,
     i: RS::Elem,
     n: Natural,
     factorization: HenselFactorizationNode<LIFTED_BEZOUT_COEFFS, RS>, //defined absolutely and factored modulo i^n
@@ -75,7 +76,7 @@ impl<
     #[allow(unused)]
     fn check(
         &self,
-        ring: &RS,
+        ring: &Arc<RS>,
         h: &Polynomial<RS::Elem>,
         i: &RS::Elem,
         n: &Natural,
@@ -97,7 +98,7 @@ impl<
                 let poly_ring_mod_i_tothe_n = ring
                     .euclidean_quotient_ring(ring.nat_pow(i, n))
                     .unwrap()
-                    .into_polynomials();
+                    .polynomials();
 
                 //af + bg = 1 mod i
                 if !poly_ring_mod_i.is_zero(&poly_ring_mod_i.sum(&[
@@ -145,14 +146,14 @@ impl<
     }
 
     fn new_split(
-        ring: &RS,
+        ring: &Arc<RS>,
         p: &RS::Elem,
         n: &Natural,
         first_fs: Vec<&Polynomial<RS::Elem>>,
         second_fs: Vec<&Polynomial<RS::Elem>>,
     ) -> Self {
         let poly_ring = ring.polynomials();
-        let poly_ring_mod_p = ring.quotient_field_unchecked(p.clone()).into_polynomials();
+        let poly_ring_mod_p = ring.quotient_field_unchecked(p.clone()).polynomials();
 
         //first_h and second_h are defined modulo p^n
         let first_h = poly_ring
@@ -233,7 +234,7 @@ impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMo
 fn compute_lift_factors<
     RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature,
 >(
-    ring: &RS,
+    ring: &Arc<RS>,
     i: &RS::Elem,
     n: &Natural,
     a: &Polynomial<RS::Elem>,
@@ -270,7 +271,7 @@ fn compute_lift_factors<
     let poly_ring_mod_i_tothe_nplusone = ring
         .euclidean_quotient_ring(ring.nat_pow(i, &(n + Natural::ONE)))
         .unwrap()
-        .into_polynomials();
+        .polynomials();
     debug_assert!(poly_ring_mod_i_tothe_nplusone.equal(
         &delta_h,
         &poly_ring_mod_i_tothe_nplusone.add(
@@ -316,7 +317,7 @@ fn compute_lift_factors<
 impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature>
     HenselFactorizationNodeCases<false, RS>
 {
-    fn linear_lift(&mut self, ring: &RS, i: &RS::Elem, n: &Natural, h: &Polynomial<RS::Elem>) {
+    fn linear_lift(&mut self, ring: &Arc<RS>, i: &RS::Elem, n: &Natural, h: &Polynomial<RS::Elem>) {
         match self {
             HenselFactorizationNodeCases::Leaf => {}
             HenselFactorizationNodeCases::Branch {
@@ -344,7 +345,13 @@ impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMo
 impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature>
     HenselFactorizationNodeCases<true, RS>
 {
-    fn quadratic_lift(&mut self, ring: &RS, i: &RS::Elem, n: &Natural, h: &Polynomial<RS::Elem>) {
+    fn quadratic_lift(
+        &mut self,
+        ring: &Arc<RS>,
+        i: &RS::Elem,
+        n: &Natural,
+        h: &Polynomial<RS::Elem>,
+    ) {
         match self {
             HenselFactorizationNodeCases::Leaf => {}
             HenselFactorizationNodeCases::Branch {
@@ -356,7 +363,7 @@ impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMo
                 let pring_mod_i2n = ring
                     .euclidean_quotient_ring(ring.nat_pow(i, &(n * Natural::TWO)))
                     .unwrap()
-                    .into_polynomials();
+                    .polynomials();
 
                 let f = &f_factorization.h;
                 let g = &g_factorization.h;
@@ -412,7 +419,7 @@ impl<
 > HenselFactorizationNode<LIFTED_BEZOUT_COEFFS, RS>
 {
     #[allow(unused)]
-    fn check(&self, ring: &RS, i: &RS::Elem, n: &Natural) -> Result<(), &'static str> {
+    fn check(&self, ring: &Arc<RS>, i: &RS::Elem, n: &Natural) -> Result<(), &'static str> {
         // let poly_ring = PolynomialStructure::new(ring.clone().into());
         // if !poly_ring.is_monic(&self.h) {
         //     return Err("h is not monic");
@@ -422,7 +429,7 @@ impl<
     }
 
     fn new(
-        ring: &RS,
+        ring: &Arc<RS>,
         p: &RS::Elem,
         n: &Natural,
         h: Polynomial<RS::Elem>,
@@ -477,7 +484,7 @@ impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMo
 impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature>
     HenselFactorizationNode<false, RS>
 {
-    fn linear_lift(&mut self, ring: &RS, i: &RS::Elem, n: &Natural) {
+    fn linear_lift(&mut self, ring: &Arc<RS>, i: &RS::Elem, n: &Natural) {
         self.factorization.linear_lift(ring, i, n, &self.h);
     }
 }
@@ -485,7 +492,7 @@ impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMo
 impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMonoidSignature>
     HenselFactorizationNode<true, RS>
 {
-    fn quadratic_lift(&mut self, ring: &RS, i: &RS::Elem, n: &Natural) {
+    fn quadratic_lift(&mut self, ring: &Arc<RS>, i: &RS::Elem, n: &Natural) {
         self.factorization.quadratic_lift(ring, i, n, &self.h);
     }
 }
@@ -501,7 +508,7 @@ impl<
     }
 
     pub fn new(
-        ring: RS,
+        ring: Arc<RS>,
         p: RS::Elem,
         n: Natural,
         h: Polynomial<RS::Elem>,
@@ -521,7 +528,7 @@ impl<
         let poly_ring_mod_p_tothe_n = ring
             .euclidean_quotient_ring(ring.nat_pow(&p, &n))
             .unwrap()
-            .into_polynomials();
+            .polynomials();
         let alpha = poly_ring.leading_coeff(&h).unwrap();
         debug_assert!(poly_ring_mod_p_tothe_n.equal(
             &h,

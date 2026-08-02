@@ -283,7 +283,7 @@ impl<RS: IntegralDomainSignature> IntegralDomainSignature for MultiPolynomialStr
 impl<RS: FavoriteAssociateSignature + IntegralDomainSignature> FavoriteAssociateSignature
     for MultiPolynomialStructure<RS>
 {
-    fn factor_fav_assoc(&self, mpoly: &Self::Elem) -> (Self::Elem, Self::Elem) {
+    fn factor_fav_assoc(self: &Arc<Self>, mpoly: &Self::Elem) -> (Self::Elem, Self::Elem) {
         match mpoly.terms.first() {
             None => {
                 debug_assert!(self.is_zero(mpoly));
@@ -365,15 +365,15 @@ impl<RS: UniqueFactorizationMonoidSignature + IntegralDomainSignature>
 {
     type FactoredExponent = NaturalCanonicalStructure;
 
-    fn factorization_exponents(&self) -> Arc<Self::FactoredExponent> {
+    fn factorization_exponents(self: &Arc<Self>) -> Arc<Self::FactoredExponent> {
         Natural::structure()
     }
 
-    fn try_is_irreducible(&self, _a: &Self::Elem) -> Option<bool> {
+    fn try_is_irreducible(self: &Arc<Self>, _a: &Self::Elem) -> Option<bool> {
         None
     }
 
-    fn factorization_pow(&self, a: &Self::Elem, k: &Natural) -> Self::Elem {
+    fn factorization_pow(self: &Arc<Self>, a: &Self::Elem, k: &Natural) -> Self::Elem {
         self.nat_pow(a, k)
     }
 }
@@ -395,7 +395,7 @@ where
         + GreatestCommonDivisorSignature,
 {
     pub fn factor_by_yuns_and_kroneckers_inductively(
-        &self,
+        self: &Arc<Self>,
         factor_poly: impl Fn(&Polynomial<RS::Elem>) -> Factored<Polynomial<RS::Elem>, Natural>,
         factor_multipoly_coeff: impl Fn(
             &MultiPolynomial<RS::Elem>,
@@ -447,7 +447,7 @@ where
         + UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
 {
     pub fn factor_by_yuns_and_kroneckers_inductively(
-        &self,
+        self: &Arc<Self>,
         factor_coeff: Rc<dyn Fn(&RS::Elem) -> Factored<RS::Elem, Natural>>,
         factor_poly: Rc<dyn Fn(&Polynomial<RS::Elem>) -> Factored<Polynomial<RS::Elem>, Natural>>,
         mpoly: &<Self as SetSignature>::Elem,
@@ -599,7 +599,7 @@ impl<RS: RingEqSignature> MultiPolynomialStructure<RS> {
     }
 
     pub fn homogenize(
-        &self,
+        self: &Arc<Self>,
         p: &MultiPolynomial<RS::Elem>,
         v: &Variable,
     ) -> MultiPolynomial<RS::Elem> {
@@ -622,7 +622,7 @@ impl<RS: RingEqSignature> MultiPolynomialStructure<RS> {
     }
 
     pub fn expand(
-        &self,
+        self: &Arc<Self>,
         p: &MultiPolynomial<RS::Elem>,
         v: &Variable,
     ) -> Polynomial<MultiPolynomial<RS::Elem>> {

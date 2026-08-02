@@ -18,7 +18,7 @@ fn compute_lifting_mat_mod<
         + FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
     RingMod: QuotientRingGetPrincipalIdealSignature<Ring> + EqSignature,
 >(
-    ring_mod_p: &RingMod,
+    ring_mod_p: &Arc<RingMod>,
     fs: &[Polynomial<Ring::Elem>],
 ) -> Matrix<RingMod::Elem> {
     let ring = ring_mod_p.pre_quotient_set();
@@ -86,7 +86,7 @@ pub struct HenselFactorization<
         + FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
     RingMod: QuotientRingGetPrincipalIdealSignature<Ring> + EqSignature,
 > {
-    make_ring_mod: Arc<dyn Fn(&Ring::Elem) -> RingMod + Send + Sync>,
+    make_ring_mod: Arc<dyn Fn(&Ring::Elem) -> Arc<RingMod> + Send + Sync>,
     polys: Arc<PolynomialStructure<Ring>>,
     p: Ring::Elem, // An irreducible element of Ring
     k: Natural,
@@ -95,7 +95,7 @@ pub struct HenselFactorization<
     fs_count: usize,
     fs: Vec<Polynomial<Ring::Elem>>, // monic Polynomials over Ring mod p^k
     fs_deg: Vec<usize>,
-    ring_mod_p: RingMod,
+    ring_mod_p: Arc<RingMod>,
     // p^k
     pk: Ring::Elem,
     // The inverse of the leading coefficient of h modulo p
@@ -138,7 +138,7 @@ impl<
     RingMod: QuotientRingGetPrincipalIdealSignature<Ring> + EqSignature,
 > HenselFactorization<Ring, RingMod>
 {
-    pub fn ring(&self) -> &Ring {
+    pub fn ring(&self) -> Arc<Ring> {
         self.ring_mod_p.pre_quotient_set()
     }
 
@@ -155,8 +155,8 @@ impl<
     }
 
     fn compute_err_poly_mod_p_poly(
-        ring: &Ring,
-        ring_mod_p: &RingMod,
+        ring: &Arc<Ring>,
+        ring_mod_p: &Arc<RingMod>,
         p: &Ring::Elem,
         k: &Natural,
         h: &Polynomial<Ring::Elem>,
@@ -170,7 +170,7 @@ impl<
         let polys_mod_pk1 = ring
             .euclidean_quotient_ring(pk1.clone())
             .unwrap()
-            .into_polynomials();
+            .polynomials();
 
         // compute t = (h - lc * (f1 * f2 * f3)) / p^k mod p
         polys_mod_pk1
@@ -248,7 +248,7 @@ impl<
             .ring()
             .euclidean_quotient_ring(self.pk.clone())
             .unwrap()
-            .into_polynomials();
+            .polynomials();
 
         if !ring_poly_mod_pk.equal(
             &self.h,
@@ -277,8 +277,8 @@ impl<
     }
 
     pub fn new_unchecked(
-        make_ring_mod: impl Fn(&Ring::Elem) -> RingMod + Send + Sync + 'static,
-        ring_mod_p: RingMod,
+        make_ring_mod: impl Fn(&Ring::Elem) -> Arc<RingMod> + Send + Sync + 'static,
+        ring_mod_p: Arc<RingMod>,
         k: Natural,
         h: Polynomial<Ring::Elem>,
         fs: Vec<Polynomial<Ring::Elem>>,
@@ -287,7 +287,7 @@ impl<
     ) -> Self {
         let p = ring_mod_p.modulus().into_owned();
         let ring = ring_mod_p.pre_quotient_set();
-        let polys = ring.clone().into_polynomials();
+        let polys = ring.clone().polynomials();
         let pk = ring.nat_pow(&p, &k);
         let h_deg = polys.degree(&h).unwrap();
         let fs_count = fs.len();
@@ -321,8 +321,8 @@ impl<
     pub fn new_unchecked_mod_field<
         FieldModP: QuotientRingGetPrincipalIdealSignature<Ring> + FieldSignature,
     >(
-        make_ring_mod: impl Fn(&Ring::Elem) -> RingMod + Send + Sync + 'static,
-        field_mod_p: FieldModP,
+        make_ring_mod: impl Fn(&Ring::Elem) -> Arc<RingMod> + Send + Sync + 'static,
+        field_mod_p: Arc<FieldModP>,
         k: Natural,
         h: Polynomial<Ring::Elem>,
         fs: Vec<Polynomial<Ring::Elem>>,
@@ -357,10 +357,9 @@ impl<
     pub fn from_mod_field_factorization<
         FieldModP: QuotientRingGetPrincipalIdealSignature<Ring> + FieldSignature,
     >(
-        make_ring_mod: impl Fn(&Ring::Elem) -> RingMod + Send + Sync + 'static,
-        fs_structure: &FactoringStructure<
-            PolynomialStructure<FieldModP>,
-            NaturalCanonicalStructure,
+        make_ring_mod: impl Fn(&Ring::Elem) -> Arc<RingMod> + Send + Sync + 'static,
+        fs_structure: Arc<
+            FactoringStructure<PolynomialStructure<FieldModP>, NaturalCanonicalStructure>,
         >,
         fs: NonZeroFactored<Polynomial<FieldModP::Elem>, Natural>,
         h: Polynomial<Ring::Elem>,
@@ -431,7 +430,7 @@ impl<
 
         // It might be possible to update some data each lift so that this is much cheaper to compute and update per lift
         let err_poly_mod_p = Self::compute_err_poly_mod_p_poly(
-            self.ring(),
+            &self.ring(),
             &self.ring_mod_p,
             &self.p,
             &self.k,
@@ -644,7 +643,7 @@ mod tests {
     use super::*;
     use crate::structure::{
         MetaEuclideanDivisionSignature, MetaMultiplicationSignature,
-        MetaMultiplicativeMonoidSignature,
+        MetaMultiplicativeMonoidSignature, RingToQuotientFieldSignature,
     };
 
     #[test]
@@ -672,14 +671,14 @@ mod tests {
 
         //set up bezout coefficients for hensel lifting the factorization modulo 25, 125, ...
         let mod5 = Integer::structure()
-            .into_quotient_field(Integer::from(5))
+            .quotient_field(Integer::from(5))
             .unwrap();
 
         let fs = vec![f1, f2, f3];
         let mut hensel_fact = HenselFactorization::new_unchecked_mod_field(
             |x| {
                 Integer::structure()
-                    .into_euclidean_quotient_ring(x.clone())
+                    .euclidean_quotient_ring(x.clone())
                     .unwrap()
             },
             mod5,

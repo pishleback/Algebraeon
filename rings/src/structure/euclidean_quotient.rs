@@ -13,12 +13,12 @@ impl<RS: EuclideanDomainSignature, const IS_FIELD: bool>
     EuclideanRemainderQuotientStructure<RS, IS_FIELD>
 {
     pub fn new_unchecked(ring: Arc<RS>, modulus: RS::Elem) -> Arc<Self> {
-        debug_assert!(!ring.borrow().is_zero(&modulus));
+        debug_assert!(!ring.is_zero(&modulus));
         Self { ring, modulus }.into()
     }
 
-    pub fn ring(&self) -> &RS {
-        self.ring.borrow()
+    pub fn ring(&self) -> &Arc<RS> {
+        &self.ring
     }
 
     // not a unique reduction
@@ -29,7 +29,7 @@ impl<RS: EuclideanDomainSignature, const IS_FIELD: bool>
 
 impl<RS: EuclideanDomainSignature> EuclideanRemainderQuotientStructure<RS, false> {
     fn try_new_ring(ring: Arc<RS>, modulus: RS::Elem) -> Option<Arc<Self>> {
-        if ring.borrow().is_zero(&modulus) {
+        if ring.is_zero(&modulus) {
             None
         } else {
             Some(Self::new_unchecked(ring, modulus))
@@ -41,12 +41,12 @@ impl<RS: EuclideanDomainSignature + FactoringMonoidSignature>
     EuclideanRemainderQuotientStructure<RS, true>
 {
     fn new_field_unchecked(ring: Arc<RS>, modulus: RS::Elem) -> Arc<Self> {
-        debug_assert!(ring.borrow().is_irreducible(&modulus));
+        debug_assert!(ring.is_irreducible(&modulus));
         Self::new_unchecked(ring, modulus)
     }
 
     fn try_new_field(ring: Arc<RS>, modulus: RS::Elem) -> Option<Arc<Self>> {
-        if ring.borrow().is_zero(&modulus) || !ring.borrow().is_irreducible(&modulus) {
+        if ring.is_zero(&modulus) || !ring.is_irreducible(&modulus) {
             None
         } else {
             Some(Self::new_unchecked(ring, modulus))
@@ -133,23 +133,23 @@ impl<RS: EuclideanDomainSignature + ToStringSignature, const IS_FIELD: bool> ToS
 impl<RS: EuclideanDomainSignature + FavoriteAssociateSignature, const IS_FIELD: bool>
     QuotientSetSignature<RS> for EuclideanRemainderQuotientStructure<RS, IS_FIELD>
 {
-    fn pre_quotient_set(&self) -> &RS {
-        self.ring()
+    fn pre_quotient_set(self: &Arc<Self>) -> Arc<RS> {
+        self.ring().clone()
     }
 
-    fn project(&self, x: <RS as SetSignature>::Elem) -> Self::Elem {
+    fn project(self: &Arc<Self>, x: <RS as SetSignature>::Elem) -> Self::Elem {
         x
     }
 
-    fn project_ref(&self, x: &<RS as SetSignature>::Elem) -> Self::Elem {
+    fn project_ref(self: &Arc<Self>, x: &<RS as SetSignature>::Elem) -> Self::Elem {
         x.clone()
     }
 
-    fn unproject(&self, x: Self::Elem) -> <RS as SetSignature>::Elem {
+    fn unproject(self: &Arc<Self>, x: Self::Elem) -> <RS as SetSignature>::Elem {
         x
     }
 
-    fn unproject_ref(&self, x: &Self::Elem) -> <RS as SetSignature>::Elem {
+    fn unproject_ref(self: &Arc<Self>, x: &Self::Elem) -> <RS as SetSignature>::Elem {
         x.clone()
     }
 }
@@ -184,9 +184,9 @@ impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> RinglikeSpecializationS
     for EuclideanRemainderQuotientStructure<RS, IS_FIELD>
 {
     fn try_ring_restructure(
-        self: &Arc<Self>,
+        self: Arc<Self>,
     ) -> Option<Arc<impl EqSignature<Elem = Self::Elem> + RingSignature>> {
-        Some(self.clone())
+        Some(self)
     }
 }
 

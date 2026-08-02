@@ -644,15 +644,15 @@ impl ToStringSignature for ComplexAlgebraicCanonicalStructure {
 
 impl RinglikeSpecializationSignature for ComplexAlgebraicCanonicalStructure {
     fn try_ring_restructure(
-        self: &Arc<Self>,
+        self: Arc<Self>,
     ) -> Option<Arc<impl EqSignature<Elem = Self::Elem> + RingSignature>> {
-        Some(self.clone())
+        Some(self)
     }
 
     fn try_char_zero_ring_restructure(
-        self: &Arc<Self>,
+        self: Arc<Self>,
     ) -> Option<Arc<impl EqSignature<Elem = Self::Elem> + CharZeroRingSignature>> {
-        Some(self.clone())
+        Some(self)
     }
 }
 
@@ -1085,7 +1085,7 @@ impl ComplexSubsetSignature for ComplexAlgebraicCanonicalStructure {
         }
     }
 
-    fn as_f64_real_and_imaginary_parts(&self, z: &Self::Elem) -> (f64, f64) {
+    fn as_f64_real_and_imaginary_parts(self: &Arc<Self>, z: &Self::Elem) -> (f64, f64) {
         match z {
             ComplexAlgebraic::Real(z) => z.as_f64_real_and_imaginary_parts(),
             ComplexAlgebraic::Complex(z) => {
@@ -1136,7 +1136,7 @@ impl
         ComplexAlgebraicCanonicalStructure,
     > for PrincipalIntegerMap<ComplexAlgebraicCanonicalStructure>
 {
-    fn all_roots(&self, polynomial: &Polynomial<Integer>) -> Vec<ComplexAlgebraic> {
+    fn all_roots(self: &Arc<Self>, polynomial: &Polynomial<Integer>) -> Vec<ComplexAlgebraic> {
         polynomial.all_complex_roots()
     }
 }
@@ -1147,7 +1147,7 @@ impl
         ComplexAlgebraicCanonicalStructure,
     > for PrincipalRationalMap<ComplexAlgebraicCanonicalStructure>
 {
-    fn all_roots(&self, polynomial: &Polynomial<Rational>) -> Vec<ComplexAlgebraic> {
+    fn all_roots(self: &Arc<Self>, polynomial: &Polynomial<Rational>) -> Vec<ComplexAlgebraic> {
         polynomial.all_complex_roots()
     }
 }

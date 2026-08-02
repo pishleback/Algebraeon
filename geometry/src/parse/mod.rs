@@ -5,7 +5,7 @@ use lalrpop_util::lalrpop_mod;
 lalrpop_mod!(shape_parser, "/parse/shape_grammar.rs");
 mod ast;
 
-pub fn parse_shape(string: &str) -> PartialSimplicialComplex<'static, RationalCanonicalStructure> {
+pub fn parse_shape(string: &str) -> PartialSimplicialComplex<RationalCanonicalStructure> {
     shape_parser::ShapeParser::new()
         .parse(string)
         .unwrap()

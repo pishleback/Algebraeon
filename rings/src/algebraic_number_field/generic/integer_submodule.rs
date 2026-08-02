@@ -20,13 +20,13 @@ pub struct FullRankIntegerSubmoduleWithBasis<K: AlgebraicNumberFieldSignature> {
 }
 
 impl<K: AlgebraicNumberFieldSignature> FullRankIntegerSubmoduleWithBasis<K> {
-    fn check(&self) -> Result<(), String> {
-        let n = self.anf.borrow().n();
+    fn check(self: &Arc<Self>) -> Result<(), String> {
+        let n = self.anf.n();
         if n != self.basis.len() {
             return Err("Basis has wrong length".to_string());
         }
         for v in &self.basis {
-            if let Err(e) = self.anf.borrow().validate_element(v) {
+            if let Err(e) = self.anf.validate_element(v) {
                 return Err(format!(
                     "Vector is not a valid element of the number field: {}",
                     e
@@ -38,7 +38,6 @@ impl<K: AlgebraicNumberFieldSignature> FullRankIntegerSubmoduleWithBasis<K> {
             (0..n)
                 .map(|i| {
                     self.anf
-                        .borrow()
                         .inbound_finite_dimensional_rational_extension()
                         .to_col(&self.basis[i])
                 })
@@ -70,14 +69,14 @@ impl<K: AlgebraicNumberFieldSignature> FullRankIntegerSubmoduleWithBasis<K> {
 
 impl<K: AlgebraicNumberFieldSignature> PartialEq for FullRankIntegerSubmoduleWithBasis<K> {
     fn eq(&self, other: &Self) -> bool {
-        let n = self.anf().n();
+        let n = self.anf.n();
         if self.anf == other.anf {
-            debug_assert_eq!(other.anf().n(), n);
+            debug_assert_eq!(other.anf.n(), n);
             debug_assert_eq!(self.basis.len(), n);
             debug_assert_eq!(other.basis.len(), n);
             (0..n).all(|i| {
-                let b = self.anf().equal(&self.basis[i], &other.basis[i]);
-                debug_assert_eq!(b, other.anf().equal(&self.basis[i], &other.basis[i]));
+                let b = self.anf.equal(&self.basis[i], &other.basis[i]);
+                debug_assert_eq!(b, other.anf.equal(&self.basis[i], &other.basis[i]));
                 b
             })
         } else {
@@ -93,7 +92,7 @@ impl<K: AlgebraicNumberFieldSignature> Signature for FullRankIntegerSubmoduleWit
 impl<K: AlgebraicNumberFieldSignature> SetSignature for FullRankIntegerSubmoduleWithBasis<K> {
     type Elem = Vec<Integer>;
 
-    fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, x: &Self::Elem) -> Result<(), String> {
         if x.len() != self.n() {
             return Err("wrong length".to_string());
         }
@@ -104,14 +103,14 @@ impl<K: AlgebraicNumberFieldSignature> SetSignature for FullRankIntegerSubmodule
 impl<K: AlgebraicNumberFieldSignature + ToStringSignature> ToStringSignature
     for FullRankIntegerSubmoduleWithBasis<K>
 {
-    fn to_string(&self, elem: &Self::Elem) -> String {
+    fn to_string(self: &Arc<Self>, elem: &Self::Elem) -> String {
         self.anf()
             .to_string(&self.outbound_order_to_anf_inclusion().image(elem))
     }
 }
 
 impl<K: AlgebraicNumberFieldSignature> EqSignature for FullRankIntegerSubmoduleWithBasis<K> {
-    fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         self.free_integer_submodule_restructure().equal(a, b)
     }
 }
@@ -122,13 +121,13 @@ impl<K: AlgebraicNumberFieldSignature> RinglikeSpecializationSignature
 }
 
 impl<K: AlgebraicNumberFieldSignature> ZeroSignature for FullRankIntegerSubmoduleWithBasis<K> {
-    fn zero(&self) -> Self::Elem {
+    fn zero(self: &Arc<Self>) -> Self::Elem {
         self.free_integer_submodule_restructure().zero()
     }
 }
 
 impl<K: AlgebraicNumberFieldSignature> AdditionSignature for FullRankIntegerSubmoduleWithBasis<K> {
-    fn add(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn add(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.free_integer_submodule_restructure().add(a, b)
     }
 }
@@ -136,13 +135,13 @@ impl<K: AlgebraicNumberFieldSignature> AdditionSignature for FullRankIntegerSubm
 impl<K: AlgebraicNumberFieldSignature> CancellativeAdditionSignature
     for FullRankIntegerSubmoduleWithBasis<K>
 {
-    fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_sub(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.sub(a, b))
     }
 }
 
 impl<K: AlgebraicNumberFieldSignature> TryNegateSignature for FullRankIntegerSubmoduleWithBasis<K> {
-    fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_neg(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
     }
 }
@@ -155,11 +154,11 @@ impl<K: AlgebraicNumberFieldSignature> AdditiveMonoidSignature
 impl<K: AlgebraicNumberFieldSignature> AdditiveGroupSignature
     for FullRankIntegerSubmoduleWithBasis<K>
 {
-    fn neg(&self, a: &Self::Elem) -> Self::Elem {
+    fn neg(self: &Arc<Self>, a: &Self::Elem) -> Self::Elem {
         self.free_integer_submodule_restructure().neg(a)
     }
 
-    fn sub(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn sub(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.free_integer_submodule_restructure().sub(a, b)
     }
 }
@@ -167,11 +166,11 @@ impl<K: AlgebraicNumberFieldSignature> AdditiveGroupSignature
 impl<K: AlgebraicNumberFieldSignature> FullRankIntegerSubmoduleWithBasisSignature<K>
     for FullRankIntegerSubmoduleWithBasis<K>
 {
-    fn anf(&self) -> &K {
-        self.anf.borrow()
+    fn anf(self: &Arc<Self>) -> Arc<K> {
+        self.anf.clone()
     }
 
-    fn basis(&self) -> &Vec<<K>::Elem> {
+    fn basis(self: &Arc<Self>) -> &Vec<<K>::Elem> {
         &self.basis
     }
 }

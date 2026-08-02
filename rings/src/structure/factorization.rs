@@ -505,25 +505,28 @@ impl<
 > FactoringStructure<Object, Exponent>
 {
     pub fn new_irreducible_unchecked(
-        &self,
+        self: &Arc<Self>,
         p: Object::Elem,
     ) -> Factored<Object::Elem, Exponent::Elem> {
         self.new_unit_and_powers_unchecked(self.objects().one(), vec![(p, self.exponents().one())])
     }
 
-    pub fn new_unit_unchecked(&self, unit: Object::Elem) -> Factored<Object::Elem, Exponent::Elem> {
+    pub fn new_unit_unchecked(
+        self: &Arc<Self>,
+        unit: Object::Elem,
+    ) -> Factored<Object::Elem, Exponent::Elem> {
         self.new_unit_and_powers_unchecked(unit, vec![])
     }
 
     pub fn new_powers_unchecked(
-        &self,
+        self: &Arc<Self>,
         powers: Vec<(Object::Elem, Exponent::Elem)>,
     ) -> Factored<Object::Elem, Exponent::Elem> {
         self.new_unit_and_powers_unchecked(self.objects().one(), powers)
     }
 
     pub fn new_unit_and_powers_unchecked(
-        &self,
+        self: &Arc<Self>,
         mut unit: Object::Elem,
         powers: Vec<(Object::Elem, Exponent::Elem)>,
     ) -> Factored<Object::Elem, Exponent::Elem> {
@@ -544,7 +547,7 @@ impl<
     }
 
     pub fn gcd(
-        &self,
+        self: &Arc<Self>,
         a: &Factored<Object::Elem, Exponent::Elem>,
         b: &Factored<Object::Elem, Exponent::Elem>,
     ) -> Factored<Object::Elem, Exponent::Elem> {
@@ -559,7 +562,7 @@ impl<
     }
 
     pub fn lcm(
-        &self,
+        self: &Arc<Self>,
         a: &Factored<Object::Elem, Exponent::Elem>,
         b: &Factored<Object::Elem, Exponent::Elem>,
     ) -> Option<Factored<Object::Elem, Exponent::Elem>> {
@@ -580,13 +583,13 @@ impl<
         }
     }
 
-    pub fn is_irreducible(&self, a: &Factored<Object::Elem, Exponent::Elem>) -> bool {
+    pub fn is_irreducible(self: &Arc<Self>, a: &Factored<Object::Elem, Exponent::Elem>) -> bool {
         #[cfg(debug_assertions)]
         self.validate_element(a).unwrap();
         self.is_irreducible_impl(a)
     }
 
-    pub fn expand(&self, a: &Factored<Object::Elem, Exponent::Elem>) -> Object::Elem {
+    pub fn expand(self: &Arc<Self>, a: &Factored<Object::Elem, Exponent::Elem>) -> Object::Elem {
         #[cfg(debug_assertions)]
         self.validate_element(a).unwrap();
         match a {
@@ -602,7 +605,10 @@ impl<
         }
     }
 
-    pub fn expand_squarefree(&self, a: &Factored<Object::Elem, Exponent::Elem>) -> Object::Elem {
+    pub fn expand_squarefree(
+        self: &Arc<Self>,
+        a: &Factored<Object::Elem, Exponent::Elem>,
+    ) -> Object::Elem {
         #[cfg(debug_assertions)]
         self.validate_element(a).unwrap();
         match a {
@@ -618,7 +624,7 @@ impl<
     }
 
     pub fn pow(
-        &self,
+        self: &Arc<Self>,
         f: &Factored<Object::Elem, Exponent::Elem>,
         n: &Exponent::Elem,
     ) -> Factored<Object::Elem, Exponent::Elem> {
@@ -641,7 +647,7 @@ impl<Object: UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanoni
 {
     /// Return an iterator over all divisors of a factorization
     pub fn divisors<'a>(
-        &'a self,
+        self: &'a Arc<Self>,
         a: &'a Factored<Object::Elem, Natural>,
     ) -> Option<Box<dyn Iterator<Item = Object::Elem> + 'a>> {
         match a {
@@ -681,7 +687,10 @@ impl<Object: UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanoni
     }
 
     /// The number of divisors of a factorization
-    pub fn count_divideisors(&self, a: &Factored<Object::Elem, Natural>) -> Option<Natural> {
+    pub fn count_divideisors(
+        self: &Arc<Self>,
+        a: &Factored<Object::Elem, Natural>,
+    ) -> Option<Natural> {
         #[cfg(debug_assertions)]
         self.validate_element(a).unwrap();
         match a {
@@ -699,7 +708,7 @@ impl<Object: UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanoni
 
     /// Determine whether it is the square of some element
     #[allow(unused)]
-    fn is_square(&self, a: &Factored<Object::Elem, Natural>) -> bool {
+    fn is_square(self: &Arc<Self>, a: &Factored<Object::Elem, Natural>) -> bool {
         match a {
             Factored::Zero => true,
             Factored::NonZero(a) => a
@@ -710,7 +719,7 @@ impl<Object: UniqueFactorizationMonoidSignature<FactoredExponent = NaturalCanoni
     }
 
     /// Return true if non-zero and factors as a product of distinct primes
-    fn is_squarefree(&self, a: &Factored<Object::Elem, Natural>) -> bool {
+    fn is_squarefree(self: &Arc<Self>, a: &Factored<Object::Elem, Natural>) -> bool {
         match a {
             Factored::Zero => false,
             Factored::NonZero(a) => a
@@ -730,7 +739,7 @@ impl<
     /// Return the element whose square equals the input, if it exists.
     #[allow(unused)]
     fn sqrt_if_square(
-        &self,
+        self: &Arc<Self>,
         a: &Factored<Object::Elem, Natural>,
     ) -> Option<Factored<Object::Elem, Natural>> {
         #[cfg(debug_assertions)]
@@ -763,27 +772,27 @@ pub trait UniqueFactorizationMonoidSignature:
 {
     type FactoredExponent: SemiRingSignature + CancellativeAdditionSignature + OrdSignature;
 
-    fn factorization_exponents(&self) -> Arc<Self::FactoredExponent>;
+    fn factorization_exponents(self: &Arc<Self>) -> Arc<Self::FactoredExponent>;
 
     fn factorizations(self: &Arc<Self>) -> Arc<FactoringStructure<Self, Self::FactoredExponent>> {
         FactoringStructure::new(self.clone(), self.factorization_exponents())
     }
 
     fn factorization_pow(
-        &self,
+        self: &Arc<Self>,
         a: &Self::Elem,
         k: &<Self::FactoredExponent as SetSignature>::Elem,
     ) -> Self::Elem;
 
     /// This should determine whether a is irreducible _without_ factoring it.
     /// Factoring a is not allowed because this function is used by factorizations to validate their state.
-    fn try_is_irreducible(&self, a: &Self::Elem) -> Option<bool>;
+    fn try_is_irreducible(self: &Arc<Self>, a: &Self::Elem) -> Option<bool>;
 }
 pub trait MetaUniqueFactorizationMonoidSignature: MetaType
 where
     Self::Signature: UniqueFactorizationMonoidSignature,
 {
-    fn try_is_irreducible(&self) -> Option<bool> {
+    fn try_is_irreducible(self: &Arc<Self>) -> Option<bool> {
         Self::structure().try_is_irreducible(self)
     }
 }
@@ -793,18 +802,18 @@ impl<R: MetaType> MetaUniqueFactorizationMonoidSignature for R where
 }
 
 pub trait FactoringMonoidSignature: UniqueFactorizationMonoidSignature {
-    fn is_irreducible(&self, a: &Self::Elem) -> bool {
+    fn is_irreducible(self: &Arc<Self>, a: &Self::Elem) -> bool {
         self.factorizations()
             .is_irreducible_impl(&self.factor_unchecked(a))
     }
 
     fn factor_unchecked(
-        &self,
+        self: &Arc<Self>,
         a: &Self::Elem,
     ) -> Factored<Self::Elem, <Self::FactoredExponent as SetSignature>::Elem>;
 
     fn factor(
-        &self,
+        self: &Arc<Self>,
         a: &Self::Elem,
     ) -> Factored<Self::Elem, <Self::FactoredExponent as SetSignature>::Elem> {
         let f = self.factor_unchecked(a);
@@ -837,12 +846,12 @@ impl<R: MetaType> MetaFactoringMonoid for R where Self::Signature: FactoringMono
 pub trait FactoringMonoidNaturalExponentSignature:
     FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
 {
-    fn gcd_by_factor(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn gcd_by_factor(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.factorizations()
             .expand(&self.factorizations().gcd(&self.factor(a), &self.factor(b)))
     }
 
-    fn lcm_by_factor(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn lcm_by_factor(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(
             self.factorizations().expand(
                 &self
@@ -852,7 +861,7 @@ pub trait FactoringMonoidNaturalExponentSignature:
         )
     }
 
-    fn is_squarefree(&self, a: &Self::Elem) -> bool {
+    fn is_squarefree(self: &Arc<Self>, a: &Self::Elem) -> bool {
         self.factorizations().is_squarefree(&self.factor(a))
     }
 }
@@ -884,22 +893,22 @@ impl<R: MetaType> MetaFactoringMonoidNaturalExponent for R where
 impl<FS: FieldSignature> UniqueFactorizationMonoidSignature for FS {
     type FactoredExponent = NaturalCanonicalStructure;
 
-    fn factorization_exponents(&self) -> Arc<Self::FactoredExponent> {
+    fn factorization_exponents(self: &Arc<Self>) -> Arc<Self::FactoredExponent> {
         Natural::structure()
     }
 
-    fn try_is_irreducible(&self, _a: &Self::Elem) -> Option<bool> {
+    fn try_is_irreducible(self: &Arc<Self>, _a: &Self::Elem) -> Option<bool> {
         Some(false)
     }
 
-    fn factorization_pow(&self, a: &Self::Elem, k: &Natural) -> Self::Elem {
+    fn factorization_pow(self: &Arc<Self>, a: &Self::Elem, k: &Natural) -> Self::Elem {
         self.nat_pow(a, k)
     }
 }
 
 impl<FS: FieldSignature> FactoringMonoidSignature for FS {
     fn factor_unchecked(
-        &self,
+        self: &Arc<Self>,
         a: &Self::Elem,
     ) -> Factored<Self::Elem, <Self::FactoredExponent as SetSignature>::Elem> {
         if self.is_zero(a) {

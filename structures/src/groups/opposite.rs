@@ -111,8 +111,8 @@ pub struct OppositeGroupAction<Action: Signature> {
 }
 
 impl<Action: Signature> OppositeGroupAction<Action> {
-    pub fn new(action: Arc<Action>) -> Self {
-        Self { action }
+    pub fn new(action: Arc<Action>) -> Arc<Self> {
+        Self { action }.into()
     }
 
     pub fn action(self: &Arc<Self>) -> &Arc<Action> {
@@ -125,7 +125,7 @@ impl<Action: Signature> Signature for OppositeGroupAction<Action> {}
 pub trait LeftActionToOppositeRightActionSignature<Group: GroupSignature, Set: SetSignature>:
     Signature
 {
-    fn opposite(self: &Arc<Self>) -> OppositeGroupAction<Self> {
+    fn opposite(self: &Arc<Self>) -> Arc<OppositeGroupAction<Self>> {
         OppositeGroupAction::new(self.clone())
     }
 }
@@ -137,7 +137,7 @@ impl<Group: GroupSignature, Set: SetSignature, Action: LeftGroupActionSignature<
 pub trait RightActionToOppositeLeftActionSignature<Set: SetSignature, Group: GroupSignature>:
     Signature
 {
-    fn opposite(self: &Arc<Self>) -> OppositeGroupAction<Self> {
+    fn opposite(self: &Arc<Self>) -> Arc<OppositeGroupAction<Self>> {
         OppositeGroupAction::new(self.clone())
     }
 }

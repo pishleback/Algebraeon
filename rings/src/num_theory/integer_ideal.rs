@@ -23,13 +23,13 @@ impl Signature for IntegerIdealsStructure {}
 
 impl SetSignature for IntegerIdealsStructure {
     type Elem = Natural;
-    fn validate_element(&self, _x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, _x: &Self::Elem) -> Result<(), String> {
         Ok(())
     }
 }
 
 impl IdealsSignature<IntegerCanonicalStructure> for IntegerIdealsStructure {
-    fn ring(&self) -> Arc<IntegerCanonicalStructure> {
+    fn ring(self: &Arc<Self>) -> Arc<IntegerCanonicalStructure> {
         Integer::structure()
     }
 }
@@ -91,19 +91,19 @@ impl RightDistributiveMultiplicationOverAddition for IntegerIdealsStructure {}
 impl SemiRingSignature for IntegerIdealsStructure {}
 
 impl IdealsArithmeticSignature<IntegerCanonicalStructure> for IntegerIdealsStructure {
-    fn principal_ideal(&self, a: &Integer) -> Self::Elem {
+    fn principal_ideal(self: &Arc<Self>, a: &Integer) -> Self::Elem {
         Abs::abs(a)
     }
 
-    fn contains_ideal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn contains_ideal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         b % a == Natural::ZERO
     }
 
-    fn intersect(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn intersect(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         lcm(a.clone(), b.clone())
     }
 
-    fn quotient(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn quotient(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         if b == &Natural::ZERO {
             Natural::ONE
         } else {
@@ -127,7 +127,7 @@ impl TryReciprocalSignature for IntegerIdealsStructure {
 }
 
 impl FavoriteAssociateSignature for IntegerIdealsStructure {
-    fn factor_fav_assoc(&self, a: &Self::Elem) -> (Self::Elem, Self::Elem) {
+    fn factor_fav_assoc(self: &Arc<Self>, a: &Self::Elem) -> (Self::Elem, Self::Elem) {
         self.factorization_exponents().factor_fav_assoc(a)
     }
 }
@@ -135,21 +135,21 @@ impl FavoriteAssociateSignature for IntegerIdealsStructure {
 impl UniqueFactorizationMonoidSignature for IntegerIdealsStructure {
     type FactoredExponent = NaturalCanonicalStructure;
 
-    fn factorization_exponents(&self) -> Arc<Self::FactoredExponent> {
+    fn factorization_exponents(self: &Arc<Self>) -> Arc<Self::FactoredExponent> {
         Natural::structure()
     }
 
-    fn factorization_pow(&self, a: &Self::Elem, k: &Natural) -> Self::Elem {
+    fn factorization_pow(self: &Arc<Self>, a: &Self::Elem, k: &Natural) -> Self::Elem {
         self.factorization_exponents().nat_pow(a, k)
     }
 
-    fn try_is_irreducible(&self, a: &Self::Elem) -> Option<bool> {
+    fn try_is_irreducible(self: &Arc<Self>, a: &Self::Elem) -> Option<bool> {
         self.factorization_exponents().try_is_irreducible(a)
     }
 }
 
 impl FactoringMonoidSignature for IntegerIdealsStructure {
-    fn factor_unchecked(&self, ideal: &Natural) -> Factored<Natural, Natural> {
+    fn factor_unchecked(self: &Arc<Self>, ideal: &Natural) -> Factored<Natural, Natural> {
         Natural::structure().factor_unchecked(ideal)
     }
 }
@@ -160,7 +160,7 @@ mod tests {
 
     #[test]
     fn integer_ideals() {
-        let ideals = Integer::structure().into_ideals();
+        let ideals = Integer::structure().ideals();
 
         assert!(ideals.equal(&Natural::from(3u32), &Natural::from(3u32)));
 
@@ -200,7 +200,7 @@ mod tests {
 
     #[test]
     fn factor_integer_ideal() {
-        let ideals = Integer::structure().into_ideals();
+        let ideals = Integer::structure().ideals();
 
         let f = ideals.factor(
             &Integer::structure()

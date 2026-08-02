@@ -6,15 +6,15 @@ use std::sync::Arc;
 
 impl RinglikeSpecializationSignature for IntegerCanonicalStructure {
     fn try_ring_restructure(
-        self: &Arc<Self>,
+        self: Arc<Self>,
     ) -> Option<Arc<impl EqSignature<Elem = Self::Elem> + RingSignature>> {
-        Some(self.clone())
+        Some(self)
     }
 
     fn try_char_zero_ring_restructure(
-        self: &Arc<Self>,
+        self: Arc<Self>,
     ) -> Option<Arc<impl EqSignature<Elem = Self::Elem> + CharZeroRingSignature>> {
-        Some(self.clone())
+        Some(self)
     }
 }
 
@@ -145,21 +145,21 @@ impl FavoriteAssociateSignature for IntegerCanonicalStructure {
 impl UniqueFactorizationMonoidSignature for IntegerCanonicalStructure {
     type FactoredExponent = NaturalCanonicalStructure;
 
-    fn factorization_exponents(&self) -> Arc<Self::FactoredExponent> {
+    fn factorization_exponents(self: &Arc<Self>) -> Arc<Self::FactoredExponent> {
         Natural::structure()
     }
 
-    fn try_is_irreducible(&self, a: &Self::Elem) -> Option<bool> {
+    fn try_is_irreducible(self: &Arc<Self>, a: &Self::Elem) -> Option<bool> {
         Some(Abs::abs(a).is_irreducible())
     }
 
-    fn factorization_pow(&self, a: &Self::Elem, k: &Natural) -> Self::Elem {
+    fn factorization_pow(self: &Arc<Self>, a: &Self::Elem, k: &Natural) -> Self::Elem {
         self.nat_pow(a, k)
     }
 }
 
 impl FactoringMonoidSignature for IntegerCanonicalStructure {
-    fn factor_unchecked(&self, a: &Self::Elem) -> Factored<Integer, Natural> {
+    fn factor_unchecked(self: &Arc<Self>, a: &Self::Elem) -> Factored<Integer, Natural> {
         if a == &Integer::ZERO {
             Factored::Zero
         } else {
@@ -230,19 +230,19 @@ impl CharZeroRingSignature for IntegerCanonicalStructure {
 }
 
 impl AlgebraicIntegerRingSignature<RationalCanonicalStructure> for IntegerCanonicalStructure {
-    fn anf(&self) -> &RationalCanonicalStructure {
-        Rational::structure_ref()
+    fn anf(self: &Arc<Self>) -> Arc<RationalCanonicalStructure> {
+        Rational::structure()
     }
 
-    fn to_anf(&self, x: &Integer) -> Rational {
+    fn to_anf(self: &Arc<Self>, x: &Integer) -> Rational {
         Rational::from(x)
     }
 
-    fn try_from_anf(&self, y: &Rational) -> Option<Integer> {
+    fn try_from_anf(self: &Arc<Self>, y: &Rational) -> Option<Integer> {
         Integer::try_from_rat(y)
     }
 
-    fn integral_basis(&self) -> Vec<Integer> {
+    fn integral_basis(self: &Arc<Self>) -> Vec<Integer> {
         vec![Integer::ONE]
     }
 }

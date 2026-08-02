@@ -38,7 +38,7 @@ impl<RS: SetSignature> Signature for GeneralLinearStructure<RS> {}
 impl<RS: FieldSignature> SetSignature for GeneralLinearStructure<RS> {
     type Elem = Matrix<RS::Elem>;
 
-    fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, x: &Self::Elem) -> Result<(), String> {
         self.mats().validate_element(x)?;
         if x.rows() != self.n || x.cols() != self.n {
             return Err("Wrong dimension".to_string());

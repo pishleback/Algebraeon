@@ -186,12 +186,12 @@ struct SimpleContinuedFractionFromRealStructureCache<R: ToSimpleContinuedFractio
 
 #[derive(Debug, Clone)]
 pub struct SimpleContinuedFractionFromRealStructure<R: ToSimpleContinuedFractionSignature> {
-    ring: R,
+    ring: Arc<R>,
     cache: Arc<Mutex<SimpleContinuedFractionFromRealStructureCache<R>>>,
 }
 
 impl<R: ToSimpleContinuedFractionSignature> SimpleContinuedFractionFromRealStructure<R> {
-    fn new(ring: R, value: R::Elem) -> Self {
+    fn new(ring: Arc<R>, value: R::Elem) -> Arc<Self> {
         Self {
             ring,
             cache: Arc::new(Mutex::new(SimpleContinuedFractionFromRealStructureCache {
@@ -199,6 +199,7 @@ impl<R: ToSimpleContinuedFractionSignature> SimpleContinuedFractionFromRealStruc
                 coeffs: vec![],
             })),
         }
+        .into()
     }
 }
 
@@ -234,7 +235,7 @@ pub trait ToSimpleContinuedFractionSignature: RealRoundingSignature + RingUnitsS
     fn simple_continued_fraction(
         self: &Arc<Self>,
         value: Self::Elem,
-    ) -> SimpleContinuedFractionFromRealStructure<Self> {
+    ) -> Arc<SimpleContinuedFractionFromRealStructure<Self>> {
         SimpleContinuedFractionFromRealStructure::new(self.clone(), value)
     }
 }

@@ -9,15 +9,15 @@ use std::sync::Arc;
 
 impl RinglikeSpecializationSignature for RationalCanonicalStructure {
     fn try_ring_restructure(
-        self: &Arc<Self>,
+        self: Arc<Self>,
     ) -> Option<Arc<impl EqSignature<Elem = Self::Elem> + RingSignature>> {
-        Some(self.clone())
+        Some(self)
     }
 
     fn try_char_zero_ring_restructure(
-        self: &Arc<Self>,
+        self: Arc<Self>,
     ) -> Option<Arc<impl EqSignature<Elem = Self::Elem> + CharZeroRingSignature>> {
-        Some(self.clone())
+        Some(self)
     }
 }
 
@@ -174,7 +174,7 @@ impl RealSubsetSignature for RationalCanonicalStructure {
 impl FieldOfFractionsInclusion<IntegerCanonicalStructure, RationalCanonicalStructure>
     for PrincipalIntegerMap<RationalCanonicalStructure>
 {
-    fn numerator_and_denominator(&self, a: &Rational) -> (Integer, Integer) {
+    fn numerator_and_denominator(self: &Arc<Self>, a: &Rational) -> (Integer, Integer) {
         (a.numerator(), a.denominator().into())
     }
 }
@@ -201,23 +201,25 @@ impl AlgebraicNumberFieldSignature for RationalCanonicalStructure {
     type Basis = SingletonSetStructure;
     type RationalInclusion = PrincipalRationalMap<Self>;
 
-    fn inbound_finite_dimensional_rational_extension(&self) -> Arc<Self::RationalInclusion> {
+    fn inbound_finite_dimensional_rational_extension(
+        self: &Arc<Self>,
+    ) -> Arc<Self::RationalInclusion> {
         self.inbound_principal_rational_map()
     }
 
-    fn generator(&self) -> Rational {
+    fn generator(self: &Arc<Self>) -> Rational {
         Rational::ONE
     }
 
-    fn discriminant(&self) -> Integer {
+    fn discriminant(self: &Arc<Self>) -> Integer {
         Integer::ONE
     }
 
-    fn integral_basis(&self) -> Vec<Self::Elem> {
+    fn integral_basis(self: &Arc<Self>) -> Vec<Self::Elem> {
         vec![Rational::ONE]
     }
 
-    fn is_algebraic_integer(&self, a: &Self::Elem) -> bool {
+    fn is_algebraic_integer(self: &Arc<Self>, a: &Self::Elem) -> bool {
         self.try_to_int(a).is_some()
     }
 }
@@ -228,7 +230,7 @@ const_assert!(
 
 impl FactoringMonoidSignature for PolynomialStructure<RationalCanonicalStructure> {
     fn factor_unchecked(
-        &self,
+        self: &Arc<Self>,
         p: &Self::Elem,
     ) -> Factored<Self::Elem, <Self::FactoredExponent as SetSignature>::Elem> {
         factorize_by_factorize_primitive_part(

@@ -162,7 +162,7 @@ impl<RS: SetSignature> Signature for SymmetricMatrixStructure<RS> {}
 impl<RS: SetSignature> SetSignature for SymmetricMatrixStructure<RS> {
     type Elem = SymmetricMatrix<RS::Elem>;
 
-    fn validate_element(&self, _x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, _x: &Self::Elem) -> Result<(), String> {
         Ok(())
     }
 }
@@ -172,8 +172,8 @@ impl<RS: SetSignature> SymmetricMatrixStructure<RS> {
         Self { set }.into()
     }
 
-    pub fn set(&self) -> &RS {
-        self.set.borrow()
+    pub fn set(&self) -> &Arc<RS> {
+        &self.set
     }
 }
 

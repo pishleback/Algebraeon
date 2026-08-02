@@ -51,17 +51,15 @@ impl<FS: FiniteFieldSignature> FiniteFieldSignature for PolynomialQuotientRingSt
 pub fn new_finite_field_extension<FS: FiniteFieldSignature>(
     finite_field: Arc<FS>,
     poly: Polynomial<FS::Elem>,
-) -> PolynomialQuotientRingStructure<FS, true>
+) -> Arc<PolynomialQuotientRingStructure<FS, true>>
 where
     PolynomialStructure<FS>: FactoringMonoidSignature<Elem = Polynomial<FS::Elem>>,
 {
-    finite_field
-        .into_polynomials()
-        .into_quotient_field_unchecked(poly)
+    finite_field.polynomials().quotient_field_unchecked(poly)
 }
 
 #[allow(unused)]
-pub(crate) fn f9() -> PolynomialQuotientRingStructure<ModuloCanonicalStructure<3>, true> {
+pub(crate) fn f9() -> Arc<PolynomialQuotientRingStructure<ModuloCanonicalStructure<3>, true>> {
     use crate::num_theory::modulo::const_naive::*;
     new_finite_field_extension::<ModuloCanonicalStructure<3>>(
         Modulo::<3>::structure(),
