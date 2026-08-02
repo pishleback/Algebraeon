@@ -77,7 +77,7 @@ The scalar ring structure can be obtained from a module by calling `.ring()`.
 # let module = Integer::structure().free_module(EnumeratedFiniteSetStructure::new(3));
 # 
 let ring = module.ring();
-assert_eq!(ring, &Integer::structure());
+assert_eq!(ring, Integer::structure());
 ```
 
 ## Submodules
@@ -89,6 +89,7 @@ For example, to obtain the set of all submodules of \\(\mathbb{Z}^3\\)
 ```rust
 # use algebraeon::structures::Integer;
 # use algebraeon::rings::linear::finitely_free_module::*;
+# use algebraeon::rings::structure::FinitelyFreeModuleSignature;
 # use algebraeon::structures::*;
 # use algebraeon::sets::sets::EnumeratedFiniteSetStructure;
 # 
@@ -104,6 +105,7 @@ The zero submodule \\(\{0\} \subseteq R^n\\) can be constructed using `.zero_sub
 ```rust
 # use algebraeon::structures::Integer;
 # use algebraeon::rings::linear::finitely_free_module::*;
+# use algebraeon::rings::structure::FinitelyFreeModuleSignature;
 # use algebraeon::structures::*;
 # use algebraeon::sets::sets::EnumeratedFiniteSetStructure;
 # 
@@ -118,6 +120,7 @@ The submodule given by the span of some elements of the module can be constructe
 ```rust
 # use algebraeon::structures::Integer;
 # use algebraeon::rings::linear::finitely_free_module::*;
+# use algebraeon::rings::structure::FinitelyFreeModuleSignature;
 # use algebraeon::structures::*;
 # use algebraeon::sets::sets::EnumeratedFiniteSetStructure;
 # 
@@ -140,6 +143,7 @@ The submodule given by the kernel of some elements can be constructed using `.ke
 ```rust
 # use algebraeon::structures::Integer;
 # use algebraeon::rings::linear::finitely_free_module::*;
+# use algebraeon::rings::structure::FinitelyFreeModuleSignature;
 # use algebraeon::structures::*;
 # use algebraeon::sets::sets::EnumeratedFiniteSetStructure;
 # 
@@ -162,6 +166,7 @@ Test submodules for equality using `.equal(..)`.
 ```rust
 # use algebraeon::structures::Integer;
 # use algebraeon::rings::linear::finitely_free_module::*;
+# use algebraeon::rings::structure::FinitelyFreeModuleSignature;
 # use algebraeon::structures::*;
 # use algebraeon::sets::sets::EnumeratedFiniteSetStructure;
 # 
@@ -196,6 +201,7 @@ Check whether a submodule contains an element using `.contains_element(..)`.
 ```rust
 # use algebraeon::structures::Integer;
 # use algebraeon::rings::linear::finitely_free_module::*;
+# use algebraeon::rings::structure::FinitelyFreeModuleSignature;
 # use algebraeon::structures::*;
 # use algebraeon::sets::sets::EnumeratedFiniteSetStructure;
 # 
@@ -216,6 +222,7 @@ Check whether a submodule is a subset of another submodule using `.contains(..)`
 ```rust
 # use algebraeon::structures::Integer;
 # use algebraeon::rings::linear::finitely_free_module::*;
+# use algebraeon::rings::structure::FinitelyFreeModuleSignature;
 # use algebraeon::structures::*;
 # use algebraeon::sets::sets::EnumeratedFiniteSetStructure;
 # 
@@ -233,6 +240,7 @@ Compute the sum of two submodules using `.sum(..)` and compute the intersection 
 ```rust
 # use algebraeon::structures::Integer;
 # use algebraeon::rings::linear::finitely_free_module::*;
+# use algebraeon::rings::structure::FinitelyFreeModuleSignature;
 # use algebraeon::structures::*;
 # use algebraeon::sets::sets::EnumeratedFiniteSetStructure;
 # 

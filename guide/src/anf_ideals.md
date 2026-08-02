@@ -44,10 +44,9 @@
 use algebraeon::rings::algebraic_number_field::AlgebraicNumberFieldSignature;
 use algebraeon::rings::algebraic_number_field::FullRankIntegerSubmoduleWithBasisSignature;
 use algebraeon::rings::polynomial::PolynomialFromStr;
-use algebraeon::structures::InjectiveFunction;
 use algebraeon::{
-    structures::*,
     rings::{polynomial::Polynomial, structure::*},
+    structures::*,
 };
 
 // Construct the ring of integers Z[i]
