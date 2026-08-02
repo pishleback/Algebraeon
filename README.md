@@ -34,7 +34,7 @@ let f = n.clone().factor();
 println!(
     "{} = {}",
     n,
-    Natural::structure_ref().factorizations().to_string(&f)
+    Natural::structure().factorizations().to_string(&f)
 );
 /*
 Output:

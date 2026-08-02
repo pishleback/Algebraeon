@@ -5,7 +5,7 @@ use algebraeon_sets::sets::{
     SetToFiniteSubsetsByOrdSignature,
 };
 use algebraeon_structures::*;
-use std::{cmp::Ordering, marker::PhantomData, sync::Arc};
+use std::{cmp::Ordering, sync::Arc};
 
 #[derive(Debug, Clone)]
 pub struct Syntheme<Elem> {

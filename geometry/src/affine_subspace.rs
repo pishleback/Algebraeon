@@ -32,13 +32,10 @@ impl<FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<FS> {
         for point in &points {
             debug_assert_eq!(point.ambient_space(), ambient_space);
         }
-        if !ambient_space
-            .borrow()
-            .are_points_affine_independent(points.iter().collect())
-        {
+        if !ambient_space.are_points_affine_independent(points.iter().collect()) {
             return Err("Affine embedding points must be affine independent");
         }
-        let field = ambient_space.borrow().field();
+        let field = ambient_space.field();
         let embedded_space: AffineSpace<FS> = AffineSpace::new_affine(field.clone(), points.len());
         let n = points.len();
         let embedded_pts = (0..n)
@@ -99,8 +96,8 @@ impl<FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<FS> {
         if points.is_empty() {
             Self::new_empty(ambient_space)
         } else {
-            let dim = ambient_space.borrow().linear_dimension().unwrap();
-            let field = ambient_space.borrow().field();
+            let dim = ambient_space.linear_dimension().unwrap();
+            let field = ambient_space.field();
             let mut points = points.into_iter();
             let root = points.next().unwrap();
             let span = points.map(|pt| pt - root).collect::<Vec<_>>();
@@ -123,7 +120,7 @@ impl<FS: OrderedRingSignature + FieldSignature> AffineSpace<FS> {
         &self,
         points: Vec<&Vector<FS>>,
     ) -> EmbeddedAffineSubspace<FS> {
-        EmbeddedAffineSubspace::new_affine_span(&self, points)
+        EmbeddedAffineSubspace::new_affine_span(self, points)
     }
 
     pub fn affine_subspace_from_root_and_linear_span(
@@ -131,14 +128,14 @@ impl<FS: OrderedRingSignature + FieldSignature> AffineSpace<FS> {
         root: &Vector<FS>,
         span: Vec<&Vector<FS>>,
     ) -> EmbeddedAffineSubspace<FS> {
-        EmbeddedAffineSubspace::new_root_and_linear_span(&self, root, span)
+        EmbeddedAffineSubspace::new_root_and_linear_span(self, root, span)
     }
 
     pub fn affine_subspace_from_affine_independent_span(
         &self,
         points: Vec<Vector<FS>>,
     ) -> Result<(EmbeddedAffineSubspace<FS>, Vec<Vector<FS>>), &'static str> {
-        EmbeddedAffineSubspace::new_affine_independent_span(&self, points)
+        EmbeddedAffineSubspace::new_affine_independent_span(self, points)
     }
 
     pub fn affine_subspace_from_root_and_linear_independent_span(
@@ -146,11 +143,11 @@ impl<FS: OrderedRingSignature + FieldSignature> AffineSpace<FS> {
         root: &Vector<FS>,
         span: Vec<&Vector<FS>>,
     ) -> Result<(EmbeddedAffineSubspace<FS>, Vec<Vector<FS>>), &'static str> {
-        EmbeddedAffineSubspace::new_root_and_linear_independent_span(&self, root, span)
+        EmbeddedAffineSubspace::new_root_and_linear_independent_span(self, root, span)
     }
 
     pub fn empty_affine_subspace(&self) -> EmbeddedAffineSubspace<FS> {
-        EmbeddedAffineSubspace::new_empty(&self)
+        EmbeddedAffineSubspace::new_empty(self)
     }
 }
 
@@ -321,7 +318,7 @@ impl<FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<FS> {
                         let ref_point = {
                             //root + e_k
                             let k = extension_elementary_basis_vectors[i];
-                            Vector::construct(&ambient_space, |l| {
+                            Vector::construct(ambient_space, |l| {
                                 field.add(
                                     root.coordinate(l),
                                     &if l == k { field.one() } else { field.zero() },
@@ -329,7 +326,7 @@ impl<FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<FS> {
                             })
                         };
                         OrientedSimplex::new_with_positive_point(
-                            &ambient_space,
+                            ambient_space,
                             {
                                 let mut points = vec![root.clone()];
                                 for s in &span {
@@ -339,7 +336,7 @@ impl<FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<FS> {
                                 {
                                     if i != j {
                                         //push root + e_k
-                                        points.push(Vector::construct(&ambient_space, |l| {
+                                        points.push(Vector::construct(ambient_space, |l| {
                                             field.add(root.coordinate(l), &{
                                                 if l == k { field.one() } else { field.zero() }
                                             })

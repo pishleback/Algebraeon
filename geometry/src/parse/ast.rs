@@ -125,41 +125,41 @@ impl ShapeExpression {
         match self {
             ShapeExpression::Union(left, right) => left
                 .to_partial_simplicial_complex(space)
-                .union(&right.to_partial_simplicial_complex(&space)),
+                .union(&right.to_partial_simplicial_complex(space)),
             ShapeExpression::Intersect(left, right) => left
                 .to_partial_simplicial_complex(space)
-                .intersect(&right.to_partial_simplicial_complex(&space)),
+                .intersect(&right.to_partial_simplicial_complex(space)),
             ShapeExpression::MinkowskiSum(left, right) => left
                 .to_partial_simplicial_complex(space)
-                .minkowski_sum(&right.to_partial_simplicial_complex(&space)),
+                .minkowski_sum(&right.to_partial_simplicial_complex(space)),
             ShapeExpression::Difference(left, right) => left
                 .to_partial_simplicial_complex(space)
-                .difference(&right.to_partial_simplicial_complex(&space)),
+                .difference(&right.to_partial_simplicial_complex(space)),
             ShapeExpression::Point(point) => space
-                .convex_hull(vec![point.to_vector(&space)])
+                .convex_hull(vec![point.to_vector(space)])
                 .to_simplicial_complex()
                 .into_forget_labels()
                 .into_partial_simplicial_complex(),
             ShapeExpression::ConvexHull(points) => space
-                .convex_hull(points.iter().map(|pt| pt.to_vector(&space)).collect())
+                .convex_hull(points.iter().map(|pt| pt.to_vector(space)).collect())
                 .to_simplicial_complex()
                 .into_forget_labels()
                 .into_partial_simplicial_complex(),
             ShapeExpression::ConvexHullInterior(points) => space
-                .convex_hull(points.iter().map(|pt| pt.to_vector(&space)).collect())
+                .convex_hull(points.iter().map(|pt| pt.to_vector(space)).collect())
                 .to_simplicial_complex()
                 .interior()
                 .into_partial_simplicial_complex(),
             ShapeExpression::ConvexHullBoundary(points) => space
-                .convex_hull(points.iter().map(|pt| pt.to_vector(&space)).collect())
+                .convex_hull(points.iter().map(|pt| pt.to_vector(space)).collect())
                 .to_simplicial_complex()
                 .boundary()
                 .into_partial_simplicial_complex(),
             ShapeExpression::Lines(points) => {
                 let mut shape = space.empty_subset().into_partial_simplicial_complex();
                 for i in 0..points.len() - 1 {
-                    let p0 = points[i].to_vector(&space);
-                    let p1 = points[i + 1].to_vector(&space);
+                    let p0 = points[i].to_vector(space);
+                    let p1 = points[i + 1].to_vector(space);
                     shape = shape.union(
                         &space
                             .convex_hull(vec![p0, p1])
@@ -173,8 +173,8 @@ impl ShapeExpression {
                 let mut shape = space.empty_subset().into_partial_simplicial_complex();
                 let n = points.len();
                 for i in 0..n {
-                    let p0 = points[i].to_vector(&space);
-                    let p1 = points[(i + 1) % n].to_vector(&space);
+                    let p0 = points[i].to_vector(space);
+                    let p1 = points[(i + 1) % n].to_vector(space);
                     shape = shape.union(
                         &space
                             .convex_hull(vec![p0, p1])
@@ -186,9 +186,7 @@ impl ShapeExpression {
             }
             ShapeExpression::Polygon(points) => ShapeExpression::PolygonInterior(points.clone())
                 .to_partial_simplicial_complex(space)
-                .union(
-                    &ShapeExpression::Loop(points.clone()).to_partial_simplicial_complex(&space),
-                ),
+                .union(&ShapeExpression::Loop(points.clone()).to_partial_simplicial_complex(space)),
             ShapeExpression::PolygonInterior(points) => {
                 assert_eq!(space.linear_dimension(), Some(2));
 
@@ -201,8 +199,8 @@ impl ShapeExpression {
                     let n = points.len();
 
                     for i in 0..n {
-                        let p0 = points[i].to_vector(&space);
-                        let p1 = points[(i + 1) % n].to_vector(&space);
+                        let p0 = points[i].to_vector(space);
+                        let p1 = points[(i + 1) % n].to_vector(space);
                         let part = space
                             .convex_hull(vec![root.clone(), p0, p1])
                             .to_simplicial_complex()
@@ -211,7 +209,7 @@ impl ShapeExpression {
                     }
 
                     PartialSimplicialComplex::new_unchecked(
-                        &space,
+                        space,
                         shape
                             .simplexes()
                             .into_iter()
