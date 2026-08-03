@@ -18,8 +18,7 @@ All notable changes to this project will be documented in this file.
  - Added group actions.
  - Added const size versions of various structures on finite sets.
  - Added methods for working with the Hexacode, Tetracode, and Extended Binary Golay Code.
- - Added `MetaTypeRef` as a subtrait of `MetaType`. `MetaTypeRef` provides `structure_ref()`.
- - Added optional `#[ref_meta]` attribute to fns taking `&self` of a trait decorated with `#[signature_meta_trait]`. This forwards `&self` as `Self::structure_ref()` instead of `&Self::structure()`.
+ - Moved all structure types into `Arc`s to simplify code.
 
 ## [0.0.17] - 2026-03-06
 
