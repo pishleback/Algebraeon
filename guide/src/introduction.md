@@ -30,7 +30,7 @@ Algebraeon is published to crates.io under an umbrella crate [algebraeon](https:
 - [algebraeon-geometry](https://crates.io/crates/algebraeon-geometry)
 - [algebraeon-drawing](https://crates.io/crates/algebraeon-drawing)
 
-**A Taster**
+**Taster**
 
 To give a flavour of what it's about, here is a non-exhaustive list of the things Algebraeon can already do:
 
