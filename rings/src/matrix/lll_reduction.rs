@@ -14,7 +14,9 @@ use crate::{
     },
     structure::{FieldSignature, OrderedRingSignature, RealRoundingSignature, RealSubsetSignature},
 };
+use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 use algebraeon_structures::*;
+use std::sync::Arc;
 
 impl<
     FS: RealSubsetSignature
@@ -22,8 +24,7 @@ impl<
         + OrderedRingSignature
         + FieldSignature
         + ToStringSignature,
-    FSB: BorrowedStructure<FS>,
-> MatrixStructure<FS, FSB>
+> MatrixStructure<FS>
 {
     /// Take the rows of M = `mat` as the basis for a lattice.
     ///
@@ -31,9 +32,9 @@ impl<
     ///
     /// `delta` must be in the range (-0.25, 1] with polynomial time complexity only for `delta` in (-0.25, 1). `delta` = 3/4 is the "default" value to use.
     pub fn lll_row_reduction_algorithm(
-        &self,
+        self: &Arc<Self>,
         mut basis: Matrix<FS::Elem>,
-        inner_product: &impl RealInnerProduct<FS>,
+        inner_product: &Arc<impl RealInnerProduct<FS>>,
         delta: &Rational,
     ) -> (Matrix<FS::Elem>, Matrix<FS::Elem>) {
         let n = basis.rows(); // size of the basis
@@ -42,7 +43,9 @@ impl<
         debug_assert!(self.rank(basis.clone()) == n);
         // 1/4 < delta <= 1
         assert!(Rational::ONE < Rational::from(4) * delta && delta <= &Rational::ONE);
-        let vs = self.ring().free_module(m);
+        let vs = self
+            .ring()
+            .free_module(EnumeratedFiniteSetStructure::new(m));
 
         if n == 0 {
             return (self.ident(0), basis);
@@ -299,9 +302,9 @@ impl<
     ///
     /// `delta` must be in the range (-0.25, 1] with polynomial time complexity only for `delta` in (-0.25, 1). `delta` = 3/4 is the "default" value to use.
     pub fn lll_col_reduction_algorithm(
-        &self,
+        self: &Arc<Self>,
         basis: Matrix<FS::Elem>,
-        inner_product: &impl RealInnerProduct<FS>,
+        inner_product: &Arc<impl RealInnerProduct<FS>>,
         delta: &Rational,
     ) -> (Matrix<FS::Elem>, Matrix<FS::Elem>) {
         let (h, b) = self.lll_row_reduction_algorithm(basis.transpose(), inner_product, delta);
@@ -319,7 +322,7 @@ where
 {
     pub fn lll_row_reduction_algorithm(
         self,
-        inner_product: &impl RealInnerProduct<F::Signature>,
+        inner_product: &Arc<impl RealInnerProduct<F::Signature>>,
         delta: &Rational,
     ) -> (Matrix<F>, Matrix<F>) {
         Self::structure().lll_row_reduction_algorithm(self, inner_product, delta)
@@ -327,16 +330,14 @@ where
 
     pub fn lll_col_reduction_algorithm(
         self,
-        inner_product: &impl RealInnerProduct<F::Signature>,
+        inner_product: &Arc<impl RealInnerProduct<F::Signature>>,
         delta: &Rational,
     ) -> (Matrix<F>, Matrix<F>) {
         Self::structure().lll_col_reduction_algorithm(self, inner_product, delta)
     }
 }
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>>
-    MatrixStructure<IntegerCanonicalStructure, B>
-{
+impl MatrixStructure<IntegerCanonicalStructure> {
     /// Take the rows of M = `mat` as the basis for a lattice.
     ///
     /// Perform an LLL reduction on the lattice, returning matricies (H, H*M) such that H is invertible the rows of H*M are an LLL reduced basis for the lattice.
@@ -345,7 +346,7 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>>
     pub fn lll_integral_row_reduction_algorithm(
         &self,
         mut basis: Matrix<Integer>,
-        inner_product: &impl RealInnerProduct<IntegerCanonicalStructure>,
+        inner_product: &Arc<impl RealInnerProduct<IntegerCanonicalStructure>>,
         delta: &Rational,
     ) -> (Matrix<Integer>, Matrix<Integer>) {
         let n = basis.rows(); // size of the basis
@@ -355,7 +356,9 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>>
         // 1/4 < delta <= 1
         assert!(Rational::ONE < Rational::from(4) * delta && delta <= &Rational::ONE);
         #[cfg(debug_assertions)]
-        let vs = self.ring().free_module(m);
+        let vs = self
+            .ring()
+            .free_module(EnumeratedFiniteSetStructure::new(m));
 
         if n == 0 {
             return (self.ident(0), basis);
@@ -627,7 +630,7 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>>
     pub fn lll_integral_col_reduction_algorithm(
         &self,
         basis: Matrix<Integer>,
-        inner_product: &impl RealInnerProduct<IntegerCanonicalStructure>,
+        inner_product: &Arc<impl RealInnerProduct<IntegerCanonicalStructure>>,
         delta: &Rational,
     ) -> (Matrix<Integer>, Matrix<Integer>) {
         let (h, b) =
@@ -639,7 +642,7 @@ impl<B: BorrowedStructure<IntegerCanonicalStructure>>
 impl Matrix<Integer> {
     pub fn lll_integral_row_reduction_algorithm(
         self,
-        inner_product: &impl RealInnerProduct<IntegerCanonicalStructure>,
+        inner_product: &Arc<impl RealInnerProduct<IntegerCanonicalStructure>>,
         delta: &Rational,
     ) -> (Matrix<Integer>, Matrix<Integer>) {
         Self::structure().lll_integral_row_reduction_algorithm(self, inner_product, delta)
@@ -647,7 +650,7 @@ impl Matrix<Integer> {
 
     pub fn lll_integral_col_reduction_algorithm(
         self,
-        inner_product: &impl RealInnerProduct<IntegerCanonicalStructure>,
+        inner_product: &Arc<impl RealInnerProduct<IntegerCanonicalStructure>>,
         delta: &Rational,
     ) -> (Matrix<Integer>, Matrix<Integer>) {
         Self::structure().lll_integral_col_reduction_algorithm(self, inner_product, delta)

@@ -1,7 +1,7 @@
 use crate::structure::*;
 use algebraeon_macros::repeat_small_primes;
 use algebraeon_structures::*;
-use std::{borrow::Cow, fmt::Display, hash::Hash};
+use std::{borrow::Cow, cmp::Ordering, fmt::Display, hash::Hash, sync::Arc};
 
 fn xgcd(mut x: usize, mut y: usize) -> (usize, isize, isize) {
     let mut pa = 1;
@@ -126,7 +126,7 @@ impl<const N: usize> Signature for ModuloCanonicalStructure<N> {}
 impl<const N: usize> SetSignature for ModuloCanonicalStructure<N> {
     type Elem = Modulo<N>;
 
-    fn validate_element(&self, _x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, _x: &Self::Elem) -> Result<(), String> {
         Ok(())
     }
 }
@@ -134,19 +134,31 @@ impl<const N: usize> SetSignature for ModuloCanonicalStructure<N> {
 impl<const N: usize> MetaType for Modulo<N> {
     type Signature = ModuloCanonicalStructure<N>;
 
-    fn structure() -> Self::Signature {
-        ModuloCanonicalStructure {}
+    fn structure() -> Arc<Self::Signature> {
+        ModuloCanonicalStructure {}.into()
     }
 }
 
 impl<const N: usize> EqSignature for ModuloCanonicalStructure<N> {
-    fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         a == b
     }
 }
 
+impl<const N: usize> PartialOrdSignature for ModuloCanonicalStructure<N> {
+    fn partial_cmp(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Ordering> {
+        a.x.partial_cmp(&b.x)
+    }
+}
+
+impl<const N: usize> OrdSignature for ModuloCanonicalStructure<N> {
+    fn cmp(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Ordering {
+        a.x.cmp(&b.x)
+    }
+}
+
 impl<const N: usize> ToStringSignature for ModuloCanonicalStructure<N> {
-    fn to_string(&self, elem: &Self::Elem) -> String {
+    fn to_string(self: &Arc<Self>, elem: &Self::Elem) -> String {
         format!("{}", elem)
     }
 }
@@ -154,25 +166,25 @@ impl<const N: usize> ToStringSignature for ModuloCanonicalStructure<N> {
 impl<const N: usize> RinglikeSpecializationSignature for ModuloCanonicalStructure<N> {}
 
 impl<const N: usize> ZeroSignature for ModuloCanonicalStructure<N> {
-    fn zero(&self) -> Self::Elem {
+    fn zero(self: &Arc<Self>) -> Self::Elem {
         Modulo { x: 0 }
     }
 }
 
 impl<const N: usize> AdditionSignature for ModuloCanonicalStructure<N> {
-    fn add(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn add(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         Modulo { x: (a.x + b.x) % N }
     }
 }
 
 impl<const N: usize> CancellativeAdditionSignature for ModuloCanonicalStructure<N> {
-    fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_sub(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.sub(a, b))
     }
 }
 
 impl<const N: usize> TryNegateSignature for ModuloCanonicalStructure<N> {
-    fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_neg(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
     }
 }
@@ -180,7 +192,7 @@ impl<const N: usize> TryNegateSignature for ModuloCanonicalStructure<N> {
 impl<const N: usize> AdditiveMonoidSignature for ModuloCanonicalStructure<N> {}
 
 impl<const N: usize> AdditiveGroupSignature for ModuloCanonicalStructure<N> {
-    fn neg(&self, a: &Self::Elem) -> Self::Elem {
+    fn neg(self: &Arc<Self>, a: &Self::Elem) -> Self::Elem {
         if a.x == 0 {
             Modulo { x: 0 }
         } else {
@@ -190,7 +202,7 @@ impl<const N: usize> AdditiveGroupSignature for ModuloCanonicalStructure<N> {
 }
 
 impl<const N: usize> OneSignature for ModuloCanonicalStructure<N> {
-    fn one(&self) -> Self::Elem {
+    fn one(self: &Arc<Self>) -> Self::Elem {
         if N == 1 {
             Modulo { x: 0 }
         } else {
@@ -200,7 +212,7 @@ impl<const N: usize> OneSignature for ModuloCanonicalStructure<N> {
 }
 
 impl<const N: usize> MultiplicationSignature for ModuloCanonicalStructure<N> {
-    fn mul(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn mul(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         Modulo { x: (a.x * b.x) % N }
     }
 }
@@ -220,13 +232,13 @@ impl<const N: usize> SemiRingSignature for ModuloCanonicalStructure<N> {}
 impl<const N: usize> RingSignature for ModuloCanonicalStructure<N> {}
 
 impl<const N: usize> CharacteristicSignature for ModuloCanonicalStructure<N> {
-    fn characteristic(&self) -> Natural {
+    fn characteristic(self: &Arc<Self>) -> Natural {
         Natural::from(N)
     }
 }
 
 impl<const N: usize> TryReciprocalSignature for ModuloCanonicalStructure<N> {
-    fn try_reciprocal(&self, x: &Self::Elem) -> Option<Self::Elem> {
+    fn try_reciprocal(self: &Arc<Self>, x: &Self::Elem) -> Option<Self::Elem> {
         if x == &self.zero() {
             None
         } else {
@@ -244,23 +256,23 @@ impl<const N: usize> TryReciprocalSignature for ModuloCanonicalStructure<N> {
 impl<const N: usize> QuotientSetSignature<IntegerCanonicalStructure>
     for ModuloCanonicalStructure<N>
 {
-    fn pre_quotient_set(&self) -> &IntegerCanonicalStructure {
-        Integer::structure_ref()
+    fn pre_quotient_set(self: &Arc<Self>) -> Arc<IntegerCanonicalStructure> {
+        Integer::structure()
     }
 
-    fn project(&self, x: Integer) -> Self::Elem {
+    fn project(self: &Arc<Self>, x: Integer) -> Self::Elem {
         x.into()
     }
 
-    fn project_ref(&self, x: &Integer) -> Self::Elem {
+    fn project_ref(self: &Arc<Self>, x: &Integer) -> Self::Elem {
         x.into()
     }
 
-    fn unproject(&self, x: Self::Elem) -> Integer {
+    fn unproject(self: &Arc<Self>, x: Self::Elem) -> Integer {
         x.lift_int()
     }
 
-    fn unproject_ref(&self, x: &Self::Elem) -> Integer {
+    fn unproject_ref(self: &Arc<Self>, x: &Self::Elem) -> Integer {
         x.lift_int()
     }
 }
@@ -279,21 +291,40 @@ impl<const N: usize> QuotientRingGetPrincipalIdealSignature<IntegerCanonicalStru
 }
 
 impl<const N: usize> CountableSetSignature for ModuloCanonicalStructure<N> {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
+    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
         (0..N).map(Modulo::new)
     }
 }
 
 impl<const N: usize> FiniteSetSignature for ModuloCanonicalStructure<N> {
-    fn size(&self) -> usize {
-        N
+    fn size(self: &Arc<Self>) -> Natural {
+        Natural::from(N)
+    }
+}
+
+impl<const N: usize> OrderedFiniteSetSignature for ModuloCanonicalStructure<N> {
+    fn list_all_elements_ordered(self: &Arc<Self>) -> Vec<Self::Elem> {
+        (0..N).map(|x| Modulo { x }).collect()
+    }
+
+    fn element_to_enumeration(self: &Arc<Self>, elem: &Self::Elem) -> Natural {
+        elem.x.into()
+    }
+
+    fn enumeration_to_element(self: &Arc<Self>, num: &Natural) -> Option<Self::Elem> {
+        let x: usize = num.try_into().ok()?;
+        if x < N { Some(Modulo { x }) } else { None }
     }
 }
 
 macro_rules! impl_field {
     ($N: literal) => {
         impl CancellativeMultiplicationSignature for ModuloCanonicalStructure<$N> {
-            fn try_divide(&self, top: &Self::Elem, bot: &Self::Elem) -> Option<Self::Elem> {
+            fn try_divide(
+                self: &Arc<Self>,
+                top: &Self::Elem,
+                bot: &Self::Elem,
+            ) -> Option<Self::Elem> {
                 Some(self.mul(top, &self.try_reciprocal(bot)?))
             }
         }
@@ -304,23 +335,21 @@ macro_rules! impl_field {
 
         impl FieldSignature for ModuloCanonicalStructure<$N> {}
 
-        impl<B: BorrowedStructure<ModuloCanonicalStructure<$N>>> CountableSetSignature
-            for MultiplicativeMonoidUnitsStructure<ModuloCanonicalStructure<$N>, B>
+        impl CountableSetSignature
+            for MultiplicativeMonoidUnitsStructure<ModuloCanonicalStructure<$N>>
         {
-            fn generate_all_elements(
-                &self,
-            ) -> impl std::iter::Iterator<Item = Modulo<$N>> + std::clone::Clone {
+            fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
                 (1..$N).map(|i| Modulo { x: i })
             }
         }
 
-        impl<B: BorrowedStructure<ModuloCanonicalStructure<$N>>> FiniteSetSignature
-            for MultiplicativeMonoidUnitsStructure<ModuloCanonicalStructure<$N>, B>
+        impl FiniteSetSignature
+            for MultiplicativeMonoidUnitsStructure<ModuloCanonicalStructure<$N>>
         {
         }
 
         impl FiniteFieldSignature for ModuloCanonicalStructure<$N> {
-            fn characteristic_and_power(&self) -> (Natural, Natural) {
+            fn characteristic_and_power(self: &Arc<Self>) -> (Natural, Natural) {
                 (Natural::from($N as usize), Natural::from(1u8))
             }
         }
@@ -331,30 +360,22 @@ repeat_small_primes!(20, p =>
     impl_field!(p);
 );
 
-impl<
-    B: BorrowedStructure<IntegerCanonicalStructure>,
-    BE: BorrowedStructure<EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, B, true>>,
-> CountableSetSignature
+impl CountableSetSignature
     for MultiplicativeMonoidUnitsStructure<
-        EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, B, true>,
-        BE,
+        EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, true>,
     >
 {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
+    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
         self.list_all_elements().into_iter()
     }
 }
 
-impl<
-    B: BorrowedStructure<IntegerCanonicalStructure>,
-    BE: BorrowedStructure<EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, B, true>>,
-> FiniteSetSignature
+impl FiniteSetSignature
     for MultiplicativeMonoidUnitsStructure<
-        EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, B, true>,
-        BE,
+        EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, true>,
     >
 {
-    fn list_all_elements(&self) -> Vec<Self::Elem> {
+    fn list_all_elements(self: &Arc<Self>) -> Vec<Self::Elem> {
         let mut units = vec![];
         let mut u = Integer::from(1);
         while u < Abs::abs(self.monoid().modulus().as_ref()) {
@@ -365,29 +386,28 @@ impl<
     }
 }
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>> FiniteFieldSignature
-    for EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, B, true>
-{
-    fn characteristic_and_power(&self) -> (Natural, Natural) {
+impl FiniteFieldSignature for EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, true> {
+    fn characteristic_and_power(self: &Arc<Self>) -> (Natural, Natural) {
         (Abs::abs(self.modulus().as_ref()), Natural::ONE)
     }
 }
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>, const IS_FIELD: bool> CountableSetSignature
-    for EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, B, IS_FIELD>
+impl<const IS_FIELD: bool> CountableSetSignature
+    for EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, IS_FIELD>
 {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
+    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
+        let modulus = self.modulus().as_ref().clone();
         (0usize..)
             .map(Integer::from)
-            .take_while(|n| n < self.modulus().as_ref())
+            .take_while(move |n| n < &modulus)
     }
 }
 
-impl<B: BorrowedStructure<IntegerCanonicalStructure>, const IS_FIELD: bool> FiniteSetSignature
-    for EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, B, IS_FIELD>
+impl<const IS_FIELD: bool> FiniteSetSignature
+    for EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, IS_FIELD>
 {
-    fn size(&self) -> usize {
-        Abs::abs(self.modulus().as_ref()).try_into().unwrap()
+    fn size(self: &Arc<Self>) -> Natural {
+        Abs::abs(self.modulus().as_ref())
     }
 }
 
@@ -408,5 +428,10 @@ mod tests {
     #[test]
     fn count_elements() {
         assert_eq!(Modulo::<26>::structure().list_all_elements().len(), 26);
+    }
+
+    #[test]
+    fn enumeration() {
+        algebraeon_structures::assert_enumerated_ord_finite_set!(Modulo::<26>::structure(), 26);
     }
 }

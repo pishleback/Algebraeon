@@ -3,7 +3,8 @@
 Sometimes the situation is simple and we only want to define one set with structure rather than a family of sets, for example, the set of all rational numbers. Since sets with structure are represented in Algebraeon objects of structure types we will need a structure type with exactly once instance. This can be done explicitly like so
 
 ```rust
-use algebraeon::{rings::structure::*, structures::*};
+use algebraeon::structures::*;
+use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MyRational {
@@ -18,13 +19,13 @@ impl Signature for MyRationalCanonicalStructure {}
 impl SetSignature for MyRationalCanonicalStructure {
     type Elem = MyRational;
 
-    fn validate_element(&self, _x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, _x: &Self::Elem) -> Result<(), String> {
         Ok(())
     }
 }
 
 impl EqSignature for MyRationalCanonicalStructure {
-    fn equal(&self, x: &Self::Elem, y: &Self::Elem) -> bool {
+    fn equal(self: &Arc<Self>, x: &Self::Elem, y: &Self::Elem) -> bool {
         x == y
     }
 }

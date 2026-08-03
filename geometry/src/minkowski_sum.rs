@@ -19,14 +19,14 @@ pub trait MinkowskiSum<Other> {
     fn minkowski_sum(&self, other: &Other) -> Self::Output;
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature>
-    MinkowskiSumRaw<PartialSimplicialComplex<'f, FS>> for PartialSimplicialComplex<'f, FS>
+impl<FS: OrderedRingSignature + FieldSignature> MinkowskiSumRaw<PartialSimplicialComplex<FS>>
+    for PartialSimplicialComplex<FS>
 where
     FS::Elem: Hash,
 {
-    type Output = SimplicialDisjointUnion<'f, FS>;
+    type Output = SimplicialDisjointUnion<FS>;
 
-    fn minkowski_sum_raw(&self, other: &PartialSimplicialComplex<'f, FS>) -> Self::Output {
+    fn minkowski_sum_raw(&self, other: &PartialSimplicialComplex<FS>) -> Self::Output {
         let space = common_space(self.ambient_space(), other.ambient_space()).unwrap();
 
         self.simplexes()
@@ -54,14 +54,14 @@ where
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature> MinkowskiSum<PartialSimplicialComplex<'f, FS>>
-    for PartialSimplicialComplex<'f, FS>
+impl<FS: OrderedRingSignature + FieldSignature> MinkowskiSum<PartialSimplicialComplex<FS>>
+    for PartialSimplicialComplex<FS>
 where
     FS::Elem: Hash,
 {
-    type Output = PartialSimplicialComplex<'f, FS>;
+    type Output = PartialSimplicialComplex<FS>;
 
-    fn minkowski_sum(&self, other: &PartialSimplicialComplex<'f, FS>) -> Self::Output {
+    fn minkowski_sum(&self, other: &PartialSimplicialComplex<FS>) -> Self::Output {
         self.minkowski_sum_raw(other)
             .refine_into_partial_simplicial_complex()
             .simplify()

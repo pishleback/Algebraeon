@@ -15,22 +15,22 @@ use super::*;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Clone)]
-pub struct ConvexHull<'f, FS: OrderedRingSignature + FieldSignature>
+pub struct ConvexHull<FS: OrderedRingSignature + FieldSignature>
 where
     FS::Elem: Hash,
 {
     // the space in which this convex hull lives
-    ambient_space: AffineSpace<'f, FS>,
+    ambient_space: AffineSpace<FS>,
     // the affine subspace spanned by this convex hull
     // so that this convex hull is "full" in this embedded subspace
-    subspace: EmbeddedAffineSubspace<'f, FS>,
+    subspace: EmbeddedAffineSubspace<FS>,
     // oriented facets belonging to the embedded subspace such that
     // the positive side of each facet is on the interior of the convex hull and
     // the negative side of each facet is on the outside of the convex hull.
     // These facets should form a simplicial complex
-    facets: Vec<OrientedSimplex<'f, FS>>,
+    facets: Vec<OrientedSimplex<FS>>,
     // These interior simplicies are the full-dimensional simplicies in the embedded subspace forming the interior of the convex hull
-    interior: Vec<Simplex<'f, FS>>,
+    interior: Vec<Simplex<FS>>,
     /*
     Consider the case of a convex hull given by a simplex in dimension d:
 
@@ -45,7 +45,7 @@ where
     */
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature> std::fmt::Debug for ConvexHull<'f, FS>
+impl<FS: OrderedRingSignature + FieldSignature> std::fmt::Debug for ConvexHull<FS>
 where
     FS::Elem: std::hash::Hash + std::fmt::Debug,
 {
@@ -61,13 +61,13 @@ where
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature> ConvexHull<'f, FS>
+impl<FS: OrderedRingSignature + FieldSignature> ConvexHull<FS>
 where
     FS::Elem: Hash,
 {
     #[allow(unused)]
     fn check(&self) -> Result<(), &'static str> {
-        assert_eq!(self.subspace.ambient_space(), self.ambient_space);
+        assert_eq!(self.subspace.ambient_space(), &self.ambient_space);
 
         {
             for facet in &self.facets {
@@ -176,17 +176,17 @@ where
         Ok(())
     }
 
-    pub(crate) fn new_empty(ambient_space: AffineSpace<'f, FS>) -> Self {
+    pub(crate) fn new_empty(ambient_space: &AffineSpace<FS>) -> Self {
         let subspace = EmbeddedAffineSubspace::new_empty(ambient_space);
         Self {
-            ambient_space,
+            ambient_space: ambient_space.clone(),
             subspace: subspace.clone(),
             facets: vec![],
             interior: vec![subspace.clone().embedded_space().simplex(vec![]).unwrap()],
         }
     }
 
-    pub(crate) fn new(ambient_space: AffineSpace<'f, FS>, points: Vec<Vector<'f, FS>>) -> Self {
+    pub(crate) fn new(ambient_space: &AffineSpace<FS>, points: Vec<Vector<FS>>) -> Self {
         let mut ch = Self::new_empty(ambient_space);
         for point in points {
             ch.extend_by_point(point);
@@ -194,8 +194,8 @@ where
         ch
     }
 
-    pub(crate) fn from_simplex(spx: Simplex<'f, FS>) -> Self {
-        let ambient_space = spx.ambient_space();
+    pub(crate) fn from_simplex(spx: Simplex<FS>) -> Self {
+        let ambient_space = spx.ambient_space().clone();
         let (subspace, embedded_pts) = spx.into_affine_span();
         let embedded_spx = subspace.embedded_space().simplex(embedded_pts).unwrap();
         Self {
@@ -207,16 +207,16 @@ where
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature> AffineSpace<'f, FS>
+impl<FS: OrderedRingSignature + FieldSignature> AffineSpace<FS>
 where
     FS::Elem: Hash,
 {
-    pub fn convex_hull(&self, points: Vec<Vector<'f, FS>>) -> ConvexHull<'f, FS> {
-        ConvexHull::new(*self, points)
+    pub fn convex_hull(&self, points: Vec<Vector<FS>>) -> ConvexHull<FS> {
+        ConvexHull::new(self, points)
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature> ConvexHull<'f, FS>
+impl<FS: OrderedRingSignature + FieldSignature> ConvexHull<FS>
 where
     FS::Elem: Hash,
 {
@@ -224,7 +224,7 @@ where
         self.subspace.embedded_space().affine_dimension()
     }
 
-    pub fn ambient_space(&self) -> AffineSpace<'f, FS> {
+    pub fn ambient_space(&self) -> &AffineSpace<FS> {
         self.subspace.ambient_space()
     }
 
@@ -232,7 +232,7 @@ where
         self.subspace.borrow().embedded_space().affine_dimension() == 0
     }
 
-    pub fn defining_points(&self) -> HashSet<Vector<'f, FS>> {
+    pub fn defining_points(&self) -> HashSet<Vector<FS>> {
         match self.subspace.borrow().embedded_space().affine_dimension() {
             0 => HashSet::new(),
             1 => {
@@ -254,8 +254,8 @@ where
         }
     }
 
-    pub fn extend_by_point(&mut self, pt: Vector<'f, FS>) {
-        assert_eq!(pt.ambient_space(), self.ambient_space);
+    pub fn extend_by_point(&mut self, pt: Vector<FS>) {
+        assert_eq!(pt.ambient_space(), &self.ambient_space);
         #[cfg(debug_assertions)]
         self.check().unwrap();
 
@@ -446,7 +446,7 @@ where
         self.check().unwrap();
     }
 
-    fn embedded_interior_simplexes(&self) -> Vec<Simplex<'f, FS>> {
+    fn embedded_interior_simplexes(&self) -> Vec<Simplex<FS>> {
         self.interior
             .iter()
             .map(|spx| {
@@ -462,7 +462,7 @@ where
             .collect()
     }
 
-    fn embedded_facet_simplexes(&self) -> Vec<Simplex<'f, FS>> {
+    fn embedded_facet_simplexes(&self) -> Vec<Simplex<FS>> {
         self.facets
             .iter()
             .map(|ospx| {
@@ -479,7 +479,7 @@ where
             .collect()
     }
 
-    pub fn to_simplicial_complex(&self) -> LabelledSimplicialComplex<'f, FS, InteriorOrBoundary> {
+    pub fn to_simplicial_complex(&self) -> LabelledSimplicialComplex<FS, InteriorOrBoundary> {
         let boundary_simplexes = self
             .embedded_facet_simplexes()
             .into_iter()
@@ -515,17 +515,17 @@ where
 }
 
 #[derive(Clone)]
-struct ConvexHullWireframe<'f, FS: OrderedRingSignature + FieldSignature> {
-    ambient_space: AffineSpace<'f, FS>,
-    points: Vec<Vector<'f, FS>>,
-    edges: Vec<(Vector<'f, FS>, Vector<'f, FS>)>,
+struct ConvexHullWireframe<FS: OrderedRingSignature + FieldSignature> {
+    ambient_space: AffineSpace<FS>,
+    points: Vec<Vector<FS>>,
+    edges: Vec<(Vector<FS>, Vector<FS>)>,
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature> ConvexHullWireframe<'f, FS>
+impl<FS: OrderedRingSignature + FieldSignature> ConvexHullWireframe<FS>
 where
     FS::Elem: Hash,
 {
-    fn from_convex_hull(ch: &ConvexHull<'f, FS>) -> Self {
+    fn from_convex_hull(ch: &ConvexHull<FS>) -> Self {
         let mut outer_points = HashSet::new();
         let mut outer_edges = HashSet::new();
         for facet in &ch.facets {
@@ -567,7 +567,7 @@ where
         }
 
         Self {
-            ambient_space: ch.ambient_space(),
+            ambient_space: ch.ambient_space().clone(),
             points: outer_points
                 .into_iter()
                 .map(|pt| ch.subspace.embed_point(&pt))
@@ -579,13 +579,13 @@ where
         }
     }
 
-    fn into_convex_hull(self) -> ConvexHull<'f, FS> {
-        ConvexHull::new(self.ambient_space, self.points)
+    fn into_convex_hull(self) -> ConvexHull<FS> {
+        ConvexHull::new(&self.ambient_space, self.points)
     }
 
     pub fn intersect_with_oriented_hyperplane(
         &self,
-        hyperplane: &OrientedHyperplane<'f, FS>,
+        hyperplane: &OrientedHyperplane<FS>,
         region: OrientationSide, //TODO: make this const generic once rust has const generic enums
     ) -> Self {
         /*
@@ -650,7 +650,7 @@ where
             points: middle_points,
             edges: middle_edges,
         } = Self::from_convex_hull(&ConvexHull::new(
-            self.ambient_space,
+            &self.ambient_space,
             middle_points.into_iter().collect(),
         ));
 
@@ -658,9 +658,8 @@ where
             debug_assert!(!middle_points.is_empty());
         }
 
-        let mut points: HashSet<Vector<'f, FS>> = middle_points.into_iter().collect();
-        let mut edges: HashSet<(Vector<'f, FS>, Vector<'f, FS>)> =
-            middle_edges.into_iter().collect();
+        let mut points: HashSet<Vector<FS>> = middle_points.into_iter().collect();
+        let mut edges: HashSet<(Vector<FS>, Vector<FS>)> = middle_edges.into_iter().collect();
 
         match region {
             OrientationSide::Positive => {
@@ -683,20 +682,20 @@ where
         }
 
         Self {
-            ambient_space: self.ambient_space,
+            ambient_space: self.ambient_space.clone(),
             points: points.into_iter().collect(),
             edges: edges.into_iter().collect(),
         }
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature> ConvexHull<'f, FS>
+impl<FS: OrderedRingSignature + FieldSignature> ConvexHull<FS>
 where
     FS::Elem: Hash,
 {
     pub fn intersect_with_oriented_hyperplane(
         &self,
-        hyperplane: &OrientedHyperplane<'f, FS>,
+        hyperplane: &OrientedHyperplane<FS>,
         region: OrientationSide, //TODO: make this const generic once rust has const generic enums
     ) -> Self {
         ConvexHullWireframe::from_convex_hull(self)
@@ -755,7 +754,7 @@ where
             }
             None => {
                 //other is empty, so the intersection with other is empty
-                *self = Self::new_empty(self.ambient_space);
+                *self = Self::new_empty(&self.ambient_space);
             }
         }
     }
@@ -769,12 +768,12 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use algebraeon_structures::Rational;
+    use algebraeon_structures::{MetaType, Rational};
 
     #[test]
     fn construct_convex_hull() {
-        let space = AffineSpace::new_linear(Rational::structure_ref(), 2);
-        let mut ch = ConvexHull::new_empty(space);
+        let space = AffineSpace::new_linear(Rational::structure(), 2);
+        let mut ch = ConvexHull::new_empty(&space);
         //add a point to get started
         ch.extend_by_point(space.vector([1, 1]));
         //add the same point again
@@ -808,9 +807,9 @@ mod tests {
 
     #[test]
     fn convex_hull_intersect_hyperplane() {
-        let space = AffineSpace::new_linear(Rational::structure_ref(), 2);
+        let space = AffineSpace::new_linear(Rational::structure(), 2);
         let ch = ConvexHull::new(
-            space,
+            &space,
             vec![
                 space.vector([1, 1]),
                 space.vector([1, 1]),
@@ -830,7 +829,7 @@ mod tests {
         );
 
         let ohsp = OrientedSimplex::new_with_positive_point(
-            space,
+            &space,
             vec![
                 space.vector([Rational::from(1), Rational::from(4)]),
                 space.vector([Rational::from(1), Rational::from(-4)]),
@@ -850,11 +849,11 @@ mod tests {
 
     #[test]
     fn convex_hull_intersections() {
-        let space = AffineSpace::new_linear(Rational::structure_ref(), 2);
+        let space = AffineSpace::new_linear(Rational::structure(), 2);
         //2d intersect 2d
         {
             let ch1 = ConvexHull::new(
-                space,
+                &space,
                 vec![
                     space.vector([1, 1]),
                     space.vector([1, 1]),
@@ -873,7 +872,7 @@ mod tests {
                 ],
             );
             let ch2 = ConvexHull::new(
-                space,
+                &space,
                 vec![
                     space.vector([-2, 0]),
                     space.vector([3, 0]),
@@ -887,7 +886,7 @@ mod tests {
         //2d intersect 1d
         {
             let ch1 = ConvexHull::new(
-                space,
+                &space,
                 vec![
                     space.vector([1, 1]),
                     space.vector([1, 1]),
@@ -905,21 +904,21 @@ mod tests {
                     space.vector([2, 2]),
                 ],
             );
-            let ch2 = ConvexHull::new(space, vec![space.vector([3, 2]), space.vector([0, -1])]);
+            let ch2 = ConvexHull::new(&space, vec![space.vector([3, 2]), space.vector([0, -1])]);
             let ch3 = ch1.intersect(&ch2);
             println!("{ch3:?}");
         }
         //line misses line
         {
-            let ch1 = ConvexHull::new(space, vec![space.vector([-2, -1]), space.vector([-1, 1])]);
-            let ch2 = ConvexHull::new(space, vec![space.vector([1, 1]), space.vector([-1, 0])]);
+            let ch1 = ConvexHull::new(&space, vec![space.vector([-2, -1]), space.vector([-1, 1])]);
+            let ch2 = ConvexHull::new(&space, vec![space.vector([1, 1]), space.vector([-1, 0])]);
             let ch3 = ch1.intersect(&ch2);
             debug_assert_eq!(ch3.subspace.embedded_space().affine_dimension(), 0);
         }
         //line hits line
         {
-            let ch1 = ConvexHull::new(space, vec![space.vector([2, 0]), space.vector([-2, -1])]);
-            let ch2 = ConvexHull::new(space, vec![space.vector([0, -1]), space.vector([1, 1])]);
+            let ch1 = ConvexHull::new(&space, vec![space.vector([2, 0]), space.vector([-2, -1])]);
+            let ch2 = ConvexHull::new(&space, vec![space.vector([0, -1]), space.vector([1, 1])]);
             let ch3 = ch1.intersect(&ch2);
             debug_assert_eq!(ch3.subspace.embedded_space().affine_dimension(), 1);
         }
@@ -927,7 +926,7 @@ mod tests {
 
     #[test]
     fn convex_hull_from_simplex() {
-        let space = AffineSpace::new_linear(Rational::structure_ref(), 3);
+        let space = AffineSpace::new_linear(Rational::structure(), 3);
         let p1 = space.vector([4, 2, 2]);
         let p2 = space.vector([5, -3, 3]);
         let p3 = space.vector([-5, 6, 2]);

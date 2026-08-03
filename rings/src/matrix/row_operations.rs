@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use super::*;
 
 #[derive(Debug)]
@@ -31,7 +33,7 @@ pub enum ElementaryOppType<RS: RingSignature> {
 
 #[derive(Debug)]
 pub struct ElementaryOpp<RS: RingSignature> {
-    ring: RS,
+    ring: Arc<RS>,
     transpose: bool, //false = row opp, true = column opp
     opp: ElementaryOppType<RS>,
 }
@@ -77,7 +79,7 @@ impl<RS: IntegralDomainSignature> ElementaryOpp<RS> {
         Ok(())
     }
 
-    pub fn new_row_opp(ring: RS, opp: ElementaryOppType<RS>) -> Self {
+    pub fn new_row_opp(ring: Arc<RS>, opp: ElementaryOppType<RS>) -> Self {
         Self {
             ring,
             transpose: false,
@@ -85,7 +87,7 @@ impl<RS: IntegralDomainSignature> ElementaryOpp<RS> {
         }
     }
 
-    pub fn new_col_opp(ring: RS, opp: ElementaryOppType<RS>) -> Self {
+    pub fn new_col_opp(ring: Arc<RS>, opp: ElementaryOppType<RS>) -> Self {
         Self {
             ring,
             transpose: true,

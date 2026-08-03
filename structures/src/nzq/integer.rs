@@ -2,8 +2,9 @@
 
 use crate::*;
 use algebraeon_macros::CanonicalStructure;
-use malachite_base::num::basic::traits::{One, Two, Zero};
+use malachite::base::num::basic::traits::{One, Two, Zero};
 use std::iter::{Product, Sum};
+use std::sync::Arc;
 use std::{
     ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Rem, Sub, SubAssign},
     str::FromStr,
@@ -12,23 +13,23 @@ use std::{
 /// Represent an integer {..., -2, -1, 0, 1, 2, ...}
 #[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, CanonicalStructure)]
 #[canonical_structure(eq, partial_ord, ord)]
-pub struct Integer(malachite_nz::integer::Integer);
+pub struct Integer(malachite::integer::Integer);
 
 #[allow(clippy::wrong_self_convention)]
 impl Integer {
-    pub(crate) fn from_malachite(value: malachite_nz::integer::Integer) -> Self {
+    pub(crate) fn from_malachite(value: malachite::integer::Integer) -> Self {
         Self(value)
     }
-    pub(crate) fn to_malachite(self) -> malachite_nz::integer::Integer {
+    pub(crate) fn to_malachite(self) -> malachite::integer::Integer {
         self.0
     }
-    pub(crate) fn to_malachite_ref(&self) -> &malachite_nz::integer::Integer {
+    pub(crate) fn to_malachite_ref(&self) -> &malachite::integer::Integer {
         &self.0
     }
 }
 
 impl ToStringSignature for IntegerCanonicalStructure {
-    fn to_string(&self, elem: &Self::Elem) -> String {
+    fn to_string(self: &Arc<Self>, elem: &Self::Elem) -> String {
         format!("{}", elem)
     }
 }
@@ -41,74 +42,72 @@ impl std::fmt::Display for Integer {
 
 impl From<u8> for Integer {
     fn from(value: u8) -> Self {
-        Self(malachite_nz::integer::Integer::from(value))
+        Self(malachite::integer::Integer::from(value))
     }
 }
 impl From<u16> for Integer {
     fn from(value: u16) -> Self {
-        Self(malachite_nz::integer::Integer::from(value))
+        Self(malachite::integer::Integer::from(value))
     }
 }
 impl From<u32> for Integer {
     fn from(value: u32) -> Self {
-        Self(malachite_nz::integer::Integer::from(value))
+        Self(malachite::integer::Integer::from(value))
     }
 }
 impl From<u64> for Integer {
     fn from(value: u64) -> Self {
-        Self(malachite_nz::integer::Integer::from(value))
+        Self(malachite::integer::Integer::from(value))
     }
 }
 impl From<u128> for Integer {
     fn from(value: u128) -> Self {
-        Self(malachite_nz::integer::Integer::from(value))
+        Self(malachite::integer::Integer::from(value))
     }
 }
 impl From<usize> for Integer {
     fn from(value: usize) -> Self {
-        Self(malachite_nz::integer::Integer::from(value))
+        Self(malachite::integer::Integer::from(value))
     }
 }
 impl From<i8> for Integer {
     fn from(value: i8) -> Self {
-        Self(malachite_nz::integer::Integer::from(value))
+        Self(malachite::integer::Integer::from(value))
     }
 }
 impl From<i16> for Integer {
     fn from(value: i16) -> Self {
-        Self(malachite_nz::integer::Integer::from(value))
+        Self(malachite::integer::Integer::from(value))
     }
 }
 impl From<i32> for Integer {
     fn from(value: i32) -> Self {
-        Self(malachite_nz::integer::Integer::from(value))
+        Self(malachite::integer::Integer::from(value))
     }
 }
 impl From<i64> for Integer {
     fn from(value: i64) -> Self {
-        Self(malachite_nz::integer::Integer::from(value))
+        Self(malachite::integer::Integer::from(value))
     }
 }
 impl From<i128> for Integer {
     fn from(value: i128) -> Self {
-        Self(malachite_nz::integer::Integer::from(value))
+        Self(malachite::integer::Integer::from(value))
     }
 }
 impl From<isize> for Integer {
     fn from(value: isize) -> Self {
-        Self(malachite_nz::integer::Integer::from(value))
+        Self(malachite::integer::Integer::from(value))
     }
 }
 impl From<Natural> for Integer {
     fn from(value: Natural) -> Self {
-        Self(malachite_nz::integer::Integer::from(value.to_malachite()))
+        Self(malachite::integer::Integer::from(value.to_malachite()))
     }
 }
 impl From<&Natural> for Integer {
     fn from(value: &Natural) -> Self {
-        Self(malachite_nz::integer::Integer::from(
-            value.to_malachite_ref(),
-        ))
+        Self(malachite::integer::Integer::from(value.to_malachite_ref()))
     }
 }
 impl From<&Integer> for Integer {
@@ -120,7 +119,7 @@ impl From<&Integer> for Integer {
 impl TryFrom<Rational> for Integer {
     type Error = ();
     fn try_from(value: Rational) -> Result<Self, Self::Error> {
-        if let Ok(value) = malachite_nz::integer::Integer::try_from(value.to_malachite()) {
+        if let Ok(value) = malachite::integer::Integer::try_from(value.to_malachite()) {
             Ok(Integer::from_malachite(value))
         } else {
             Err(())
@@ -130,7 +129,7 @@ impl TryFrom<Rational> for Integer {
 impl TryFrom<&Rational> for Integer {
     type Error = ();
     fn try_from(value: &Rational) -> Result<Self, Self::Error> {
-        if let Ok(value) = malachite_nz::integer::Integer::try_from(value.to_malachite_ref()) {
+        if let Ok(value) = malachite::integer::Integer::try_from(value.to_malachite_ref()) {
             Ok(Integer::from_malachite(value))
         } else {
             Err(())
@@ -272,14 +271,14 @@ impl FromStr for Integer {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self(malachite_nz::integer::Integer::from_str(s)?))
+        Ok(Self(malachite::integer::Integer::from_str(s)?))
     }
 }
 
 impl Integer {
-    pub const ZERO: Self = Self(malachite_nz::integer::Integer::ZERO);
-    pub const ONE: Self = Self(malachite_nz::integer::Integer::ONE);
-    pub const TWO: Self = Self(malachite_nz::integer::Integer::TWO);
+    pub const ZERO: Self = Self(malachite::integer::Integer::ZERO);
+    pub const ONE: Self = Self(malachite::integer::Integer::ONE);
+    pub const TWO: Self = Self(malachite::integer::Integer::TWO);
 
     pub fn latex(&self) -> String {
         format!("{}", self)
@@ -466,7 +465,7 @@ impl Rem<Integer> for Integer {
     type Output = Integer;
 
     fn rem(self, rhs: Integer) -> Self::Output {
-        use malachite_base::num::arithmetic::traits::Mod;
+        use malachite::base::num::arithmetic::traits::Mod;
         Integer(self.0.mod_op(rhs.0))
     }
 }
@@ -474,7 +473,7 @@ impl Rem<&Integer> for Integer {
     type Output = Integer;
 
     fn rem(self, rhs: &Integer) -> Self::Output {
-        use malachite_base::num::arithmetic::traits::Mod;
+        use malachite::base::num::arithmetic::traits::Mod;
         Integer(self.0.mod_op(&rhs.0))
     }
 }
@@ -482,7 +481,7 @@ impl Rem<Integer> for &Integer {
     type Output = Integer;
 
     fn rem(self, rhs: Integer) -> Self::Output {
-        use malachite_base::num::arithmetic::traits::Mod;
+        use malachite::base::num::arithmetic::traits::Mod;
         Integer((&self.0).mod_op(rhs.0))
     }
 }
@@ -490,7 +489,7 @@ impl Rem<&Integer> for &Integer {
     type Output = Integer;
 
     fn rem(self, rhs: &Integer) -> Self::Output {
-        use malachite_base::num::arithmetic::traits::Mod;
+        use malachite::base::num::arithmetic::traits::Mod;
         Integer((&self.0).mod_op(&rhs.0))
     }
 }
@@ -559,7 +558,7 @@ impl DivMod<Integer> for Integer {
     type ModOutput = Integer;
 
     fn div_mod(self, other: Integer) -> (Self::DivOutput, Self::ModOutput) {
-        use malachite_base::num::arithmetic::traits::DivMod;
+        use malachite::base::num::arithmetic::traits::DivMod;
         let (q, r) = self.0.div_mod(other.0);
         (Integer(q), Integer(r))
     }
@@ -570,7 +569,7 @@ impl DivMod<&Integer> for Integer {
     type ModOutput = Integer;
 
     fn div_mod(self, other: &Integer) -> (Self::DivOutput, Self::ModOutput) {
-        use malachite_base::num::arithmetic::traits::DivMod;
+        use malachite::base::num::arithmetic::traits::DivMod;
         let (q, r) = self.0.div_mod(&other.0);
         (Integer(q), Integer(r))
     }
@@ -581,7 +580,7 @@ impl DivMod<Integer> for &Integer {
     type ModOutput = Integer;
 
     fn div_mod(self, other: Integer) -> (Self::DivOutput, Self::ModOutput) {
-        use malachite_base::num::arithmetic::traits::DivMod;
+        use malachite::base::num::arithmetic::traits::DivMod;
         let (q, r) = (&self.0).div_mod(other.0);
         (Integer(q), Integer(r))
     }
@@ -592,7 +591,7 @@ impl DivMod<&Integer> for &Integer {
     type ModOutput = Integer;
 
     fn div_mod(self, other: &Integer) -> (Self::DivOutput, Self::ModOutput) {
-        use malachite_base::num::arithmetic::traits::DivMod;
+        use malachite::base::num::arithmetic::traits::DivMod;
         let (q, r) = (&self.0).div_mod(&other.0);
         (Integer(q), Integer(r))
     }
@@ -601,7 +600,7 @@ impl DivMod<&Integer> for &Integer {
 impl Abs for Integer {
     type Output = Natural;
     fn abs(self) -> Self::Output {
-        use malachite_base::num::arithmetic::traits::UnsignedAbs;
+        use malachite::base::num::arithmetic::traits::UnsignedAbs;
         Natural::from_malachite(self.0.unsigned_abs())
     }
 }
@@ -609,7 +608,7 @@ impl Abs for Integer {
 impl Abs for &Integer {
     type Output = Natural;
     fn abs(self) -> Self::Output {
-        use malachite_base::num::arithmetic::traits::UnsignedAbs;
+        use malachite::base::num::arithmetic::traits::UnsignedAbs;
         Natural::from_malachite((&self.0).unsigned_abs())
     }
 }
@@ -618,7 +617,7 @@ impl AbsDiff<Integer> for Integer {
     type Output = Natural;
 
     fn abs_diff(self, rhs: Integer) -> Self::Output {
-        use malachite_base::num::arithmetic::traits::AbsDiff;
+        use malachite::base::num::arithmetic::traits::AbsDiff;
         Natural::from_malachite(self.0.abs_diff(rhs.0))
     }
 }
@@ -626,7 +625,7 @@ impl AbsDiff<&Integer> for Integer {
     type Output = Natural;
 
     fn abs_diff(self, rhs: &Integer) -> Self::Output {
-        use malachite_base::num::arithmetic::traits::AbsDiff;
+        use malachite::base::num::arithmetic::traits::AbsDiff;
         Natural::from_malachite(self.0.abs_diff(&rhs.0))
     }
 }
@@ -634,7 +633,7 @@ impl AbsDiff<Integer> for &Integer {
     type Output = Natural;
 
     fn abs_diff(self, rhs: Integer) -> Self::Output {
-        use malachite_base::num::arithmetic::traits::AbsDiff;
+        use malachite::base::num::arithmetic::traits::AbsDiff;
         Natural::from_malachite((&self.0).abs_diff(rhs.0))
     }
 }
@@ -642,14 +641,14 @@ impl AbsDiff<&Integer> for &Integer {
     type Output = Natural;
 
     fn abs_diff(self, rhs: &Integer) -> Self::Output {
-        use malachite_base::num::arithmetic::traits::AbsDiff;
+        use malachite::base::num::arithmetic::traits::AbsDiff;
         Natural::from_malachite((&self.0).abs_diff(&rhs.0))
     }
 }
 
 impl Sum for Integer {
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
-        Self::from_malachite(malachite_nz::integer::Integer::sum(
+        Self::from_malachite(malachite::integer::Integer::sum(
             iter.map(|x| x.to_malachite()),
         ))
     }
@@ -657,15 +656,15 @@ impl Sum for Integer {
 
 impl Product for Integer {
     fn product<I: Iterator<Item = Self>>(iter: I) -> Self {
-        Self::from_malachite(malachite_nz::integer::Integer::product(
+        Self::from_malachite(malachite::integer::Integer::product(
             iter.map(|x| x.to_malachite()),
         ))
     }
 }
 
 impl CountableSetSignature for IntegerCanonicalStructure {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
-        use malachite_nz::integer::exhaustive::exhaustive_integers;
+    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
+        use malachite::integer::exhaustive::exhaustive_integers;
         exhaustive_integers().map(Integer::from_malachite)
     }
 }

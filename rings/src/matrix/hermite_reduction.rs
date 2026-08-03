@@ -1,9 +1,10 @@
 use super::*;
 use crate::linear::{
-    finitely_free_affine::FinitelyFreeSubmoduleAffineSubset,
+    finitely_free_affine_subsets::FinitelyFreeSubmoduleAffineSubset,
     finitely_free_module::FinitelyFreeModuleStructure,
-    finitely_free_submodule::FinitelyFreeSubmodule,
+    finitely_free_submodules::FinitelyFreeSubmodule,
 };
+use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 use algebraeon_structures::*;
 
 /// Rings for which hermite normal forms can be computed
@@ -25,13 +26,13 @@ pub trait UniqueReducedHermiteAlgorithmSignature: ReducedHermiteAlgorithmSignatu
 impl UniqueReducedHermiteAlgorithmSignature for IntegerCanonicalStructure {}
 impl<Field: FieldSignature> UniqueReducedHermiteAlgorithmSignature for Field {}
 
-impl<Ring: HermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> MatrixStructure<Ring, RingB> {
+impl<Ring: HermiteAlgorithmSignature> MatrixStructure<Ring> {
     /// Return (H, U, u_det, pivots) such that
     /// - H is in row hermite normal form, meaning
     /// - U is invertible
     /// - UM=H
     /// - u_det is the determinant of u
-    /// - pivots[r] is the column of the rth pivot
+    /// - `pivots[r]` is the column of the rth pivot
     pub fn row_hermite_algorithm(
         &self,
         mut m: Matrix<Ring::Elem>,
@@ -177,14 +178,12 @@ impl<Ring: HermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> MatrixStru
     }
 }
 
-impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
-    MatrixStructure<Ring, RingB>
-{
+impl<Ring: ReducedHermiteAlgorithmSignature> MatrixStructure<Ring> {
     /// Returns (H, U, u_det, pivots) such that
     /// - H is in row reduced hermite normal form, meaning entries above pivots have euclidean norm strictly less than the pivot
     /// - U is invertible
     /// - UM=H
-    /// - pivots[r] is the column of the rth pivot and pivots.len() == rank(A)
+    /// - `pivots[r]` is the column of the rth pivot and pivots.len() == rank(A)
     pub fn row_reduced_hermite_algorithm(
         &self,
         m: Matrix<Ring::Elem>,
@@ -257,27 +256,39 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
     }
 
     pub fn row_span(&self, matrix: Matrix<Ring::Elem>) -> FinitelyFreeSubmodule<Ring::Elem> {
-        FinitelyFreeModuleStructure::<Ring, _>::new(self.ring(), matrix.cols())
-            .into_submodules()
-            .matrix_row_span(matrix)
+        FinitelyFreeModuleStructure::<_, Ring>::new(
+            EnumeratedFiniteSetStructure::new(matrix.cols()),
+            self.ring(),
+        )
+        .submodules()
+        .matrix_row_span(matrix)
     }
 
     pub fn col_span(&self, matrix: Matrix<Ring::Elem>) -> FinitelyFreeSubmodule<Ring::Elem> {
-        FinitelyFreeModuleStructure::<Ring, _>::new(self.ring(), matrix.rows())
-            .into_submodules()
-            .matrix_col_span(matrix)
+        FinitelyFreeModuleStructure::<_, Ring>::new(
+            EnumeratedFiniteSetStructure::new(matrix.rows()),
+            self.ring(),
+        )
+        .submodules()
+        .matrix_col_span(matrix)
     }
 
     pub fn row_kernel(&self, matrix: Matrix<Ring::Elem>) -> FinitelyFreeSubmodule<Ring::Elem> {
-        FinitelyFreeModuleStructure::<Ring, _>::new(self.ring(), matrix.rows())
-            .into_submodules()
-            .matrix_row_kernel(matrix)
+        FinitelyFreeModuleStructure::<_, Ring>::new(
+            EnumeratedFiniteSetStructure::new(matrix.rows()),
+            self.ring(),
+        )
+        .submodules()
+        .matrix_row_kernel(matrix)
     }
 
     pub fn col_kernel(&self, matrix: Matrix<Ring::Elem>) -> FinitelyFreeSubmodule<Ring::Elem> {
-        FinitelyFreeModuleStructure::<Ring, _>::new(self.ring(), matrix.cols())
-            .into_submodules()
-            .matrix_col_kernel(matrix)
+        FinitelyFreeModuleStructure::<_, Ring>::new(
+            EnumeratedFiniteSetStructure::new(matrix.cols()),
+            self.ring(),
+        )
+        .submodules()
+        .matrix_col_kernel(matrix)
     }
 
     pub fn row_preimage(
@@ -285,9 +296,12 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         matrix: &Matrix<Ring::Elem>,
         space: &FinitelyFreeSubmodule<Ring::Elem>,
     ) -> FinitelyFreeSubmodule<Ring::Elem> {
-        FinitelyFreeModuleStructure::<Ring, _>::new(self.ring(), matrix.rows())
-            .into_submodules()
-            .matrix_row_preimage(matrix, space)
+        FinitelyFreeModuleStructure::<_, Ring>::new(
+            EnumeratedFiniteSetStructure::new(matrix.rows()),
+            self.ring(),
+        )
+        .submodules()
+        .matrix_row_preimage(matrix, space)
     }
 
     pub fn col_preimage(
@@ -295,9 +309,12 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         matrix: &Matrix<Ring::Elem>,
         space: &FinitelyFreeSubmodule<Ring::Elem>,
     ) -> FinitelyFreeSubmodule<Ring::Elem> {
-        FinitelyFreeModuleStructure::<Ring, _>::new(self.ring(), matrix.rows())
-            .into_submodules()
-            .matrix_col_preimage(matrix, space)
+        FinitelyFreeModuleStructure::<_, Ring>::new(
+            EnumeratedFiniteSetStructure::new(matrix.rows()),
+            self.ring(),
+        )
+        .submodules()
+        .matrix_col_preimage(matrix, space)
     }
 
     pub fn row_affine_span(
@@ -307,9 +324,12 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         let span = (0..matrix.rows())
             .map(|r| matrix.get_row(r))
             .collect::<Vec<_>>();
-        FinitelyFreeModuleStructure::<Ring, _>::new(self.ring(), matrix.cols())
-            .affine_subsets()
-            .from_affine_span(span.iter().collect())
+        FinitelyFreeModuleStructure::<_, Ring>::new(
+            EnumeratedFiniteSetStructure::new(matrix.cols()),
+            self.ring(),
+        )
+        .affine_subsets()
+        .from_affine_span(span.iter().collect())
     }
 
     pub fn col_affine_span(
@@ -324,8 +344,11 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         matrix: Matrix<Ring::Elem>,
         y: &Vec<Ring::Elem>,
     ) -> Option<Vec<Ring::Elem>> {
-        let submodules = FinitelyFreeModuleStructure::<Ring, _>::new(self.ring(), matrix.cols())
-            .into_submodules();
+        let submodules = FinitelyFreeModuleStructure::<_, Ring>::new(
+            EnumeratedFiniteSetStructure::new(matrix.cols()),
+            self.ring(),
+        )
+        .submodules();
         let (row_span_submodule, basis_in_terms_of_matrix_rows) =
             submodules.matrix_row_span_and_basis(matrix);
         let (offset, y_reduced) = submodules.reduce_element(&row_span_submodule, y);
@@ -356,7 +379,10 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
         matrix: Matrix<Ring::Elem>,
         y: &Vec<Ring::Elem>,
     ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Elem> {
-        let module = FinitelyFreeModuleStructure::<Ring, _>::new(self.ring(), matrix.rows());
+        let module = FinitelyFreeModuleStructure::<_, Ring>::new(
+            EnumeratedFiniteSetStructure::new(matrix.rows()),
+            self.ring(),
+        );
         match self.row_solve(matrix.clone(), y) {
             Some(offset) => FinitelyFreeSubmoduleAffineSubset::NonEmpty(
                 module
@@ -787,7 +813,7 @@ mod tests {
     #[test]
     fn affine_span() {
         {
-            let module = Integer::structure().into_free_module(2);
+            let module = Integer::structure().free_module(EnumeratedFiniteSetStructure::new(2));
 
             //row affine span
             let lat1 = Matrix::<Integer>::from_rows(vec![
@@ -812,7 +838,7 @@ mod tests {
         }
 
         {
-            let module = Integer::structure().into_free_module(2);
+            let module = Integer::structure().free_module(EnumeratedFiniteSetStructure::new(2));
 
             //column affine span
             let lat1 = Matrix::<Integer>::from_rows(vec![
@@ -838,7 +864,7 @@ mod tests {
 
     #[test]
     fn span_and_kernel_points() {
-        let module = Integer::structure().into_free_module(4);
+        let module = Integer::structure().free_module(EnumeratedFiniteSetStructure::new(4));
 
         let mat = Matrix::<Integer>::from_rows(vec![
             vec![
@@ -879,7 +905,7 @@ mod tests {
 
     #[test]
     fn test_row_solve() {
-        let module = Integer::structure().into_free_module(3);
+        let module = Integer::structure().free_module(EnumeratedFiniteSetStructure::new(3));
 
         let matrix =
             Matrix::<Integer>::from_rows(vec![vec![1, 0, 0], vec![1, 0, 1], vec![1, 1, 1]]);

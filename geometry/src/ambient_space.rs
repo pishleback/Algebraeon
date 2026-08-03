@@ -3,7 +3,7 @@ use crate::{
     simplex_collection::LabelledSimplexCollection,
     simplicial_disjoint_union::SimplicialDisjointUnion, vector::Vector,
 };
-use std::sync::atomic::AtomicUsize;
+use std::sync::{Arc, atomic::AtomicUsize};
 
 /// An affine space over a field.
 /// affine_dimension = 0 => the empty space
@@ -12,16 +12,14 @@ use std::sync::atomic::AtomicUsize;
 /// affine_dimension = 3 => a plane
 /// ...
 #[derive(Debug, Clone)]
-pub struct AffineSpace<'f, FS: FieldSignature> {
-    field: &'f FS,
+pub struct AffineSpace<FS: FieldSignature> {
+    field: Arc<FS>,
     // linear dimension = affine dimension - 1
     affine_dimension: usize,
     ident: usize,
 }
 
-impl<'f, FS: FieldSignature> Copy for AffineSpace<'f, FS> {}
-
-impl<'f, FS: FieldSignature> PartialEq for AffineSpace<'f, FS> {
+impl<FS: FieldSignature> PartialEq for AffineSpace<FS> {
     fn eq(&self, other: &Self) -> bool {
         #[cfg(debug_assertions)]
         if self.ident == other.ident {
@@ -32,16 +30,16 @@ impl<'f, FS: FieldSignature> PartialEq for AffineSpace<'f, FS> {
     }
 }
 
-impl<'f, FS: FieldSignature> Eq for AffineSpace<'f, FS> {}
+impl<FS: FieldSignature> Eq for AffineSpace<FS> {}
 
-impl<'f, FS: FieldSignature + Hash> Hash for AffineSpace<'f, FS> {
+impl<FS: FieldSignature + Hash> Hash for AffineSpace<FS> {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.ident.hash(state);
     }
 }
 
-impl<'f, FS: FieldSignature> AffineSpace<'f, FS> {
-    pub fn new_affine(field: &'f FS, affine_dimension: usize) -> Self {
+impl<FS: FieldSignature> AffineSpace<FS> {
+    pub fn new_affine(field: Arc<FS>, affine_dimension: usize) -> Self {
         static COUNTER: AtomicUsize = AtomicUsize::new(0);
         Self {
             field,
@@ -50,28 +48,28 @@ impl<'f, FS: FieldSignature> AffineSpace<'f, FS> {
         }
     }
 
-    pub fn new_empty(field: &'f FS) -> Self {
+    pub fn new_empty(field: Arc<FS>) -> Self {
         Self::new_affine(field, 0)
     }
 
-    pub fn new_linear(field: &'f FS, linear_dimension: usize) -> Self {
+    pub fn new_linear(field: Arc<FS>, linear_dimension: usize) -> Self {
         Self::new_affine(field, linear_dimension + 1)
     }
 
-    pub fn field(&self) -> &'f FS {
-        self.field
+    pub fn field(&self) -> &Arc<FS> {
+        &self.field
     }
 
-    pub fn origin(&self) -> Option<Vector<'f, FS>> {
-        Some(Vector::construct(*self, |_| self.field().zero()))
+    pub fn origin(&self) -> Option<Vector<FS>> {
+        Some(Vector::construct(self, |_| self.field().zero()))
     }
 
-    pub fn empty_subset(&self) -> impl LabelledSimplexCollection<'f, FS, ()>
+    pub fn empty_subset(&self) -> impl LabelledSimplexCollection<FS, ()>
     where
         FS: OrderedRingSignature,
         FS::Elem: Hash,
     {
-        SimplicialDisjointUnion::new_unchecked(*self, std::collections::HashSet::new())
+        SimplicialDisjointUnion::new_unchecked(self, std::collections::HashSet::new())
     }
 
     pub fn linear_dimension(&self) -> Option<usize> {
@@ -87,9 +85,9 @@ impl<'f, FS: FieldSignature> AffineSpace<'f, FS> {
     }
 }
 
-pub fn common_space<'s, 'f, FS: FieldSignature + 'f>(
-    space1: AffineSpace<'f, FS>,
-    space2: AffineSpace<'f, FS>,
-) -> Option<AffineSpace<'f, FS>> {
+pub fn common_space<'s, FS: FieldSignature>(
+    space1: &'s AffineSpace<FS>,
+    space2: &'s AffineSpace<FS>,
+) -> Option<&'s AffineSpace<FS>> {
     if space1 == space2 { Some(space1) } else { None }
 }

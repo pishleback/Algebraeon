@@ -6,13 +6,13 @@ use crate::{
     polynomial::*,
 };
 use algebraeon_structures::*;
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[derive(Debug, Clone)]
 pub struct EmbeddedAnf {
     // must have anf.modulus() equal to gen.min_poly()
     #[allow(unused)]
-    anf: Rc<AlgebraicNumberFieldPolynomialQuotientStructure>,
+    anf: Arc<AlgebraicNumberFieldPolynomialQuotientStructure>,
     generator: ComplexAlgebraic,
 }
 
@@ -68,13 +68,13 @@ impl AlgebraicNumberFieldPolynomialQuotientStructure {
 impl ComplexAlgebraic {
     pub fn generated_algebraic_number_field(
         &self,
-    ) -> AlgebraicNumberFieldPolynomialQuotientStructure {
+    ) -> Arc<AlgebraicNumberFieldPolynomialQuotientStructure> {
         self.min_poly().algebraic_number_field_unchecked()
     }
 
     pub fn embedded_generated_algebraic_number_field(self) -> EmbeddedAnf {
         EmbeddedAnf {
-            anf: self.generated_algebraic_number_field().into(),
+            anf: self.generated_algebraic_number_field(),
             generator: self,
         }
     }
@@ -87,15 +87,15 @@ impl ComplexAlgebraic {
 impl AlgebraicClosureSignature for ComplexAlgebraicCanonicalStructure {
     type BFS = <Rational as MetaType>::Signature;
 
-    fn base_field(&self) -> Self::BFS {
+    fn base_field(self: &Arc<Self>) -> Arc<Self::BFS> {
         Rational::structure()
     }
 
-    fn base_field_inclusion(&self, x: &Rational) -> Self::Elem {
+    fn base_field_inclusion(self: &Arc<Self>, x: &Rational) -> Self::Elem {
         ComplexAlgebraic::Real(RealAlgebraic::Rational(x.clone()))
     }
 
-    fn all_roots_list(&self, poly: &Polynomial<Rational>) -> Option<Vec<Self::Elem>> {
+    fn all_roots_list(self: &Arc<Self>, poly: &Polynomial<Rational>) -> Option<Vec<Self::Elem>> {
         if poly.is_zero() {
             None
         } else {
@@ -271,7 +271,7 @@ mod tests {
                 "{:?}",
                 root.generated_algebraic_number_field()
                     .ring_of_integers()
-                    .into_outbound_order_to_anf_inclusion()
+                    .outbound_order_to_anf_inclusion()
             );
         }
     }

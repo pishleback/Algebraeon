@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fmt::Display;
 use std::hash::Hash;
+use std::sync::Arc;
 use std::sync::atomic::AtomicUsize;
 
 #[derive(Debug, Clone)]
@@ -71,7 +72,7 @@ impl Display for Monomial {
             write!(f, "1")
         } else {
             for VariablePower { var, pow } in &self.prod {
-                write!(f, "{}", &var.name)?;
+                write!(f, "{}", var.name)?;
                 if *pow != 1 {
                     write!(f, "^")?;
                     write!(f, "{}", pow)?;
@@ -163,7 +164,7 @@ impl Monomial {
 
     pub fn evaluate<RS: RingSignature>(
         &self,
-        ring: &RS,
+        ring: &Arc<RS>,
         values: &HashMap<Variable, impl Borrow<RS::Elem>>,
     ) -> RS::Elem {
         ring.product(

@@ -96,13 +96,13 @@ assert!(b.is_irreducible()); // 5 is prime
 
 // Euler's totient function
 assert_eq!(
-    Natural::structure_ref()
+    Natural::structure()
         .factorizations()
         .euler_totient(&a.factor()),
     Natural::from(4u32)
 ); // φ(12) = 4
 assert_eq!(
-    Natural::structure_ref()
+    Natural::structure()
         .factorizations()
         .euler_totient(&b.factor()),
     Natural::from(4u32)
@@ -114,8 +114,9 @@ assert_eq!(
 Algebraeon implements [Lenstra elliptic-curve factorization](https://en.wikipedia.org/wiki/Lenstra_elliptic-curve_factorization) for quickly finding prime factors up to around 20 digits.
 
 ```rust
-use algebraeon::structures::Natural;
 use algebraeon::rings::structure::{MetaFactoringMonoid, UniqueFactorizationMonoidSignature};
+use algebraeon::structures::MetaType;
+use algebraeon::structures::Natural;
 use algebraeon::structures::ToStringSignature;
 use std::str::FromStr;
 
@@ -124,7 +125,7 @@ let f = n.clone().factor();
 println!(
     "{} = {}",
     n,
-    Natural::structure_ref().factorizations().to_string(&f)
+    Natural::structure().factorizations().to_string(&f)
 );
 /*
 Output:

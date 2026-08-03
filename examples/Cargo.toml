@@ -14,6 +14,7 @@ name = "algebraeon_examples"
 
 [dependencies]
 algebraeon = { version = "=0.0.17", path = "../algebraeon" }
+algebraeon-combinatorics = { version = "=0.0.0", path = "../combinatorics" }
 
 [package.metadata.docs.rs]
 rustdoc-args = ["--html-in-header", "katex-header.html"]

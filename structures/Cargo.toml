@@ -14,8 +14,6 @@ name = "algebraeon_structures"
 
 [dependencies]
 algebraeon-macros = { version = "=0.0.17", path = "../macros", default-features = false }
-malachite-base = "0.9.1"
-malachite-nz = { version = "0.9.1", features = ["random"] }
-malachite-q = "0.9.1"
+malachite = { version = "0.9.2", features = ["random"] }
 paste = "1.0.15"
 rand = "0.10.0"

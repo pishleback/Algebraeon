@@ -174,17 +174,15 @@ impl Canvas2D {
 }
 
 pub fn simplicial_complex_shapes<
-    'f,
     FS: algebraeon_rings::structure::OrderedRingSignature
         + algebraeon_rings::structure::FieldSignature
-        + algebraeon_rings::structure::RealSubsetSignature
-        + 'f,
+        + algebraeon_rings::structure::RealSubsetSignature,
     T: Eq + Clone + Send + Sync,
 >(
     line_colour: &Colour,
     fill_colour: &Colour,
     fill_alpha: f32,
-    sc: &impl algebraeon_geometry::simplex_collection::LabelledSimplexCollection<'f, FS, T>,
+    sc: &impl algebraeon_geometry::simplex_collection::LabelledSimplexCollection<FS, T>,
 ) -> impl IntoIterator<Item = Shape>
 where
     FS::Elem: std::hash::Hash,

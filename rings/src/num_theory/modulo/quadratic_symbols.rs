@@ -83,7 +83,7 @@ pub fn legendre_symbol(
     if p % Natural::TWO == Natural::ZERO || !p.is_irreducible() {
         Err(LegendreSymbolError::BottomNotOddPrime)
     } else {
-        let mod_p = Integer::structure_ref().quotient_field_unchecked(Integer::from(p));
+        let mod_p = Integer::structure().quotient_field_unchecked(Integer::from(p));
         let v = mod_p.reduce(&mod_p.nat_pow(a, &((p - Natural::ONE) / Natural::TWO)));
         if v == Integer::ZERO {
             Ok(QuadraticSymbolValue::Zero)
@@ -109,7 +109,7 @@ fn jacobi_symbol_by_factorization(
     if n % Natural::TWO == Natural::ZERO {
         Err(JacobiSymbolError::BottomEven)
     } else {
-        let mod_n = Integer::structure_ref()
+        let mod_n = Integer::structure()
             .euclidean_quotient_ring(Integer::from(n))
             .unwrap();
         let a = mod_n.reduce(a);

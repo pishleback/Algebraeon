@@ -12,43 +12,42 @@ use std::collections::{HashMap, HashSet};
 /// A collection of disjoint simplices labelled by T with no additional structure
 #[derive(Clone)]
 pub struct LabelledSimplicialDisjointUnion<
-    'f,
     FS: OrderedRingSignature + FieldSignature,
     T: Eq + Clone + Send + Sync,
 > where
     FS::Elem: Hash,
 {
-    ambient_space: AffineSpace<'f, FS>,
-    simplexes: HashMap<Simplex<'f, FS>, T>,
+    ambient_space: AffineSpace<FS>,
+    simplexes: HashMap<Simplex<FS>, T>,
 }
 
-pub type SimplicialDisjointUnion<'f, FS> = LabelledSimplicialDisjointUnion<'f, FS, ()>;
+pub type SimplicialDisjointUnion<FS> = LabelledSimplicialDisjointUnion<FS, ()>;
 
-impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone + Send + Sync>
-    LabelledSimplexCollection<'f, FS, T> for LabelledSimplicialDisjointUnion<'f, FS, T>
+impl<FS: OrderedRingSignature + FieldSignature, T: Eq + Clone + Send + Sync>
+    LabelledSimplexCollection<FS, T> for LabelledSimplicialDisjointUnion<FS, T>
 where
     FS::Elem: Hash,
 {
-    type WithLabel<S: Eq + Clone + Send + Sync> = LabelledSimplicialDisjointUnion<'f, FS, S>;
-    type SubsetType = LabelledSimplicialDisjointUnion<'f, FS, T>;
+    type WithLabel<S: Eq + Clone + Send + Sync> = LabelledSimplicialDisjointUnion<FS, S>;
+    type SubsetType = LabelledSimplicialDisjointUnion<FS, T>;
 
     fn try_new_labelled(
-        ambient_space: AffineSpace<'f, FS>,
-        simplexes: HashMap<Simplex<'f, FS>, T>,
+        ambient_space: &AffineSpace<FS>,
+        simplexes: HashMap<Simplex<FS>, T>,
     ) -> Result<Self, &'static str> {
         //todo: check simplexes are disjoint
         Ok(Self {
-            ambient_space,
+            ambient_space: ambient_space.clone(),
             simplexes,
         })
     }
 
     fn new_labelled_unchecked(
-        ambient_space: AffineSpace<'f, FS>,
-        simplexes: HashMap<Simplex<'f, FS>, T>,
+        ambient_space: &AffineSpace<FS>,
+        simplexes: HashMap<Simplex<FS>, T>,
     ) -> Self {
         let s = Self {
-            ambient_space,
+            ambient_space: ambient_space.clone(),
             simplexes,
         };
         #[cfg(debug_assertions)]
@@ -56,37 +55,37 @@ where
         s
     }
 
-    fn ambient_space(&self) -> AffineSpace<'f, FS> {
-        self.ambient_space
+    fn ambient_space(&self) -> &AffineSpace<FS> {
+        &self.ambient_space
     }
 
-    fn labelled_simplexes(&self) -> HashMap<&Simplex<'f, FS>, &T> {
+    fn labelled_simplexes(&self) -> HashMap<&Simplex<FS>, &T> {
         self.simplexes.iter().collect()
     }
 
-    fn into_labelled_simplexes(self) -> HashMap<Simplex<'f, FS>, T> {
+    fn into_labelled_simplexes(self) -> HashMap<Simplex<FS>, T> {
         self.simplexes
     }
 
-    fn into_partial_simplicial_complex(self) -> LabelledPartialSimplicialComplex<'f, FS, T> {
+    fn into_partial_simplicial_complex(self) -> LabelledPartialSimplicialComplex<FS, T> {
         self.refine_into_partial_simplicial_complex()
     }
 
-    fn to_partial_simplicial_complex(&self) -> LabelledPartialSimplicialComplex<'f, FS, T> {
+    fn to_partial_simplicial_complex(&self) -> LabelledPartialSimplicialComplex<FS, T> {
         self.clone().refine_into_partial_simplicial_complex()
     }
 
-    fn into_simplicial_disjoint_union(self) -> LabelledSimplicialDisjointUnion<'f, FS, T> {
+    fn into_simplicial_disjoint_union(self) -> LabelledSimplicialDisjointUnion<FS, T> {
         self
     }
 
-    fn to_simplicial_disjoint_union(&self) -> LabelledSimplicialDisjointUnion<'f, FS, T> {
+    fn to_simplicial_disjoint_union(&self) -> LabelledSimplicialDisjointUnion<FS, T> {
         self.clone()
     }
 }
 
-impl<'f, FS: OrderedRingSignature + FieldSignature, T: Eq + Clone + Send + Sync>
-    LabelledSimplicialDisjointUnion<'f, FS, T>
+impl<FS: OrderedRingSignature + FieldSignature, T: Eq + Clone + Send + Sync>
+    LabelledSimplicialDisjointUnion<FS, T>
 where
     FS::Elem: Hash,
 {
@@ -120,17 +119,17 @@ where
         }
     }
 
-    pub fn into_partial_simplicial_complex(self) -> LabelledPartialSimplicialComplex<'f, FS, T> {
+    pub fn into_partial_simplicial_complex(self) -> LabelledPartialSimplicialComplex<FS, T> {
         self.refine_into_partial_simplicial_complex().simplify()
     }
 
     pub fn refine_into_partial_simplicial_complex(
         mut self,
-    ) -> LabelledPartialSimplicialComplex<'f, FS, T> {
-        let ambient_space = self.ambient_space();
+    ) -> LabelledPartialSimplicialComplex<FS, T> {
+        let ambient_space = self.ambient_space().clone();
 
         //maintain a list of pairs of simplexes which may intersect on their boundary
-        let mut pairs_todo: HashMap<Simplex<'f, FS>, HashSet<Simplex<'f, FS>>> = HashMap::new();
+        let mut pairs_todo: HashMap<Simplex<FS>, HashSet<Simplex<FS>>> = HashMap::new();
         let simplexes = self.simplexes().into_iter().collect::<Vec<_>>();
 
         for (spx_i, spx_j) in (0..simplexes.len())
@@ -278,6 +277,6 @@ where
             }
         }
 
-        LabelledPartialSimplicialComplex::new_labelled_unchecked(ambient_space, self.simplexes)
+        LabelledPartialSimplicialComplex::new_labelled_unchecked(&ambient_space, self.simplexes)
     }
 }

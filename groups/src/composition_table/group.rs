@@ -10,6 +10,7 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fmt::Debug;
 use std::hash::Hash;
+use std::sync::Arc;
 
 #[derive(Debug)]
 pub struct FiniteGroupMultiplicationTable {
@@ -409,7 +410,7 @@ pub fn direct_product_structure(
 #[signature_meta_trait]
 pub trait GenerateFiniteSubgroupTableSignature: GroupSignature {
     fn generated_finite_subgroup_table(
-        &self,
+        self: &Arc<Self>,
         generators: Vec<Self::Elem>,
     ) -> (
         crate::composition_table::group::FiniteGroupMultiplicationTable,
@@ -491,7 +492,8 @@ pub mod examples {
     use crate::composition_table::group::MetaGenerateFiniteSubgroupTableSignature;
     use crate::free_group::todd_coxeter::FinitelyGeneratedGroupPresentation;
     use algebraeon_sets::sets::{
-        FiniteSubsetStructure, FinitelySupportedPermutation, FinitelySupportedPermutationsStructure,
+        FiniteSubsetByHashStructure, FinitelySupportedPermutation,
+        FinitelySupportedPermutationsStructure,
     };
     use algebraeon_structures::*;
 
@@ -552,7 +554,7 @@ pub mod examples {
 
     pub fn symmetric_group_structure(n: usize) -> FiniteGroupMultiplicationTable {
         FinitelySupportedPermutation::<usize>::generated_finite_subgroup_table(
-            FinitelySupportedPermutationsStructure::new(FiniteSubsetStructure::new(
+            FinitelySupportedPermutationsStructure::new(FiniteSubsetByHashStructure::new(
                 usize::structure(),
                 (0..n).collect(),
             ))
@@ -563,7 +565,7 @@ pub mod examples {
 
     pub fn alternating_group_structure(n: usize) -> FiniteGroupMultiplicationTable {
         FinitelySupportedPermutation::<usize>::generated_finite_subgroup_table(
-            FinitelySupportedPermutationsStructure::new(FiniteSubsetStructure::new(
+            FinitelySupportedPermutationsStructure::new(FiniteSubsetByHashStructure::new(
                 usize::structure(),
                 (0..n).collect(),
             ))

@@ -1,6 +1,7 @@
 use algebraeon_structures::*;
 use std::fmt::Debug;
 use std::marker::PhantomData;
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct EmptySetStructure<Elem> {
@@ -32,25 +33,25 @@ impl<Elem: Clone + Send + Sync> Signature for EmptySetStructure<Elem> {}
 impl<Elem: Debug + Clone + Send + Sync> SetSignature for EmptySetStructure<Elem> {
     type Elem = Elem;
 
-    fn validate_element(&self, _: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, _: &Self::Elem) -> Result<(), String> {
         Err("Empty set has no elements".to_string())
     }
 }
 
 impl<Elem: Debug + Clone + Send + Sync> EqSignature for EmptySetStructure<Elem> {
-    fn equal(&self, _: &Self::Elem, _: &Self::Elem) -> bool {
+    fn equal(self: &Arc<Self>, _: &Self::Elem, _: &Self::Elem) -> bool {
         panic!("Empty set had no elements to compare for equality")
     }
 }
 
 impl<Elem: Debug + Clone + Send + Sync> PartialOrdSignature for EmptySetStructure<Elem> {
-    fn partial_cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Option<std::cmp::Ordering> {
+    fn partial_cmp(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<std::cmp::Ordering> {
         Some(self.cmp(a, b))
     }
 }
 
 impl<Elem: Debug + Clone + Send + Sync> OrdSignature for EmptySetStructure<Elem> {
-    fn cmp(&self, _: &Self::Elem, _: &Self::Elem) -> std::cmp::Ordering {
+    fn cmp(self: &Arc<Self>, _: &Self::Elem, _: &Self::Elem) -> std::cmp::Ordering {
         panic!("Empty set had no elements to compare for ordering")
     }
 }

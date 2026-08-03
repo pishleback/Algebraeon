@@ -5,6 +5,7 @@ pub const ZERO: TernaryField = TernaryField::new(0);
 pub const PLUS: TernaryField = TernaryField::new(1);
 pub const MINUS: TernaryField = TernaryField::new(2);
 
+#[allow(unused)]
 struct ExtendedTernaryGolayCode {
     basis: [[usize; 12]; 6],
 }

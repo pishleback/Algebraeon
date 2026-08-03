@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::structure::{
     GraphSignature, GraphWithEdgesSignature, LooplessGraphSignature, UndirectedGraphSignature,
 };
@@ -6,17 +8,18 @@ use algebraeon_structures::*;
 
 #[allow(dead_code)]
 pub struct CompleteUndirectedGraph<Vertices: SetSignature> {
-    vertices: Vertices,
-    pairs_of_vertices: UnorderedPairs<Vertices>,
+    vertices: Arc<Vertices>,
+    pairs_of_vertices: Arc<UnorderedPairs<Vertices>>,
 }
 
 impl<Vertices: SetSignature> CompleteUndirectedGraph<Vertices> {
-    pub fn new(vertices: Vertices) -> Self {
+    pub fn new(vertices: Arc<Vertices>) -> Arc<Self> {
         let pairs_of_vertices = UnorderedPairs::new(vertices.clone());
         Self {
             vertices,
             pairs_of_vertices,
         }
+        .into()
     }
 }
 
@@ -24,7 +27,7 @@ impl<Vertices: SetSignature + EqSignature> GraphSignature for CompleteUndirected
     type Vertices = Vertices;
 
     fn has_directed_edge(
-        &self,
+        self: &Arc<Self>,
         source: &Vertices::Elem,
         target: &Vertices::Elem,
     ) -> Result<(), String> {
@@ -59,7 +62,7 @@ impl<Vertices: SetSignature + EqSignature> GraphWithEdgesSignature
     type Edges = UnorderedPairs<Vertices>;
 
     fn endpoints(
-        &self,
+        self: &Arc<Self>,
         edge: &<Self::Edges as SetSignature>::Elem,
     ) -> UnorderedPair<<Self::Vertices as SetSignature>::Elem> {
         edge.clone()
