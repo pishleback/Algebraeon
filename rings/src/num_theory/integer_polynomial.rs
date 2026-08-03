@@ -1,5 +1,5 @@
 use crate::{
-    num_theory::berlekamp_zassenhaus::factorize_by_berlekamp_zassenhaus_algorithm,
+    num_theory::berlekamp_zassenhaus::factorize_by_van_hoeij_knapsack_algorithm,
     polynomial::*,
     structure::{
         Factored, FactoringMonoidSignature, GreatestCommonDivisorSignature, MetaFactoringMonoid,
@@ -20,7 +20,8 @@ impl FactoringMonoidSignature for PolynomialStructure<IntegerCanonicalStructure>
         p: &Self::Elem,
     ) -> Factored<Polynomial<Integer>, Natural> {
         // self.factorize_by_kroneckers_method(p)
-        factorize_by_berlekamp_zassenhaus_algorithm(p.clone())
+        // factorize_by_berlekamp_zassenhaus_algorithm(p.clone())
+        factorize_by_van_hoeij_knapsack_algorithm(p.clone())
     }
 }
 
@@ -74,7 +75,10 @@ impl FactoringMonoidSignature for MultiPolynomialStructure<IntegerCanonicalStruc
 mod tests {
     use super::*;
     use crate::{
-        num_theory::berlekamp_zassenhaus::factorize_by_berlekamp_zassenhaus_algorithm_naive,
+        num_theory::berlekamp_zassenhaus::{
+            factorize_by_berlekamp_zassenhaus_algorithm,
+            factorize_by_berlekamp_zassenhaus_algorithm_naive,
+        },
         structure::{IntoErgonomic, UniqueFactorizationMonoidSignature},
     };
 

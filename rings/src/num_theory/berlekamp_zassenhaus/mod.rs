@@ -74,7 +74,7 @@ use std::collections::BTreeSet;
 use std::ops::Rem;
 use std::sync::Arc;
 
-mod van_hoeij_lll;
+mod van_hoeij_knapsack_lll;
 
 fn compute_polynomial_factor_bound(poly: &Polynomial<Integer>) -> Natural {
     poly.mignotte_factor_coefficient_bound().unwrap()
@@ -85,7 +85,6 @@ fn compute_polynomial_factor_bound(poly: &Polynomial<Integer>) -> Natural {
 /// with many modular factors (where the product tree gives subquadratic lifting).
 // Only ever one backend is held at a time (one per factorization), so the size of
 // the larger variant is not worth an extra heap indirection on every access.
-#[allow(clippy::large_enum_variant)]
 enum HenselBackend {
     LinearAlgebra(
         LinearAlgebraHenselFactorization<
@@ -684,8 +683,10 @@ impl<'a> StateAtGoodPrime<'a> {
     }
 }
 
-fn factorize_primitive_squarefree_by_berlekamp_zassenhaus_algorithm(
+fn factorize_primitive_squarefree_by_berlekamp_zassenhaus_with_optional_van_hoeij_knapsack(
     f: &Polynomial<Integer>,
+    // If present, use van_hoeij_knapsack when the number of modular factors is at least this
+    van_hoeij_knapsack_modular_factor_count: Option<usize>,
 ) -> Factored<Polynomial<Integer>, Natural> {
     debug_assert_ne!(f.degree().unwrap(), 0);
     debug_assert!(Integer::structure().polynomials().is_primitive(f.clone()));
@@ -700,16 +701,12 @@ fn factorize_primitive_squarefree_by_berlekamp_zassenhaus_algorithm(
     let mut best_prime_factorization = None;
     let mut good_primes_checked = 0;
     let max_good_primes = 5;
-    let diagnostics = std::env::var_os("ALGEBRAEON_FACTOR_TRACE").is_some();
     let mut possible_proper_factor_degrees = (1..f.degree().unwrap()).collect::<BTreeSet<_>>();
     for p in primes() {
         if let Some(prime_factorization) = FactorizationAtGoodPrime::try_new(p, f) {
             good_primes_checked += 1;
             let factor_degrees = prime_factorization.factor_degrees();
             let n = factor_degrees.len();
-            if diagnostics {
-                eprintln!("prime {p}: {n} modular factors");
-            }
             let mut possible_proper_factor_degrees_at_p = BTreeSet::new();
             for d in factor_degrees {
                 for e in possible_proper_factor_degrees_at_p.clone() {
@@ -742,16 +739,21 @@ fn factorize_primitive_squarefree_by_berlekamp_zassenhaus_algorithm(
     }
     let mut best_p_state = best_prime_factorization.unwrap().into_hensel_state(f);
     let n = best_p_state.num_modular_factors;
-    if diagnostics {
-        eprintln!("selected prime {} with {n} modular factors", best_p_state.p);
+
+    match &best_p_state.hensel_factorization {
+        HenselBackend::LinearAlgebra(_) => {
+            best_p_state.lift_to_modulus(&Natural::from(u64::MAX));
+        }
+        HenselBackend::ProductTree(_) => {}
     }
-    if matches!(
-        &best_p_state.hensel_factorization,
-        HenselBackend::LinearAlgebra(_)
-    ) {
-        best_p_state.lift_to_modulus(&Natural::from(u64::MAX));
-    }
-    let factors = if best_p_state.num_modular_factors <= 18 {
+
+    let factors = if let Some(van_hoeij_knapsack_modular_factor_count) =
+        van_hoeij_knapsack_modular_factor_count
+        && best_p_state.num_modular_factors >= van_hoeij_knapsack_modular_factor_count
+    {
+        // Use van_hoeij_knapsack_lll when there are many modular factors
+        best_p_state.factor_by_van_hoeij_knapsack(&minimum_modulus)
+    } else {
         let partially_factored = best_p_state.partial_factor_by_test_modular_subsets(
             {
                 if n < 10 {
@@ -770,7 +772,7 @@ fn factorize_primitive_squarefree_by_berlekamp_zassenhaus_algorithm(
             for f in partially_factored {
                 Integer::structure().polynomials().factorizations().mul_mut(
                     &mut factored,
-                    &factorize_primitive_squarefree_by_berlekamp_zassenhaus_algorithm(&f),
+                    &factorize_primitive_squarefree_by_berlekamp_zassenhaus_with_optional_van_hoeij_knapsack(&f, van_hoeij_knapsack_modular_factor_count),
                 );
             }
             return factored;
@@ -779,9 +781,8 @@ fn factorize_primitive_squarefree_by_berlekamp_zassenhaus_algorithm(
         best_p_state.lift_to_modulus(&minimum_modulus);
         best_p_state
             .partial_factor_by_test_modular_subsets(usize::MAX, &possible_proper_factor_degrees)
-    } else {
-        best_p_state.factor_by_van_hoeij_knapsack(&minimum_modulus)
     };
+
     Integer::structure().polynomials().factorizations().product(
         &factors
             .into_iter()
@@ -793,6 +794,45 @@ fn factorize_primitive_squarefree_by_berlekamp_zassenhaus_algorithm(
             })
             .collect::<Vec<_>>(),
     )
+}
+
+/// quick test if the polynomial is square-free
+///  - Returns `true`: Then `poly` is definitely square-free
+///  - Returns `false`: Then we don't know whether `poly` is square-free
+fn modular_square_free_test(poly: &Polynomial<Integer>) -> bool {
+    // optimization for square-free inputs
+    // if we can prove it's already square-free then we can skip yuns algorithm
+    // test if it is square-free modulo some big random primes
+    // if it is square-free then it's very likely square-free modulo one of the primes, proving the original is square-free too
+    // this is a quicker test because computing the discriminant mod p does not suffer from coefficient blow-up
+    const SQUARE_FREE_TEST_PRIMES: [u64; 3] = [179424691, 179424697, 179424719];
+    #[cfg(debug_assertions)]
+    let disc = poly.clone().discriminant().unwrap();
+    for p in SQUARE_FREE_TEST_PRIMES {
+        let mod_p = Integer::structure().quotient_field_unchecked(Integer::from(p));
+        let poly_mod_p = mod_p.polynomials();
+
+        if Integer::structure()
+            .polynomials()
+            .leading_coeff(poly)
+            .unwrap()
+            .divisible(&Integer::from(p))
+        {
+            continue;
+        }
+
+        let disc_mod_p = poly_mod_p.discriminant(poly.clone()).unwrap();
+        let disc_mod_p_is_zero = mod_p.is_zero(&disc_mod_p);
+
+        #[cfg(debug_assertions)]
+        assert_eq!(disc.divisible(&Integer::from(p)), disc_mod_p_is_zero);
+
+        if !disc_mod_p_is_zero {
+            // the poly is square-free
+            return true;
+        }
+    }
+    false
 }
 
 /// Factor an integer polynomial using a naive implementation of the Berlekamp-Zassenhaus algorithm.
@@ -807,46 +847,44 @@ pub fn factorize_by_berlekamp_zassenhaus_algorithm(
             poly,
             Integer::factor,
             &|poly| {
-                // optimization for square-free inputs
-                // if we can prove it's already square-free then we can skip yuns algorithm
-                // test if it is square-free modulo some big random primes
-                // if it is square-free then it's very likely square-free modulo one of the primes, proving the original is square-free too
-                // this is a quicker test because computing the discriminant mod p does not suffer from coefficient blow-up
-                const SQUARE_FREE_TEST_PRIMES: [u64; 3] = [179424691, 179424697, 179424719];
-                #[cfg(debug_assertions)]
-                let disc = poly.clone().discriminant().unwrap();
-                for p in SQUARE_FREE_TEST_PRIMES {
-                    let mod_p = Integer::structure().quotient_field_unchecked(Integer::from(p));
-                    let poly_mod_p = mod_p.polynomials();
-
-                    if Integer::structure()
-                        .polynomials()
-                        .leading_coeff(&poly)
-                        .unwrap()
-                        .divisible(&Integer::from(p))
-                    {
-                        continue;
-                    }
-
-                    let disc_mod_p = poly_mod_p.discriminant(poly.clone()).unwrap();
-                    let disc_mod_p_is_zero = mod_p.is_zero(&disc_mod_p);
-
-                    #[cfg(debug_assertions)]
-                    assert_eq!(disc.divisible(&Integer::from(p)), disc_mod_p_is_zero);
-
-                    if !disc_mod_p_is_zero {
-                        // the poly is square-free
-                        return factorize_primitive_squarefree_by_berlekamp_zassenhaus_algorithm(
-                            &poly,
-                        );
-                    }
+                if modular_square_free_test(&poly) {
+                    return factorize_primitive_squarefree_by_berlekamp_zassenhaus_with_optional_van_hoeij_knapsack(&poly, None);
                 }
 
                 // it may already be square-free but we couldn't quickly prove it
                 // use yuns algorithm to reduce to the case of square-free polynomials
                 Polynomial::<Integer>::structure()
                     .factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(poly, &|poly| {
-                        factorize_primitive_squarefree_by_berlekamp_zassenhaus_algorithm(&poly)
+                        factorize_primitive_squarefree_by_berlekamp_zassenhaus_with_optional_van_hoeij_knapsack(&poly, None)
+                    })
+            },
+        )
+    }
+}
+
+/// Factor an integer polynomial using a naive implementation of the Berlekamp-Zassenhaus algorithm.
+/// No optimizations are used when searching for combinations of modular factors yielding true factors.
+pub fn factorize_by_van_hoeij_knapsack_algorithm(
+    poly: Polynomial<Integer>,
+) -> Factored<Polynomial<Integer>, Natural> {
+    if poly.is_zero() {
+        Factored::Zero
+    } else {
+        Polynomial::<Integer>::structure().factorize_by_primitive_factorize(
+            poly,
+            Integer::factor,
+            &|poly| {
+                let van_hoeij_knapsack_modular_factor_count = Some(18);
+
+                if modular_square_free_test(&poly) {
+                    return factorize_primitive_squarefree_by_berlekamp_zassenhaus_with_optional_van_hoeij_knapsack(&poly, van_hoeij_knapsack_modular_factor_count);
+                }
+
+                // it may already be square-free but we couldn't quickly prove it
+                // use yuns algorithm to reduce to the case of square-free polynomials
+                Polynomial::<Integer>::structure()
+                    .factorize_using_primitive_sqfree_factorize_by_yuns_algorithm(poly, &|poly| {
+                        factorize_primitive_squarefree_by_berlekamp_zassenhaus_with_optional_van_hoeij_knapsack(&poly, van_hoeij_knapsack_modular_factor_count)
                     })
             },
         )

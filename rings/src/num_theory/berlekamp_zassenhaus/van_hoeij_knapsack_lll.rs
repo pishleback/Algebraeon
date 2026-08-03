@@ -307,7 +307,6 @@ impl<'a> StateAtGoodPrime<'a> {
         let leading_coeff = self.sqfree_prim_poly.leading_coeff().unwrap().clone();
         let mut lattice_basis = Matrix::<Integer>::ident(modular_factor_count);
         let mut trace_index = 1;
-        let diagnostics = std::env::var_os("ALGEBRAEON_FACTOR_TRACE").is_some();
         // Two traces per round matches the precision schedule that reliably collapses
         // the recombination lattice (e.g. for the degree-384 case p7). The lift is now
         // fast enough that the extra p-adic precision this requires is affordable, even
@@ -328,16 +327,7 @@ impl<'a> StateAtGoodPrime<'a> {
                 .map(|b| b + extra_accuracy + 1)
                 .collect::<Vec<_>>();
             let target_exponent = *accuracy_exponents.iter().max().unwrap();
-            if diagnostics {
-                eprintln!(
-                    "van Hoeij: lifting traces {:?} to p-adic exponent {}",
-                    trace_indices, target_exponent
-                );
-            }
             self.lift_to_modulus(&prime_power(self.p, target_exponent));
-            if diagnostics {
-                eprintln!("van Hoeij: lift complete");
-            }
 
             let modulus = self.modulus();
             let traces = self
@@ -375,20 +365,7 @@ impl<'a> StateAtGoodPrime<'a> {
                 .map(|(b, a)| Integer::from(prime_power(self.p, a - b)))
                 .collect::<Vec<_>>();
 
-            let old_rank = lattice_basis.rows();
-            if diagnostics {
-                eprintln!("van Hoeij: starting LLL at rank {}", old_rank);
-            }
             lattice_basis = refine_factor_lattice(lattice_basis, &trace_cuts, &trace_moduli);
-            if diagnostics {
-                eprintln!(
-                    "van Hoeij: traces {:?}, extra accuracy {}, rank {} -> {}",
-                    trace_indices,
-                    extra_accuracy,
-                    old_rank,
-                    lattice_basis.rows()
-                );
-            }
 
             if let Some(partition) = partition_from_lattice_basis(&lattice_basis) {
                 if partition.len() == 1 {
