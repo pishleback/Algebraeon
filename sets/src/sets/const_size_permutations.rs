@@ -21,7 +21,7 @@ impl<const N: usize, Elem> PartialEq for ConstSizePermutation<N, Elem> {
 impl<const N: usize, Elem> Eq for ConstSizePermutation<N, Elem> {}
 
 impl<const N: usize, Elem> ConstSizePermutation<N, Elem> {
-    fn validate(&self) -> Result<(), String> {
+    pub fn validate(&self) -> Result<(), String> {
         let expected = (0..N).collect::<HashSet<_>>();
         let forward = self.forward.iter().cloned().collect();
         if expected != forward {
@@ -248,8 +248,6 @@ impl<const N: usize, Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSigna
             backward,
         };
 
-        println!("{:?}", perm);
-
         debug_assert!(perm.validate().is_ok());
         Ok(perm)
     }
@@ -310,7 +308,6 @@ impl<const N: usize, Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSigna
             forward: std::array::from_fn(|i| a.forward[b.forward[i]]),
             backward: std::array::from_fn(|i| b.backward[a.backward[i]]),
         };
-        println!("{:?}", s);
         debug_assert!(self.is_element(&s));
         s
     }

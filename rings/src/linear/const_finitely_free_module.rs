@@ -40,9 +40,9 @@ pub trait RingToConstFinitelyFreeModuleSignature: RingSignature {
         Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
     >(
         self: &Arc<Self>,
-        set: Arc<Set>,
+        set: &Arc<Set>,
     ) -> Arc<ConstFinitelyFreeModuleStructure<N, Set, Self>> {
-        ConstFinitelyFreeModuleStructure::new(set, self.clone())
+        ConstFinitelyFreeModuleStructure::new(set.clone(), self.clone())
     }
 }
 impl<Ring: RingSignature> RingToConstFinitelyFreeModuleSignature for Ring {}

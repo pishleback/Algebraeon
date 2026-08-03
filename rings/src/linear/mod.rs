@@ -1,4 +1,5 @@
 pub mod const_finitely_free_module;
+pub mod const_monomial_transformation;
 pub mod finitely_free_affine_subsets;
 pub mod finitely_free_cosets;
 pub mod finitely_free_module;
