@@ -29,7 +29,7 @@ fn main() {
     // let s2 = Simplex::new( space, vec![p1.clone(), p2.clone()]).unwrap();
     // let s3 = Simplex::new( space, vec![p1.clone(), p2.clone(), p3.clone()]).unwrap();
 
-    let space = AffineSpace::new_linear(Rational::structure_ref(), 2);
+    let space = AffineSpace::new_linear(Rational::structure(), 2);
     let mut ch = space.convex_hull(vec![
         space.vector([1, 1]),
         space.vector([1, 1]),
@@ -48,7 +48,7 @@ fn main() {
     ]);
 
     let ospx = OrientedSimplex::new_with_positive_point(
-        space,
+        &space,
         vec![space.vector([0, 4]), space.vector([1, -4])],
         &space.vector([Rational::from(10), Rational::from(0)]),
     )
@@ -86,7 +86,7 @@ fn main() {
                 &Colour::red(),
                 &Colour::red().darken(),
                 0.5,
-                &SimplicialDisjointUnion::new_unchecked(space, [ospx.simplex().clone()].into()),
+                &SimplicialDisjointUnion::new_unchecked(&space, [ospx.simplex().clone()].into()),
             )),
     );
     canvas.run();

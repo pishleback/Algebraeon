@@ -1,5 +1,5 @@
 use crate::*;
-use std::cmp::Ordering;
+use std::{cmp::Ordering, sync::Arc};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PrimitiveI32CanonicalStructure {}
@@ -7,8 +7,8 @@ pub struct PrimitiveI32CanonicalStructure {}
 impl MetaType for i32 {
     type Signature = PrimitiveI32CanonicalStructure;
 
-    fn structure() -> Self::Signature {
-        PrimitiveI32CanonicalStructure {}
+    fn structure() -> Arc<Self::Signature> {
+        Arc::new(PrimitiveI32CanonicalStructure {})
     }
 }
 
@@ -17,55 +17,51 @@ impl Signature for PrimitiveI32CanonicalStructure {}
 impl SetSignature for PrimitiveI32CanonicalStructure {
     type Elem = i32;
 
-    fn validate_element(&self, _x: &i32) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, _x: &i32) -> Result<(), String> {
         Ok(())
     }
 }
 
 impl EqSignature for PrimitiveI32CanonicalStructure {
-    fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         a == b
     }
 }
 
 impl PartialOrdSignature for PrimitiveI32CanonicalStructure {
-    fn partial_cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Ordering> {
+    fn partial_cmp(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Ordering> {
         Some(self.cmp(a, b))
     }
 }
 
 impl OrdSignature for PrimitiveI32CanonicalStructure {
-    fn cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Ordering {
+    fn cmp(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Ordering {
         a.cmp(b)
     }
 }
 
 impl CountableSetSignature for PrimitiveI32CanonicalStructure {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
-        self.clone().into_generate_all_elements()
-    }
-
-    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
+    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
         i32::MIN..=i32::MAX
     }
 }
 
 impl FiniteSetSignature for PrimitiveI32CanonicalStructure {
-    fn size(&self) -> Natural {
+    fn size(self: &Arc<Self>) -> Natural {
         Natural::from(u32::MAX) + Natural::ONE
     }
 }
 
-impl EnumeratedOrdFiniteSetSignature for PrimitiveI32CanonicalStructure {
-    fn list_all_elements_ordered(&self) -> Vec<Self::Elem> {
+impl OrderedFiniteSetSignature for PrimitiveI32CanonicalStructure {
+    fn list_all_elements_ordered(self: &Arc<Self>) -> Vec<Self::Elem> {
         self.list_all_elements()
     }
 
-    fn element_to_enumeration(&self, elem: &i32) -> Natural {
+    fn element_to_enumeration(self: &Arc<Self>, elem: &i32) -> Natural {
         Natural::from(elem.wrapping_sub(i32::MIN) as u32)
     }
 
-    fn enumeration_to_element(&self, num: &Natural) -> Option<Self::Elem> {
+    fn enumeration_to_element(self: &Arc<Self>, num: &Natural) -> Option<Self::Elem> {
         if *num >= self.size() {
             None
         } else {
@@ -77,7 +73,7 @@ impl EnumeratedOrdFiniteSetSignature for PrimitiveI32CanonicalStructure {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::MetaEnumeratedOrdFiniteSetSignature;
+    use crate::MetaOrderedFiniteSetSignature;
 
     #[test]
     fn test_enumeration() {

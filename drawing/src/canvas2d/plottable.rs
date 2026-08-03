@@ -29,7 +29,7 @@ fn plot_simplex_collection<
         + 'f,
 >(
     canvas: &mut Canvas2D,
-    shape: &impl LabelledSimplexCollection<'f, FS, ()>,
+    shape: &impl LabelledSimplexCollection<FS, ()>,
 ) where
     FS::Elem: std::hash::Hash,
 {
@@ -70,12 +70,10 @@ fn plot_simplex_collection<
 }
 
 impl<
-    'f,
     FS: algebraeon_rings::structure::OrderedRingSignature
         + algebraeon_rings::structure::FieldSignature
-        + algebraeon_rings::structure::RealSubsetSignature
-        + 'f,
-> Plottable for SimplicialDisjointUnion<'f, FS>
+        + algebraeon_rings::structure::RealSubsetSignature,
+> Plottable for SimplicialDisjointUnion<FS>
 where
     FS::Elem: std::hash::Hash,
 {
@@ -85,12 +83,10 @@ where
 }
 
 impl<
-    'f,
     FS: algebraeon_rings::structure::OrderedRingSignature
         + algebraeon_rings::structure::FieldSignature
-        + algebraeon_rings::structure::RealSubsetSignature
-        + 'f,
-> Plottable for PartialSimplicialComplex<'f, FS>
+        + algebraeon_rings::structure::RealSubsetSignature,
+> Plottable for PartialSimplicialComplex<FS>
 where
     FS::Elem: std::hash::Hash,
 {
@@ -100,12 +96,10 @@ where
 }
 
 impl<
-    'f,
     FS: algebraeon_rings::structure::OrderedRingSignature
         + algebraeon_rings::structure::FieldSignature
-        + algebraeon_rings::structure::RealSubsetSignature
-        + 'f,
-> Plottable for SimplicialComplex<'f, FS>
+        + algebraeon_rings::structure::RealSubsetSignature,
+> Plottable for SimplicialComplex<FS>
 where
     FS::Elem: std::hash::Hash,
 {

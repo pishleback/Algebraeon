@@ -6,6 +6,7 @@ use algebraeon_structures::*;
 use gungraun::{library_benchmark, library_benchmark_group, main};
 use std::hint::black_box;
 use std::str::FromStr;
+use std::sync::Arc;
 
 #[library_benchmark]
 #[benches::small(iter = (100u16..=120).map(Natural::from))]
@@ -79,7 +80,7 @@ library_benchmark_group!(
 )]
 fn bench_lll_integral_dim6(
     mat: Matrix<Integer>,
-    inner_product: &impl RealInnerProduct<IntegerCanonicalStructure>,
+    inner_product: &Arc<impl RealInnerProduct<IntegerCanonicalStructure>>,
     delta: Rational,
 ) {
     black_box(mat.lll_integral_row_reduction_algorithm(inner_product, &delta));

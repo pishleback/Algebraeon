@@ -2,51 +2,43 @@ use algebraeon_structures::*;
 use std::cmp::Ordering;
 use std::collections::HashSet;
 use std::hash::Hash;
-use std::marker::PhantomData;
+use std::sync::Arc;
 
 // A finite subset of a set
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FiniteSubsetByHashStructure<Set: SetSignature, SetB: BorrowedStructure<Set>>
+pub struct FiniteSubsetByHashStructure<Set: SetSignature>
 where
     Set::Elem: MetaType + Eq + Hash,
 {
-    _set: PhantomData<Set>,
-    set: SetB,
+    set: Arc<Set>,
     elems: HashSet<Set::Elem>,
 }
 
-impl<Set: SetSignature, SetB: BorrowedStructure<Set>> FiniteSubsetByHashStructure<Set, SetB>
+impl<Set: SetSignature> FiniteSubsetByHashStructure<Set>
 where
     Set::Elem: MetaType + Eq + Hash,
 {
-    pub fn new(set: SetB, elems: HashSet<Set::Elem>) -> Self {
-        Self {
-            _set: PhantomData,
-            set,
-            elems,
-        }
+    pub fn new(set: Arc<Set>, elems: HashSet<Set::Elem>) -> Arc<Self> {
+        Self { set, elems }.into()
     }
 
-    pub fn set(&self) -> &Set {
-        self.set.borrow()
+    pub fn set(&self) -> &Arc<Set> {
+        &self.set
     }
 }
 
-impl<Set: SetSignature, SetB: BorrowedStructure<Set>> Signature
-    for FiniteSubsetByHashStructure<Set, SetB>
-where
-    Set::Elem: MetaType + Eq + Hash,
+impl<Set: SetSignature> Signature for FiniteSubsetByHashStructure<Set> where
+    Set::Elem: MetaType + Eq + Hash
 {
 }
 
-impl<Set: SetSignature, SetB: BorrowedStructure<Set>> SetSignature
-    for FiniteSubsetByHashStructure<Set, SetB>
+impl<Set: SetSignature> SetSignature for FiniteSubsetByHashStructure<Set>
 where
     Set::Elem: MetaType + Eq + Hash,
 {
     type Elem = Set::Elem;
 
-    fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, x: &Self::Elem) -> Result<(), String> {
         if !self.elems.contains(x) {
             return Err("element not in finite subset".to_string());
         }
@@ -54,59 +46,49 @@ where
     }
 }
 
-impl<Set: EqSignature, SetB: BorrowedStructure<Set>> EqSignature
-    for FiniteSubsetByHashStructure<Set, SetB>
+impl<Set: EqSignature> EqSignature for FiniteSubsetByHashStructure<Set>
 where
     Set::Elem: MetaType + Eq + Hash,
 {
-    fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(b));
         self.set().equal(a, b)
     }
 }
 
-impl<Set: PartialOrdSignature, SetB: BorrowedStructure<Set>> PartialOrdSignature
-    for FiniteSubsetByHashStructure<Set, SetB>
+impl<Set: PartialOrdSignature> PartialOrdSignature for FiniteSubsetByHashStructure<Set>
 where
     Set::Elem: MetaType + Eq + Hash,
 {
-    fn partial_cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Ordering> {
+    fn partial_cmp(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Ordering> {
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(b));
         self.set().partial_cmp(a, b)
     }
 }
 
-impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> OrdSignature
-    for FiniteSubsetByHashStructure<Set, SetB>
+impl<Set: OrdSignature> OrdSignature for FiniteSubsetByHashStructure<Set>
 where
     Set::Elem: MetaType + Eq + Hash,
 {
-    fn cmp(&self, a: &Self::Elem, b: &Self::Elem) -> Ordering {
+    fn cmp(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Ordering {
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(b));
         self.set().cmp(a, b)
     }
 }
 
-impl<Set: SetSignature, SetB: BorrowedStructure<Set>> CountableSetSignature
-    for FiniteSubsetByHashStructure<Set, SetB>
+impl<Set: SetSignature> CountableSetSignature for FiniteSubsetByHashStructure<Set>
 where
     Set::Elem: MetaType + Eq + Hash,
 {
-    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
-        self.elems.into_iter()
-    }
-
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
-        self.clone().into_generate_all_elements()
+    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
+        self.elems.clone().into_iter()
     }
 }
 
-impl<Set: SetSignature, SetB: BorrowedStructure<Set>> FiniteSetSignature
-    for FiniteSubsetByHashStructure<Set, SetB>
-where
-    Set::Elem: MetaType + Eq + Hash,
+impl<Set: SetSignature> FiniteSetSignature for FiniteSubsetByHashStructure<Set> where
+    Set::Elem: MetaType + Eq + Hash
 {
 }

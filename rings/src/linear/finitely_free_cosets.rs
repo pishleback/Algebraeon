@@ -7,7 +7,7 @@ use crate::{
 };
 use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 use algebraeon_structures::*;
-use std::{fmt::Debug, marker::PhantomData};
+use std::{fmt::Debug, marker::PhantomData, sync::Arc};
 
 #[derive(Debug, Clone)]
 pub struct FinitelyFreeSubmoduleCoset<Set: Clone + Debug> {
@@ -40,75 +40,69 @@ impl<Set: Clone + Debug> FinitelyFreeSubmoduleCoset<Set> {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FinitelyFreeSubmoduleCosetsStructure<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
-    ModuleB: BorrowedStructure<Module>,
 > {
     _set: PhantomData<Set>,
     _ring: PhantomData<Ring>,
-    _module: PhantomData<Module>,
-    module: ModuleB,
+    module: Arc<Module>,
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
-    ModuleB: BorrowedStructure<Module>,
-> FinitelyFreeSubmoduleCosetsStructure<Set, Ring, Module, ModuleB>
+> FinitelyFreeSubmoduleCosetsStructure<Set, Ring, Module>
 {
-    pub fn new(module: ModuleB) -> Self {
+    pub fn new(module: Arc<Module>) -> Arc<Self> {
         Self {
             _set: PhantomData,
             _ring: PhantomData,
-            _module: PhantomData,
             module,
         }
+        .into()
     }
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
-    ModuleB: BorrowedStructure<Module>,
-> Signature for FinitelyFreeSubmoduleCosetsStructure<Set, Ring, Module, ModuleB>
+> Signature for FinitelyFreeSubmoduleCosetsStructure<Set, Ring, Module>
 {
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
-    ModuleB: BorrowedStructure<Module>,
-> SetSignature for FinitelyFreeSubmoduleCosetsStructure<Set, Ring, Module, ModuleB>
+> SetSignature for FinitelyFreeSubmoduleCosetsStructure<Set, Ring, Module>
 {
     type Elem = FinitelyFreeSubmoduleCoset<Ring::Elem>;
 
-    fn validate_element(&self, _x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, _x: &Self::Elem) -> Result<(), String> {
         //TODO: better checks here
         Ok(())
     }
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring>,
-    ModuleB: BorrowedStructure<Module>,
-> FinitelyFreeSubmoduleCosetsStructure<Set, Ring, Module, ModuleB>
+> FinitelyFreeSubmoduleCosetsStructure<Set, Ring, Module>
 {
-    pub fn ring(&self) -> &Ring {
+    pub fn ring(self: &Arc<Self>) -> Arc<Ring> {
         self.module().ring()
     }
 
-    pub fn module(&self) -> &Module {
-        self.module.borrow()
+    pub fn module(self: &Arc<Self>) -> &Arc<Module> {
+        &self.module
     }
 
     pub fn from_offset_and_submodule(
-        &self,
+        self: &Arc<Self>,
         offset: &Module::Elem,
         submodule: FinitelyFreeSubmodule<Ring::Elem>,
     ) -> FinitelyFreeSubmoduleCoset<Ring::Elem> {
@@ -130,7 +124,7 @@ impl<
     }
 
     pub fn from_submodule(
-        &self,
+        self: &Arc<Self>,
         submodule: FinitelyFreeSubmodule<Ring::Elem>,
     ) -> FinitelyFreeSubmoduleCoset<Ring::Elem> {
         FinitelyFreeSubmoduleCoset {
@@ -140,7 +134,7 @@ impl<
     }
 
     pub fn equal_slow(
-        &self,
+        self: &Arc<Self>,
         x: &FinitelyFreeSubmoduleCoset<Ring::Elem>,
         y: &FinitelyFreeSubmoduleCoset<Ring::Elem>,
     ) -> bool {
@@ -163,7 +157,7 @@ impl<
     }
 
     pub fn add(
-        &self,
+        self: &Arc<Self>,
         x: FinitelyFreeSubmoduleCoset<Ring::Elem>,
         y: FinitelyFreeSubmoduleCoset<Ring::Elem>,
     ) -> FinitelyFreeSubmoduleCoset<Ring::Elem> {
@@ -179,7 +173,7 @@ impl<
     }
 
     pub fn intersect(
-        &self,
+        self: &Arc<Self>,
         x: &FinitelyFreeSubmoduleCoset<Ring::Elem>,
         y: &FinitelyFreeSubmoduleCoset<Ring::Elem>,
     ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Elem> {
@@ -298,7 +292,7 @@ impl<
     }
 
     pub fn contains_element(
-        &self,
+        self: &Arc<Self>,
         x: &FinitelyFreeSubmoduleCoset<Ring::Elem>,
         p: &Module::Elem,
     ) -> bool {
@@ -316,13 +310,12 @@ impl<
 }
 
 impl<
-    Set: EnumeratedOrdFiniteSetSignature,
+    Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
     Module: FinitelyFreeModuleSignature<Set, Ring> + EqSignature,
-    ModuleB: BorrowedStructure<Module>,
-> EqSignature for FinitelyFreeSubmoduleCosetsStructure<Set, Ring, Module, ModuleB>
+> EqSignature for FinitelyFreeSubmoduleCosetsStructure<Set, Ring, Module>
 {
-    fn equal(&self, x: &Self::Elem, y: &Self::Elem) -> bool {
+    fn equal(self: &Arc<Self>, x: &Self::Elem, y: &Self::Elem) -> bool {
         self.module().equal(
             &self.module().from_vec(x.offset.iter().collect()),
             &self.module().from_vec(x.offset.iter().collect()),
@@ -336,7 +329,7 @@ mod tests {
 
     #[test]
     fn test_cosets() {
-        let module = Integer::structure().into_free_module(EnumeratedFiniteSetStructure::new(2));
+        let module = Integer::structure().free_module(EnumeratedFiniteSetStructure::new(2));
 
         let coset1 = module.submodules().coset(
             &Matrix::<Integer>::from_rows(vec![vec![15, 0], vec![0, 10]]).row_span(),
@@ -382,7 +375,7 @@ mod tests {
 
     #[test]
     fn test_cosets_intersect() {
-        let module = Integer::structure().into_free_module(EnumeratedFiniteSetStructure::new(2));
+        let module = Integer::structure().free_module(EnumeratedFiniteSetStructure::new(2));
 
         let coset1 = module.submodules().coset(
             &Matrix::<Integer>::from_rows(vec![vec![6, 4], vec![0, 3]]).row_span(),

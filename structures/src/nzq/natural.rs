@@ -5,6 +5,7 @@ use algebraeon_macros::CanonicalStructure;
 use malachite::base::num::basic::traits::{One, Two, Zero};
 use malachite::base::num::conversion::traits::ExactFrom;
 use std::iter::{Product, Sum};
+use std::sync::Arc;
 use std::{
     borrow::Borrow,
     ops::{
@@ -33,7 +34,7 @@ impl Natural {
 }
 
 impl ToStringSignature for NaturalCanonicalStructure {
-    fn to_string(&self, elem: &Self::Elem) -> String {
+    fn to_string(self: &Arc<Self>, elem: &Self::Elem) -> String {
         format!("{}", elem)
     }
 }
@@ -890,12 +891,9 @@ impl Natural {
 }
 
 impl CountableSetSignature for NaturalCanonicalStructure {
-    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
+    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
         use malachite::natural::exhaustive::exhaustive_naturals;
         exhaustive_naturals().map(Natural::from_malachite)
-    }
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
-        self.clone().into_generate_all_elements()
     }
 }
 

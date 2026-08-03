@@ -1,7 +1,7 @@
 use super::*;
 use algebraeon_structures::*;
 
-impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MatrixStructure<FS, FSB> {
+impl<FS: FieldSignature> MatrixStructure<FS> {
     pub fn presentation_matrix(
         &self,
         m: Matrix<FS::Elem>,

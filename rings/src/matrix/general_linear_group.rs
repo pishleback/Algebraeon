@@ -3,78 +3,42 @@ use crate::{
     structure::FieldSignature,
 };
 use algebraeon_structures::*;
-use std::marker::PhantomData;
+use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct GeneralLinearStructure<
-    RS: SetSignature,
-    RSB: BorrowedStructure<RS>,
-    MatB: BorrowedStructure<MatrixStructure<RS, RSB>>,
-> {
-    _ring: PhantomData<RS>,
-    _ringb: PhantomData<RSB>,
-    mats: MatB,
+pub struct GeneralLinearStructure<RS: SetSignature> {
+    mats: Arc<MatrixStructure<RS>>,
     n: usize,
 }
 
-impl<
-    RS: SetSignature,
-    RSB: BorrowedStructure<RS>,
-    MatB: BorrowedStructure<MatrixStructure<RS, RSB>>,
-> GeneralLinearStructure<RS, RSB, MatB>
-{
-    pub fn new(mats: MatB, n: usize) -> Self {
-        Self {
-            _ring: PhantomData,
-            _ringb: PhantomData,
-            mats,
-            n,
-        }
+impl<RS: SetSignature> GeneralLinearStructure<RS> {
+    pub fn new(mats: Arc<MatrixStructure<RS>>, n: usize) -> Arc<Self> {
+        Self { mats, n }.into()
     }
 }
 
-impl<RS: SetSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
-    pub fn general_linear_structure(&self, n: usize) -> GeneralLinearStructure<RS, RSB, &Self> {
-        GeneralLinearStructure::new(self, n)
-    }
-
-    pub fn into_general_linear_structure(self, n: usize) -> GeneralLinearStructure<RS, RSB, Self> {
-        GeneralLinearStructure::new(self, n)
+impl<RS: SetSignature> MatrixStructure<RS> {
+    pub fn general_linear_structure(self: &Arc<Self>, n: usize) -> Arc<GeneralLinearStructure<RS>> {
+        GeneralLinearStructure::new(self.clone(), n)
     }
 }
 
-impl<
-    RS: SetSignature,
-    RSB: BorrowedStructure<RS>,
-    MatB: BorrowedStructure<MatrixStructure<RS, RSB>>,
-> GeneralLinearStructure<RS, RSB, MatB>
-{
-    pub fn ring(&self) -> &RS {
+impl<RS: SetSignature> GeneralLinearStructure<RS> {
+    pub fn ring(&self) -> Arc<RS> {
         self.mats().ring()
     }
 
-    pub fn mats(&self) -> &MatrixStructure<RS, RSB> {
-        self.mats.borrow()
+    pub fn mats(&self) -> &Arc<MatrixStructure<RS>> {
+        &self.mats
     }
 }
 
-impl<
-    RS: SetSignature,
-    RSB: BorrowedStructure<RS>,
-    MatB: BorrowedStructure<MatrixStructure<RS, RSB>>,
-> Signature for GeneralLinearStructure<RS, RSB, MatB>
-{
-}
+impl<RS: SetSignature> Signature for GeneralLinearStructure<RS> {}
 
-impl<
-    RS: FieldSignature,
-    RSB: BorrowedStructure<RS>,
-    MatB: BorrowedStructure<MatrixStructure<RS, RSB>>,
-> SetSignature for GeneralLinearStructure<RS, RSB, MatB>
-{
+impl<RS: FieldSignature> SetSignature for GeneralLinearStructure<RS> {
     type Elem = Matrix<RS::Elem>;
 
-    fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, x: &Self::Elem) -> Result<(), String> {
         self.mats().validate_element(x)?;
         if x.rows() != self.n || x.cols() != self.n {
             return Err("Wrong dimension".to_string());
@@ -86,106 +50,58 @@ impl<
     }
 }
 
-impl<
-    RS: FieldSignature,
-    RSB: BorrowedStructure<RS>,
-    MatB: BorrowedStructure<MatrixStructure<RS, RSB>>,
-> IdentitySignature for GeneralLinearStructure<RS, RSB, MatB>
-{
-    fn identity(&self) -> Self::Elem {
+impl<RS: FieldSignature> IdentitySignature for GeneralLinearStructure<RS> {
+    fn identity(self: &Arc<Self>) -> Self::Elem {
         self.mats().ident(self.n)
     }
 }
 
-impl<
-    RS: FieldSignature,
-    RSB: BorrowedStructure<RS>,
-    MatB: BorrowedStructure<MatrixStructure<RS, RSB>>,
-> CompositionSignature for GeneralLinearStructure<RS, RSB, MatB>
-{
-    fn compose(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+impl<RS: FieldSignature> CompositionSignature for GeneralLinearStructure<RS> {
+    fn compose(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.mats().mul(a, b).unwrap()
     }
 }
 
-impl<
-    RS: FieldSignature,
-    RSB: BorrowedStructure<RS>,
-    MatB: BorrowedStructure<MatrixStructure<RS, RSB>>,
-> AssociativeCompositionSignature for GeneralLinearStructure<RS, RSB, MatB>
-{
-}
+impl<RS: FieldSignature> AssociativeCompositionSignature for GeneralLinearStructure<RS> {}
 
-impl<
-    RS: FieldSignature,
-    RSB: BorrowedStructure<RS>,
-    MatB: BorrowedStructure<MatrixStructure<RS, RSB>>,
-> MonoidSignature for GeneralLinearStructure<RS, RSB, MatB>
-{
-}
+impl<RS: FieldSignature> MonoidSignature for GeneralLinearStructure<RS> {}
 
-impl<
-    RS: FieldSignature,
-    RSB: BorrowedStructure<RS>,
-    MatB: BorrowedStructure<MatrixStructure<RS, RSB>>,
-> TryInverseSignature for GeneralLinearStructure<RS, RSB, MatB>
-{
-    fn try_inverse(&self, a: &Self::Elem) -> Option<Self::Elem> {
+impl<RS: FieldSignature> TryInverseSignature for GeneralLinearStructure<RS> {
+    fn try_inverse(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.inverse(a))
     }
 }
 
-impl<
-    RS: FieldSignature,
-    RSB: BorrowedStructure<RS>,
-    MatB: BorrowedStructure<MatrixStructure<RS, RSB>>,
-> TryLeftInverseSignature for GeneralLinearStructure<RS, RSB, MatB>
-{
-    fn try_left_inverse(&self, a: &Self::Elem) -> Option<Self::Elem> {
+impl<RS: FieldSignature> TryLeftInverseSignature for GeneralLinearStructure<RS> {
+    fn try_left_inverse(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.inverse(a))
     }
 }
 
-impl<
-    RS: FieldSignature,
-    RSB: BorrowedStructure<RS>,
-    MatB: BorrowedStructure<MatrixStructure<RS, RSB>>,
-> TryRightInverseSignature for GeneralLinearStructure<RS, RSB, MatB>
-{
-    fn try_right_inverse(&self, a: &Self::Elem) -> Option<Self::Elem> {
+impl<RS: FieldSignature> TryRightInverseSignature for GeneralLinearStructure<RS> {
+    fn try_right_inverse(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.inverse(a))
     }
 }
 
-impl<
-    RS: FieldSignature,
-    RSB: BorrowedStructure<RS>,
-    MatB: BorrowedStructure<MatrixStructure<RS, RSB>>,
-> LeftCancellativeCompositionSignature for GeneralLinearStructure<RS, RSB, MatB>
-{
-    fn try_left_difference(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+impl<RS: FieldSignature> LeftCancellativeCompositionSignature for GeneralLinearStructure<RS> {
+    fn try_left_difference(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.compose(&self.inverse(b), a))
     }
 }
 
-impl<
-    RS: FieldSignature,
-    RSB: BorrowedStructure<RS>,
-    MatB: BorrowedStructure<MatrixStructure<RS, RSB>>,
-> RightCancellativeCompositionSignature for GeneralLinearStructure<RS, RSB, MatB>
-{
-    fn try_right_difference(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+impl<RS: FieldSignature> RightCancellativeCompositionSignature for GeneralLinearStructure<RS> {
+    fn try_right_difference(
+        self: &Arc<Self>,
+        a: &Self::Elem,
+        b: &Self::Elem,
+    ) -> Option<Self::Elem> {
         Some(self.compose(a, &self.inverse(b)))
     }
 }
 
-impl<
-    RS: FieldSignature,
-    RSB: BorrowedStructure<RS>,
-    MatB: BorrowedStructure<MatrixStructure<RS, RSB>>,
-> GroupSignature for GeneralLinearStructure<RS, RSB, MatB>
-{
-    fn inverse(&self, a: &Self::Elem) -> Self::Elem {
+impl<RS: FieldSignature> GroupSignature for GeneralLinearStructure<RS> {
+    fn inverse(self: &Arc<Self>, a: &Self::Elem) -> Self::Elem {
         self.mats().inv(a.clone()).unwrap()
     }
 }

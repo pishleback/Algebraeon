@@ -10,6 +10,7 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fmt::Debug;
 use std::hash::Hash;
+use std::sync::Arc;
 
 #[derive(Debug)]
 pub struct FiniteGroupMultiplicationTable {
@@ -409,7 +410,7 @@ pub fn direct_product_structure(
 #[signature_meta_trait]
 pub trait GenerateFiniteSubgroupTableSignature: GroupSignature {
     fn generated_finite_subgroup_table(
-        &self,
+        self: &Arc<Self>,
         generators: Vec<Self::Elem>,
     ) -> (
         crate::composition_table::group::FiniteGroupMultiplicationTable,

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use super::conway_polynomials::conway_polynomial;
 use crate::{
     matrix::{Matrix, MatrixStructure},
@@ -10,44 +12,26 @@ use algebraeon_structures::*;
 pub struct ConwayFiniteFieldStructure {
     p: usize,
     n: usize,
-    structure: PolynomialQuotientRingStructure<
-        EuclideanRemainderQuotientStructure<
-            IntegerCanonicalStructure,
-            IntegerCanonicalStructure,
+    structure: Arc<
+        PolynomialQuotientRingStructure<
+            EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, true>,
             true,
         >,
-        EuclideanRemainderQuotientStructure<
-            IntegerCanonicalStructure,
-            IntegerCanonicalStructure,
-            true,
-        >,
-        PolynomialStructure<
-            EuclideanRemainderQuotientStructure<
-                IntegerCanonicalStructure,
-                IntegerCanonicalStructure,
-                true,
-            >,
-            EuclideanRemainderQuotientStructure<
-                IntegerCanonicalStructure,
-                IntegerCanonicalStructure,
-                true,
-            >,
-        >,
-        true,
     >,
 }
 
 impl ConwayFiniteFieldStructure {
-    pub fn new(p: usize, n: usize) -> Result<Self, ()> {
+    pub fn new(p: usize, n: usize) -> Result<Arc<Self>, ()> {
         let f = conway_polynomial(p, n)?;
         Ok(Self {
             p,
             n,
             structure: Integer::structure()
-                .into_quotient_field_unchecked(Integer::from(p))
-                .into_polynomials()
-                .into_quotient_field_unchecked(f.clone()),
-        })
+                .quotient_field_unchecked(Integer::from(p))
+                .polynomials()
+                .quotient_field_unchecked(f.clone()),
+        }
+        .into())
     }
 
     pub fn reduce(&self, f: &Polynomial<Integer>) -> Polynomial<Integer> {
@@ -84,13 +68,13 @@ impl Signature for ConwayFiniteFieldStructure {}
 impl SetSignature for ConwayFiniteFieldStructure {
     type Elem = Polynomial<Integer>;
 
-    fn validate_element(&self, _: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, _: &Self::Elem) -> Result<(), String> {
         Ok(())
     }
 }
 
 impl EqSignature for ConwayFiniteFieldStructure {
-    fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         self.structure.equal(a, b)
     }
 }
@@ -98,25 +82,25 @@ impl EqSignature for ConwayFiniteFieldStructure {
 impl RinglikeSpecializationSignature for ConwayFiniteFieldStructure {}
 
 impl ZeroSignature for ConwayFiniteFieldStructure {
-    fn zero(&self) -> Self::Elem {
+    fn zero(self: &Arc<Self>) -> Self::Elem {
         self.structure.zero()
     }
 }
 
 impl AdditionSignature for ConwayFiniteFieldStructure {
-    fn add(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn add(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.structure.add(a, b)
     }
 }
 
 impl CancellativeAdditionSignature for ConwayFiniteFieldStructure {
-    fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_sub(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.sub(a, b))
     }
 }
 
 impl TryNegateSignature for ConwayFiniteFieldStructure {
-    fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_neg(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
     }
 }
@@ -124,19 +108,19 @@ impl TryNegateSignature for ConwayFiniteFieldStructure {
 impl AdditiveMonoidSignature for ConwayFiniteFieldStructure {}
 
 impl AdditiveGroupSignature for ConwayFiniteFieldStructure {
-    fn neg(&self, a: &Self::Elem) -> Self::Elem {
+    fn neg(self: &Arc<Self>, a: &Self::Elem) -> Self::Elem {
         self.structure.neg(a)
     }
 }
 
 impl OneSignature for ConwayFiniteFieldStructure {
-    fn one(&self) -> Self::Elem {
+    fn one(self: &Arc<Self>) -> Self::Elem {
         self.structure.one()
     }
 }
 
 impl MultiplicationSignature for ConwayFiniteFieldStructure {
-    fn mul(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn mul(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.structure.mul(a, b)
     }
 }
@@ -154,37 +138,33 @@ impl RightDistributiveMultiplicationOverAddition for ConwayFiniteFieldStructure 
 impl SemiRingSignature for ConwayFiniteFieldStructure {}
 
 impl RingSignature for ConwayFiniteFieldStructure {
-    fn is_reduced(&self) -> Result<bool, String> {
+    fn is_reduced(self: &Arc<Self>) -> Result<bool, String> {
         Ok(true)
     }
 }
 
 impl CountableSetSignature for ConwayFiniteFieldStructure {
-    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
+    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
         self.all_units_and_zero().into_iter()
-    }
-
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
-        self.clone().into_generate_all_elements()
     }
 }
 
 impl FiniteSetSignature for ConwayFiniteFieldStructure {}
 
 impl CharacteristicSignature for ConwayFiniteFieldStructure {
-    fn characteristic(&self) -> Natural {
+    fn characteristic(self: &Arc<Self>) -> Natural {
         self.characteristic_and_power().0
     }
 }
 
 impl TryReciprocalSignature for ConwayFiniteFieldStructure {
-    fn try_reciprocal(&self, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_reciprocal(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         self.structure.try_reciprocal(a)
     }
 }
 
 impl CancellativeMultiplicationSignature for ConwayFiniteFieldStructure {
-    fn try_divide(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_divide(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         self.structure.try_divide(a, b)
     }
 }
@@ -195,28 +175,20 @@ impl IntegralDomainSignature for ConwayFiniteFieldStructure {}
 
 impl FieldSignature for ConwayFiniteFieldStructure {}
 
-impl<B: BorrowedStructure<ConwayFiniteFieldStructure>> CountableSetSignature
-    for MultiplicativeMonoidUnitsStructure<ConwayFiniteFieldStructure, B>
-{
-    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
+impl CountableSetSignature for MultiplicativeMonoidUnitsStructure<ConwayFiniteFieldStructure> {
+    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
         self.list_all_elements().into_iter()
-    }
-
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
-        self.clone().into_generate_all_elements()
     }
 }
 
-impl<B: BorrowedStructure<ConwayFiniteFieldStructure>> FiniteSetSignature
-    for MultiplicativeMonoidUnitsStructure<ConwayFiniteFieldStructure, B>
-{
-    fn list_all_elements(&self) -> Vec<Self::Elem> {
+impl FiniteSetSignature for MultiplicativeMonoidUnitsStructure<ConwayFiniteFieldStructure> {
+    fn list_all_elements(self: &Arc<Self>) -> Vec<Self::Elem> {
         self.monoid().structure.all_units()
     }
 }
 
 impl FiniteFieldSignature for ConwayFiniteFieldStructure {
-    fn characteristic_and_power(&self) -> (Natural, Natural) {
+    fn characteristic_and_power(self: &Arc<Self>) -> (Natural, Natural) {
         (self.p.into(), self.n.into())
     }
 }
@@ -227,31 +199,21 @@ pub struct ConwayFiniteFieldInclusion {
     #[allow(unused)]
     p: usize,
     // finite field of order p^m
-    domain: ConwayFiniteFieldStructure,
+    domain: Arc<ConwayFiniteFieldStructure>,
     // finite field of order p^n
-    range: ConwayFiniteFieldStructure,
+    range: Arc<ConwayFiniteFieldStructure>,
     // n/m
     #[allow(unused)]
     degree: usize,
     // Linear map F_{p^m} -> F_{p^n} of column vectors of polynomial coefficients over F_p
     inclusion: Matrix<Integer>,
     // matrices modulo p
-    mat_mod_p: MatrixStructure<
-        EuclideanRemainderQuotientStructure<
-            IntegerCanonicalStructure,
-            IntegerCanonicalStructure,
-            true,
-        >,
-        EuclideanRemainderQuotientStructure<
-            IntegerCanonicalStructure,
-            IntegerCanonicalStructure,
-            true,
-        >,
-    >,
+    mat_mod_p:
+        Arc<MatrixStructure<EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, true>>>,
 }
 
 impl ConwayFiniteFieldInclusion {
-    pub fn new(p: usize, m: usize, n: usize) -> Result<Self, &'static str> {
+    pub fn new(p: usize, m: usize, n: usize) -> Result<Arc<Self>, &'static str> {
         if n.is_multiple_of(m) {
             let degree = n / m;
 
@@ -278,9 +240,10 @@ impl ConwayFiniteFieldInclusion {
                 degree,
                 inclusion,
                 mat_mod_p: MatrixStructure::new(
-                    Integer::structure().into_quotient_field(p.into()).unwrap(),
+                    Integer::structure().quotient_field(p.into()).unwrap(),
                 ),
-            })
+            }
+            .into())
         } else {
             Err("m must divide n")
         }
@@ -290,19 +253,19 @@ impl ConwayFiniteFieldInclusion {
 impl Morphism<ConwayFiniteFieldStructure, ConwayFiniteFieldStructure>
     for ConwayFiniteFieldInclusion
 {
-    fn domain(&self) -> &ConwayFiniteFieldStructure {
-        &self.domain
+    fn domain(self: &Arc<Self>) -> Arc<ConwayFiniteFieldStructure> {
+        self.domain.clone()
     }
 
-    fn range(&self) -> &ConwayFiniteFieldStructure {
-        &self.range
+    fn range(self: &Arc<Self>) -> Arc<ConwayFiniteFieldStructure> {
+        self.range.clone()
     }
 }
 
 impl FunctionMorphism<ConwayFiniteFieldStructure, ConwayFiniteFieldStructure>
     for ConwayFiniteFieldInclusion
 {
-    fn image(&self, x: &Polynomial<Integer>) -> Polynomial<Integer> {
+    fn image(self: &Arc<Self>, x: &Polynomial<Integer>) -> Polynomial<Integer> {
         self.range().from_col_vector(
             self.mat_mod_p
                 .mul(&self.inclusion, &self.domain().to_col_vector(x))
@@ -314,7 +277,7 @@ impl FunctionMorphism<ConwayFiniteFieldStructure, ConwayFiniteFieldStructure>
 impl InjectiveFunctionMorphism<ConwayFiniteFieldStructure, ConwayFiniteFieldStructure>
     for ConwayFiniteFieldInclusion
 {
-    fn try_preimage(&self, x: &Polynomial<Integer>) -> Option<Polynomial<Integer>> {
+    fn try_preimage(self: &Arc<Self>, x: &Polynomial<Integer>) -> Option<Polynomial<Integer>> {
         Some(
             self.domain().from_vector(
                 self.inclusion

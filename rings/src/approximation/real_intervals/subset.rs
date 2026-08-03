@@ -1,6 +1,7 @@
 use crate::approximation::rational_interval::RationalInterval;
 use algebraeon_sets::approximations::SubsetsSignature;
 use algebraeon_structures::*;
+use std::sync::Arc;
 
 #[derive(Debug, Clone)]
 pub enum Subset {
@@ -29,7 +30,7 @@ impl Signature for SubsetsStructure {}
 impl SetSignature for SubsetsStructure {
     type Elem = Subset;
 
-    fn validate_element(&self, _: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, _: &Self::Elem) -> Result<(), String> {
         Ok(())
     }
 }

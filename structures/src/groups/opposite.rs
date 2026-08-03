@@ -1,165 +1,132 @@
 use crate::*;
-use std::marker::PhantomData;
+use std::sync::Arc;
 
 /// The grouplike structure obtained from another grouplike structure where the order of composition is reversed
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct OppositeMagmaStructure<G: CompositionSignature, GB: BorrowedStructure<G>> {
-    _magma: PhantomData<G>,
-    magma: GB,
+pub struct OppositeMagmaStructure<G: CompositionSignature> {
+    magma: Arc<G>,
 }
 
-impl<G: CompositionSignature, GB: BorrowedStructure<G>> OppositeMagmaStructure<G, GB> {
-    pub fn new(magma: GB) -> Self {
-        Self {
-            _magma: PhantomData,
-            magma,
-        }
+impl<G: CompositionSignature> OppositeMagmaStructure<G> {
+    pub fn new(magma: Arc<G>) -> Self {
+        Self { magma }
     }
 }
 
-impl<G: CompositionSignature, GB: BorrowedStructure<G>> OppositeMagmaStructure<G, GB> {
-    pub fn magma(&self) -> &G {
-        self.magma.borrow()
+impl<G: CompositionSignature> OppositeMagmaStructure<G> {
+    pub fn magma(self: &Arc<Self>) -> &Arc<G> {
+        &self.magma
     }
 }
 
-impl<G: GroupSignature, GB: BorrowedStructure<G>> OppositeMagmaStructure<G, GB> {
-    pub fn group(&self) -> &G {
+impl<G: GroupSignature> OppositeMagmaStructure<G> {
+    pub fn group(self: &Arc<Self>) -> &Arc<G> {
         self.magma()
     }
 }
 
 pub trait MagmaToOppositeSignature: CompositionSignature {
-    fn opposite(&self) -> OppositeMagmaStructure<Self, &Self> {
-        OppositeMagmaStructure::new(self)
-    }
-
-    fn into_opposite(self) -> OppositeMagmaStructure<Self, Self> {
-        OppositeMagmaStructure::new(self)
+    fn opposite(self: &Arc<Self>) -> OppositeMagmaStructure<Self> {
+        OppositeMagmaStructure::new(self.clone())
     }
 }
 impl<G: CompositionSignature> MagmaToOppositeSignature for G {}
 
-impl<G: CompositionSignature, GB: BorrowedStructure<G>> Signature
-    for OppositeMagmaStructure<G, GB>
-{
-}
+impl<G: CompositionSignature> Signature for OppositeMagmaStructure<G> {}
 
-impl<G: CompositionSignature, GB: BorrowedStructure<G>> SetSignature
-    for OppositeMagmaStructure<G, GB>
-{
+impl<G: CompositionSignature> SetSignature for OppositeMagmaStructure<G> {
     type Elem = G::Elem;
 
-    fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, x: &Self::Elem) -> Result<(), String> {
         self.magma().validate_element(x)
     }
 }
 
-impl<G: CompositionSignature + IdentitySignature, GB: BorrowedStructure<G>> IdentitySignature
-    for OppositeMagmaStructure<G, GB>
-{
-    fn identity(&self) -> Self::Elem {
+impl<G: CompositionSignature + IdentitySignature> IdentitySignature for OppositeMagmaStructure<G> {
+    fn identity(self: &Arc<Self>) -> Self::Elem {
         self.magma().identity()
     }
 }
 
-impl<G: CompositionSignature, GB: BorrowedStructure<G>> CompositionSignature
-    for OppositeMagmaStructure<G, GB>
-{
-    fn compose(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+impl<G: CompositionSignature> CompositionSignature for OppositeMagmaStructure<G> {
+    fn compose(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.magma().compose(b, a)
     }
 }
 
-impl<G: AssociativeCompositionSignature, GB: BorrowedStructure<G>> AssociativeCompositionSignature
-    for OppositeMagmaStructure<G, GB>
+impl<G: AssociativeCompositionSignature> AssociativeCompositionSignature
+    for OppositeMagmaStructure<G>
 {
 }
 
-impl<G: MonoidSignature, GB: BorrowedStructure<G>> MonoidSignature
-    for OppositeMagmaStructure<G, GB>
-{
-}
+impl<G: MonoidSignature> MonoidSignature for OppositeMagmaStructure<G> {}
 
-impl<G: LeftCancellativeCompositionSignature, GB: BorrowedStructure<G>>
-    RightCancellativeCompositionSignature for OppositeMagmaStructure<G, GB>
+impl<G: LeftCancellativeCompositionSignature> RightCancellativeCompositionSignature
+    for OppositeMagmaStructure<G>
 {
-    fn try_right_difference(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_right_difference(
+        self: &Arc<Self>,
+        a: &Self::Elem,
+        b: &Self::Elem,
+    ) -> Option<Self::Elem> {
         self.magma().try_left_difference(a, b)
     }
 }
 
-impl<G: RightCancellativeCompositionSignature, GB: BorrowedStructure<G>>
-    LeftCancellativeCompositionSignature for OppositeMagmaStructure<G, GB>
+impl<G: RightCancellativeCompositionSignature> LeftCancellativeCompositionSignature
+    for OppositeMagmaStructure<G>
 {
-    fn try_left_difference(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_left_difference(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         self.magma().try_right_difference(a, b)
     }
 }
 
-impl<G: TryLeftInverseSignature, GB: BorrowedStructure<G>> TryRightInverseSignature
-    for OppositeMagmaStructure<G, GB>
-{
-    fn try_right_inverse(&self, a: &Self::Elem) -> Option<Self::Elem> {
+impl<G: TryLeftInverseSignature> TryRightInverseSignature for OppositeMagmaStructure<G> {
+    fn try_right_inverse(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         self.magma().try_left_inverse(a)
     }
 }
 
-impl<G: TryRightInverseSignature, GB: BorrowedStructure<G>> TryLeftInverseSignature
-    for OppositeMagmaStructure<G, GB>
-{
-    fn try_left_inverse(&self, a: &Self::Elem) -> Option<Self::Elem> {
+impl<G: TryRightInverseSignature> TryLeftInverseSignature for OppositeMagmaStructure<G> {
+    fn try_left_inverse(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         self.magma().try_right_inverse(a)
     }
 }
 
-impl<G: TryInverseSignature, GB: BorrowedStructure<G>> TryInverseSignature
-    for OppositeMagmaStructure<G, GB>
-{
-    fn try_inverse(&self, a: &Self::Elem) -> Option<Self::Elem> {
+impl<G: TryInverseSignature> TryInverseSignature for OppositeMagmaStructure<G> {
+    fn try_inverse(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         self.magma().try_inverse(a)
     }
 }
 
-impl<G: GroupSignature, GB: BorrowedStructure<G>> GroupSignature for OppositeMagmaStructure<G, GB> {
-    fn inverse(&self, a: &Self::Elem) -> Self::Elem {
+impl<G: GroupSignature> GroupSignature for OppositeMagmaStructure<G> {
+    fn inverse(self: &Arc<Self>, a: &Self::Elem) -> Self::Elem {
         self.group().inverse(a)
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct OppositeGroupAction<Action: Signature, ActionB: BorrowedStructure<Action>> {
-    _action: PhantomData<Action>,
-    action: ActionB,
+pub struct OppositeGroupAction<Action: Signature> {
+    action: Arc<Action>,
 }
 
-impl<Action: Signature, ActionB: BorrowedStructure<Action>> OppositeGroupAction<Action, ActionB> {
-    pub fn new(action: ActionB) -> Self {
-        Self {
-            _action: PhantomData,
-            action,
-        }
+impl<Action: Signature> OppositeGroupAction<Action> {
+    pub fn new(action: Arc<Action>) -> Arc<Self> {
+        Self { action }.into()
     }
 
-    pub fn action(&self) -> &Action {
-        self.action.borrow()
+    pub fn action(self: &Arc<Self>) -> &Arc<Action> {
+        &self.action
     }
 }
 
-impl<Action: Signature, ActionB: BorrowedStructure<Action>> Signature
-    for OppositeGroupAction<Action, ActionB>
-{
-}
+impl<Action: Signature> Signature for OppositeGroupAction<Action> {}
 
 pub trait LeftActionToOppositeRightActionSignature<Group: GroupSignature, Set: SetSignature>:
     Signature
 {
-    fn opposite(&self) -> OppositeGroupAction<Self, &Self> {
-        OppositeGroupAction::new(self)
-    }
-
-    fn into_opposite(self) -> OppositeGroupAction<Self, Self> {
-        OppositeGroupAction::new(self)
+    fn opposite(self: &Arc<Self>) -> Arc<OppositeGroupAction<Self>> {
+        OppositeGroupAction::new(self.clone())
     }
 }
 impl<Group: GroupSignature, Set: SetSignature, Action: LeftGroupActionSignature<Group, Set>>
@@ -170,12 +137,8 @@ impl<Group: GroupSignature, Set: SetSignature, Action: LeftGroupActionSignature<
 pub trait RightActionToOppositeLeftActionSignature<Set: SetSignature, Group: GroupSignature>:
     Signature
 {
-    fn opposite(&self) -> OppositeGroupAction<Self, &Self> {
-        OppositeGroupAction::new(self)
-    }
-
-    fn into_opposite(self) -> OppositeGroupAction<Self, Self> {
-        OppositeGroupAction::new(self)
+    fn opposite(self: &Arc<Self>) -> Arc<OppositeGroupAction<Self>> {
+        OppositeGroupAction::new(self.clone())
     }
 }
 impl<Group: GroupSignature, Set: SetSignature, Action: RightGroupActionSignature<Set, Group>>
@@ -183,23 +146,19 @@ impl<Group: GroupSignature, Set: SetSignature, Action: RightGroupActionSignature
 {
 }
 
-impl<
-    Group: GroupSignature,
-    Set: SetSignature,
-    Action: LeftGroupActionSignature<Group, Set>,
-    ActionB: BorrowedStructure<Action>,
-> RightGroupActionSignature<Set, Group> for OppositeGroupAction<Action, ActionB>
+impl<Group: GroupSignature, Set: SetSignature, Action: LeftGroupActionSignature<Group, Set>>
+    RightGroupActionSignature<Set, Group> for OppositeGroupAction<Action>
 {
-    fn group(&self) -> &Group {
+    fn group(self: &Arc<Self>) -> &Arc<Group> {
         self.action().group()
     }
 
-    fn set(&self) -> &Set {
+    fn set(self: &Arc<Self>) -> &Arc<Set> {
         self.action().set()
     }
 
     fn apply(
-        &self,
+        self: &Arc<Self>,
         g: &<Group>::Elem,
         x: &<Set as SetSignature>::Elem,
     ) -> <Set as SetSignature>::Elem {
@@ -207,23 +166,19 @@ impl<
     }
 }
 
-impl<
-    Group: GroupSignature,
-    Set: SetSignature,
-    Action: RightGroupActionSignature<Set, Group>,
-    ActionB: BorrowedStructure<Action>,
-> LeftGroupActionSignature<Group, Set> for OppositeGroupAction<Action, ActionB>
+impl<Group: GroupSignature, Set: SetSignature, Action: RightGroupActionSignature<Set, Group>>
+    LeftGroupActionSignature<Group, Set> for OppositeGroupAction<Action>
 {
-    fn group(&self) -> &Group {
+    fn group(self: &Arc<Self>) -> &Arc<Group> {
         self.action().group()
     }
 
-    fn set(&self) -> &Set {
+    fn set(self: &Arc<Self>) -> &Arc<Set> {
         self.action().set()
     }
 
     fn apply(
-        &self,
+        self: &Arc<Self>,
         g: &<Group>::Elem,
         x: &<Set as SetSignature>::Elem,
     ) -> <Set as SetSignature>::Elem {

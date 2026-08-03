@@ -5,6 +5,7 @@ use malachite::base::num::arithmetic::traits::Pow;
 use malachite::base::num::basic::traits::{One, OneHalf, Two, Zero};
 use std::f64;
 use std::iter::{Product, Sum};
+use std::sync::Arc;
 use std::{
     ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Rem, Sub, SubAssign},
     str::FromStr,
@@ -16,7 +17,7 @@ use std::{
 pub struct Rational(malachite::Rational);
 
 impl ToStringSignature for RationalCanonicalStructure {
-    fn to_string(&self, elem: &Self::Elem) -> String {
+    fn to_string(self: &Arc<Self>, elem: &Self::Elem) -> String {
         format!("{}", elem)
     }
 }
@@ -697,13 +698,9 @@ impl Rational {
 }
 
 impl CountableSetSignature for RationalCanonicalStructure {
-    fn into_generate_all_elements(self) -> impl Iterator<Item = Self::Elem> {
+    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
         use malachite::rational::exhaustive::exhaustive_rationals;
         exhaustive_rationals().map(Rational::from_malachite)
-    }
-
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> {
-        self.clone().into_generate_all_elements()
     }
 }
 

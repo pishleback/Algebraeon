@@ -17,7 +17,10 @@ use algebraeon_rings::{
 };
 use algebraeon_sets::sets::Function;
 use algebraeon_structures::*;
-use std::{ops::Add, sync::OnceLock};
+use std::{
+    ops::Add,
+    sync::{Arc, OnceLock},
+};
 
 type F4 = QuaternaryField;
 type F4Structure = QuaternaryFieldCanonicalStructure;
@@ -95,20 +98,16 @@ impl Add<&HexacodeVector> for &HexacodeVector {
     }
 }
 
-type AmbientSpace = ConstFinitelyFreeModuleStructure<
-    6,
-    OrderedSynthemePointCanonicalStructure,
-    OrderedSynthemePointCanonicalStructure,
-    F4Structure,
-    F4Structure,
->;
+type AmbientSpace =
+    ConstFinitelyFreeModuleStructure<6, OrderedSynthemePointCanonicalStructure, F4Structure>;
 
 struct HexacodeCache {
-    subspace: FinitelyFreeSubmoduleStructure<
-        OrderedSynthemePointCanonicalStructure,
-        F4Structure,
-        AmbientSpace,
-        AmbientSpace,
+    subspace: Arc<
+        FinitelyFreeSubmoduleStructure<
+            OrderedSynthemePointCanonicalStructure,
+            F4Structure,
+            AmbientSpace,
+        >,
     >,
 }
 
@@ -117,7 +116,7 @@ static HEXACODE_CACHE: OnceLock<HexacodeCache> = OnceLock::new();
 fn cache() -> &'static HexacodeCache {
     HEXACODE_CACHE.get_or_init(|| {
         let points = OrderedSynthemePoint::structure();
-        let space = F4::structure().into_free_module(points);
+        let space = F4::structure().free_module(points);
         let subspace = space.generated_submodule(vec![
             &[
                 F4::Alpha,
@@ -155,8 +154,8 @@ fn cache() -> &'static HexacodeCache {
 }
 
 /// The 6 dimensional vector space structure over F4 with basis given by the points of an ordered syntheme
-pub fn space_structure() -> &'static AmbientSpace {
-    cache().subspace.module()
+pub fn space_structure() -> Arc<AmbientSpace> {
+    cache().subspace.module().clone()
 }
 
 /// The 3 dimensional vector subspace given by the hexacode
@@ -165,13 +164,14 @@ pub fn hexacode_subspace() -> &'static FinitelyFreeSubmodule<F4> {
 }
 
 /// The 3 dimensional vector subspace structure given by the hexacode
-pub fn hexacode_subspace_structure() -> &'static FinitelyFreeSubmoduleStructure<
-    OrderedSynthemePointCanonicalStructure,
-    <F4 as MetaType>::Signature,
-    AmbientSpace,
-    AmbientSpace,
+pub fn hexacode_subspace_structure() -> Arc<
+    FinitelyFreeSubmoduleStructure<
+        OrderedSynthemePointCanonicalStructure,
+        <F4 as MetaType>::Signature,
+        AmbientSpace,
+    >,
 > {
-    &cache().subspace
+    cache().subspace.clone()
 }
 
 pub fn all_hexacodewords() -> Vec<HexacodeVector> {

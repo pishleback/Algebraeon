@@ -5,6 +5,7 @@ use crate::polynomial::*;
 use crate::structure::*;
 use algebraeon_macros::CanonicalStructure;
 use boxes::*;
+use std::sync::Arc;
 use std::{collections::HashSet, fmt::Display, str::FromStr};
 mod boxes;
 mod polynomial;
@@ -636,31 +637,33 @@ impl Display for ComplexAlgebraic {
 }
 
 impl ToStringSignature for ComplexAlgebraicCanonicalStructure {
-    fn to_string(&self, elem: &Self::Elem) -> String {
+    fn to_string(self: &Arc<Self>, elem: &Self::Elem) -> String {
         format!("{}", elem)
     }
 }
 
 impl RinglikeSpecializationSignature for ComplexAlgebraicCanonicalStructure {
-    fn try_ring_restructure(&self) -> Option<impl EqSignature<Elem = Self::Elem> + RingSignature> {
-        Some(self.clone())
+    fn try_ring_restructure(
+        self: Arc<Self>,
+    ) -> Option<Arc<impl EqSignature<Elem = Self::Elem> + RingSignature>> {
+        Some(self)
     }
 
     fn try_char_zero_ring_restructure(
-        &self,
-    ) -> Option<impl EqSignature<Elem = Self::Elem> + CharZeroRingSignature> {
-        Some(self.clone())
+        self: Arc<Self>,
+    ) -> Option<Arc<impl EqSignature<Elem = Self::Elem> + CharZeroRingSignature>> {
+        Some(self)
     }
 }
 
 impl ZeroSignature for ComplexAlgebraicCanonicalStructure {
-    fn zero(&self) -> Self::Elem {
+    fn zero(self: &Arc<Self>) -> Self::Elem {
         ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::zero()))
     }
 }
 
 impl AdditionSignature for ComplexAlgebraicCanonicalStructure {
-    fn add(&self, alg1: &Self::Elem, alg2: &Self::Elem) -> Self::Elem {
+    fn add(self: &Arc<Self>, alg1: &Self::Elem, alg2: &Self::Elem) -> Self::Elem {
         // println!("add {:?} {:?}", alg1, alg2);
         // alg1.check_invariants().unwrap();
         // alg2.check_invariants().unwrap();
@@ -733,13 +736,13 @@ impl AdditionSignature for ComplexAlgebraicCanonicalStructure {
 }
 
 impl CancellativeAdditionSignature for ComplexAlgebraicCanonicalStructure {
-    fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_sub(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.sub(a, b))
     }
 }
 
 impl TryNegateSignature for ComplexAlgebraicCanonicalStructure {
-    fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_neg(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
     }
 }
@@ -747,7 +750,7 @@ impl TryNegateSignature for ComplexAlgebraicCanonicalStructure {
 impl AdditiveMonoidSignature for ComplexAlgebraicCanonicalStructure {}
 
 impl AdditiveGroupSignature for ComplexAlgebraicCanonicalStructure {
-    fn neg(&self, a: &Self::Elem) -> Self::Elem {
+    fn neg(self: &Arc<Self>, a: &Self::Elem) -> Self::Elem {
         match a {
             ComplexAlgebraic::Real(root) => ComplexAlgebraic::Real(RealAlgebraic::neg(root)),
             ComplexAlgebraic::Complex(root) => ComplexAlgebraic::Complex(root.clone().neg()),
@@ -756,13 +759,13 @@ impl AdditiveGroupSignature for ComplexAlgebraicCanonicalStructure {
 }
 
 impl OneSignature for ComplexAlgebraicCanonicalStructure {
-    fn one(&self) -> Self::Elem {
+    fn one(self: &Arc<Self>) -> Self::Elem {
         ComplexAlgebraic::Real(RealAlgebraic::Rational(Rational::one()))
     }
 }
 
 impl MultiplicationSignature for ComplexAlgebraicCanonicalStructure {
-    fn mul(&self, alg1: &Self::Elem, alg2: &Self::Elem) -> Self::Elem {
+    fn mul(self: &Arc<Self>, alg1: &Self::Elem, alg2: &Self::Elem) -> Self::Elem {
         // println!("mul {:?} {:?}", alg1, alg2);
         // alg1.check_invariants().unwrap();
         // alg2.check_invariants().unwrap();
@@ -906,19 +909,19 @@ impl RightDistributiveMultiplicationOverAddition for ComplexAlgebraicCanonicalSt
 impl SemiRingSignature for ComplexAlgebraicCanonicalStructure {}
 
 impl RingSignature for ComplexAlgebraicCanonicalStructure {
-    fn is_reduced(&self) -> Result<bool, String> {
+    fn is_reduced(self: &Arc<Self>) -> Result<bool, String> {
         Ok(true)
     }
 }
 
 impl CharacteristicSignature for ComplexAlgebraicCanonicalStructure {
-    fn characteristic(&self) -> Natural {
+    fn characteristic(self: &Arc<Self>) -> Natural {
         Natural::ZERO
     }
 }
 
 impl TryReciprocalSignature for ComplexAlgebraicCanonicalStructure {
-    fn try_reciprocal(&self, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_reciprocal(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         // println!("inv {:?}", a);
         // a.check_invariants().unwrap();
 
@@ -1033,7 +1036,7 @@ impl TryReciprocalSignature for ComplexAlgebraicCanonicalStructure {
 }
 
 impl CancellativeMultiplicationSignature for ComplexAlgebraicCanonicalStructure {
-    fn try_divide(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_divide(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.mul(a, &self.try_reciprocal(b)?))
     }
 }
@@ -1045,7 +1048,7 @@ impl IntegralDomainSignature for ComplexAlgebraicCanonicalStructure {}
 impl FieldSignature for ComplexAlgebraicCanonicalStructure {}
 
 impl CharZeroRingSignature for ComplexAlgebraicCanonicalStructure {
-    fn try_to_int(&self, alg: &Self::Elem) -> Option<Integer> {
+    fn try_to_int(self: &Arc<Self>, alg: &Self::Elem) -> Option<Integer> {
         match alg {
             ComplexAlgebraic::Real(real_alg) => real_alg.try_to_int(),
             ComplexAlgebraic::Complex(_) => None,
@@ -1054,7 +1057,7 @@ impl CharZeroRingSignature for ComplexAlgebraicCanonicalStructure {
 }
 
 impl CharZeroFieldSignature for ComplexAlgebraicCanonicalStructure {
-    fn try_to_rat(&self, x: &Self::Elem) -> Option<Rational> {
+    fn try_to_rat(self: &Arc<Self>, x: &Self::Elem) -> Option<Rational> {
         match x {
             ComplexAlgebraic::Real(real_algebraic) => {
                 RealAlgebraic::structure().try_to_rat(real_algebraic)
@@ -1065,7 +1068,7 @@ impl CharZeroFieldSignature for ComplexAlgebraicCanonicalStructure {
 }
 
 impl ComplexSubsetSignature for ComplexAlgebraicCanonicalStructure {
-    fn as_f32_real_and_imaginary_parts(&self, z: &Self::Elem) -> (f32, f32) {
+    fn as_f32_real_and_imaginary_parts(self: &Arc<Self>, z: &Self::Elem) -> (f32, f32) {
         match z {
             ComplexAlgebraic::Real(z) => z.as_f32_real_and_imaginary_parts(),
             ComplexAlgebraic::Complex(z) => {
@@ -1082,7 +1085,7 @@ impl ComplexSubsetSignature for ComplexAlgebraicCanonicalStructure {
         }
     }
 
-    fn as_f64_real_and_imaginary_parts(&self, z: &Self::Elem) -> (f64, f64) {
+    fn as_f64_real_and_imaginary_parts(self: &Arc<Self>, z: &Self::Elem) -> (f64, f64) {
         match z {
             ComplexAlgebraic::Real(z) => z.as_f64_real_and_imaginary_parts(),
             ComplexAlgebraic::Complex(z) => {
@@ -1101,7 +1104,7 @@ impl ComplexSubsetSignature for ComplexAlgebraicCanonicalStructure {
 }
 
 impl ComplexConjugateSignature for ComplexAlgebraicCanonicalStructure {
-    fn conjugate(&self, x: &Self::Elem) -> Self::Elem {
+    fn conjugate(self: &Arc<Self>, x: &Self::Elem) -> Self::Elem {
         match x {
             ComplexAlgebraic::Real(x) => ComplexAlgebraic::Real(x.clone()),
             ComplexAlgebraic::Complex(x) => ComplexAlgebraic::Complex(x.clone().conj()),
@@ -1110,7 +1113,7 @@ impl ComplexConjugateSignature for ComplexAlgebraicCanonicalStructure {
 }
 
 impl PositiveRealNthRootSignature for ComplexAlgebraicCanonicalStructure {
-    fn nth_root(&self, x: &Self::Elem, n: usize) -> Result<Self::Elem, ()> {
+    fn nth_root(self: &Arc<Self>, x: &Self::Elem, n: usize) -> Result<Self::Elem, ()> {
         match x {
             ComplexAlgebraic::Real(x) => Ok(ComplexAlgebraic::Real(x.nth_root(n)?)),
             ComplexAlgebraic::Complex(_) => Err(()),
@@ -1127,24 +1130,24 @@ impl ComplexAlgebraic {
     }
 }
 
-impl<B: BorrowedStructure<ComplexAlgebraicCanonicalStructure>>
+impl
     IntegralDomainExtensionAllPolynomialRoots<
         IntegerCanonicalStructure,
         ComplexAlgebraicCanonicalStructure,
-    > for PrincipalIntegerMap<ComplexAlgebraicCanonicalStructure, B>
+    > for PrincipalIntegerMap<ComplexAlgebraicCanonicalStructure>
 {
-    fn all_roots(&self, polynomial: &Polynomial<Integer>) -> Vec<ComplexAlgebraic> {
+    fn all_roots(self: &Arc<Self>, polynomial: &Polynomial<Integer>) -> Vec<ComplexAlgebraic> {
         polynomial.all_complex_roots()
     }
 }
 
-impl<B: BorrowedStructure<ComplexAlgebraicCanonicalStructure>>
+impl
     IntegralDomainExtensionAllPolynomialRoots<
         RationalCanonicalStructure,
         ComplexAlgebraicCanonicalStructure,
-    > for PrincipalRationalMap<ComplexAlgebraicCanonicalStructure, B>
+    > for PrincipalRationalMap<ComplexAlgebraicCanonicalStructure>
 {
-    fn all_roots(&self, polynomial: &Polynomial<Rational>) -> Vec<ComplexAlgebraic> {
+    fn all_roots(self: &Arc<Self>, polynomial: &Polynomial<Rational>) -> Vec<ComplexAlgebraic> {
         polynomial.all_complex_roots()
     }
 }
