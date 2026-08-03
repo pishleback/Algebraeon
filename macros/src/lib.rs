@@ -271,7 +271,9 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
             type Signature = #newtype_name;
 
             fn structure() -> std::sync::Arc<Self::Signature> {
-                std::sync::Arc::new(#newtype_name::new())
+                // only allocate on the heap once and clone for each call
+                static INSTANCE: std::sync::OnceLock<std::sync::Arc<#newtype_name>> = std::sync::OnceLock::new();
+                INSTANCE.get_or_init(|| std::sync::Arc::new(#newtype_name::new())).clone()
             }
         }
     };
