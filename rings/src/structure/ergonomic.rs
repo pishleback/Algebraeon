@@ -1,12 +1,12 @@
 use super::*;
 use algebraeon_structures::*;
 use std::{
-    borrow::Borrow,
     ops::{Add, Div, Mul, Neg, Sub},
+    sync::Arc,
 };
 
 pub trait IntoErgonomicSignature: SetSignature {
-    fn into_ergonomic(&self, elem: Self::Elem) -> StructuredElement<Self> {
+    fn into_ergonomic(self: &Arc<Self>, elem: Self::Elem) -> StructuredElement<Self> {
         StructuredElement::new(self.clone(), elem)
     }
 }
@@ -19,9 +19,9 @@ pub trait IntoErgonomic: MetaType {
 }
 impl<T: MetaType> IntoErgonomic for T {}
 
-fn common_structure<S: Signature>(structure1: impl Borrow<S>, structure2: impl Borrow<S>) -> S {
-    if structure1.borrow() == structure2.borrow() {
-        structure1.borrow().clone()
+fn common_structure<S: Signature>(structure1: Arc<S>, structure2: Arc<S>) -> Arc<S> {
+    if structure1 == structure2 {
+        structure1
     } else {
         panic!("Unequal ring structures")
     }
@@ -29,16 +29,16 @@ fn common_structure<S: Signature>(structure1: impl Borrow<S>, structure2: impl B
 
 #[derive(Debug, Clone)]
 pub struct StructuredElement<S: SetSignature> {
-    structure: S,
+    structure: Arc<S>,
     elem: S::Elem,
 }
 
 impl<S: SetSignature> StructuredElement<S> {
-    pub fn new(structure: S, elem: S::Elem) -> Self {
+    pub fn new(structure: Arc<S>, elem: S::Elem) -> Self {
         Self { structure, elem }
     }
 
-    pub fn structure(&self) -> S {
+    pub fn structure(&self) -> Arc<S> {
         self.structure.clone()
     }
 

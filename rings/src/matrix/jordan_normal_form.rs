@@ -1,14 +1,17 @@
+use std::sync::Arc;
+
 use super::*;
 use crate::linear::{
     finitely_free_module::FinitelyFreeModuleStructure,
-    finitely_free_submodule::FinitelyFreeSubmodule,
+    finitely_free_submodules::FinitelyFreeSubmodule,
 };
+use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 use algebraeon_structures::*;
 
 #[derive(Debug, Clone)]
 pub struct JordanBlock<FS: AlgebraicClosureSignature>
 where
-    PolynomialStructure<FS::BFS, FS::BFS>: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
+    PolynomialStructure<FS::BFS>: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
         + SetSignature<Elem = Polynomial<<FS::BFS as SetSignature>::Elem>>,
 {
     eigenvalue: FS::Elem,
@@ -17,10 +20,10 @@ where
 
 impl<FS: AlgebraicClosureSignature> JordanBlock<FS>
 where
-    PolynomialStructure<FS::BFS, FS::BFS>: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
+    PolynomialStructure<FS::BFS>: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
         + SetSignature<Elem = Polynomial<<FS::BFS as SetSignature>::Elem>>,
 {
-    pub fn matrix(&self, field: &FS) -> Matrix<FS::Elem> {
+    pub fn matrix(&self, field: &Arc<FS>) -> Matrix<FS::Elem> {
         // let base_field = field.base_field();
         Matrix::construct(self.blocksize, self.blocksize, |r, c| {
             if r == c {
@@ -37,16 +40,16 @@ where
 #[derive(Debug, Clone)]
 pub struct JordanNormalForm<FS: AlgebraicClosureSignature>
 where
-    PolynomialStructure<FS::BFS, FS::BFS>: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
+    PolynomialStructure<FS::BFS>: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
         + SetSignature<Elem = Polynomial<<FS::BFS as SetSignature>::Elem>>,
 {
-    field: FS,
+    field: Arc<FS>,
     blocks: Vec<JordanBlock<FS>>,
 }
 
 impl<FS: AlgebraicClosureSignature> JordanNormalForm<FS>
 where
-    PolynomialStructure<FS::BFS, FS::BFS>: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
+    PolynomialStructure<FS::BFS>: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
         + SetSignature<Elem = Polynomial<<FS::BFS as SetSignature>::Elem>>,
 {
     pub fn matrix(&self) -> Matrix<FS::Elem> {
@@ -60,13 +63,13 @@ where
     }
 }
 
-impl<FS: AlgebraicClosureSignature, FSB: BorrowedStructure<FS>> MatrixStructure<FS, FSB>
+impl<FS: AlgebraicClosureSignature> MatrixStructure<FS>
 where
-    PolynomialStructure<FS::BFS, FS::BFS>: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
+    PolynomialStructure<FS::BFS>: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
         + SetSignature<Elem = Polynomial<<FS::BFS as SetSignature>::Elem>>,
 {
     pub fn eigenvalues_list(&self, mat: Matrix<<FS::BFS as SetSignature>::Elem>) -> Vec<FS::Elem> {
-        let base_field_mat_structure = MatrixStructure::new(self.ring().base_field().clone());
+        let base_field_mat_structure = MatrixStructure::new(self.ring().base_field());
         self.ring()
             .all_roots_list(
                 &base_field_mat_structure
@@ -80,7 +83,7 @@ where
         &self,
         mat: Matrix<<FS::BFS as SetSignature>::Elem>,
     ) -> Vec<FS::Elem> {
-        let base_field_mat_structure = MatrixStructure::new(self.ring().base_field().clone());
+        let base_field_mat_structure = MatrixStructure::new(self.ring().base_field());
         self.ring()
             .all_roots_unique(
                 &base_field_mat_structure
@@ -94,7 +97,7 @@ where
         &self,
         mat: Matrix<<FS::BFS as SetSignature>::Elem>,
     ) -> Vec<(FS::Elem, usize)> {
-        let base_field_mat_structure = MatrixStructure::new(self.ring().base_field().clone());
+        let base_field_mat_structure = MatrixStructure::new(self.ring().base_field());
         self.ring()
             .all_roots_powers(
                 &base_field_mat_structure
@@ -248,7 +251,10 @@ where
                         .collect_vec();
                     // ker(S) in ker(S^2) in ker(S^3) in ...
 
-                    let module = FinitelyFreeModuleStructure::<FS, _>::new(ac_field, m);
+                    let module = FinitelyFreeModuleStructure::<_, FS>::new(
+                        EnumeratedFiniteSetStructure::new(m),
+                        ac_field.clone(),
+                    );
                     let mut accounted = module.submodules().zero_submodule();
 
                     let mut jordan_block_bases = vec![];
@@ -324,7 +330,7 @@ where
             ));
         }
         let jnf = JordanNormalForm {
-            field: self.ring().clone(),
+            field: self.ring(),
             blocks: jordan_blocks,
         };
         let jordan_blocks_basis = ac_mat_structure.join_diag(jnf_basis_rel_gesp_basis);

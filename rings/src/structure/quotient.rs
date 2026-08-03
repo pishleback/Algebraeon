@@ -18,8 +18,7 @@ pub trait QuotientRingGetPrincipalIdealSignature<PreQuoRing: RingSignature>:
 /// A quotient ring where we can get the quotient ideal
 pub trait QuotientRingGetIdealSignature<
     PreQuoRing: RingSignature,
-    PreQuoRingB: BorrowedStructure<PreQuoRing>,
-    PreQuoRingIdeal: IdealsSignature<PreQuoRing, PreQuoRingB>,
+    PreQuoRingIdeal: IdealsSignature<PreQuoRing>,
 >: QuotientRingSignature<PreQuoRing>
 {
     fn quotient_ideal<'a>(&'a self) -> Cow<'a, PreQuoRingIdeal::Elem>;

@@ -4,9 +4,7 @@ use algebraeon_structures::*;
 /// Algebras over `Ring`
 pub trait AlgebraSignature<Ring: RingSignature>: ModuleSignature<Ring> + RingSignature {}
 
-pub trait FiniteDimensionalAlgebraSignature<Field: FieldSignature>:
-    AlgebraSignature<Field> + FinitelyFreeModuleSignature<Field>
-where
-    Self::Basis: FiniteSetSignature,
+pub trait FiniteDimensionalAlgebraSignature<Basis: FiniteSetSignature, Field: FieldSignature>:
+    AlgebraSignature<Field> + FinitelyFreeModuleSignature<Basis, Field>
 {
 }

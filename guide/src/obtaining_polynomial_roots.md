@@ -5,35 +5,30 @@ This example finds all roots of a rational polynomial \\(f(x) \in \mathbb{Q}[x]\
 - Calling `.all_roots(&f)` on a field extension \\(\mathbb{Q} \to K\\) to obtain all roots of \\(f(x) \in \mathbb{Q}[x]\\) belonging to \\(K\\).
 
 ```rust
-use algebraeon::structures::{Natural, Rational};
 use algebraeon::rings::isolated_algebraic::ComplexAlgebraic;
 use algebraeon::rings::isolated_algebraic::PAdicAlgebraic;
 use algebraeon::rings::isolated_algebraic::RealAlgebraic;
 use algebraeon::rings::{polynomial::*, structure::*};
 use algebraeon::structures::*;
+use algebraeon::structures::{Natural, Rational};
 
 // Find all roots of f in some fields
 
-let f = Polynomial::<Rational>::from_str(
-    "(x - 3) * (x^2 - 17) * (x^2 + 1)", "x"
-).unwrap();
+let f = Polynomial::<Rational>::from_str("(x - 3) * (x^2 - 17) * (x^2 + 1)", "x").unwrap();
 println!("f = {}", f);
 
 println!();
 
-let two_adic = PAdicAlgebraic::structure(Natural::from(2u32))
-    .into_inbound_principal_rational_map();
-let three_adic = PAdicAlgebraic::structure(Natural::from(3u32))
-    .into_inbound_principal_rational_map();
-let complex = ComplexAlgebraic::structure()
-    .into_inbound_principal_rational_map();
-let real = RealAlgebraic::structure()
-    .into_inbound_principal_rational_map();
+let two_adic = PAdicAlgebraic::structure(Natural::from(2u32)).inbound_principal_rational_map();
+let three_adic =
+    PAdicAlgebraic::structure(Natural::from(3u32)).inbound_principal_rational_map();
+let complex = ComplexAlgebraic::structure().inbound_principal_rational_map();
+let real = RealAlgebraic::structure().inbound_principal_rational_map();
 let anf = Polynomial::from_str("x^2 + 1", "x")
     .unwrap()
     .algebraic_number_field()
     .unwrap()
-    .into_inbound_principal_rational_map();
+    .inbound_principal_rational_map();
 
 println!("Real roots of f");
 for x in real.all_roots(&f) {
@@ -69,7 +64,7 @@ for x in anf.all_roots(&f) {
         "{}",
         x.apply_map_into(MultiPolynomial::constant).evaluate(
             &Rational::structure()
-                .into_multivariable_polynomials()
+                .multivariable_polynomials()
                 .var(Variable::new("i"))
         )
     );

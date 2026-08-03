@@ -6,7 +6,7 @@ use crate::{
     simplex_collection::{InteriorOrBoundarySimplexCollection, LabelledSimplexCollection},
     vector::Vector,
 };
-use algebraeon_structures::{Rational, RationalCanonicalStructure};
+use algebraeon_structures::{MetaType, Rational, RationalCanonicalStructure};
 use std::str::FromStr;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -33,8 +33,8 @@ impl Point {
 
     fn to_vector(
         &self,
-        space: AffineSpace<'static, RationalCanonicalStructure>,
-    ) -> Vector<'static, RationalCanonicalStructure> {
+        space: &AffineSpace<RationalCanonicalStructure>,
+    ) -> Vector<RationalCanonicalStructure> {
         space.vector(self.coordinates.iter().map(|ast_value| {
             let mut value = Rational::from_str(&ast_value.value).unwrap();
             match ast_value.sign {
@@ -120,8 +120,8 @@ impl ShapeExpression {
 
     fn to_partial_simplicial_complex(
         &self,
-        space: AffineSpace<'static, RationalCanonicalStructure>,
-    ) -> PartialSimplicialComplex<'static, RationalCanonicalStructure> {
+        space: &AffineSpace<RationalCanonicalStructure>,
+    ) -> PartialSimplicialComplex<RationalCanonicalStructure> {
         match self {
             ShapeExpression::Union(left, right) => left
                 .to_partial_simplicial_complex(space)
@@ -226,9 +226,9 @@ impl ShapeExpression {
 
     pub fn to_partial_simplicial_complex_root(
         &self,
-    ) -> PartialSimplicialComplex<'static, RationalCanonicalStructure> {
+    ) -> PartialSimplicialComplex<RationalCanonicalStructure> {
         let n = self.dimension().unwrap();
-        let space = AffineSpace::new_linear(Rational::structure_ref(), n);
-        self.to_partial_simplicial_complex(space)
+        let space = AffineSpace::new_linear(Rational::structure(), n);
+        self.to_partial_simplicial_complex(&space)
     }
 }

@@ -153,6 +153,7 @@ macro_rules! define_special_vector_struct {
         #[derivative(Debug)]
         pub struct $name<'g, V: Borrow<Vector24>> {
             #[derivative(Debug = "ignore")]
+            #[allow(unused)]
             ebgc: &'g ExtendedBinaryGolayCode,
             vec: V,
         }
@@ -218,6 +219,7 @@ impl<'g> UnorderedSextet<'g> {
 #[derivative(Debug)]
 pub struct SextetLabelling<'g> {
     #[derivative(Debug = "ignore")]
+    #[allow(unused)]
     ebgc: &'g ExtendedBinaryGolayCode,
     sextet: &'g OrderedSextet<'g>,
     labels: [QuaternaryField; 24],

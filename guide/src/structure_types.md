@@ -21,9 +21,10 @@ The approach taken by Algebraeon to represent such sets with additional structur
   
 In practice this looks like
 ```rust
-use algebraeon::structures::{Integer, Natural};
 use algebraeon::rings::structure::*;
 use algebraeon::structures::*;
+use algebraeon::structures::{Integer, Natural};
+use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct IntegersModuloN {
@@ -35,7 +36,7 @@ impl Signature for IntegersModuloN {}
 impl SetSignature for IntegersModuloN {
     type Elem = Integer;
 
-    fn validate_element(&self, x: &Integer) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, x: &Integer) -> Result<(), String> {
         if x >= &self.n {
             return Err("too big".to_string());
         }
@@ -44,7 +45,7 @@ impl SetSignature for IntegersModuloN {
 }
 
 impl EqSignature for IntegersModuloN {
-    fn equal(&self, a: &Integer, b: &Integer) -> bool {
+    fn equal(self: &Arc<Self>, a: &Integer, b: &Integer) -> bool {
         a == b
     }
 }
@@ -52,25 +53,25 @@ impl EqSignature for IntegersModuloN {
 impl RinglikeSpecializationSignature for IntegersModuloN {}
 
 impl ZeroSignature for IntegersModuloN {
-    fn zero(&self) -> Self::Elem {
+    fn zero(self: &Arc<Self>) -> Self::Elem {
         Integer::ZERO
     }
 }
 
 impl AdditionSignature for IntegersModuloN {
-    fn add(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn add(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         ((a + b) % &self.n).into()
     }
 }
 
 impl CancellativeAdditionSignature for IntegersModuloN {
-    fn try_sub(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_sub(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.sub(a, b))
     }
 }
 
 impl TryNegateSignature for IntegersModuloN {
-    fn try_neg(&self, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_neg(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
     }
 }
@@ -78,19 +79,19 @@ impl TryNegateSignature for IntegersModuloN {
 impl AdditiveMonoidSignature for IntegersModuloN {}
 
 impl AdditiveGroupSignature for IntegersModuloN {
-    fn neg(&self, a: &Self::Elem) -> Self::Elem {
+    fn neg(self: &Arc<Self>, a: &Self::Elem) -> Self::Elem {
         (-a % &self.n).into()
     }
 }
 
 impl OneSignature for IntegersModuloN {
-    fn one(&self) -> Self::Elem {
+    fn one(self: &Arc<Self>) -> Self::Elem {
         (Integer::ONE % &self.n).into()
     }
 }
 
 impl MultiplicationSignature for IntegersModuloN {
-    fn mul(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn mul(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         ((a * b) % &self.n).into()
     }
 }
@@ -109,7 +110,7 @@ impl SemiRingSignature for IntegersModuloN {}
 
 impl RingSignature for IntegersModuloN {}
 
-let mod_6 = IntegersModuloN { n: 6u32.into() };
+let mod_6 = Arc::new(IntegersModuloN { n: 6u32.into() });
 // Since we've given `mod_6` the structure of a ring, Algebraeon implements
 // the repeated squaring algorithm for taking very large powers modulo `n`.
 assert!(mod_6.equal(

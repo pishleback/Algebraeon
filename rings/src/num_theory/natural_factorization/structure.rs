@@ -7,46 +7,39 @@ use crate::structure::{
 };
 use algebraeon_structures::*;
 use itertools::Itertools;
+use std::sync::Arc;
 
 impl UniqueFactorizationMonoidSignature for NaturalCanonicalStructure {
     type FactoredExponent = NaturalCanonicalStructure;
 
-    fn factorization_exponents(&self) -> &Self::FactoredExponent {
-        Natural::structure_ref()
-    }
-
-    fn into_factorization_exponents(self) -> Self::FactoredExponent {
+    fn factorization_exponents(self: &Arc<Self>) -> Arc<Self::FactoredExponent> {
         Natural::structure()
     }
 
-    fn try_is_irreducible(&self, a: &Self::Elem) -> Option<bool> {
+    fn try_is_irreducible(self: &Arc<Self>, a: &Self::Elem) -> Option<bool> {
         Some(is_prime_nat(a))
     }
 
-    fn factorization_pow(&self, a: &Self::Elem, k: &Natural) -> Self::Elem {
+    fn factorization_pow(self: &Arc<Self>, a: &Self::Elem, k: &Natural) -> Self::Elem {
         self.nat_pow(a, k)
     }
 }
 
 impl FactoringMonoidSignature for NaturalCanonicalStructure {
-    fn is_irreducible(&self, a: &Self::Elem) -> bool {
+    fn is_irreducible(self: &Arc<Self>, a: &Self::Elem) -> bool {
         is_prime_nat(a)
     }
 
     fn factor_unchecked(
-        &self,
+        self: &Arc<Self>,
         a: &Self::Elem,
     ) -> Factored<Self::Elem, <Self::FactoredExponent as SetSignature>::Elem> {
         factor_nat(a.clone())
     }
 }
 
-impl<
-    ObjectB: BorrowedStructure<NaturalCanonicalStructure>,
-    ExponentB: BorrowedStructure<NaturalCanonicalStructure>,
-> FactoringStructure<NaturalCanonicalStructure, ObjectB, NaturalCanonicalStructure, ExponentB>
-{
-    pub fn euler_totient(&self, a: &Factored<Natural, Natural>) -> Natural {
+impl FactoringStructure<NaturalCanonicalStructure, NaturalCanonicalStructure> {
+    pub fn euler_totient(self: &Arc<Self>, a: &Factored<Natural, Natural>) -> Natural {
         #[cfg(debug_assertions)]
         self.validate_element(a).unwrap();
         match a {
@@ -77,21 +70,17 @@ pub enum IsPrimitiveRootResult {
     Yes,
 }
 
-impl<
-    PowersB: BorrowedStructure<NaturalCanonicalStructure>,
-    ExponentB: BorrowedStructure<NaturalCanonicalStructure>,
-> FactoringStructure<NaturalCanonicalStructure, PowersB, NaturalCanonicalStructure, ExponentB>
-{
+impl FactoringStructure<NaturalCanonicalStructure, NaturalCanonicalStructure> {
     /// Return whether x is a primitive root modulo the factorized value
     pub fn is_primitive_root(
-        &self,
+        self: &Arc<Self>,
         x: &Natural,
         n_factored: &Factored<Natural, Natural>,
     ) -> IsPrimitiveRootResult {
         #[cfg(debug_assertions)]
         self.validate_element(n_factored).unwrap();
 
-        let factorizations = Natural::structure_ref().factorizations();
+        let factorizations = Natural::structure().factorizations();
         let n = factorizations.expand(n_factored);
         if gcd(x.clone(), n.clone()) != Natural::ONE {
             IsPrimitiveRootResult::NonUnit
@@ -108,13 +97,10 @@ impl<
     }
 }
 
-impl<
-    PowersB: BorrowedStructure<NaturalCanonicalStructure>,
-    ExponentB: BorrowedStructure<NaturalCanonicalStructure>,
-> ToStringSignature
-    for FactoringStructure<NaturalCanonicalStructure, PowersB, NaturalCanonicalStructure, ExponentB>
+impl ToStringSignature
+    for FactoringStructure<NaturalCanonicalStructure, NaturalCanonicalStructure>
 {
-    fn to_string(&self, elem: &Self::Elem) -> String {
+    fn to_string(self: &Arc<Self>, elem: &Self::Elem) -> String {
         use std::fmt::Write;
         let mut f = String::new();
         if let Some(powers) = elem.powers() {

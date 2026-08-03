@@ -3,12 +3,7 @@ use itertools::Itertools;
 use std::borrow::Borrow;
 use std::collections::HashSet;
 use std::hash::Hash;
-use std::marker::PhantomData;
-
-#[derive(Debug, Clone)]
-pub struct Cycle<T> {
-    pub cycle: Vec<T>,
-}
+use std::sync::Arc;
 
 #[derive(Debug, Clone)]
 struct FromAndTo {
@@ -72,45 +67,46 @@ impl<Elem: MetaType> MetaType for FinitelySupportedPermutation<Elem>
 where
     Elem::Signature: OrdSignature,
 {
-    type Signature = FinitelySupportedPermutationsStructure<Elem::Signature, Elem::Signature>;
+    type Signature = FinitelySupportedPermutationsStructure<Elem::Signature>;
 
-    fn structure() -> Self::Signature {
+    fn structure() -> Arc<Self::Signature> {
         FinitelySupportedPermutationsStructure::new(Elem::structure())
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FinitelySupportedPermutationsStructure<Set: SetSignature, SetB: BorrowedStructure<Set>> {
-    _set: PhantomData<Set>,
-    set: SetB,
+pub struct FinitelySupportedPermutationsStructure<Set: SetSignature> {
+    set: Arc<Set>,
 }
 
-impl<Set: SetSignature, SetB: BorrowedStructure<Set>>
-    FinitelySupportedPermutationsStructure<Set, SetB>
-{
-    pub fn new(set: SetB) -> Self {
-        Self {
-            _set: PhantomData,
-            set,
-        }
-    }
-
-    pub fn set(&self) -> &Set {
-        self.set.borrow()
+impl<Set: SetSignature> FinitelySupportedPermutationsStructure<Set> {
+    pub fn new(set: Arc<Set>) -> Arc<Self> {
+        Self { set }.into()
     }
 }
 
-impl<Set: SetSignature, SetB: BorrowedStructure<Set>> Signature
-    for FinitelySupportedPermutationsStructure<Set, SetB>
-{
+pub trait SetToFinitelySupportedPermutationsStructure: SetSignature {
+    fn finitely_supported_permutations(
+        self: &Arc<Self>,
+    ) -> Arc<FinitelySupportedPermutationsStructure<Self>> {
+        FinitelySupportedPermutationsStructure::new(self.clone())
+    }
 }
+impl<Set: SetSignature> SetToFinitelySupportedPermutationsStructure for Set {}
 
-impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> SetSignature
-    for FinitelySupportedPermutationsStructure<Set, SetB>
-{
+pub trait FiniteSetToFinitelySupportedPermutationsStructure: FiniteSetSignature {
+    fn permutations(self: &Arc<Self>) -> Arc<FinitelySupportedPermutationsStructure<Self>> {
+        FinitelySupportedPermutationsStructure::new(self.clone())
+    }
+}
+impl<Set: FiniteSetSignature> FiniteSetToFinitelySupportedPermutationsStructure for Set {}
+
+impl<Set: SetSignature> Signature for FinitelySupportedPermutationsStructure<Set> {}
+
+impl<Set: OrdSignature> SetSignature for FinitelySupportedPermutationsStructure<Set> {
     type Elem = FinitelySupportedPermutation<Set::Elem>;
 
-    fn validate_element(&self, x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, x: &Self::Elem) -> Result<(), String> {
         if !self.set().is_sorted_and_unique_by_key(&x.perm, |(a, _)| a) {
             return Err("Permutation first items are not sorted and unique".to_string());
         }
@@ -151,10 +147,8 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> SetSignature
     }
 }
 
-impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> EqSignature
-    for FinitelySupportedPermutationsStructure<Set, SetB>
-{
-    fn equal(&self, a: &Self::Elem, b: &Self::Elem) -> bool {
+impl<Set: OrdSignature> EqSignature for FinitelySupportedPermutationsStructure<Set> {
+    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(b));
         let mut a_tos = vec![];
@@ -178,11 +172,23 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> EqSignature
     }
 }
 
-impl<Set: OrdSignature, SetB: BorrowedStructure<Set>>
-    FinitelySupportedPermutationsStructure<Set, SetB>
-{
+impl<Set: OrdSignature> FinitelySupportedPermutationsStructure<Set> {
+    pub fn map<T>(
+        self: &Arc<Self>,
+        perm: <Self as SetSignature>::Elem,
+        f: impl Fn(Set::Elem) -> T,
+    ) -> FinitelySupportedPermutation<T> {
+        FinitelySupportedPermutation {
+            perm: perm
+                .perm
+                .into_iter()
+                .map(|(elem, from_and_to)| (f(elem), from_and_to))
+                .collect(),
+        }
+    }
+
     fn image_ref<'a>(
-        &self,
+        self: &Arc<Self>,
         perm: &'a <Self as SetSignature>::Elem,
         elem: &'a Set::Elem,
     ) -> &'a Set::Elem {
@@ -198,7 +204,7 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>>
     }
 
     fn preimage_ref<'a>(
-        &self,
+        self: &Arc<Self>,
         perm: &'a <Self as SetSignature>::Elem,
         elem: &'a Set::Elem,
     ) -> &'a Set::Elem {
@@ -214,10 +220,12 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>>
     }
 }
 
-impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> PermutationsSignature<Set>
-    for FinitelySupportedPermutationsStructure<Set, SetB>
-{
-    fn new_cycle(&self, cycle: Vec<Set::Elem>) -> Result<Self::Elem, ()> {
+impl<Set: OrdSignature> PermutationsSignature<Set> for FinitelySupportedPermutationsStructure<Set> {
+    fn set(self: &Arc<Self>) -> &Arc<Set> {
+        &self.set
+    }
+
+    fn new_cycle(self: &Arc<Self>, cycle: Vec<Set::Elem>) -> Result<Self::Elem, ()> {
         let sorted_enumerated_cycle = self
             .set()
             .sort_by_key(cycle.iter().enumerate().collect(), &|item| item.1);
@@ -227,7 +235,7 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> PermutationsSignature<Set>
         {
             return Err(());
         }
-        let n = sorted_enumerated_cycle.len();
+        let n: usize = sorted_enumerated_cycle.len();
         let enumerated_sorted_enumerated_cycle = sorted_enumerated_cycle
             .into_iter()
             .enumerate()
@@ -267,34 +275,36 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> PermutationsSignature<Set>
     }
 
     fn new_perm(
-        &self,
-        cycle: Vec<(impl Borrow<Set::Elem>, impl Borrow<Set::Elem>)>,
+        self: &Arc<Self>,
+        perm: Vec<(impl Borrow<Set::Elem>, impl Borrow<Set::Elem>)>,
     ) -> Result<Self::Elem, ()> {
-        let cycle_sorted_froms = self
+        let perm_sorted_froms = self
             .set()
-            .sort_by_key(cycle.iter().collect(), &|(from, _)| from.borrow());
-        let cycle_sorted_tos = self
+            .sort_by_key(perm.iter().collect(), &|(from, _)| from.borrow());
+        let perm_sorted_tos = self
             .set()
-            .sort_by_key(cycle.iter().collect(), &|(_, to)| to.borrow());
+            .sort_by_key(perm.iter().collect(), &|(_, to)| to.borrow());
 
         if !self
             .set()
-            .is_sorted_and_unique_by_key(&cycle_sorted_froms, |(from, _)| from.borrow())
+            .is_sorted_and_unique_by_key(&perm_sorted_froms, |(from, _)| from.borrow())
         {
             return Err(());
         }
+
         if !self
             .set()
-            .is_sorted_and_unique_by_key(&cycle_sorted_tos, |(_, to)| to.borrow())
+            .is_sorted_and_unique_by_key(&perm_sorted_tos, |(_, to)| to.borrow())
         {
             return Err(());
         }
+
         for merged in self.set().merge_sorted_and_unique_by_key(
-            cycle_sorted_froms
+            perm_sorted_froms
                 .iter()
                 .map(|(from, _)| from.borrow())
                 .collect(),
-            cycle_sorted_tos.iter().map(|(_, to)| to.borrow()).collect(),
+            perm_sorted_tos.iter().map(|(_, to)| to.borrow()).collect(),
             |item| item,
         ) {
             match merged {
@@ -308,8 +318,7 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> PermutationsSignature<Set>
         }
 
         // at this point we know the input is a valid permutation
-
-        let elems_sorted = cycle_sorted_tos
+        let elems_sorted = perm_sorted_tos
             .iter()
             .filter(|(from, to)| !self.set().equal(from.borrow(), to.borrow()))
             .map(|(_, to)| to.borrow())
@@ -327,7 +336,7 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> PermutationsSignature<Set>
                                     &elems_sorted,
                                     self.set()
                                         .binary_search_by_key(
-                                            &cycle_sorted_tos,
+                                            &perm_sorted_tos,
                                             elem.borrow(),
                                             |item| item.1.borrow(),
                                         )
@@ -342,7 +351,7 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> PermutationsSignature<Set>
                                     &elems_sorted,
                                     self.set()
                                         .binary_search_by_key(
-                                            &cycle_sorted_froms,
+                                            &perm_sorted_froms,
                                             elem.borrow(),
                                             |item| item.0.borrow(),
                                         )
@@ -360,25 +369,25 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> PermutationsSignature<Set>
         Ok(s)
     }
 
-    fn support(&self, perm: Self::Elem) -> Vec<Set::Elem> {
-        debug_assert!(self.is_element(&perm));
-        perm.perm.into_iter().map(|(elem, _)| elem).collect()
+    fn support(self: &Arc<Self>, perm: &Self::Elem) -> Vec<Set::Elem> {
+        debug_assert!(self.is_element(perm));
+        perm.perm.iter().map(|(elem, _)| elem.clone()).collect()
     }
 
-    fn support_size(&self, perm: &Self::Elem) -> usize {
+    fn support_size(self: &Arc<Self>, perm: &Self::Elem) -> usize {
         debug_assert!(self.is_element(perm));
         perm.perm.len()
     }
 
-    fn image(&self, perm: &Self::Elem, elem: &Set::Elem) -> Set::Elem {
+    fn image(self: &Arc<Self>, perm: &Self::Elem, elem: &Set::Elem) -> Set::Elem {
         self.image_ref(perm, elem).clone()
     }
 
-    fn preimage(&self, perm: &Self::Elem, elem: &Set::Elem) -> Set::Elem {
+    fn preimage(self: &Arc<Self>, perm: &Self::Elem, elem: &Set::Elem) -> Set::Elem {
         self.preimage_ref(perm, elem).clone()
     }
 
-    fn disjoint_cycles(&self, perm: &Self::Elem) -> Vec<Vec<Set::Elem>> {
+    fn disjoint_cycles(self: &Arc<Self>, perm: &Self::Elem) -> Vec<Vec<Set::Elem>> {
         debug_assert!(self.is_element(perm));
         // vector of pairs of moved elements and whether they have been accounted for
         let mut elems_todo = perm
@@ -414,10 +423,8 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> PermutationsSignature<Set>
     }
 }
 
-impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> CompositionSignature
-    for FinitelySupportedPermutationsStructure<Set, SetB>
-{
-    fn compose(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+impl<Set: OrdSignature> CompositionSignature for FinitelySupportedPermutationsStructure<Set> {
+    fn compose(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(b));
 
@@ -425,27 +432,23 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> CompositionSignature
         let unfixed_elems = self
             .set()
             .merge_sorted_and_unique_by_key(a.perm.clone(), b.perm.clone(), |item| &item.0)
-            .filter(|merged_item| {
-                println!("{:?}", merged_item);
-
-                match merged_item {
-                    MergedUniqueSource::Second(b_item) | MergedUniqueSource::Both(_, b_item) => {
-                        if let Some(a_item) = self.set().binary_search_by_key(
-                            &a.perm,
-                            &b.perm[b_item.1.to].0,
-                            |item| &item.0,
-                        ) && let Some(b_item_2) = self.set().binary_search_by_key(
+            .filter(|merged_item| match merged_item {
+                MergedUniqueSource::Second(b_item) | MergedUniqueSource::Both(_, b_item) => {
+                    if let Some(a_item) =
+                        self.set()
+                            .binary_search_by_key(&a.perm, &b.perm[b_item.1.to].0, |item| &item.0)
+                        && let Some(b_item_2) = self.set().binary_search_by_key(
                             &b.perm,
                             &a.perm[a_item.1.to].0,
                             |item| &item.0,
-                        ) {
-                            !self.set().equal(&b_item.0, &b_item_2.0)
-                        } else {
-                            true
-                        }
+                        )
+                    {
+                        !self.set().equal(&b_item.0, &b_item_2.0)
+                    } else {
+                        true
                     }
-                    MergedUniqueSource::First(_) => true,
                 }
+                MergedUniqueSource::First(_) => true,
             })
             .map(|merged_item| match merged_item {
                 MergedUniqueSource::First(a_item) => a_item.0,
@@ -485,79 +488,69 @@ impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> CompositionSignature
     }
 }
 
-impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> AssociativeCompositionSignature
-    for FinitelySupportedPermutationsStructure<Set, SetB>
+impl<Set: OrdSignature> AssociativeCompositionSignature
+    for FinitelySupportedPermutationsStructure<Set>
 {
 }
 
-impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> LeftCancellativeCompositionSignature
-    for FinitelySupportedPermutationsStructure<Set, SetB>
+impl<Set: OrdSignature> LeftCancellativeCompositionSignature
+    for FinitelySupportedPermutationsStructure<Set>
 {
-    fn try_left_difference(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_left_difference(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.compose(&self.inverse(b), a))
     }
 }
 
-impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> RightCancellativeCompositionSignature
-    for FinitelySupportedPermutationsStructure<Set, SetB>
+impl<Set: OrdSignature> RightCancellativeCompositionSignature
+    for FinitelySupportedPermutationsStructure<Set>
 {
-    fn try_right_difference(&self, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_right_difference(
+        self: &Arc<Self>,
+        a: &Self::Elem,
+        b: &Self::Elem,
+    ) -> Option<Self::Elem> {
         Some(self.compose(a, &self.inverse(b)))
     }
 }
 
-impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> IdentitySignature
-    for FinitelySupportedPermutationsStructure<Set, SetB>
-{
-    fn identity(&self) -> Self::Elem {
+impl<Set: OrdSignature> IdentitySignature for FinitelySupportedPermutationsStructure<Set> {
+    fn identity(self: &Arc<Self>) -> Self::Elem {
         FinitelySupportedPermutation::identity()
     }
 }
 
-impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> MonoidSignature
-    for FinitelySupportedPermutationsStructure<Set, SetB>
-{
-}
+impl<Set: OrdSignature> MonoidSignature for FinitelySupportedPermutationsStructure<Set> {}
 
-impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> TryLeftInverseSignature
-    for FinitelySupportedPermutationsStructure<Set, SetB>
-{
-    fn try_left_inverse(&self, a: &Self::Elem) -> Option<Self::Elem> {
+impl<Set: OrdSignature> TryLeftInverseSignature for FinitelySupportedPermutationsStructure<Set> {
+    fn try_left_inverse(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.inverse(a))
     }
 }
 
-impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> TryRightInverseSignature
-    for FinitelySupportedPermutationsStructure<Set, SetB>
-{
-    fn try_right_inverse(&self, a: &Self::Elem) -> Option<Self::Elem> {
+impl<Set: OrdSignature> TryRightInverseSignature for FinitelySupportedPermutationsStructure<Set> {
+    fn try_right_inverse(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.inverse(a))
     }
 }
 
-impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> TryInverseSignature
-    for FinitelySupportedPermutationsStructure<Set, SetB>
-{
-    fn try_inverse(&self, a: &Self::Elem) -> Option<Self::Elem> {
+impl<Set: OrdSignature> TryInverseSignature for FinitelySupportedPermutationsStructure<Set> {
+    fn try_inverse(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.inverse(a))
     }
 }
 
-impl<Set: OrdSignature, SetB: BorrowedStructure<Set>> GroupSignature
-    for FinitelySupportedPermutationsStructure<Set, SetB>
-{
-    fn inverse(&self, a: &Self::Elem) -> Self::Elem {
+impl<Set: OrdSignature> GroupSignature for FinitelySupportedPermutationsStructure<Set> {
+    fn inverse(self: &Arc<Self>, a: &Self::Elem) -> Self::Elem {
         a.clone().inverse()
     }
 }
 
-impl<Set: OrdSignature + FiniteSetSignature, SetB: BorrowedStructure<Set>> CountableSetSignature
-    for FinitelySupportedPermutationsStructure<Set, SetB>
+impl<Set: OrdSignature + FiniteSetSignature> CountableSetSignature
+    for FinitelySupportedPermutationsStructure<Set>
 {
-    fn generate_all_elements(&self) -> impl Iterator<Item = Self::Elem> + Clone {
+    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
         let all_elems = self.set().list_all_elements();
         let n = all_elems.len();
-
         (0..n)
             .permutations(n)
             .map(|perm| {
@@ -574,8 +567,8 @@ impl<Set: OrdSignature + FiniteSetSignature, SetB: BorrowedStructure<Set>> Count
     }
 }
 
-impl<Set: OrdSignature + FiniteSetSignature, SetB: BorrowedStructure<Set>> FiniteSetSignature
-    for FinitelySupportedPermutationsStructure<Set, SetB>
+impl<Set: OrdSignature + FiniteSetSignature> FiniteSetSignature
+    for FinitelySupportedPermutationsStructure<Set>
 {
 }
 

@@ -2,11 +2,12 @@ use crate::{ambient_space::common_space, simplex::Simplex, vector::DotProduct};
 use algebraeon_rings::{
     linear::{
         finitely_free_module::FinitelyFreeModuleStructure,
-        finitely_free_submodule::FinitelyFreeSubmoduleStructure,
+        finitely_free_submodules::FinitelyFreeSubmodulesStructure,
     },
     matrix::{Matrix, MatrixStructure},
     structure::{FieldSignature, OrderedRingSignature, ZeroEqSignature},
 };
+use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 use itertools::Itertools;
 use std::collections::HashSet;
 use std::hash::Hash;
@@ -30,13 +31,9 @@ The linear cosets defined by the hyperplanar faces of the minkowski sum are give
 In the algorithm, we work with the normal vectors to hyperplanes rather than the hyperplanes themselves
 */
 // If RETURN_IF_TOUCHING=true then this function may return SimplexOverlapResult::Touching even if the simplexes are actually disjoint. That gives a performance boost if it only matters that the interiors are disjoint
-fn simplex_overlap_impl<
-    'f,
-    FS: OrderedRingSignature + FieldSignature,
-    const RETURN_IF_TOUCHING: bool,
->(
-    a: &Simplex<'f, FS>,
-    b: &Simplex<'f, FS>,
+fn simplex_overlap_impl<FS: OrderedRingSignature + FieldSignature, const RETURN_IF_TOUCHING: bool>(
+    a: &Simplex<FS>,
+    b: &Simplex<FS>,
 ) -> SimplexOverlapResult
 where
     FS::Elem: Hash,
@@ -116,9 +113,10 @@ where
             // Add the normal to the sum of A and B for the degenerate case
 
             let normal_space =
-                FinitelyFreeSubmoduleStructure::new(
-                    FinitelyFreeModuleStructure::<FS, &'f FS>::new(field, space_dim),
-                )
+                FinitelyFreeSubmodulesStructure::new(FinitelyFreeModuleStructure::<_, FS>::new(
+                    EnumeratedFiniteSetStructure::new(space_dim),
+                    field.clone(),
+                ))
                 .intersect(
                     MatrixStructure::new(space.field().clone()).col_kernel(Matrix::construct(
                         a_vecs.len() + b_vecs.len(),
@@ -169,8 +167,11 @@ where
                     .map(|k| b_sub.point(k + 1) - b_sub_root)
                     .collect::<Vec<_>>();
 
-                let normal_space = FinitelyFreeSubmoduleStructure::new(
-                    FinitelyFreeModuleStructure::<FS, &'f FS>::new(field, space_dim),
+                let normal_space = FinitelyFreeSubmodulesStructure::new(
+                    FinitelyFreeModuleStructure::<_, FS>::new(
+                        EnumeratedFiniteSetStructure::new(space_dim),
+                        field.clone(),
+                    ),
                 )
                 .intersect(
                     MatrixStructure::new(space.field().clone()).col_kernel(Matrix::construct(
@@ -263,9 +264,9 @@ where
     }
 }
 
-pub fn simplex_interior_overlap<'f, FS: OrderedRingSignature + FieldSignature>(
-    a: &Simplex<'f, FS>,
-    b: &Simplex<'f, FS>,
+pub fn simplex_interior_overlap<FS: OrderedRingSignature + FieldSignature>(
+    a: &Simplex<FS>,
+    b: &Simplex<FS>,
 ) -> bool
 where
     FS::Elem: Hash,
@@ -277,9 +278,9 @@ where
     }
 }
 
-pub fn simplex_closure_overlap<'f, FS: OrderedRingSignature + FieldSignature>(
-    a: &Simplex<'f, FS>,
-    b: &Simplex<'f, FS>,
+pub fn simplex_closure_overlap<FS: OrderedRingSignature + FieldSignature>(
+    a: &Simplex<FS>,
+    b: &Simplex<FS>,
 ) -> bool
 where
     FS::Elem: Hash,
@@ -291,9 +292,9 @@ where
     }
 }
 
-pub fn simplex_overlap<'f, FS: OrderedRingSignature + FieldSignature>(
-    a: &Simplex<'f, FS>,
-    b: &Simplex<'f, FS>,
+pub fn simplex_overlap<FS: OrderedRingSignature + FieldSignature>(
+    a: &Simplex<FS>,
+    b: &Simplex<FS>,
 ) -> SimplexOverlapResult
 where
     FS::Elem: Hash,
@@ -305,11 +306,11 @@ where
 mod tests {
     use super::*;
     use crate::ambient_space::AffineSpace;
-    use algebraeon_structures::Rational;
+    use algebraeon_structures::{MetaType, Rational};
 
     #[test]
     fn something_and_null() {
-        let space3 = AffineSpace::new_linear(Rational::structure_ref(), 3);
+        let space3 = AffineSpace::new_linear(Rational::structure(), 3);
 
         assert_eq!(
             simplex_overlap(
@@ -332,7 +333,7 @@ mod tests {
 
     #[test]
     fn two_points() {
-        let space3 = AffineSpace::new_linear(Rational::structure_ref(), 3);
+        let space3 = AffineSpace::new_linear(Rational::structure(), 3);
 
         // different points
         assert_eq!(
@@ -355,7 +356,7 @@ mod tests {
 
     #[test]
     fn point_and_line() {
-        let space3 = AffineSpace::new_linear(Rational::structure_ref(), 3);
+        let space3 = AffineSpace::new_linear(Rational::structure(), 3);
 
         // point in the middle of the line
         assert_eq!(
@@ -429,7 +430,7 @@ mod tests {
 
     #[test]
     fn point_and_triangle() {
-        let space3 = AffineSpace::new_linear(Rational::structure_ref(), 3);
+        let space3 = AffineSpace::new_linear(Rational::structure(), 3);
 
         let triangle = space3
             .simplex(vec![
@@ -481,7 +482,7 @@ mod tests {
 
     #[test]
     fn line_and_triangle() {
-        let space3 = AffineSpace::new_linear(Rational::structure_ref(), 3);
+        let space3 = AffineSpace::new_linear(Rational::structure(), 3);
 
         let triangle = space3
             .simplex(vec![
@@ -552,7 +553,7 @@ mod tests {
 
     #[test]
     fn triangle_and_triangle() {
-        let space3 = AffineSpace::new_linear(Rational::structure_ref(), 3);
+        let space3 = AffineSpace::new_linear(Rational::structure(), 3);
 
         assert_eq!(
             simplex_overlap(

@@ -18,7 +18,7 @@ The examples in this section primarily illustrate how to use Algebraeon in the c
 
 ## Free Modules
 
-The free module \\(R^n\\) is represented by objects of type `FinitelyFreeModuleStructure`. A free module structure can be obtained from the ring of scalars by calling `.free_module(n)` (the module will take the scalar ring structure by reference) or `.into_free_module(n)` (the module will take ownership of the scalar ring structure).
+The free module \\(R^n\\) is represented by objects of type `FinitelyFreeModuleStructure`. A free module structure can be obtained from the ring of scalars by calling `.free_module(n)` (the module will take the scalar ring structure by reference) or `.free_module(n)` (the module will take ownership of the scalar ring structure).
 
 For example, to obtain \\(\mathbb{Z}^3\\)
 
@@ -26,8 +26,9 @@ For example, to obtain \\(\mathbb{Z}^3\\)
 # use algebraeon::structures::Integer;
 # use algebraeon::rings::linear::finitely_free_module::RingToFinitelyFreeModuleSignature;
 # use algebraeon::structures::MetaType;
+# use algebraeon::sets::sets::EnumeratedFiniteSetStructure;
 #
-let module = Integer::structure().into_free_module(3);
+let module = Integer::structure().free_module(EnumeratedFiniteSetStructure::new(3));
 ```
 
 Elements of \\(\mathbb{Z}^3\\) are represented by objects of type `Vec<Integer>` and basic operations with the elements are provided by the module structure.
@@ -37,8 +38,9 @@ Elements of \\(\mathbb{Z}^3\\) are represented by objects of type `Vec<Integer>`
 # use algebraeon::rings::linear::finitely_free_module::*;
 # use algebraeon::rings::structure::*;
 # use algebraeon::structures::*;
+# use algebraeon::sets::sets::EnumeratedFiniteSetStructure;
 # 
-# let module = Integer::structure().into_free_module(3);
+# let module = Integer::structure().free_module(EnumeratedFiniteSetStructure::new(3));
 # 
 let a = vec![1.into(), 2.into(), 3.into()];
 let b = vec![(-1).into(), 2.into(), (-2).into()];
@@ -70,25 +72,28 @@ The scalar ring structure can be obtained from a module by calling `.ring()`.
 # use algebraeon::structures::Integer;
 # use algebraeon::rings::linear::finitely_free_module::*;
 # use algebraeon::structures::*;
+# use algebraeon::sets::sets::EnumeratedFiniteSetStructure;
 # 
-# let module = Integer::structure().into_free_module(3);
+# let module = Integer::structure().free_module(EnumeratedFiniteSetStructure::new(3));
 # 
 let ring = module.ring();
-assert_eq!(ring, &Integer::structure());
+assert_eq!(ring, Integer::structure());
 ```
 
 ## Submodules
 
-The set of submodules of the free module \\(R^n\\) is represented by objects of type `FinitelyFreeSubmoduleStructure`. This structure can be obtained from a module by calling `.submodules()` (the structure will take the module structure by reference) or `.into_submodules()` (the structure will take ownership of the module structure).
+The set of submodules of the free module \\(R^n\\) is represented by objects of type `FinitelyFreeSubmoduleStructure`. This structure can be obtained from a module by calling `.submodules()` (the structure will take the module structure by reference) or `.submodules()` (the structure will take ownership of the module structure).
 
 For example, to obtain the set of all submodules of \\(\mathbb{Z}^3\\)
 
 ```rust
 # use algebraeon::structures::Integer;
 # use algebraeon::rings::linear::finitely_free_module::*;
+# use algebraeon::rings::structure::FinitelyFreeModuleSignature;
 # use algebraeon::structures::*;
+# use algebraeon::sets::sets::EnumeratedFiniteSetStructure;
 # 
-let submodules = Integer::structure().into_free_module(3).into_submodules();
+let submodules = Integer::structure().free_module(EnumeratedFiniteSetStructure::new(3)).submodules();
 ```
 
 Submodules of \\(R^n\\) are represented by objects of type `FinitelyFreeSubmodule`.
@@ -100,9 +105,11 @@ The zero submodule \\(\{0\} \subseteq R^n\\) can be constructed using `.zero_sub
 ```rust
 # use algebraeon::structures::Integer;
 # use algebraeon::rings::linear::finitely_free_module::*;
+# use algebraeon::rings::structure::FinitelyFreeModuleSignature;
 # use algebraeon::structures::*;
+# use algebraeon::sets::sets::EnumeratedFiniteSetStructure;
 # 
-# let submodules = Integer::structure().into_free_module(3).into_submodules();
+# let submodules = Integer::structure().free_module(EnumeratedFiniteSetStructure::new(3)).submodules();
 # 
 assert_eq!(submodules.zero_submodule().rank(), 0);
 assert_eq!(submodules.full_submodule().rank(), 3);
@@ -113,9 +120,11 @@ The submodule given by the span of some elements of the module can be constructe
 ```rust
 # use algebraeon::structures::Integer;
 # use algebraeon::rings::linear::finitely_free_module::*;
+# use algebraeon::rings::structure::FinitelyFreeModuleSignature;
 # use algebraeon::structures::*;
+# use algebraeon::sets::sets::EnumeratedFiniteSetStructure;
 # 
-# let submodules = Integer::structure().into_free_module(3).into_submodules();
+# let submodules = Integer::structure().free_module(EnumeratedFiniteSetStructure::new(3)).submodules();
 # 
 assert_eq!(
     submodules
@@ -134,9 +143,11 @@ The submodule given by the kernel of some elements can be constructed using `.ke
 ```rust
 # use algebraeon::structures::Integer;
 # use algebraeon::rings::linear::finitely_free_module::*;
+# use algebraeon::rings::structure::FinitelyFreeModuleSignature;
 # use algebraeon::structures::*;
+# use algebraeon::sets::sets::EnumeratedFiniteSetStructure;
 # 
-# let submodules = Integer::structure().into_free_module(3).into_submodules();
+# let submodules = Integer::structure().free_module(EnumeratedFiniteSetStructure::new(3)).submodules();
 # 
 assert!(submodules.equal(
     &submodules.kernel(vec![
@@ -155,9 +166,11 @@ Test submodules for equality using `.equal(..)`.
 ```rust
 # use algebraeon::structures::Integer;
 # use algebraeon::rings::linear::finitely_free_module::*;
+# use algebraeon::rings::structure::FinitelyFreeModuleSignature;
 # use algebraeon::structures::*;
+# use algebraeon::sets::sets::EnumeratedFiniteSetStructure;
 # 
-# let submodules = Integer::structure().into_free_module(3).into_submodules();
+# let submodules = Integer::structure().free_module(EnumeratedFiniteSetStructure::new(3)).submodules();
 # 
 assert!(submodules.equal(
     &submodules.span(vec![
@@ -188,9 +201,11 @@ Check whether a submodule contains an element using `.contains_element(..)`.
 ```rust
 # use algebraeon::structures::Integer;
 # use algebraeon::rings::linear::finitely_free_module::*;
+# use algebraeon::rings::structure::FinitelyFreeModuleSignature;
 # use algebraeon::structures::*;
+# use algebraeon::sets::sets::EnumeratedFiniteSetStructure;
 # 
-# let submodules = Integer::structure().into_free_module(3).into_submodules();
+# let submodules = Integer::structure().free_module(EnumeratedFiniteSetStructure::new(3)).submodules();
 # 
 let a = submodules.span(vec![
     &vec![2.into(), 2.into(), 0.into()],
@@ -207,9 +222,11 @@ Check whether a submodule is a subset of another submodule using `.contains(..)`
 ```rust
 # use algebraeon::structures::Integer;
 # use algebraeon::rings::linear::finitely_free_module::*;
+# use algebraeon::rings::structure::FinitelyFreeModuleSignature;
 # use algebraeon::structures::*;
+# use algebraeon::sets::sets::EnumeratedFiniteSetStructure;
 # 
-# let submodules = Integer::structure().into_free_module(3).into_submodules();
+# let submodules = Integer::structure().free_module(EnumeratedFiniteSetStructure::new(3)).submodules();
 # 
 let a = submodules.span(vec![&vec![3.into(), 3.into(), 3.into()]]);
 let b = submodules.span(vec![&vec![6.into(), 6.into(), 6.into()]]);
@@ -223,9 +240,11 @@ Compute the sum of two submodules using `.sum(..)` and compute the intersection 
 ```rust
 # use algebraeon::structures::Integer;
 # use algebraeon::rings::linear::finitely_free_module::*;
+# use algebraeon::rings::structure::FinitelyFreeModuleSignature;
 # use algebraeon::structures::*;
+# use algebraeon::sets::sets::EnumeratedFiniteSetStructure;
 # 
-# let submodules = Integer::structure().into_free_module(3).into_submodules();
+# let submodules = Integer::structure().free_module(EnumeratedFiniteSetStructure::new(3)).submodules();
 # 
 let a = submodules.span(vec![&vec![4.into(), 4.into(), 4.into()]]);
 let b = submodules.span(vec![&vec![6.into(), 6.into(), 6.into()]]);

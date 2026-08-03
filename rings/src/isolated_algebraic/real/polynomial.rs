@@ -1041,7 +1041,7 @@ mod tests {
         //f is a squarefree polynomial with lots of roots
         println!("f = {:?}", f);
         let intervals = Polynomial::real_roots_squarefree(f, None, None, false, false);
-        println!("intervals = {:?}", &intervals);
+        println!("intervals = {:?}", intervals);
         intervals.check_invariants().unwrap();
 
         let f =

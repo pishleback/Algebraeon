@@ -58,7 +58,7 @@ pub fn miller_rabin_primality_test(
         Ok(PrimalityTestResult::Composite)
     } else {
         let mod_n = Integer::structure()
-            .into_euclidean_quotient_ring(n.into())
+            .euclidean_quotient_ring(n.into())
             .unwrap();
         debug_assert!(n % Natural::TWO == Natural::ONE); // n is odd
         for a in &a_list {
@@ -103,7 +103,7 @@ pub fn miller_rabin_primality_test(
 
 // https://cr.yp.to/papers/aks.pdf
 pub fn aks_primality_test(n: &Natural) -> PrimalityTestResult {
-    let factorizations = Natural::structure_ref().factorizations();
+    let factorizations = Natural::structure().factorizations();
     match is_power_test(n) {
         IsPowerTestResult::Zero => PrimalityTestResult::Zero,
         IsPowerTestResult::One => PrimalityTestResult::One,

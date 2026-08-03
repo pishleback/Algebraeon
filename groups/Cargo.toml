@@ -16,5 +16,5 @@ name = "algebraeon_groups"
 algebraeon-structures = { version = "=0.0.17", path = "../structures", default-features = false }
 algebraeon-macros = { version = "=0.0.17", path = "../macros", default-features = false }
 algebraeon-sets = { version = "=0.0.17", path = "../sets", default-features = false }
-itertools = "0.14.0"
+itertools = "0.15.0"
 rayon = "1.11.0"

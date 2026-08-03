@@ -1,12 +1,11 @@
-use super::{
-    finitely_free_coset::FinitelyFreeSubmoduleCoset,
-    finitely_free_module::FinitelyFreeModuleStructure,
-};
-use crate::matrix::{ReducedHermiteAlgorithmSignature, UniqueReducedHermiteAlgorithmSignature};
+use super::finitely_free_cosets::FinitelyFreeSubmoduleCoset;
+use crate::matrix::ReducedHermiteAlgorithmSignature;
 use crate::structure::*;
 use algebraeon_structures::*;
 use std::borrow::Borrow;
 use std::fmt::Debug;
+use std::marker::PhantomData;
+use std::sync::Arc;
 
 #[derive(Debug, Clone)]
 pub enum FinitelyFreeSubmoduleAffineSubset<Set: Clone + Debug> {
@@ -55,54 +54,74 @@ impl<Set: Clone + Debug> FinitelyFreeSubmoduleAffineSubset<Set> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FinitelyFreeSubmoduleAffineSubsetStructure<
+pub struct FinitelyFreeSubmoduleAffineSubsetsStructure<
+    Set: OrderedFiniteSetSignature,
     Ring: ReducedHermiteAlgorithmSignature,
-    RingB: BorrowedStructure<Ring>,
+    Module: FinitelyFreeModuleSignature<Set, Ring>,
 > {
-    module: FinitelyFreeModuleStructure<Ring, RingB>,
+    _set: PhantomData<Set>,
+    _ring: PhantomData<Ring>,
+    module: Arc<Module>,
 }
 
-impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
-    FinitelyFreeSubmoduleAffineSubsetStructure<Ring, RingB>
+impl<
+    Set: OrderedFiniteSetSignature,
+    Ring: ReducedHermiteAlgorithmSignature,
+    Module: FinitelyFreeModuleSignature<Set, Ring>,
+> FinitelyFreeSubmoduleAffineSubsetsStructure<Set, Ring, Module>
 {
-    pub fn new(module: FinitelyFreeModuleStructure<Ring, RingB>) -> Self {
-        Self { module }
+    pub fn new(module: Arc<Module>) -> Arc<Self> {
+        Self {
+            _set: PhantomData,
+            _ring: PhantomData,
+            module,
+        }
+        .into()
     }
 }
 
-impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> Signature
-    for FinitelyFreeSubmoduleAffineSubsetStructure<Ring, RingB>
+impl<
+    Set: OrderedFiniteSetSignature,
+    Ring: ReducedHermiteAlgorithmSignature,
+    Module: FinitelyFreeModuleSignature<Set, Ring>,
+> Signature for FinitelyFreeSubmoduleAffineSubsetsStructure<Set, Ring, Module>
 {
 }
 
-impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> SetSignature
-    for FinitelyFreeSubmoduleAffineSubsetStructure<Ring, RingB>
+impl<
+    Set: OrderedFiniteSetSignature,
+    Ring: ReducedHermiteAlgorithmSignature,
+    Module: FinitelyFreeModuleSignature<Set, Ring>,
+> SetSignature for FinitelyFreeSubmoduleAffineSubsetsStructure<Set, Ring, Module>
 {
     type Elem = FinitelyFreeSubmoduleAffineSubset<Ring::Elem>;
 
-    fn validate_element(&self, _x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, _x: &Self::Elem) -> Result<(), String> {
         //TODO: better checks
         Ok(())
     }
 }
 
-impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
-    FinitelyFreeSubmoduleAffineSubsetStructure<Ring, RingB>
+impl<
+    Set: OrderedFiniteSetSignature,
+    Ring: ReducedHermiteAlgorithmSignature,
+    Module: FinitelyFreeModuleSignature<Set, Ring>,
+> FinitelyFreeSubmoduleAffineSubsetsStructure<Set, Ring, Module>
 {
-    pub fn ring(&self) -> &Ring {
+    pub fn ring(&self) -> Arc<Ring> {
         self.module().ring()
     }
 
-    pub fn module(&self) -> &FinitelyFreeModuleStructure<Ring, RingB> {
+    pub fn module(&self) -> &Arc<Module> {
         &self.module
     }
 
     pub fn from_affine_span(
         &self,
-        mut span: Vec<&Vec<Ring::Elem>>,
+        mut span: Vec<&Module::Elem>,
     ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Elem> {
         for v in &span {
-            debug_assert_eq!(v.len(), self.module().rank());
+            debug_assert!(self.module().is_element(v));
         }
         if let Some(offset) = span.pop() {
             let linear_span = span
@@ -125,13 +144,14 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
     pub fn affine_basis(
         &self,
         subset: &FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
-    ) -> Vec<Vec<Ring::Elem>> {
+    ) -> Vec<Module::Elem> {
         match &subset {
             FinitelyFreeSubmoduleAffineSubset::Empty => vec![],
             FinitelyFreeSubmoduleAffineSubset::NonEmpty(coset) => {
-                let mut affine_basis = vec![coset.offset().clone()];
+                let offset = self.module().from_vec(coset.offset().clone());
+                let mut affine_basis = vec![offset.clone()];
                 for v in coset.submodule().basis() {
-                    affine_basis.push(self.module().add(&v, coset.offset()));
+                    affine_basis.push(self.module().add(&self.module().from_vec(v), &offset));
                 }
                 affine_basis
             }
@@ -139,7 +159,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
     }
 
     pub fn add(
-        &self,
+        self: &Arc<Self>,
         x: FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
         y: FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
     ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Elem> {
@@ -160,7 +180,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
     }
 
     pub fn intersect(
-        &self,
+        self: &Arc<Self>,
         x: &FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
         y: &FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
     ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Elem> {
@@ -179,7 +199,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
     }
 
     pub fn intersect_list(
-        &self,
+        self: &Arc<Self>,
         xs: Vec<impl Borrow<FinitelyFreeSubmoduleAffineSubset<Ring::Elem>>>,
     ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Elem> {
         for x in &xs {
@@ -198,9 +218,9 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
     }
 
     pub fn contains_element(
-        &self,
+        self: &Arc<Self>,
         x: &FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
-        p: &Vec<Ring::Elem>,
+        p: &Module::Elem,
     ) -> bool {
         debug_assert!(self.validate_element(x).is_ok());
         debug_assert!(self.module().validate_element(p).is_ok());
@@ -213,7 +233,7 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
     }
 
     pub fn equal_slow(
-        &self,
+        self: &Arc<Self>,
         x: &FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
         y: &FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
     ) -> bool {
@@ -241,11 +261,14 @@ impl<Ring: ReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>>
     }
 }
 
-impl<Ring: UniqueReducedHermiteAlgorithmSignature, RingB: BorrowedStructure<Ring>> EqSignature
-    for FinitelyFreeSubmoduleAffineSubsetStructure<Ring, RingB>
+impl<
+    Set: OrderedFiniteSetSignature,
+    Ring: ReducedHermiteAlgorithmSignature,
+    Module: FinitelyFreeModuleSignature<Set, Ring> + EqSignature,
+> EqSignature for FinitelyFreeSubmoduleAffineSubsetsStructure<Set, Ring, Module>
 {
     fn equal(
-        &self,
+        self: &Arc<Self>,
         x: &FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
         y: &FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
     ) -> bool {

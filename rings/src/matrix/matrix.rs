@@ -1,8 +1,9 @@
 use crate::structure::*;
 use algebraeon_sets::sets::*;
 use algebraeon_structures::*;
+use std::borrow::Borrow;
 use std::hash::Hash;
-use std::{borrow::Borrow, marker::PhantomData};
+use std::sync::Arc;
 
 #[derive(Debug)]
 pub enum MatOppErr {
@@ -332,46 +333,38 @@ impl<Set: Clone> Matrix<Set> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct MatrixStructure<RS: SetSignature, RSB: BorrowedStructure<RS>> {
-    _set: PhantomData<RS>,
-    set: RSB,
+pub struct MatrixStructure<RS: SetSignature> {
+    set: Arc<RS>,
 }
 
-impl<RS: SetSignature, RSB: BorrowedStructure<RS>> Signature for MatrixStructure<RS, RSB> {}
+impl<RS: SetSignature> Signature for MatrixStructure<RS> {}
 
-impl<RS: SetSignature, RSB: BorrowedStructure<RS>> SetSignature for MatrixStructure<RS, RSB> {
+impl<RS: SetSignature> SetSignature for MatrixStructure<RS> {
     type Elem = Matrix<RS::Elem>;
 
-    fn validate_element(&self, _x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, _x: &Self::Elem) -> Result<(), String> {
         Ok(())
     }
 }
 
-impl<RS: SetSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
-    pub fn new(set: RSB) -> Self {
-        Self {
-            _set: PhantomData,
-            set,
-        }
+impl<RS: SetSignature> MatrixStructure<RS> {
+    pub fn new(set: Arc<RS>) -> Arc<Self> {
+        Self { set }.into()
     }
 
-    pub fn ring(&self) -> &RS {
-        self.set.borrow()
+    pub fn ring(&self) -> Arc<RS> {
+        self.set.clone()
     }
 }
 
 pub trait RingMatricesSignature: SetSignature {
-    fn matrix_structure(&self) -> MatrixStructure<Self, &Self> {
-        MatrixStructure::new(self)
-    }
-
-    fn into_matrix_structure(self) -> MatrixStructure<Self, Self> {
-        MatrixStructure::new(self)
+    fn matrix_structure(self: &Arc<Self>) -> Arc<MatrixStructure<Self>> {
+        MatrixStructure::new(self.clone())
     }
 }
 impl<RS: SetSignature> RingMatricesSignature for RS {}
 
-impl<RS: EqSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
+impl<RS: EqSignature> MatrixStructure<RS> {
     pub fn equal(&self, a: &Matrix<RS::Elem>, b: &Matrix<RS::Elem>) -> bool {
         let rows = a.rows();
         let cols = a.cols();
@@ -390,7 +383,7 @@ impl<RS: EqSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
     }
 }
 
-impl<RS: ToStringSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
+impl<RS: ToStringSignature> MatrixStructure<RS> {
     pub fn pprint(&self, mat: &Matrix<RS::Elem>) {
         let mut str_rows = vec![];
         for r in 0..mat.rows() {
@@ -449,7 +442,7 @@ impl<RS: ToStringSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB>
     }
 }
 
-impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
+impl<RS: RingSignature> MatrixStructure<RS> {
     pub fn zero(&self, rows: usize, cols: usize) -> Matrix<RS::Elem> {
         Matrix::construct(rows, cols, |_r, _c| self.ring().zero())
     }
@@ -464,10 +457,11 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
         })
     }
 
-    pub fn diag(&self, diag: &[RS::Elem]) -> Matrix<RS::Elem> {
-        Matrix::construct(diag.len(), diag.len(), |r, c| {
+    pub fn diag(&self, diag: &[impl Clone + Into<RS::Elem>]) -> Matrix<RS::Elem> {
+        let n = diag.len();
+        Matrix::construct(n, n, |r, c| {
             if r == c {
-                diag[r].clone()
+                diag[r].clone().into()
             } else {
                 self.ring().zero()
             }
@@ -637,10 +631,9 @@ impl<RS: RingSignature, RSB: BorrowedStructure<RS>> MatrixStructure<RS, RSB> {
         let n = a.rows();
         if n == a.cols() {
             let mut det = self.ring().zero();
-            for perm in FinitelySupportedPermutationsStructure::new(FiniteSubsetStructure::new(
-                usize::structure(),
-                (0..n).collect(),
-            ))
+            for perm in FinitelySupportedPermutationsStructure::new(
+                FiniteSubsetByHashStructure::new(usize::structure(), (0..n).collect()),
+            )
             .generate_all_elements()
             {
                 let mut prod = self.ring().one();
@@ -709,9 +702,9 @@ impl<R: MetaType> MetaType for Matrix<R>
 where
     R::Signature: SetSignature,
 {
-    type Signature = MatrixStructure<R::Signature, R::Signature>;
+    type Signature = MatrixStructure<R::Signature>;
 
-    fn structure() -> Self::Signature {
+    fn structure() -> Arc<Self::Signature> {
         MatrixStructure::new(R::structure())
     }
 }
@@ -748,7 +741,8 @@ where
         Self::structure().ident(n)
     }
 
-    pub fn diag(diag: &[R]) -> Self {
+    /// Construct a diagonal matrix from a list of diagonal entries.
+    pub fn diag(diag: &[impl Into<R> + Clone]) -> Self {
         Self::structure().diag(diag)
     }
 

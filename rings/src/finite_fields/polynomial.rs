@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{matrix::*, polynomial::*, structure::*};
 use algebraeon_structures::*;
 
@@ -18,16 +20,16 @@ Cantor–Zassenhaus algorithm does 4.
 
 /// Store a monic factorization
 #[derive(Debug, Clone)]
-pub struct MonicFactored<FS: FieldSignature, FSB: BorrowedStructure<FS>> {
-    poly_ring: PolynomialStructure<FS, FSB>,
+pub struct MonicFactored<FS: FieldSignature> {
+    poly_ring: Arc<PolynomialStructure<FS>>,
     unit: FS::Elem,              // a unit
     monic: Polynomial<FS::Elem>, // a monic polynomial
 }
 
 /// Store a squarefree factorization
 #[derive(Debug, Clone)]
-pub struct SquarefreeFactored<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> {
-    poly_ring: PolynomialStructure<FS, FSB>,
+pub struct SquarefreeFactored<FS: FiniteFieldSignature> {
+    poly_ring: Arc<PolynomialStructure<FS>>,
     unit: FS::Elem,                                           // a unit
     squarefree_factors: Vec<(Polynomial<FS::Elem>, Natural)>, // squarefree monic polynomials and their multiplicities
 }
@@ -39,13 +41,13 @@ struct DistinctDegreeFactor<FS: FiniteFieldSignature> {
 }
 /// Store a distinct degree factorization
 #[derive(Debug, Clone)]
-pub struct DistinctDegreeFactored<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> {
-    poly_ring: PolynomialStructure<FS, FSB>,
+pub struct DistinctDegreeFactored<FS: FiniteFieldSignature> {
+    poly_ring: Arc<PolynomialStructure<FS>>,
     unit: FS::Elem, // a unit
     distinct_degree_factors: Vec<(DistinctDegreeFactor<FS>, Natural)>,
 }
 
-impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MonicFactored<FS, FSB> {
+impl<FS: FieldSignature> MonicFactored<FS> {
     // pub fn factor(poly_ring: PolynomialStructure<FS>, poly: Polynomial<FS::Elem>) -> Self {
     //     let (unit, monic) = poly_ring.factor_fav_assoc(&poly);
     //     let unit = poly_ring.as_constant(&unit).unwrap();
@@ -58,7 +60,7 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MonicFactored<FS, FSB> {
     // }
 
     pub fn new_monic_unchecked(
-        poly_ring: PolynomialStructure<FS, FSB>,
+        poly_ring: Arc<PolynomialStructure<FS>>,
         monic: Polynomial<FS::Elem>,
     ) -> Self {
         debug_assert!(poly_ring.is_monic(&monic));
@@ -88,8 +90,8 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MonicFactored<FS, FSB> {
     }
 }
 
-impl<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> SquarefreeFactored<FS, FSB> {
-    pub fn unit_unchecked(poly_ring: PolynomialStructure<FS, FSB>, unit: FS::Elem) -> Self {
+impl<FS: FiniteFieldSignature> SquarefreeFactored<FS> {
+    pub fn unit_unchecked(poly_ring: Arc<PolynomialStructure<FS>>, unit: FS::Elem) -> Self {
         debug_assert!(poly_ring.coeff_ring().is_unit(&unit));
         Self {
             poly_ring,
@@ -103,7 +105,7 @@ impl<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> SquarefreeFactored<FS
     }
 
     pub fn new_squarefree_poly_unchecked(
-        poly_ring: PolynomialStructure<FS, FSB>,
+        poly_ring: Arc<PolynomialStructure<FS>>,
         poly: Polynomial<FS::Elem>,
     ) -> Self {
         debug_assert!(!poly_ring.is_zero(&poly));
@@ -138,7 +140,7 @@ impl<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> SquarefreeFactored<FS
         self
     }
 
-    pub fn into_monic_factored(self) -> MonicFactored<FS, FSB> {
+    pub fn into_monic_factored(self) -> MonicFactored<FS> {
         let monic = self.poly_ring.product(
             &self
                 .squarefree_factors
@@ -169,8 +171,8 @@ impl<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> SquarefreeFactored<FS
     }
 }
 
-impl<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> DistinctDegreeFactored<FS, FSB> {
-    pub fn into_squarefree_factored(self) -> SquarefreeFactored<FS, FSB> {
+impl<FS: FiniteFieldSignature> DistinctDegreeFactored<FS> {
+    pub fn into_squarefree_factored(self) -> SquarefreeFactored<FS> {
         let squarefree_factors = self
             .distinct_degree_factors
             .into_iter()
@@ -184,20 +186,16 @@ impl<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> DistinctDegreeFactore
     }
 }
 
-impl<
-    FS: FiniteFieldSignature,
-    FSB: BorrowedStructure<FS>,
-    FSPB: BorrowedStructure<PolynomialStructure<FS, FSB>>,
-    NB: BorrowedStructure<NaturalCanonicalStructure>,
-> FactoringStructure<PolynomialStructure<FS, FSB>, FSPB, NaturalCanonicalStructure, NB>
+impl<FS: FiniteFieldSignature>
+    FactoringStructure<PolynomialStructure<FS>, NaturalCanonicalStructure>
 where
-    PolynomialStructure<FS, FSB>: SetSignature<Elem = Polynomial<FS::Elem>>
+    PolynomialStructure<FS>: SetSignature<Elem = Polynomial<FS::Elem>>
         + FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
 {
     pub fn into_distinct_degree_factored(
         &self,
         a: NonZeroFactored<Polynomial<FS::Elem>, Natural>,
-    ) -> DistinctDegreeFactored<FS, FSB> {
+    ) -> DistinctDegreeFactored<FS> {
         let poly_ring = self.objects().clone();
         let (unit, factors) = a.into_unit_and_powers();
         let unit = poly_ring.as_constant(&unit).unwrap();
@@ -221,12 +219,15 @@ where
     }
 }
 
-impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> PolynomialStructure<FS, FSB>
+impl<FS: FieldSignature> PolynomialStructure<FS>
 where
-    PolynomialStructure<FS, FSB>: SetSignature<Elem = Polynomial<FS::Elem>>,
+    PolynomialStructure<FS>: SetSignature<Elem = Polynomial<FS::Elem>>,
 {
     /// monic factorization
-    pub fn factorize_monic(&self, poly: &Polynomial<FS::Elem>) -> Option<MonicFactored<FS, FSB>> {
+    pub fn factorize_monic(
+        self: &Arc<Self>,
+        poly: &Polynomial<FS::Elem>,
+    ) -> Option<MonicFactored<FS>> {
         if self.is_zero(poly) {
             None
         } else {
@@ -244,20 +245,20 @@ where
 impl<F: MetaType> Polynomial<F>
 where
     F::Signature: FiniteFieldSignature,
-    PolynomialStructure<F::Signature, F::Signature>: SetSignature<Elem = Polynomial<F>>,
-    Self: MetaType<Signature = PolynomialStructure<F::Signature, F::Signature>>,
+    PolynomialStructure<F::Signature>: SetSignature<Elem = Polynomial<F>>,
+    Self: MetaType<Signature = PolynomialStructure<F::Signature>>,
 {
-    pub fn factorize_monic(&self) -> Option<MonicFactored<F::Signature, F::Signature>> {
+    pub fn factorize_monic(&self) -> Option<MonicFactored<F::Signature>> {
         Self::structure().factorize_monic(self)
     }
 }
 
-impl<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> MonicFactored<FS, FSB>
+impl<FS: FiniteFieldSignature> MonicFactored<FS>
 where
-    PolynomialStructure<FS, FSB>: SetSignature<Elem = Polynomial<FS::Elem>>,
+    PolynomialStructure<FS>: SetSignature<Elem = Polynomial<FS::Elem>>,
 {
     /// squarefree factorization
-    pub fn factorize_squarefree(&self) -> SquarefreeFactored<FS, FSB> {
+    pub fn factorize_squarefree(&self) -> SquarefreeFactored<FS> {
         let mut factors =
             SquarefreeFactored::unit_unchecked(self.poly_ring.clone(), self.unit.clone());
 
@@ -307,9 +308,9 @@ where
     }
 }
 
-impl<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> PolynomialStructure<FS, FSB>
+impl<FS: FiniteFieldSignature> PolynomialStructure<FS>
 where
-    PolynomialStructure<FS, FSB>: SetSignature<Elem = Polynomial<FS::Elem>>,
+    PolynomialStructure<FS>: SetSignature<Elem = Polynomial<FS::Elem>>,
 {
     // fn find_factor_by_berlekamps_algorithm(
     //     &self,
@@ -370,14 +371,14 @@ where
     // }
 
     fn factorize_monic_squarefree_by_berlekamps(
-        &self,
+        self: &Arc<Self>,
         f: &Polynomial<FS::Elem>,
     ) -> Factored<Polynomial<FS::Elem>, Natural> {
         debug_assert!(self.is_monic(f));
         debug_assert!(self.is_squarefree(f));
 
         let n = self.degree(f).unwrap();
-        let q = self.coeff_ring().size();
+        let q = self.coeff_ring().size().try_into().expect("too large");
 
         // 1, x^q, x^2q, x^3q, ..., x^dq
         let x_pows = {
@@ -459,14 +460,14 @@ where
     }
 }
 
-impl<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> SquarefreeFactored<FS, FSB>
+impl<FS: FiniteFieldSignature> SquarefreeFactored<FS>
 where
-    PolynomialStructure<FS, FSB>: SetSignature<Elem = Polynomial<FS::Elem>>,
+    PolynomialStructure<FS>: SetSignature<Elem = Polynomial<FS::Elem>>,
 {
     /// use Berlekamps algorithm for a full factorization from a squarefree
     pub fn factorize_berlekamps(&self) -> Factored<Polynomial<FS::Elem>, Natural>
     where
-        PolynomialStructure<FS, FSB>:
+        PolynomialStructure<FS>:
             FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
     {
         let mut factors = self
@@ -488,12 +489,12 @@ where
     }
 }
 
-impl<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> SquarefreeFactored<FS, FSB>
+impl<FS: FiniteFieldSignature> SquarefreeFactored<FS>
 where
-    PolynomialStructure<FS, FSB>: SetSignature<Elem = Polynomial<FS::Elem>>,
+    PolynomialStructure<FS>: SetSignature<Elem = Polynomial<FS::Elem>>,
 {
     /// distinct degree factorization
-    pub fn factorize_distinct_degree(&self) -> DistinctDegreeFactored<FS, FSB> {
+    pub fn factorize_distinct_degree(&self) -> DistinctDegreeFactored<FS> {
         // https://en.wikipedia.org/wiki/Factorization_of_polynomials_over_finite_fields#Distinct-degree_factorization
         let (p, k) = self.poly_ring.coeff_ring().characteristic_and_power();
         let q = p.nat_pow(&k);
@@ -626,14 +627,14 @@ where
     }
 }
 
-impl<FS: FiniteFieldSignature, FSB: BorrowedStructure<FS>> DistinctDegreeFactored<FS, FSB>
+impl<FS: FiniteFieldSignature> DistinctDegreeFactored<FS>
 where
-    PolynomialStructure<FS, FSB>: SetSignature<Elem = Polynomial<FS::Elem>>,
+    PolynomialStructure<FS>: SetSignature<Elem = Polynomial<FS::Elem>>,
 {
     /// Cantor–Zassenhaus algorithm for equal degree factorization
     pub fn factorize_cantor_zassenhaus(&self) -> Factored<Polynomial<FS::Elem>, Natural>
     where
-        PolynomialStructure<FS, FSB>:
+        PolynomialStructure<FS>:
             FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>,
     {
         let poly_ring = &self.poly_ring;
@@ -863,7 +864,7 @@ mod tests {
     fn test_factorize_over_f5_example1() {
         let x = &Polynomial::<Modulo<5>>::var().into_ergonomic();
         let p = (1 + x.pow(4)).pow(5).into_verbose();
-        let fs = Polynomial::<Modulo<5>>::structure().into_factorizations();
+        let fs = Polynomial::<Modulo<5>>::structure().factorizations();
         let ans = fs.new_unit_and_powers_unchecked(
             Polynomial::one(),
             vec![

@@ -1,12 +1,13 @@
 use algebraeon_sets::sets::*;
 use algebraeon_structures::*;
+use std::sync::Arc;
 
 /// A directed graph permitting loops.
 pub trait GraphSignature {
     type Vertices: SetSignature;
 
     fn has_directed_edge(
-        &self,
+        self: &Arc<Self>,
         source: &<Self::Vertices as SetSignature>::Elem,
         target: &<Self::Vertices as SetSignature>::Elem,
     ) -> Result<(), String>;
@@ -23,7 +24,7 @@ pub trait GraphWithEdgesSignature: GraphSignature {
 
     /// Return the endpoints of an edge.
     fn endpoints(
-        &self,
+        self: &Arc<Self>,
         edge: &<Self::Edges as SetSignature>::Elem,
     ) -> UnorderedPair<<Self::Vertices as SetSignature>::Elem>;
 }

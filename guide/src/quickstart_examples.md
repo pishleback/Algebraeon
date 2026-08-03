@@ -5,8 +5,9 @@
 Factor an integer with large prime factors
 
 ```rust
-use algebraeon::structures::Natural;
 use algebraeon::rings::structure::{MetaFactoringMonoid, UniqueFactorizationMonoidSignature};
+use algebraeon::structures::MetaType;
+use algebraeon::structures::Natural;
 use algebraeon::structures::ToStringSignature;
 use std::str::FromStr;
 
@@ -15,7 +16,7 @@ let f = n.clone().factor();
 println!(
     "{} = {}",
     n,
-    Natural::structure_ref().factorizations().to_string(&f)
+    Natural::structure().factorizations().to_string(&f)
 );
 /*
 Output:
@@ -64,20 +65,17 @@ Find the general solution to the linear system
 for integers \\(a\\), \\(b\\) and \\(c\\).
 
 ```rust
-use algebraeon::structures::Integer;
 use algebraeon::rings::linear::finitely_free_module::RingToFinitelyFreeModuleSignature;
 use algebraeon::rings::matrix::Matrix;
+use algebraeon::rings::structure::FinitelyFreeModuleSignature;
+use algebraeon::sets::sets::EnumeratedFiniteSetStructure;
+use algebraeon::structures::Integer;
 use algebraeon::structures::MetaType;
-let m = Matrix::<Integer>::from_rows(
-    vec![
-        vec![3, 4, 1], 
-        vec![2, 1, 2], 
-        vec![1, 3, -1]
-    ]
-);
+
+let m = Matrix::<Integer>::from_rows(vec![vec![3, 4, 1], vec![2, 1, 2], vec![1, 3, -1]]);
 let y = vec![5.into(), 5.into(), 3.into()];
 for x in Integer::structure()
-    .free_module(3)
+    .free_module(EnumeratedFiniteSetStructure::new(3))
     .affine_subsets()
     .affine_basis(&m.row_solution_set(&y))
 {

@@ -72,6 +72,7 @@ use algebraeon_structures::*;
 use itertools::Itertools;
 use std::collections::BTreeSet;
 use std::ops::Rem;
+use std::sync::Arc;
 
 fn compute_polynomial_factor_bound(poly: &Polynomial<Integer>) -> Natural {
     poly.mignotte_factor_coefficient_bound().unwrap()
@@ -87,11 +88,7 @@ enum HenselBackend {
     LinearAlgebra(
         LinearAlgebraHenselFactorization<
             IntegerCanonicalStructure,
-            EuclideanRemainderQuotientStructure<
-                IntegerCanonicalStructure,
-                IntegerCanonicalStructure,
-                false,
-            >,
+            EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, false>,
         >,
     ),
     ProductTree(ProductTreeHenselFactorization<true, IntegerCanonicalStructure>),
@@ -115,7 +112,7 @@ struct StateAtGoodPrime<'a> {
 /// `f mod p`.
 struct FactorizationAtGoodPrime {
     p: usize,
-    mod_p: MontgomeryModuloOddPrimeStructure,
+    mod_p: Arc<MontgomeryModuloOddPrimeStructure>,
     factors: NonZeroFactored<Polynomial<u64>, Natural>,
 }
 
@@ -134,7 +131,7 @@ impl FactorizationAtGoodPrime {
         }
         let p_nat = Natural::from(p);
         debug_assert!(is_prime_nat(&p_nat));
-        let mut mod_p = MontgomeryModuloOddPrimeStructure::new_unchecked(p as u64);
+        let mod_p = MontgomeryModuloOddPrimeStructure::new_unchecked(p as u64);
         mod_p.populate_inv_cache();
         let poly_mod_p = mod_p.polynomials();
         let sqfree_prim_poly_mod_p = sqfree_prim_poly.apply_map(|c| mod_p.project_ref(c));
@@ -208,10 +205,10 @@ impl FactorizationAtGoodPrime {
                 LinearAlgebraHenselFactorization::from_mod_field_factorization(
                     |q| {
                         Integer::structure()
-                            .into_euclidean_quotient_ring(q.clone())
+                            .euclidean_quotient_ring(q.clone())
                             .unwrap()
                     },
-                    &polynomial_ring_mod_p.factorizations(),
+                    polynomial_ring_mod_p.factorizations(),
                     factors,
                     sqfree_prim_poly.clone(),
                 )
@@ -770,7 +767,7 @@ impl<'a> StateAtGoodPrime<'a> {
 }
 
 struct MemoryStack<SG: AssociativeCompositionSignature> {
-    semigroup: SG,
+    semigroup: Arc<SG>,
     modular_factor_values: Vec<SG::Elem>,
     // Store the partial products of a previous calculation
     // Since subsets are visited in lexcographic order, if a test is performed frequently, values towards the right will need to be updated
@@ -786,7 +783,7 @@ struct MemoryStack<SG: AssociativeCompositionSignature> {
 }
 
 impl<SG: AssociativeCompositionSignature> MemoryStack<SG> {
-    fn new(semigroup: SG, modular_factor_values: Vec<SG::Elem>) -> Self {
+    fn new(semigroup: Arc<SG>, modular_factor_values: Vec<SG::Elem>) -> Self {
         Self {
             semigroup,
             modular_factor_values,
@@ -863,12 +860,12 @@ mod dminusone_test {
     impl SetSignature for DMinusOneTestSemigroup {
         type Elem = DMinusOneTestSemigroupElem;
 
-        fn validate_element(&self, _x: &Self::Elem) -> Result<(), String> {
+        fn validate_element(self: &Arc<Self>, _x: &Self::Elem) -> Result<(), String> {
             Ok(())
         }
     }
     impl CompositionSignature for DMinusOneTestSemigroup {
-        fn compose(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+        fn compose(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
             DMinusOneTestSemigroupElem {
                 approx_coeff_lower_bound: a
                     .approx_coeff_lower_bound
@@ -917,7 +914,7 @@ mod dminusone_test {
                         .try_into()
                         .unwrap_or(usize::MAX),
                 memory_stack: MemoryStack::new(
-                    DMinusOneTestSemigroup {},
+                    DMinusOneTestSemigroup {}.into(),
                     modular_factors
                         .iter()
                         .map(|g| {
@@ -968,20 +965,10 @@ mod dminusone_test {
 }
 
 // Polynomial division test. This test is never wrong.
-type ModularFactorMultSemigrp = PolynomialStructure<
-    EuclideanRemainderQuotientStructure<
-        IntegerCanonicalStructure,
-        IntegerCanonicalStructure,
-        false,
-    >,
-    EuclideanRemainderQuotientStructure<
-        IntegerCanonicalStructure,
-        IntegerCanonicalStructure,
-        false,
-    >,
->;
+type ModularFactorMultSemigrp =
+    PolynomialStructure<EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, false>>;
 impl CompositionSignature for ModularFactorMultSemigrp {
-    fn compose(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn compose(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.mul(a, b)
     }
 }
@@ -993,12 +980,12 @@ struct ModularFactorDegreeSumSemigrp {}
 impl Signature for ModularFactorDegreeSumSemigrp {}
 impl SetSignature for ModularFactorDegreeSumSemigrp {
     type Elem = usize;
-    fn validate_element(&self, _x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Arc<Self>, _x: &Self::Elem) -> Result<(), String> {
         Ok(())
     }
 }
 impl CompositionSignature for ModularFactorDegreeSumSemigrp {
-    fn compose(&self, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn compose(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         a + b
     }
 }
@@ -1021,13 +1008,13 @@ impl<'a> StateAtGoodPrime<'a> {
             dminusone_test::DMinusOneTest::new(&modulus, self.sqfree_prim_poly, &modular_factors);
         let mut modular_factor_product_memory_stack = MemoryStack::new(
             Integer::structure()
-                .into_euclidean_quotient_ring(modulus.clone())
+                .euclidean_quotient_ring(modulus.clone())
                 .unwrap()
-                .into_polynomials(),
+                .polynomials(),
             modular_factors.clone(),
         );
         let mut modular_factor_degree_memory_stack = MemoryStack::new(
-            ModularFactorDegreeSumSemigrp {},
+            ModularFactorDegreeSumSemigrp {}.into(),
             modular_factors
                 .iter()
                 .map(|mf| mf.degree().unwrap())
@@ -1256,8 +1243,7 @@ pub fn factorize_by_berlekamp_zassenhaus_algorithm(
                 #[cfg(debug_assertions)]
                 let disc = poly.clone().discriminant().unwrap();
                 for p in SQUARE_FREE_TEST_PRIMES {
-                    let mod_p =
-                        Integer::structure().into_quotient_field_unchecked(Integer::from(p));
+                    let mod_p = Integer::structure().quotient_field_unchecked(Integer::from(p));
                     let poly_mod_p = mod_p.polynomials();
 
                     if Integer::structure()
@@ -1308,7 +1294,7 @@ fn find_factor_primitive_sqfree_by_berlekamp_zassenhaus_algorithm_naive(
     } else {
         let prime_gen = primes();
         for p in prime_gen {
-            let mod_p = Integer::structure().into_quotient_field_unchecked(Integer::from(p));
+            let mod_p = Integer::structure().quotient_field_unchecked(Integer::from(p));
             let poly_mod_p = mod_p.polynomials();
             if poly_mod_p.degree(&f).unwrap() == f_deg {
                 let facotred_f_mod_p = poly_mod_p.factor(&f).unwrap_nonzero();
