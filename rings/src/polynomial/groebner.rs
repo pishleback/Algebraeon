@@ -25,6 +25,7 @@ use algebraeon_structures::*;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::sync::Arc;
 
 /// The three classical monomial orderings supported for Gröbner basis
 /// computations.
@@ -170,7 +171,7 @@ impl Variable {
     }
 }
 
-impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MultiPolynomialStructure<FS, FSB> {
+impl<FS: FieldSignature> MultiPolynomialStructure<FS> {
     /// The leading term of `p` with respect to `ord`: the term whose monomial is
     /// the largest. Returns `None` for the zero polynomial, which has no leading
     /// term. The polynomial is reduced first so that terms with zero
@@ -205,7 +206,11 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MultiPolynomialStructure<FS
     }
 
     /// The single-term polynomial `coeff * monomial`.
-    fn term_poly(&self, coeff: FS::Elem, monomial: Monomial) -> MultiPolynomial<FS::Elem> {
+    fn term_poly(
+        self: &Arc<Self>,
+        coeff: FS::Elem,
+        monomial: Monomial,
+    ) -> MultiPolynomial<FS::Elem> {
         if self.coeff_ring().is_zero(&coeff) {
             self.zero()
         } else {
@@ -219,7 +224,7 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MultiPolynomialStructure<FS
     /// the canonical representative of its associate class; reduced Gröbner
     /// bases are required to be monic so that they are unique.
     pub fn make_monic(
-        &self,
+        self: &Arc<Self>,
         ord: &MonomialOrdering,
         p: &MultiPolynomial<FS::Elem>,
     ) -> MultiPolynomial<FS::Elem> {
@@ -248,7 +253,7 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MultiPolynomialStructure<FS
     /// divisors; in particular `f` lies in the ideal exactly when the remainder
     /// is zero.
     pub fn reduce_modulo(
-        &self,
+        self: &Arc<Self>,
         ord: &MonomialOrdering,
         f: &MultiPolynomial<FS::Elem>,
         divisors: &[MultiPolynomial<FS::Elem>],
@@ -297,7 +302,7 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MultiPolynomialStructure<FS
     /// a Gröbner basis: a set is a Gröbner basis precisely when every
     /// S-polynomial reduces to zero modulo it (Buchberger's criterion).
     pub fn s_polynomial(
-        &self,
+        self: &Arc<Self>,
         ord: &MonomialOrdering,
         f: &MultiPolynomial<FS::Elem>,
         g: &MultiPolynomial<FS::Elem>,
@@ -334,7 +339,7 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MultiPolynomialStructure<FS
     /// The returned basis is correct but not canonical; use
     /// [`Self::reduced_groebner_basis`] for the unique reduced form.
     pub fn groebner_basis(
-        &self,
+        self: &Arc<Self>,
         ord: &MonomialOrdering,
         generators: &[MultiPolynomial<FS::Elem>],
     ) -> Vec<MultiPolynomial<FS::Elem>> {
@@ -384,7 +389,7 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MultiPolynomialStructure<FS
     /// The result is sorted by leading monomial in descending order so that the
     /// output is deterministic.
     pub fn reduced_groebner_basis(
-        &self,
+        self: &Arc<Self>,
         ord: &MonomialOrdering,
         generators: &[MultiPolynomial<FS::Elem>],
     ) -> Vec<MultiPolynomial<FS::Elem>> {
@@ -435,7 +440,7 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MultiPolynomialStructure<FS
     /// S-polynomial of every pair of basis elements reduces to zero modulo the
     /// basis, which is exactly what this routine checks.
     pub fn is_groebner_basis(
-        &self,
+        self: &Arc<Self>,
         ord: &MonomialOrdering,
         basis: &[MultiPolynomial<FS::Elem>],
     ) -> bool {
@@ -460,7 +465,7 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MultiPolynomialStructure<FS
     /// ideal and checking that the normal form of `f` modulo that basis is zero
     /// (the "ideal membership problem", solved by Gröbner bases).
     pub fn ideal_contains_element(
-        &self,
+        self: &Arc<Self>,
         ord: &MonomialOrdering,
         generators: &[MultiPolynomial<FS::Elem>],
         f: &MultiPolynomial<FS::Elem>,
@@ -473,7 +478,7 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MultiPolynomialStructure<FS
     /// ideals are equal iff they have the same reduced Gröbner basis with
     /// respect to any single fixed ordering.
     pub fn ideals_equal(
-        &self,
+        self: &Arc<Self>,
         ord: &MonomialOrdering,
         generators_a: &[MultiPolynomial<FS::Elem>],
         generators_b: &[MultiPolynomial<FS::Elem>],
@@ -494,7 +499,7 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MultiPolynomialStructure<FS
     /// eliminated variables most significant); the basis elements free of the
     /// eliminated variables generate the elimination ideal.
     pub fn eliminate_variables(
-        &self,
+        self: &Arc<Self>,
         generators: &[MultiPolynomial<FS::Elem>],
         eliminate: &[Variable],
     ) -> Vec<MultiPolynomial<FS::Elem>> {
@@ -526,7 +531,7 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MultiPolynomialStructure<FS
     /// of `k[t, x_1, ..., x_n]` satisfies `(t·I + (1 - t)·J) ∩ k[x] = I ∩ J`.
     /// Eliminating `t` therefore returns generators of the intersection.
     pub fn ideal_intersection(
-        &self,
+        self: &Arc<Self>,
         generators_a: &[MultiPolynomial<FS::Elem>],
         generators_b: &[MultiPolynomial<FS::Elem>],
     ) -> Vec<MultiPolynomial<FS::Elem>> {
@@ -553,7 +558,7 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MultiPolynomialStructure<FS
     /// `g`, and dividing each by `g` gives `I : (g)`. Intersections of the
     /// resulting ideals are taken pairwise.
     pub fn ideal_quotient(
-        &self,
+        self: &Arc<Self>,
         ord: &MonomialOrdering,
         generators_i: &[MultiPolynomial<FS::Elem>],
         generators_j: &[MultiPolynomial<FS::Elem>],
@@ -591,7 +596,7 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MultiPolynomialStructure<FS
     /// This holds iff for every variable some leading monomial of the basis is a
     /// pure power of that variable (the standard finiteness criterion).
     fn is_zero_dimensional(
-        &self,
+        self: &Arc<Self>,
         ord: &MonomialOrdering,
         gb: &[MultiPolynomial<FS::Elem>],
     ) -> bool {
@@ -626,7 +631,7 @@ impl<FS: FieldSignature, FSB: BorrowedStructure<FS>> MultiPolynomialStructure<FS
     /// ideal is not zero-dimensional, in which case fall back to
     /// [`Self::reduced_groebner_basis`] with the target ordering.
     pub fn convert_groebner_basis(
-        &self,
+        self: &Arc<Self>,
         source_order: &MonomialOrdering,
         generators: &[MultiPolynomial<FS::Elem>],
         target_order: &MonomialOrdering,
