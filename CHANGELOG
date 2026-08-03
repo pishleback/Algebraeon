@@ -19,6 +19,7 @@ All notable changes to this project will be documented in this file.
  - Added const size versions of various structures on finite sets.
  - Added methods for working with the Hexacode, Tetracode, and Extended Binary Golay Code.
  - Moved all structure types into `Arc`s to simplify code.
+ - Added Van-Hoeij knapsack algorithm for factoring integer polynomials.
 
 ## [0.0.17] - 2026-03-06
 
