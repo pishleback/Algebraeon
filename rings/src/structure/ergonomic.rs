@@ -2,11 +2,11 @@ use super::*;
 use algebraeon_structures::*;
 use std::{
     ops::{Add, Div, Mul, Neg, Sub},
-    sync::Arc,
+    rc::Rc,
 };
 
 pub trait IntoErgonomicSignature: SetSignature {
-    fn into_ergonomic(self: &Arc<Self>, elem: Self::Elem) -> StructuredElement<Self> {
+    fn into_ergonomic(self: &Rc<Self>, elem: Self::Elem) -> StructuredElement<Self> {
         StructuredElement::new(self.clone(), elem)
     }
 }
@@ -19,7 +19,7 @@ pub trait IntoErgonomic: MetaType {
 }
 impl<T: MetaType> IntoErgonomic for T {}
 
-fn common_structure<S: Signature>(structure1: Arc<S>, structure2: Arc<S>) -> Arc<S> {
+fn common_structure<S: Signature>(structure1: Rc<S>, structure2: Rc<S>) -> Rc<S> {
     if structure1 == structure2 {
         structure1
     } else {
@@ -29,16 +29,16 @@ fn common_structure<S: Signature>(structure1: Arc<S>, structure2: Arc<S>) -> Arc
 
 #[derive(Debug, Clone)]
 pub struct StructuredElement<S: SetSignature> {
-    structure: Arc<S>,
+    structure: Rc<S>,
     elem: S::Elem,
 }
 
 impl<S: SetSignature> StructuredElement<S> {
-    pub fn new(structure: Arc<S>, elem: S::Elem) -> Self {
+    pub fn new(structure: Rc<S>, elem: S::Elem) -> Self {
         Self { structure, elem }
     }
 
-    pub fn structure(&self) -> Arc<S> {
+    pub fn structure(&self) -> Rc<S> {
         self.structure.clone()
     }
 

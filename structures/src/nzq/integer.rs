@@ -4,7 +4,7 @@ use crate::*;
 use algebraeon_macros::CanonicalStructure;
 use malachite::base::num::basic::traits::{One, Two, Zero};
 use std::iter::{Product, Sum};
-use std::sync::Arc;
+use std::rc::Rc;
 use std::{
     ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Rem, Sub, SubAssign},
     str::FromStr,
@@ -29,7 +29,7 @@ impl Integer {
 }
 
 impl ToStringSignature for IntegerCanonicalStructure {
-    fn to_string(self: &Arc<Self>, elem: &Self::Elem) -> String {
+    fn to_string(self: &Rc<Self>, elem: &Self::Elem) -> String {
         format!("{}", elem)
     }
 }
@@ -663,7 +663,7 @@ impl Product for Integer {
 }
 
 impl CountableSetSignature for IntegerCanonicalStructure {
-    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
+    fn generate_all_elements(self: Rc<Self>) -> impl Iterator<Item = Self::Elem> {
         use malachite::integer::exhaustive::exhaustive_integers;
         exhaustive_integers().map(Integer::from_malachite)
     }

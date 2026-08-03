@@ -3,22 +3,22 @@ use crate::*;
 use algebraeon_macros::{signature_meta_trait, skip_meta};
 use paste::paste;
 use rand::{Rng, RngExt, SeedableRng, rngs::StdRng};
-use std::{fmt::Debug, sync::Arc};
+use std::{fmt::Debug, rc::Rc};
 
 /// Instances of a type implementing this trait represent
 /// a set of elements of type `Self::Elem` with some
 /// structure, for example, the structure of a ring.
 #[signature_meta_trait]
 pub trait SetSignature: Signature {
-    type Elem: Clone + Debug + Send + Sync;
+    type Elem: Clone + Debug;
 
     /// Some instances of `Self::Elem` may not be valid to represent elements of this set.
     /// Return `Ok(())` if `x` is a valid element and an `Err` explaining why if not.
-    fn validate_element(self: &Arc<Self>, x: &Self::Elem) -> Result<(), String>;
+    fn validate_element(self: &Rc<Self>, x: &Self::Elem) -> Result<(), String>;
 
     /// Some instances of `Self::Elem` may not be valid to represent elements of this set.
     /// Return `true` if `x` is a valid element and an `false` if not.
-    fn is_element(self: &Arc<Self>, x: &Self::Elem) -> bool {
+    fn is_element(self: &Rc<Self>, x: &Self::Elem) -> bool {
         self.validate_element(x).is_ok()
     }
 }
@@ -26,24 +26,24 @@ pub trait SetSignature: Signature {
 pub trait MetaType: Clone + Debug {
     type Signature: SetSignature<Elem = Self> + 'static;
 
-    fn structure() -> Arc<Self::Signature>;
+    fn structure() -> Rc<Self::Signature>;
 }
 
 #[signature_meta_trait]
 pub trait ToStringSignature: SetSignature {
-    fn to_string(self: &Arc<Self>, elem: &Self::Elem) -> String;
+    fn to_string(self: &Rc<Self>, elem: &Self::Elem) -> String;
 }
 
 #[signature_meta_trait]
 pub trait EqSignature: SetSignature {
-    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool;
+    fn equal(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool;
 }
 
 #[signature_meta_trait]
 pub trait CountableSetSignature: SetSignature {
     /// Yield distinct elements of the set such that every element eventually appears.
     /// Always yields elements in the same order.
-    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem>;
+    fn generate_all_elements(self: Rc<Self>) -> impl Iterator<Item = Self::Elem>;
 }
 
 /// A set with finitely many elements
@@ -51,16 +51,16 @@ pub trait CountableSetSignature: SetSignature {
 pub trait FiniteSetSignature: CountableSetSignature {
     /// A list of all elements in the set.
     /// Must always return elements in the same order.
-    fn list_all_elements(self: &Arc<Self>) -> Vec<Self::Elem> {
+    fn list_all_elements(self: &Rc<Self>) -> Vec<Self::Elem> {
         self.clone().generate_all_elements().collect()
     }
 
-    fn size(self: &Arc<Self>) -> Natural {
+    fn size(self: &Rc<Self>) -> Natural {
         Natural::from(self.list_all_elements().len())
     }
 
     #[skip_meta]
-    fn generate_random_elements(self: Arc<Self>, seed: u64) -> impl Iterator<Item = Self::Elem> {
+    fn generate_random_elements(self: Rc<Self>, seed: u64) -> impl Iterator<Item = Self::Elem> {
         let rng = StdRng::seed_from_u64(seed);
         FiniteSetRandomElementGenerator::<Self, StdRng> {
             all_elements: self.list_all_elements(),
@@ -73,7 +73,7 @@ make_maybe_trait!(FiniteSet);
 /// A set with N elements
 #[signature_meta_trait]
 pub trait ConstSizeFiniteSetSignature<const N: usize>: FiniteSetSignature {
-    fn list_all_elements_sized(self: &Arc<Self>) -> [Self::Elem; N] {
+    fn list_all_elements_sized(self: &Rc<Self>) -> [Self::Elem; N] {
         self.list_all_elements().try_into().unwrap()
     }
 }
@@ -84,14 +84,14 @@ pub trait ConstSizeFiniteSetSignature<const N: usize>: FiniteSetSignature {
 #[signature_meta_trait]
 pub trait OrderedFiniteSetSignature: FiniteSetSignature + OrdSignature {
     /// List all elements in the order in which they are numbered
-    fn list_all_elements_ordered(self: &Arc<Self>) -> Vec<Self::Elem>;
+    fn list_all_elements_ordered(self: &Rc<Self>) -> Vec<Self::Elem>;
 
     /// Return the numbering of an element
-    fn element_to_enumeration(self: &Arc<Self>, elem: &Self::Elem) -> Natural;
+    fn element_to_enumeration(self: &Rc<Self>, elem: &Self::Elem) -> Natural;
 
     /// Return the numbering of an element
     /// None iff number is too large
-    fn enumeration_to_element(self: &Arc<Self>, num: &Natural) -> Option<Self::Elem>;
+    fn enumeration_to_element(self: &Rc<Self>, num: &Natural) -> Option<Self::Elem>;
 }
 
 // for testing the invariants of OrderedFiniteSetSignature
@@ -156,14 +156,14 @@ impl<S: FiniteSetSignature, R: Rng> Iterator for FiniteSetRandomElementGenerator
 /// Instances of a type implementing this trait represent
 /// a set formed by a quotient of another set.
 pub trait QuotientSetSignature<PreQuoSet: SetSignature>: SetSignature {
-    fn pre_quotient_set(self: &Arc<Self>) -> Arc<PreQuoSet>;
+    fn pre_quotient_set(self: &Rc<Self>) -> Rc<PreQuoSet>;
 
-    fn project(self: &Arc<Self>, x: PreQuoSet::Elem) -> Self::Elem;
-    fn project_ref(self: &Arc<Self>, x: &PreQuoSet::Elem) -> Self::Elem;
+    fn project(self: &Rc<Self>, x: PreQuoSet::Elem) -> Self::Elem;
+    fn project_ref(self: &Rc<Self>, x: &PreQuoSet::Elem) -> Self::Elem;
 
     /// Return an element of the pre-quotient set which projects to the given element.
-    fn unproject(self: &Arc<Self>, x: Self::Elem) -> PreQuoSet::Elem;
-    fn unproject_ref(self: &Arc<Self>, x: &Self::Elem) -> PreQuoSet::Elem;
+    fn unproject(self: &Rc<Self>, x: Self::Elem) -> PreQuoSet::Elem;
+    fn unproject_ref(self: &Rc<Self>, x: &Self::Elem) -> PreQuoSet::Elem;
 }
 
 /// A quotient set where elements are represented using representative elements of the pre-quotient set
@@ -171,7 +171,7 @@ pub trait QuotientSetRepresentativesSignature<PreQuoSet: SetSignature<Elem = Sel
     QuotientSetSignature<PreQuoSet>
 {
     /// Must satisfy x = y in the quotient set iff reduced_representative(x) = reduced_representative(y) in the pre quotient set.
-    fn reduced_representative(self: &Arc<Self>, x: &Self::Elem) -> Self::Elem;
+    fn reduced_representative(self: &Rc<Self>, x: &Self::Elem) -> Self::Elem;
 }
 
 #[cfg(test)]
@@ -195,7 +195,7 @@ mod tests {
         }
 
         impl ToStringSignature for ACanonicalStructure {
-            fn to_string(self: &Arc<Self>, elem: &Self::Elem) -> String {
+            fn to_string(self: &Rc<Self>, elem: &Self::Elem) -> String {
                 ToString::to_string(elem)
             }
         }
@@ -220,13 +220,13 @@ mod tests {
         impl SetSignature for A {
             type Elem = usize;
 
-            fn validate_element(self: &Arc<Self>, _x: &Self::Elem) -> Result<(), String> {
+            fn validate_element(self: &Rc<Self>, _x: &Self::Elem) -> Result<(), String> {
                 Ok(())
             }
         }
 
         impl ToStringSignature for A {
-            fn to_string(self: &Arc<Self>, elem: &Self::Elem) -> String {
+            fn to_string(self: &Rc<Self>, elem: &Self::Elem) -> String {
                 elem.to_string()
             }
         }

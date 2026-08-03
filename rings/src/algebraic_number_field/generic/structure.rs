@@ -12,7 +12,7 @@ use crate::{
 use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 use algebraeon_structures::*;
 use std::marker::PhantomData;
-use std::sync::Arc;
+use std::rc::Rc;
 
 /// An algebraic number field is a field of characteristic zero such that
 /// the inclusion of its rational subfield is finite dimensional
@@ -21,44 +21,44 @@ pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
     type RationalInclusion: FiniteDimensionalFieldExtension<Self::Basis, RationalCanonicalStructure, Self>;
 
     fn inbound_finite_dimensional_rational_extension(
-        self: &Arc<Self>,
-    ) -> Arc<Self::RationalInclusion>;
+        self: &Rc<Self>,
+    ) -> Rc<Self::RationalInclusion>;
 
     /// The dimension of this algebraic number field as a vector space over the rational numbers
-    fn n(self: &Arc<Self>) -> usize {
+    fn n(self: &Rc<Self>) -> usize {
         self.inbound_finite_dimensional_rational_extension()
             .degree()
     }
 
     /// An element which generates this algebraic number field when adjoined to the rational numbers
     /// Such an element always exists by the primitive element theorem
-    fn generator(self: &Arc<Self>) -> Self::Elem;
+    fn generator(self: &Rc<Self>) -> Self::Elem;
 
     /// Determine whether an element is integral over the integers i.e. is it a root of a monic integer polynomial
-    fn is_algebraic_integer(self: &Arc<Self>, a: &Self::Elem) -> bool;
+    fn is_algebraic_integer(self: &Rc<Self>, a: &Self::Elem) -> bool;
 
     /// The discriminant of this algebraic number field i.e. the discriminant of its ring of integers
     /// Implementations should not compute this by constructing the ring of integers, as the constructor for a maximal OrderWithBasis calls this function to validate its input
-    fn discriminant(self: &Arc<Self>) -> Integer;
+    fn discriminant(self: &Rc<Self>) -> Integer;
 
     /// A list of self.n() elements which generate the ring of integers as a Z-module
-    fn integral_basis(self: &Arc<Self>) -> Vec<Self::Elem>;
+    fn integral_basis(self: &Rc<Self>) -> Vec<Self::Elem>;
 
-    fn ring_of_integers(self: &Arc<Self>) -> Arc<OrderWithBasis<Self, true>> {
+    fn ring_of_integers(self: &Rc<Self>) -> Rc<OrderWithBasis<Self, true>> {
         OrderWithBasis::new_maximal_unchecked(self.clone(), self.integral_basis())
     }
 
     fn order(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         basis: Vec<Self::Elem>,
-    ) -> Result<Arc<OrderWithBasis<Self, false>>, String> {
+    ) -> Result<Rc<OrderWithBasis<Self, false>>, String> {
         OrderWithBasis::new(self.clone(), basis)
     }
 
     /// The LCM of the denominators of the coefficients of the minimal polynomial of a.
     ///
     /// It may well be >1 even when the element a is an algebraic integer.
-    fn min_poly_denominator_lcm(self: &Arc<Self>, a: &Self::Elem) -> Integer {
+    fn min_poly_denominator_lcm(self: &Rc<Self>, a: &Self::Elem) -> Integer {
         Integer::lcm_list(
             self.inbound_finite_dimensional_rational_extension()
                 .min_poly(a)
@@ -71,7 +71,7 @@ pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
     /// A scalar multiple of $a$ which is an algebraic integer.
     ///
     /// It need not return $a$ itself when $a$ is already an algebraic integer.
-    fn integral_multiple(self: &Arc<Self>, a: &Self::Elem) -> Self::Elem {
+    fn integral_multiple(self: &Rc<Self>, a: &Self::Elem) -> Self::Elem {
         let m = self.min_poly_denominator_lcm(a);
         let b = self.mul(&self.try_from_rat(&Rational::from(m)).unwrap(), a);
         debug_assert!(self.is_algebraic_integer(&b));
@@ -82,20 +82,20 @@ pub trait AlgebraicNumberFieldSignature: CharZeroFieldSignature {
 pub trait AlgebraicIntegerRingSignature<K: AlgebraicNumberFieldSignature>:
     DedekindDomainSignature + CharZeroRingSignature
 {
-    fn n(self: &Arc<Self>) -> usize {
+    fn n(self: &Rc<Self>) -> usize {
         self.anf().n()
     }
 
-    fn anf(self: &Arc<Self>) -> Arc<K>;
+    fn anf(self: &Rc<Self>) -> Rc<K>;
 
     /// A list of self.n() elements which generate this ring as a Z-module
-    fn integral_basis(self: &Arc<Self>) -> Vec<Self::Elem>;
+    fn integral_basis(self: &Rc<Self>) -> Vec<Self::Elem>;
 
-    fn to_anf(self: &Arc<Self>, x: &Self::Elem) -> K::Elem;
+    fn to_anf(self: &Rc<Self>, x: &Self::Elem) -> K::Elem;
 
-    fn try_from_anf(self: &Arc<Self>, y: &K::Elem) -> Option<Self::Elem>;
+    fn try_from_anf(self: &Rc<Self>, y: &K::Elem) -> Option<Self::Elem>;
 
-    fn order(self: &Arc<Self>) -> Arc<OrderWithBasis<K, true>> {
+    fn order(self: &Rc<Self>) -> Rc<OrderWithBasis<K, true>> {
         OrderWithBasis::new_maximal_unchecked(
             self.anf(),
             self.integral_basis()
@@ -106,15 +106,15 @@ pub trait AlgebraicIntegerRingSignature<K: AlgebraicNumberFieldSignature>:
     }
 
     fn outbound_roi_to_anf_inclusion(
-        self: &Arc<Self>,
-    ) -> Arc<RingOfIntegersToAlgebraicNumberFieldInclusion<K, Self>> {
+        self: &Rc<Self>,
+    ) -> Rc<RingOfIntegersToAlgebraicNumberFieldInclusion<K, Self>> {
         RingOfIntegersToAlgebraicNumberFieldInclusion::from_ring_of_integers(self.clone())
     }
 
     fn inbound_order_inclusion<const MAXIMAL: bool>(
-        self: &Arc<Self>,
-        order: Arc<OrderWithBasis<K, MAXIMAL>>,
-    ) -> Arc<order_to_ring_of_integers_inclusion::OrderToRingOfIntegersInclusion<K, Self, MAXIMAL>>
+        self: &Rc<Self>,
+        order: Rc<OrderWithBasis<K, MAXIMAL>>,
+    ) -> Rc<order_to_ring_of_integers_inclusion::OrderToRingOfIntegersInclusion<K, Self, MAXIMAL>>
     {
         order_to_ring_of_integers_inclusion::OrderToRingOfIntegersInclusion::new(
             self.clone(),
@@ -123,9 +123,9 @@ pub trait AlgebraicIntegerRingSignature<K: AlgebraicNumberFieldSignature>:
     }
 
     fn inbound_order_isomorphism(
-        self: &Arc<Self>,
-        order: Arc<OrderWithBasis<K, true>>,
-    ) -> Arc<order_to_ring_of_integers_inclusion::OrderToRingOfIntegersInclusion<K, Self, true>>
+        self: &Rc<Self>,
+        order: Rc<OrderWithBasis<K, true>>,
+    ) -> Rc<order_to_ring_of_integers_inclusion::OrderToRingOfIntegersInclusion<K, Self, true>>
     {
         order_to_ring_of_integers_inclusion::OrderToRingOfIntegersInclusion::new(
             self.clone(),
@@ -145,13 +145,13 @@ mod ring_of_integers_to_algebraic_number_field_inclusion {
         R: AlgebraicIntegerRingSignature<K>,
     > {
         _anf: PhantomData<K>,
-        roi: Arc<R>,
+        roi: Rc<R>,
     }
 
     impl<K: AlgebraicNumberFieldSignature, R: AlgebraicIntegerRingSignature<K>>
         RingOfIntegersToAlgebraicNumberFieldInclusion<K, R>
     {
-        pub fn from_ring_of_integers(roi: Arc<R>) -> Arc<Self> {
+        pub fn from_ring_of_integers(roi: Rc<R>) -> Rc<Self> {
             Self {
                 _anf: PhantomData,
                 roi,
@@ -159,11 +159,11 @@ mod ring_of_integers_to_algebraic_number_field_inclusion {
             .into()
         }
 
-        pub fn roi(&self) -> Arc<R> {
+        pub fn roi(&self) -> Rc<R> {
             self.roi.clone()
         }
 
-        pub fn anf(&self) -> Arc<K> {
+        pub fn anf(&self) -> Rc<K> {
             self.roi().anf()
         }
     }
@@ -171,11 +171,11 @@ mod ring_of_integers_to_algebraic_number_field_inclusion {
     impl<K: AlgebraicNumberFieldSignature, R: AlgebraicIntegerRingSignature<K>> Morphism<R, K>
         for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R>
     {
-        fn domain(self: &Arc<Self>) -> Arc<R> {
+        fn domain(self: &Rc<Self>) -> Rc<R> {
             self.roi()
         }
 
-        fn range(self: &Arc<Self>) -> Arc<K> {
+        fn range(self: &Rc<Self>) -> Rc<K> {
             self.anf()
         }
     }
@@ -183,7 +183,7 @@ mod ring_of_integers_to_algebraic_number_field_inclusion {
     impl<K: AlgebraicNumberFieldSignature, R: AlgebraicIntegerRingSignature<K>>
         FunctionMorphism<R, K> for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R>
     {
-        fn image(self: &Arc<Self>, x: &<R as SetSignature>::Elem) -> <K as SetSignature>::Elem {
+        fn image(self: &Rc<Self>, x: &<R as SetSignature>::Elem) -> <K as SetSignature>::Elem {
             self.roi().to_anf(x)
         }
     }
@@ -192,7 +192,7 @@ mod ring_of_integers_to_algebraic_number_field_inclusion {
         InjectiveFunctionMorphism<R, K> for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R>
     {
         fn try_preimage(
-            self: &Arc<Self>,
+            self: &Rc<Self>,
             y: &<K as SetSignature>::Elem,
         ) -> Option<<R as SetSignature>::Elem> {
             self.roi().try_from_anf(y)
@@ -207,7 +207,7 @@ mod ring_of_integers_to_algebraic_number_field_inclusion {
     impl<K: AlgebraicNumberFieldSignature, R: AlgebraicIntegerRingSignature<K>>
         FieldOfFractionsInclusion<R, K> for RingOfIntegersToAlgebraicNumberFieldInclusion<K, R>
     {
-        fn numerator_and_denominator(self: &Arc<Self>, a: &<K>::Elem) -> (<R>::Elem, <R>::Elem) {
+        fn numerator_and_denominator(self: &Rc<Self>, a: &<K>::Elem) -> (<R>::Elem, <R>::Elem) {
             self.zq_extension()
                 .r_to_k_field_of_fractions()
                 .numerator_and_denominator(a)
@@ -217,7 +217,7 @@ mod ring_of_integers_to_algebraic_number_field_inclusion {
     impl<K: AlgebraicNumberFieldSignature, R: AlgebraicIntegerRingSignature<K>>
         RingOfIntegersToAlgebraicNumberFieldInclusion<K, R>
     {
-        pub fn zq_extension(self: &Arc<Self>) -> Arc<RingOfIntegersIntegralExtension<K, R>> {
+        pub fn zq_extension(self: &Rc<Self>) -> Rc<RingOfIntegersIntegralExtension<K, R>> {
             RingOfIntegersIntegralExtension::new_integer_extension(
                 RingOfIntegersToAlgebraicNumberFieldInclusion::from_ring_of_integers(self.domain()),
             )
@@ -235,15 +235,15 @@ mod order_to_ring_of_integers_inclusion {
         R: AlgebraicIntegerRingSignature<K>,
         const MAXIMAL: bool,
     > {
-        roi: Arc<R>,
-        order: Arc<OrderWithBasis<K, MAXIMAL>>,
+        roi: Rc<R>,
+        order: Rc<OrderWithBasis<K, MAXIMAL>>,
         order_basis_in_roi: Vec<R::Elem>,
     }
 
     impl<K: AlgebraicNumberFieldSignature, R: AlgebraicIntegerRingSignature<K>, const MAXIMAL: bool>
         OrderToRingOfIntegersInclusion<K, R, MAXIMAL>
     {
-        pub fn new(roi: Arc<R>, order: Arc<OrderWithBasis<K, MAXIMAL>>) -> Arc<Self> {
+        pub fn new(roi: Rc<R>, order: Rc<OrderWithBasis<K, MAXIMAL>>) -> Rc<Self> {
             let order_basis_in_roi = order
                 .basis()
                 .iter()
@@ -265,16 +265,16 @@ mod order_to_ring_of_integers_inclusion {
             self.anf().n()
         }
 
-        pub fn anf(&self) -> Arc<K> {
+        pub fn anf(&self) -> Rc<K> {
             debug_assert_eq!(self.roi().anf(), self.order().anf());
             self.order().anf()
         }
 
-        pub fn roi(&self) -> &Arc<R> {
+        pub fn roi(&self) -> &Rc<R> {
             &self.roi
         }
 
-        pub fn order(&self) -> &Arc<OrderWithBasis<K, MAXIMAL>> {
+        pub fn order(&self) -> &Rc<OrderWithBasis<K, MAXIMAL>> {
             &self.order
         }
     }
@@ -282,11 +282,11 @@ mod order_to_ring_of_integers_inclusion {
     impl<K: AlgebraicNumberFieldSignature, R: AlgebraicIntegerRingSignature<K>, const MAXIMAL: bool>
         Morphism<OrderWithBasis<K, MAXIMAL>, R> for OrderToRingOfIntegersInclusion<K, R, MAXIMAL>
     {
-        fn domain(self: &Arc<Self>) -> Arc<OrderWithBasis<K, MAXIMAL>> {
+        fn domain(self: &Rc<Self>) -> Rc<OrderWithBasis<K, MAXIMAL>> {
             self.order().clone()
         }
 
-        fn range(self: &Arc<Self>) -> Arc<R> {
+        fn range(self: &Rc<Self>) -> Rc<R> {
             self.roi().clone()
         }
     }
@@ -295,7 +295,7 @@ mod order_to_ring_of_integers_inclusion {
         FunctionMorphism<OrderWithBasis<K, MAXIMAL>, R>
         for OrderToRingOfIntegersInclusion<K, R, MAXIMAL>
     {
-        fn image(self: &Arc<Self>, x: &Vec<Integer>) -> <R as SetSignature>::Elem {
+        fn image(self: &Rc<Self>, x: &Vec<Integer>) -> <R as SetSignature>::Elem {
             self.roi().sum(
                 &(0..self.n())
                     .map(|i| {
@@ -317,7 +317,7 @@ mod order_to_ring_of_integers_inclusion {
         InjectiveFunctionMorphism<OrderWithBasis<K, MAXIMAL>, R>
         for OrderToRingOfIntegersInclusion<K, R, MAXIMAL>
     {
-        fn try_preimage(self: &Arc<Self>, y: &<R as SetSignature>::Elem) -> Option<Vec<Integer>> {
+        fn try_preimage(self: &Rc<Self>, y: &<R as SetSignature>::Elem) -> Option<Vec<Integer>> {
             self.order()
                 .outbound_order_to_anf_inclusion()
                 .try_preimage(&self.roi().outbound_roi_to_anf_inclusion().image(y))
@@ -346,7 +346,7 @@ mod anf_inclusion {
         IntegerModule: FullRankIntegerSubmoduleWithBasisSignature<K>,
     > {
         _k: PhantomData<K>,
-        integer_submodule: Arc<IntegerModule>,
+        integer_submodule: Rc<IntegerModule>,
     }
 
     impl<
@@ -354,7 +354,7 @@ mod anf_inclusion {
         IntegerModule: FullRankIntegerSubmoduleWithBasisSignature<K>,
     > AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion<K, IntegerModule>
     {
-        pub fn new(integer_submodule: Arc<IntegerModule>) -> Arc<Self> {
+        pub fn new(integer_submodule: Rc<IntegerModule>) -> Rc<Self> {
             Self {
                 _k: PhantomData,
                 integer_submodule,
@@ -362,7 +362,7 @@ mod anf_inclusion {
             .into()
         }
 
-        pub fn integer_submodule(&self) -> &Arc<IntegerModule> {
+        pub fn integer_submodule(&self) -> &Rc<IntegerModule> {
             &self.integer_submodule
         }
     }
@@ -373,11 +373,11 @@ mod anf_inclusion {
     > Morphism<IntegerModule, K>
         for AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion<K, IntegerModule>
     {
-        fn domain(self: &Arc<Self>) -> Arc<IntegerModule> {
+        fn domain(self: &Rc<Self>) -> Rc<IntegerModule> {
             self.integer_submodule().clone()
         }
 
-        fn range(self: &Arc<Self>) -> Arc<K> {
+        fn range(self: &Rc<Self>) -> Rc<K> {
             self.integer_submodule().anf()
         }
     }
@@ -388,7 +388,7 @@ mod anf_inclusion {
     > FunctionMorphism<IntegerModule, K>
         for AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion<K, IntegerModule>
     {
-        fn image(self: &Arc<Self>, x: &Vec<Integer>) -> <K as SetSignature>::Elem {
+        fn image(self: &Rc<Self>, x: &Vec<Integer>) -> <K as SetSignature>::Elem {
             debug_assert!(self.integer_submodule().validate_element(x).is_ok());
             let k = self.integer_submodule().anf();
             let n = k.n();
@@ -407,7 +407,7 @@ mod anf_inclusion {
     > InjectiveFunctionMorphism<IntegerModule, K>
         for AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion<K, IntegerModule>
     {
-        fn try_preimage(self: &Arc<Self>, y: &<K as SetSignature>::Elem) -> Option<Vec<Integer>> {
+        fn try_preimage(self: &Rc<Self>, y: &<K as SetSignature>::Elem) -> Option<Vec<Integer>> {
             let k = self.integer_submodule().anf();
             let n = k.n();
             debug_assert!(k.validate_element(y).is_ok());
@@ -447,7 +447,7 @@ mod anf_inclusion {
         >
     {
         fn numerator_and_denominator(
-            self: &Arc<Self>,
+            self: &Rc<Self>,
             a: &<K>::Elem,
         ) -> (
             <OrderWithBasis<K, MAXIMAL> as SetSignature>::Elem,
@@ -466,8 +466,8 @@ mod anf_inclusion {
         >
     {
         pub fn zq_extension(
-            self: &Arc<Self>,
-        ) -> Arc<order_integral_extension::OrderIntegralExtension<K, MAXIMAL>> {
+            self: &Rc<Self>,
+        ) -> Rc<order_integral_extension::OrderIntegralExtension<K, MAXIMAL>> {
             order_integral_extension::OrderIntegralExtension::new_integer_extension(self.clone())
         }
     }
@@ -491,7 +491,7 @@ mod anf_inclusion {
         ///
         #[derive(Debug, Clone)]
         pub struct OrderIntegralExtension<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> {
-            r_to_k: Arc<
+            r_to_k: Rc<
                 AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion<
                     K,
                     OrderWithBasis<K, MAXIMAL>,
@@ -501,19 +501,19 @@ mod anf_inclusion {
 
         impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> OrderIntegralExtension<K, MAXIMAL> {
             pub fn new_integer_extension(
-                r_to_k: Arc<
+                r_to_k: Rc<
                     AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion<
                         K,
                         OrderWithBasis<K, MAXIMAL>,
                     >,
                 >,
-            ) -> Arc<Self> {
+            ) -> Rc<Self> {
                 Self { r_to_k }.into()
             }
 
             pub fn with_ideals(
                 &self,
-            ) -> Arc<
+            ) -> Rc<
                 OrderIntegralExtensionWithIdeals<
                     K,
                     MAXIMAL,
@@ -547,35 +547,35 @@ mod anf_inclusion {
                 OrderWithBasis<K, MAXIMAL>,
             >;
 
-            fn z_ring(self: &Arc<Self>) -> Arc<Self::Z> {
+            fn z_ring(self: &Rc<Self>) -> Rc<Self::Z> {
                 Integer::structure()
             }
-            fn r_ring(self: &Arc<Self>) -> Arc<Self::R> {
+            fn r_ring(self: &Rc<Self>) -> Rc<Self::R> {
                 self.r_to_k.domain()
             }
-            fn q_field(self: &Arc<Self>) -> Arc<Self::Q> {
+            fn q_field(self: &Rc<Self>) -> Rc<Self::Q> {
                 Rational::structure()
             }
-            fn k_field(self: &Arc<Self>) -> Arc<Self::K> {
+            fn k_field(self: &Rc<Self>) -> Rc<Self::K> {
                 self.r_to_k.range()
             }
 
-            fn z_to_q(self: &Arc<Self>) -> Arc<Self::ZQ> {
+            fn z_to_q(self: &Rc<Self>) -> Rc<Self::ZQ> {
                 Rational::structure().inbound_principal_integer_map()
             }
-            fn z_to_r(self: &Arc<Self>) -> Arc<Self::ZR> {
+            fn z_to_r(self: &Rc<Self>) -> Rc<Self::ZR> {
                 self.r_ring().inbound_principal_integer_map()
             }
-            fn q_to_k(self: &Arc<Self>) -> Arc<Self::QK> {
+            fn q_to_k(self: &Rc<Self>) -> Rc<Self::QK> {
                 self.k_field()
                     .inbound_finite_dimensional_rational_extension()
             }
-            fn r_to_k(self: &Arc<Self>) -> Arc<Self::RK> {
+            fn r_to_k(self: &Rc<Self>) -> Rc<Self::RK> {
                 self.r_to_k.clone()
             }
 
             fn integralize_multiplier(
-                self: &Arc<Self>,
+                self: &Rc<Self>,
                 alpha: &<Self::K as SetSignature>::Elem,
             ) -> Integer {
                 if self.k_field().is_algebraic_integer(alpha) {
@@ -593,14 +593,14 @@ mod anf_inclusion {
             IdealsZ: IdealsSignature<IntegerCanonicalStructure>,
             IdealsR: IdealsSignature<OrderWithBasis<K, MAXIMAL>>,
         > {
-            r_to_k: Arc<
+            r_to_k: Rc<
                 AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion<
                     K,
                     OrderWithBasis<K, MAXIMAL>,
                 >,
             >,
-            ideals_z: Arc<IdealsZ>,
-            ideals_r: Arc<IdealsR>,
+            ideals_z: Rc<IdealsZ>,
+            ideals_r: Rc<IdealsR>,
         }
 
         impl<
@@ -611,15 +611,15 @@ mod anf_inclusion {
         > OrderIntegralExtensionWithIdeals<K, MAXIMAL, IdealsZ, IdealsR>
         {
             pub fn new_integer_extension(
-                r_to_k: Arc<
+                r_to_k: Rc<
                     AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion<
                         K,
                         OrderWithBasis<K, MAXIMAL>,
                     >,
                 >,
-                ideals_z: Arc<IdealsZ>,
-                ideals_r: Arc<IdealsR>,
-            ) -> Arc<Self> {
+                ideals_z: Rc<IdealsZ>,
+                ideals_r: Rc<IdealsR>,
+            ) -> Rc<Self> {
                 Self {
                     r_to_k,
                     ideals_z,
@@ -628,11 +628,11 @@ mod anf_inclusion {
                 .into()
             }
 
-            pub fn z_ideals(self: &Arc<Self>) -> &Arc<IdealsZ> {
+            pub fn z_ideals(self: &Rc<Self>) -> &Rc<IdealsZ> {
                 &self.ideals_z
             }
 
-            pub fn r_ideals(self: &Arc<Self>) -> &Arc<IdealsR> {
+            pub fn r_ideals(self: &Rc<Self>) -> &Rc<IdealsR> {
                 &self.ideals_r
             }
         }
@@ -658,35 +658,35 @@ mod anf_inclusion {
                 OrderWithBasis<K, MAXIMAL>,
             >;
 
-            fn z_ring(self: &Arc<Self>) -> Arc<Self::Z> {
+            fn z_ring(self: &Rc<Self>) -> Rc<Self::Z> {
                 Integer::structure()
             }
-            fn r_ring(self: &Arc<Self>) -> Arc<Self::R> {
+            fn r_ring(self: &Rc<Self>) -> Rc<Self::R> {
                 self.r_to_k.domain()
             }
-            fn q_field(self: &Arc<Self>) -> Arc<Self::Q> {
+            fn q_field(self: &Rc<Self>) -> Rc<Self::Q> {
                 Rational::structure()
             }
-            fn k_field(self: &Arc<Self>) -> Arc<Self::K> {
+            fn k_field(self: &Rc<Self>) -> Rc<Self::K> {
                 self.r_to_k.range()
             }
 
-            fn z_to_q(self: &Arc<Self>) -> Arc<Self::ZQ> {
+            fn z_to_q(self: &Rc<Self>) -> Rc<Self::ZQ> {
                 Rational::structure().inbound_principal_integer_map()
             }
-            fn z_to_r(self: &Arc<Self>) -> Arc<Self::ZR> {
+            fn z_to_r(self: &Rc<Self>) -> Rc<Self::ZR> {
                 self.r_ring().inbound_principal_integer_map()
             }
-            fn q_to_k(self: &Arc<Self>) -> Arc<Self::QK> {
+            fn q_to_k(self: &Rc<Self>) -> Rc<Self::QK> {
                 self.k_field()
                     .inbound_finite_dimensional_rational_extension()
             }
-            fn r_to_k(self: &Arc<Self>) -> Arc<Self::RK> {
+            fn r_to_k(self: &Rc<Self>) -> Rc<Self::RK> {
                 self.r_to_k.clone()
             }
 
             fn integralize_multiplier(
-                self: &Arc<Self>,
+                self: &Rc<Self>,
                 alpha: &<Self::K as SetSignature>::Elem,
             ) -> Integer {
                 if self.k_field().is_algebraic_integer(alpha) {
@@ -716,8 +716,8 @@ mod integer_submodule_inclusion {
         IntegerSubmodule: FullRankIntegerSubmoduleWithBasisSignature<K>,
     > {
         _k: PhantomData<K>,
-        integer_module: Arc<IntegerModule>,
-        integer_submodule: Arc<IntegerSubmodule>,
+        integer_module: Rc<IntegerModule>,
+        integer_submodule: Rc<IntegerSubmodule>,
     }
 
     impl<
@@ -726,15 +726,15 @@ mod integer_submodule_inclusion {
         IntegerSubmodule: FullRankIntegerSubmoduleWithBasisSignature<K>,
     > IntegerSubmoduleInclusion<K, IntegerModule, IntegerSubmodule>
     {
-        pub fn integer_module(&self) -> &Arc<IntegerModule> {
+        pub fn integer_module(&self) -> &Rc<IntegerModule> {
             &self.integer_module
         }
 
-        pub fn integer_submodule(&self) -> &Arc<IntegerSubmodule> {
+        pub fn integer_submodule(&self) -> &Rc<IntegerSubmodule> {
             &self.integer_submodule
         }
 
-        fn check(self: &Arc<Self>) -> Result<(), String> {
+        fn check(self: &Rc<Self>) -> Result<(), String> {
             if self
                 .integer_module()
                 .contains_integer_submodule(self.integer_submodule())
@@ -746,9 +746,9 @@ mod integer_submodule_inclusion {
         }
 
         fn new_impl(
-            integer_module: Arc<IntegerModule>,
-            integer_submodule: Arc<IntegerSubmodule>,
-        ) -> Arc<Self> {
+            integer_module: Rc<IntegerModule>,
+            integer_submodule: Rc<IntegerSubmodule>,
+        ) -> Rc<Self> {
             Self {
                 _k: PhantomData,
                 integer_module,
@@ -758,17 +758,17 @@ mod integer_submodule_inclusion {
         }
 
         pub fn new(
-            integer_module: Arc<IntegerModule>,
-            integer_submodule: Arc<IntegerSubmodule>,
-        ) -> Option<Arc<Self>> {
+            integer_module: Rc<IntegerModule>,
+            integer_submodule: Rc<IntegerSubmodule>,
+        ) -> Option<Rc<Self>> {
             let s = Self::new_impl(integer_module, integer_submodule);
             if s.check().is_ok() { Some(s) } else { None }
         }
 
         pub fn new_unchecked(
-            integer_module: Arc<IntegerModule>,
-            integer_submodule: Arc<IntegerSubmodule>,
-        ) -> Arc<Self> {
+            integer_module: Rc<IntegerModule>,
+            integer_submodule: Rc<IntegerSubmodule>,
+        ) -> Rc<Self> {
             let s = Self::new_impl(integer_module, integer_submodule);
             #[cfg(debug_assertions)]
             s.check().unwrap();
@@ -776,8 +776,8 @@ mod integer_submodule_inclusion {
         }
 
         pub fn integer_submodules_inclusion(
-            self: &Arc<Self>,
-        ) -> Arc<IntegerSubmoduleIntegerSubmoduleInclusion<K, IntegerModule, IntegerSubmodule>>
+            self: &Rc<Self>,
+        ) -> Rc<IntegerSubmoduleIntegerSubmoduleInclusion<K, IntegerModule, IntegerSubmodule>>
         {
             IntegerSubmoduleIntegerSubmoduleInclusion::new(self.clone())
         }
@@ -790,11 +790,11 @@ mod integer_submodule_inclusion {
     > Morphism<IntegerSubmodule, IntegerModule>
         for IntegerSubmoduleInclusion<K, IntegerModule, IntegerSubmodule>
     {
-        fn domain(self: &Arc<Self>) -> Arc<IntegerSubmodule> {
+        fn domain(self: &Rc<Self>) -> Rc<IntegerSubmodule> {
             self.integer_submodule().clone()
         }
 
-        fn range(self: &Arc<Self>) -> Arc<IntegerModule> {
+        fn range(self: &Rc<Self>) -> Rc<IntegerModule> {
             self.integer_module().clone()
         }
     }
@@ -816,7 +816,7 @@ mod integer_submodule_inclusion {
         for IntegerSubmoduleInclusion<K, IntegerModule, IntegerSubmodule>
     {
         fn image(
-            self: &Arc<Self>,
+            self: &Rc<Self>,
             x: &<IntegerSubmodule as SetSignature>::Elem,
         ) -> <IntegerModule as SetSignature>::Elem {
             self.integer_module()
@@ -839,7 +839,7 @@ mod integer_submodule_inclusion {
         for IntegerSubmoduleInclusion<K, IntegerModule, IntegerSubmodule>
     {
         fn try_preimage(
-            self: &Arc<Self>,
+            self: &Rc<Self>,
             y: &<IntegerModule as SetSignature>::Elem,
         ) -> Option<<IntegerSubmodule as SetSignature>::Elem> {
             self.integer_submodule()
@@ -861,8 +861,8 @@ mod integer_submodule_inclusion {
     > {
         _k: PhantomData<K>,
         integer_submodule_to_module:
-            Arc<IntegerSubmoduleInclusion<K, IntegerModule, IntegerSubmodule>>,
-        integer_module_to_submodule: Arc<
+            Rc<IntegerSubmoduleInclusion<K, IntegerModule, IntegerSubmodule>>,
+        integer_module_to_submodule: Rc<
             FinitelyFreeSubmodulesStructure<
                 EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
@@ -872,7 +872,7 @@ mod integer_submodule_inclusion {
                 >,
             >,
         >,
-        integer_submodule_to_submodules: Arc<
+        integer_submodule_to_submodules: Rc<
             FinitelyFreeSubmodulesStructure<
                 EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
@@ -891,10 +891,10 @@ mod integer_submodule_inclusion {
     > IntegerSubmoduleIntegerSubmoduleInclusion<K, IntegerModule, IntegerSubmodule>
     {
         pub fn new(
-            integer_submodule_to_module: Arc<
+            integer_submodule_to_module: Rc<
                 IntegerSubmoduleInclusion<K, IntegerModule, IntegerSubmodule>,
             >,
-        ) -> Arc<Self> {
+        ) -> Rc<Self> {
             Self {
                 _k: PhantomData,
                 integer_module_to_submodule: integer_submodule_to_module
@@ -912,13 +912,13 @@ mod integer_submodule_inclusion {
 
         pub fn integer_submodule_to_module(
             &self,
-        ) -> &Arc<IntegerSubmoduleInclusion<K, IntegerModule, IntegerSubmodule>> {
+        ) -> &Rc<IntegerSubmoduleInclusion<K, IntegerModule, IntegerSubmodule>> {
             &self.integer_submodule_to_module
         }
 
         pub fn integer_module_to_submodule(
-            self: &Arc<Self>,
-        ) -> &Arc<
+            self: &Rc<Self>,
+        ) -> &Rc<
             FinitelyFreeSubmodulesStructure<
                 EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
@@ -932,8 +932,8 @@ mod integer_submodule_inclusion {
         }
 
         pub fn integer_submodule_to_submodules(
-            self: &Arc<Self>,
-        ) -> &Arc<
+            self: &Rc<Self>,
+        ) -> &Rc<
             FinitelyFreeSubmodulesStructure<
                 EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
@@ -972,8 +972,8 @@ mod integer_submodule_inclusion {
         > for IntegerSubmoduleIntegerSubmoduleInclusion<K, IntegerModule, IntegerSubmodule>
     {
         fn domain(
-            self: &Arc<Self>,
-        ) -> Arc<
+            self: &Rc<Self>,
+        ) -> Rc<
             FinitelyFreeSubmodulesStructure<
                 EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
@@ -987,8 +987,8 @@ mod integer_submodule_inclusion {
         }
 
         fn range(
-            self: &Arc<Self>,
-        ) -> Arc<
+            self: &Rc<Self>,
+        ) -> Rc<
             FinitelyFreeSubmodulesStructure<
                 EnumeratedFiniteSetStructure,
                 IntegerCanonicalStructure,
@@ -1027,7 +1027,7 @@ mod integer_submodule_inclusion {
         > for IntegerSubmoduleIntegerSubmoduleInclusion<K, IntegerModule, IntegerSubmodule>
     {
         fn image(
-            self: &Arc<Self>,
+            self: &Rc<Self>,
             x: &FinitelyFreeSubmodule<Integer>,
         ) -> FinitelyFreeSubmodule<Integer> {
             self.integer_module_to_submodule().span(
@@ -1064,7 +1064,7 @@ mod integer_submodule_inclusion {
         > for IntegerSubmoduleIntegerSubmoduleInclusion<K, IntegerModule, IntegerSubmodule>
     {
         fn try_preimage(
-            self: &Arc<Self>,
+            self: &Rc<Self>,
             y: &FinitelyFreeSubmodule<Integer>,
         ) -> Option<FinitelyFreeSubmodule<Integer>> {
             Some(
@@ -1082,28 +1082,28 @@ mod integer_submodule_inclusion {
 pub trait FullRankIntegerSubmoduleWithBasisSignature<K: AlgebraicNumberFieldSignature>:
     AdditiveGroupSignature<Elem = Vec<Integer>>
 {
-    fn anf(self: &Arc<Self>) -> Arc<K>;
+    fn anf(self: &Rc<Self>) -> Rc<K>;
 
-    fn basis(self: &Arc<Self>) -> &Vec<K::Elem>;
+    fn basis(self: &Rc<Self>) -> &Vec<K::Elem>;
 
-    fn basis_vector(self: &Arc<Self>, i: usize) -> &K::Elem {
+    fn basis_vector(self: &Rc<Self>, i: usize) -> &K::Elem {
         debug_assert!(i < self.n());
         self.basis().get(i).unwrap()
     }
 
-    fn n(self: &Arc<Self>) -> usize {
+    fn n(self: &Rc<Self>) -> usize {
         debug_assert_eq!(self.anf().n(), self.basis().len());
         self.anf().n()
     }
 
     fn free_integer_submodule_restructure(
-        self: &Arc<Self>,
-    ) -> Arc<FinitelyFreeModuleStructure<EnumeratedFiniteSetStructure, IntegerCanonicalStructure>>
+        self: &Rc<Self>,
+    ) -> Rc<FinitelyFreeModuleStructure<EnumeratedFiniteSetStructure, IntegerCanonicalStructure>>
     {
         Integer::structure().free_module(EnumeratedFiniteSetStructure::new(self.n()))
     }
 
-    fn contains_element(self: &Arc<Self>, p: &K::Elem) -> bool {
+    fn contains_element(self: &Rc<Self>, p: &K::Elem) -> bool {
         self.outbound_order_to_anf_inclusion()
             .try_preimage(p)
             .is_some()
@@ -1112,8 +1112,8 @@ pub trait FullRankIntegerSubmoduleWithBasisSignature<K: AlgebraicNumberFieldSign
     fn contains_integer_submodule<
         IntegerSubmodule: FullRankIntegerSubmoduleWithBasisSignature<K>,
     >(
-        self: &Arc<Self>,
-        integer_submodule: &Arc<IntegerSubmodule>,
+        self: &Rc<Self>,
+        integer_submodule: &Rc<IntegerSubmodule>,
     ) -> bool {
         integer_submodule
             .basis()
@@ -1121,15 +1121,15 @@ pub trait FullRankIntegerSubmoduleWithBasisSignature<K: AlgebraicNumberFieldSign
             .all(|sublat_basis_vector| self.contains_element(sublat_basis_vector))
     }
 
-    fn discriminant(self: &Arc<Self>) -> Rational {
+    fn discriminant(self: &Rc<Self>) -> Rational {
         self.anf()
             .inbound_finite_dimensional_rational_extension()
             .discriminant(self.basis())
     }
 
     fn outbound_order_to_anf_inclusion(
-        self: &Arc<Self>,
-    ) -> Arc<anf_inclusion::AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion<K, Self>>
+        self: &Rc<Self>,
+    ) -> Rc<anf_inclusion::AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion<K, Self>>
     {
         anf_inclusion::AlgebraicNumberFieldFullRankIntegerSubmoduleWithBasisInclusion::new(
             self.clone(),
@@ -1139,21 +1139,19 @@ pub trait FullRankIntegerSubmoduleWithBasisSignature<K: AlgebraicNumberFieldSign
     fn inbound_integer_submodule_inclusion<
         IntegerSubmodule: FullRankIntegerSubmoduleWithBasisSignature<K>,
     >(
-        self: &Arc<Self>,
-        integer_submodule: Arc<IntegerSubmodule>,
-    ) -> Option<
-        Arc<integer_submodule_inclusion::IntegerSubmoduleInclusion<K, Self, IntegerSubmodule>>,
-    > {
+        self: &Rc<Self>,
+        integer_submodule: Rc<IntegerSubmodule>,
+    ) -> Option<Rc<integer_submodule_inclusion::IntegerSubmoduleInclusion<K, Self, IntegerSubmodule>>>
+    {
         integer_submodule_inclusion::IntegerSubmoduleInclusion::new(self.clone(), integer_submodule)
     }
 
     fn inbound_integer_submodule_inclusion_unchecked<
         IntegerSubmodule: FullRankIntegerSubmoduleWithBasisSignature<K>,
     >(
-        self: &Arc<Self>,
-        integer_submodule: Arc<IntegerSubmodule>,
-    ) -> Arc<integer_submodule_inclusion::IntegerSubmoduleInclusion<K, Self, IntegerSubmodule>>
-    {
+        self: &Rc<Self>,
+        integer_submodule: Rc<IntegerSubmodule>,
+    ) -> Rc<integer_submodule_inclusion::IntegerSubmoduleInclusion<K, Self, IntegerSubmodule>> {
         integer_submodule_inclusion::IntegerSubmoduleInclusion::new_unchecked(
             self.clone(),
             integer_submodule,

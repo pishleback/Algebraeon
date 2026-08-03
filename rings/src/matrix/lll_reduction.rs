@@ -16,7 +16,7 @@ use crate::{
 };
 use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 use algebraeon_structures::*;
-use std::sync::Arc;
+use std::rc::Rc;
 
 impl<
     FS: RealSubsetSignature
@@ -32,9 +32,9 @@ impl<
     ///
     /// `delta` must be in the range (-0.25, 1] with polynomial time complexity only for `delta` in (-0.25, 1). `delta` = 3/4 is the "default" value to use.
     pub fn lll_row_reduction_algorithm(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         mut basis: Matrix<FS::Elem>,
-        inner_product: &Arc<impl RealInnerProduct<FS>>,
+        inner_product: &Rc<impl RealInnerProduct<FS>>,
         delta: &Rational,
     ) -> (Matrix<FS::Elem>, Matrix<FS::Elem>) {
         let n = basis.rows(); // size of the basis
@@ -302,9 +302,9 @@ impl<
     ///
     /// `delta` must be in the range (-0.25, 1] with polynomial time complexity only for `delta` in (-0.25, 1). `delta` = 3/4 is the "default" value to use.
     pub fn lll_col_reduction_algorithm(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         basis: Matrix<FS::Elem>,
-        inner_product: &Arc<impl RealInnerProduct<FS>>,
+        inner_product: &Rc<impl RealInnerProduct<FS>>,
         delta: &Rational,
     ) -> (Matrix<FS::Elem>, Matrix<FS::Elem>) {
         let (h, b) = self.lll_row_reduction_algorithm(basis.transpose(), inner_product, delta);
@@ -322,7 +322,7 @@ where
 {
     pub fn lll_row_reduction_algorithm(
         self,
-        inner_product: &Arc<impl RealInnerProduct<F::Signature>>,
+        inner_product: &Rc<impl RealInnerProduct<F::Signature>>,
         delta: &Rational,
     ) -> (Matrix<F>, Matrix<F>) {
         Self::structure().lll_row_reduction_algorithm(self, inner_product, delta)
@@ -330,7 +330,7 @@ where
 
     pub fn lll_col_reduction_algorithm(
         self,
-        inner_product: &Arc<impl RealInnerProduct<F::Signature>>,
+        inner_product: &Rc<impl RealInnerProduct<F::Signature>>,
         delta: &Rational,
     ) -> (Matrix<F>, Matrix<F>) {
         Self::structure().lll_col_reduction_algorithm(self, inner_product, delta)
@@ -346,7 +346,7 @@ impl MatrixStructure<IntegerCanonicalStructure> {
     pub fn lll_integral_row_reduction_algorithm(
         &self,
         mut basis: Matrix<Integer>,
-        inner_product: &Arc<impl RealInnerProduct<IntegerCanonicalStructure>>,
+        inner_product: &Rc<impl RealInnerProduct<IntegerCanonicalStructure>>,
         delta: &Rational,
     ) -> (Matrix<Integer>, Matrix<Integer>) {
         let n = basis.rows(); // size of the basis
@@ -630,7 +630,7 @@ impl MatrixStructure<IntegerCanonicalStructure> {
     pub fn lll_integral_col_reduction_algorithm(
         &self,
         basis: Matrix<Integer>,
-        inner_product: &Arc<impl RealInnerProduct<IntegerCanonicalStructure>>,
+        inner_product: &Rc<impl RealInnerProduct<IntegerCanonicalStructure>>,
         delta: &Rational,
     ) -> (Matrix<Integer>, Matrix<Integer>) {
         let (h, b) =
@@ -642,7 +642,7 @@ impl MatrixStructure<IntegerCanonicalStructure> {
 impl Matrix<Integer> {
     pub fn lll_integral_row_reduction_algorithm(
         self,
-        inner_product: &Arc<impl RealInnerProduct<IntegerCanonicalStructure>>,
+        inner_product: &Rc<impl RealInnerProduct<IntegerCanonicalStructure>>,
         delta: &Rational,
     ) -> (Matrix<Integer>, Matrix<Integer>) {
         Self::structure().lll_integral_row_reduction_algorithm(self, inner_product, delta)
@@ -650,7 +650,7 @@ impl Matrix<Integer> {
 
     pub fn lll_integral_col_reduction_algorithm(
         self,
-        inner_product: &Arc<impl RealInnerProduct<IntegerCanonicalStructure>>,
+        inner_product: &Rc<impl RealInnerProduct<IntegerCanonicalStructure>>,
         delta: &Rational,
     ) -> (Matrix<Integer>, Matrix<Integer>) {
         Self::structure().lll_integral_col_reduction_algorithm(self, inner_product, delta)

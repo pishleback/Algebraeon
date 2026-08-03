@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::rc::Rc;
 
 use super::*;
 use crate::linear::{
@@ -23,7 +23,7 @@ where
     PolynomialStructure<FS::BFS>: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
         + SetSignature<Elem = Polynomial<<FS::BFS as SetSignature>::Elem>>,
 {
-    pub fn matrix(&self, field: &Arc<FS>) -> Matrix<FS::Elem> {
+    pub fn matrix(&self, field: &Rc<FS>) -> Matrix<FS::Elem> {
         // let base_field = field.base_field();
         Matrix::construct(self.blocksize, self.blocksize, |r, c| {
             if r == c {
@@ -43,7 +43,7 @@ where
     PolynomialStructure<FS::BFS>: FactoringMonoidSignature<FactoredExponent = NaturalCanonicalStructure>
         + SetSignature<Elem = Polynomial<<FS::BFS as SetSignature>::Elem>>,
 {
-    field: Arc<FS>,
+    field: Rc<FS>,
     blocks: Vec<JordanBlock<FS>>,
 }
 

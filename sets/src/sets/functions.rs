@@ -3,30 +3,30 @@ use crate::sets::{
 };
 use algebraeon_structures::*;
 use itertools::Itertools;
-use std::{cmp::Ordering, fmt::Debug, sync::Arc};
+use std::{cmp::Ordering, fmt::Debug, rc::Rc};
 
 /// Represent all functions from `domain` to `range`
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FunctionsStructure<Domain: SetSignature, Range: SetSignature> {
-    domain: Arc<Domain>,
-    range: Arc<Range>,
+    domain: Rc<Domain>,
+    range: Rc<Range>,
 }
 
 impl<Domain: SetSignature, Range: SetSignature> FunctionsStructure<Domain, Range> {
-    pub fn new(domain: Arc<Domain>, range: Arc<Range>) -> Arc<Self> {
+    pub fn new(domain: Rc<Domain>, range: Rc<Range>) -> Rc<Self> {
         Self { domain, range }.into()
     }
 
-    pub fn into_domain_and_range(self) -> (Arc<Domain>, Arc<Range>) {
+    pub fn into_domain_and_range(self) -> (Rc<Domain>, Rc<Range>) {
         (self.domain, self.range)
     }
 }
 
 pub trait SetToFunctionsToSignature: SetSignature {
     fn functions_to<Range: SetSignature>(
-        self: &Arc<Self>,
-        range: &Arc<Range>,
-    ) -> Arc<FunctionsStructure<Self, Range>> {
+        self: &Rc<Self>,
+        range: &Rc<Range>,
+    ) -> Rc<FunctionsStructure<Self, Range>> {
         FunctionsStructure::new(self.clone(), range.clone())
     }
 }
@@ -34,20 +34,20 @@ impl<Set: SetSignature> SetToFunctionsToSignature for Set {}
 
 pub trait SetToFunctionsFromSignature: SetSignature {
     fn functions_from<Domain: SetSignature>(
-        self: &Arc<Self>,
-        domain: &Arc<Domain>,
-    ) -> Arc<FunctionsStructure<Domain, Self>> {
+        self: &Rc<Self>,
+        domain: &Rc<Domain>,
+    ) -> Rc<FunctionsStructure<Domain, Self>> {
         FunctionsStructure::new(domain.clone(), self.clone())
     }
 }
 impl<Set: SetSignature> SetToFunctionsFromSignature for Set {}
 
 impl<Domain: SetSignature, Range: SetSignature> FunctionsStructure<Domain, Range> {
-    pub fn domain(&self) -> &Arc<Domain> {
+    pub fn domain(&self) -> &Rc<Domain> {
         &self.domain
     }
 
-    pub fn range(&self) -> &Arc<Range> {
+    pub fn range(&self) -> &Rc<Range> {
         &self.range
     }
 }
@@ -58,7 +58,7 @@ impl<Domain: OrderedFiniteSetSignature, Range: SetSignature> FunctionsSignature<
     for FunctionsStructure<Domain, Range>
 {
     fn function(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         f: impl Fn(&Domain::Elem) -> Range::Elem,
     ) -> Option<Vec<Range::Elem>> {
         let s = self
@@ -75,7 +75,7 @@ impl<Domain: OrderedFiniteSetSignature, Range: SetSignature> FunctionsSignature<
         Some(s)
     }
 
-    fn image<'a>(self: &Arc<Self>, f: &'a Vec<Range::Elem>, x: &Domain::Elem) -> &'a Range::Elem {
+    fn image<'a>(self: &Rc<Self>, f: &'a Vec<Range::Elem>, x: &Domain::Elem) -> &'a Range::Elem {
         debug_assert!(self.is_element(f));
         debug_assert!(self.domain().is_element(x));
         &f[TryInto::<usize>::try_into(self.domain().element_to_enumeration(x)).unwrap()]
@@ -87,7 +87,7 @@ impl<Domain: OrderedFiniteSetSignature, Range: SetSignature> SetSignature
 {
     type Elem = Vec<Range::Elem>;
 
-    fn validate_element(self: &Arc<Self>, x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Rc<Self>, x: &Self::Elem) -> Result<(), String> {
         if Natural::from(x.len()) != self.domain().size() {
             return Err("Incorrect vector length".to_string());
         }
@@ -101,7 +101,7 @@ impl<Domain: OrderedFiniteSetSignature, Range: SetSignature> SetSignature
 impl<Domain: OrderedFiniteSetSignature, Range: EqSignature> EqSignature
     for FunctionsStructure<Domain, Range>
 {
-    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn equal(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(b));
         let n = a.len();
@@ -113,7 +113,7 @@ impl<Domain: OrderedFiniteSetSignature, Range: EqSignature> EqSignature
 impl<Domain: OrderedFiniteSetSignature, Range: OrdSignature> PartialOrdSignature
     for FunctionsStructure<Domain, Range>
 {
-    fn partial_cmp(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<std::cmp::Ordering> {
+    fn partial_cmp(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<std::cmp::Ordering> {
         Some(self.cmp(a, b))
     }
 }
@@ -121,7 +121,7 @@ impl<Domain: OrderedFiniteSetSignature, Range: OrdSignature> PartialOrdSignature
 impl<Domain: OrderedFiniteSetSignature, Range: OrdSignature> OrdSignature
     for FunctionsStructure<Domain, Range>
 {
-    fn cmp(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Ordering {
+    fn cmp(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Ordering {
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(b));
         let n = a.len();
@@ -144,7 +144,7 @@ impl<Domain: OrderedFiniteSetSignature, Range: OrdSignature> OrdSignature
 impl<Domain: OrderedFiniteSetSignature, Range: OrderedFiniteSetSignature> CountableSetSignature
     for FunctionsStructure<Domain, Range>
 {
-    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
+    fn generate_all_elements(self: Rc<Self>) -> impl Iterator<Item = Self::Elem> {
         let n: usize = self.domain().size().try_into().unwrap_or(usize::MAX);
         (0..n)
             .map(|_| self.range().list_all_elements())
@@ -155,7 +155,7 @@ impl<Domain: OrderedFiniteSetSignature, Range: OrderedFiniteSetSignature> Counta
 impl<Domain: OrderedFiniteSetSignature, Range: OrderedFiniteSetSignature> FiniteSetSignature
     for FunctionsStructure<Domain, Range>
 {
-    fn size(self: &Arc<Self>) -> Natural {
+    fn size(self: &Rc<Self>) -> Natural {
         self.range().size().pow(&self.domain().size())
     }
 }
@@ -163,7 +163,7 @@ impl<Domain: OrderedFiniteSetSignature, Range: OrderedFiniteSetSignature> Finite
 impl<Domain: OrderedFiniteSetSignature, Range: OrderedFiniteSetSignature> OrderedFiniteSetSignature
     for FunctionsStructure<Domain, Range>
 {
-    fn list_all_elements_ordered(self: &Arc<Self>) -> Vec<Self::Elem> {
+    fn list_all_elements_ordered(self: &Rc<Self>) -> Vec<Self::Elem> {
         let n: usize = self.domain().size().try_into().unwrap_or(usize::MAX);
         (0..n)
             .map(|_| {
@@ -181,7 +181,7 @@ impl<Domain: OrderedFiniteSetSignature, Range: OrderedFiniteSetSignature> Ordere
             .collect()
     }
 
-    fn element_to_enumeration(self: &Arc<Self>, elem: &Self::Elem) -> Natural {
+    fn element_to_enumeration(self: &Rc<Self>, elem: &Self::Elem) -> Natural {
         debug_assert!(self.is_element(elem));
         let d = elem.len();
         let r = self.range().size();
@@ -193,7 +193,7 @@ impl<Domain: OrderedFiniteSetSignature, Range: OrderedFiniteSetSignature> Ordere
         num
     }
 
-    fn enumeration_to_element(self: &Arc<Self>, num: &Natural) -> Option<Self::Elem> {
+    fn enumeration_to_element(self: &Rc<Self>, num: &Natural) -> Option<Self::Elem> {
         if *num >= self.size() {
             return None;
         }
@@ -217,8 +217,8 @@ struct RightPermutationActionOnFunctionsStructure<
     Range: SetSignature,
     DomainPerms: PermutationsSignature<Domain>,
 > {
-    functions: Arc<FunctionsStructure<Domain, Range>>,
-    domain_perms: Arc<DomainPerms>,
+    functions: Rc<FunctionsStructure<Domain, Range>>,
+    domain_perms: Rc<DomainPerms>,
 }
 
 impl<
@@ -228,9 +228,9 @@ impl<
 > RightPermutationActionOnFunctionsStructure<Domain, Range, DomainPerms>
 {
     fn new(
-        functions: Arc<FunctionsStructure<Domain, Range>>,
-        domain_perms: Arc<DomainPerms>,
-    ) -> Arc<Self> {
+        functions: Rc<FunctionsStructure<Domain, Range>>,
+        domain_perms: Rc<DomainPerms>,
+    ) -> Rc<Self> {
         Self {
             functions,
             domain_perms,
@@ -249,8 +249,8 @@ impl<
 
 impl<Domain: OrderedFiniteSetSignature, Range: SetSignature> FunctionsStructure<Domain, Range> {
     pub fn domain_finitely_supported_permutation_action(
-        self: &Arc<Self>,
-    ) -> Arc<impl RightGroupActionSignature<Self, FinitelySupportedPermutationsStructure<Domain>>>
+        self: &Rc<Self>,
+    ) -> Rc<impl RightGroupActionSignature<Self, FinitelySupportedPermutationsStructure<Domain>>>
     {
         RightPermutationActionOnFunctionsStructure::new(self.clone(), self.domain().permutations())
     }
@@ -264,16 +264,16 @@ impl<
 > RightGroupActionSignature<FunctionsStructure<Domain, Range>, DomainPerms>
     for RightPermutationActionOnFunctionsStructure<Domain, Range, DomainPerms>
 {
-    fn group(self: &Arc<Self>) -> &Arc<DomainPerms> {
+    fn group(self: &Rc<Self>) -> &Rc<DomainPerms> {
         &self.domain_perms
     }
 
-    fn set(self: &Arc<Self>) -> &Arc<FunctionsStructure<Domain, Range>> {
+    fn set(self: &Rc<Self>) -> &Rc<FunctionsStructure<Domain, Range>> {
         &self.functions
     }
 
     fn apply(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         g: &<DomainPerms>::Elem,
         f: &<FunctionsStructure<Domain, Range> as SetSignature>::Elem,
     ) -> <FunctionsStructure<Domain, Range> as SetSignature>::Elem {
@@ -293,8 +293,8 @@ struct LeftPermutationActionOnFunctionsStructure<
     Range: OrderedFiniteSetSignature,
     RangePerms: PermutationsSignature<Range>,
 > {
-    functions: Arc<FunctionsStructure<Domain, Range>>,
-    range_perms: Arc<RangePerms>,
+    functions: Rc<FunctionsStructure<Domain, Range>>,
+    range_perms: Rc<RangePerms>,
 }
 
 impl<
@@ -304,9 +304,9 @@ impl<
 > LeftPermutationActionOnFunctionsStructure<Domain, Range, RangePerms>
 {
     fn new(
-        functions: Arc<FunctionsStructure<Domain, Range>>,
-        range_perms: Arc<RangePerms>,
-    ) -> Arc<Self> {
+        functions: Rc<FunctionsStructure<Domain, Range>>,
+        range_perms: Rc<RangePerms>,
+    ) -> Rc<Self> {
         Self {
             functions,
             range_perms,
@@ -327,8 +327,8 @@ impl<Domain: OrderedFiniteSetSignature, Range: OrderedFiniteSetSignature>
     FunctionsStructure<Domain, Range>
 {
     pub fn range_finitely_supported_permutation_action(
-        self: &Arc<Self>,
-    ) -> Arc<impl LeftGroupActionSignature<FinitelySupportedPermutationsStructure<Range>, Self>>
+        self: &Rc<Self>,
+    ) -> Rc<impl LeftGroupActionSignature<FinitelySupportedPermutationsStructure<Range>, Self>>
     {
         LeftPermutationActionOnFunctionsStructure::new(self.clone(), self.range().permutations())
     }
@@ -342,16 +342,16 @@ impl<
 > LeftGroupActionSignature<RangePerms, FunctionsStructure<Domain, Range>>
     for LeftPermutationActionOnFunctionsStructure<Domain, Range, RangePerms>
 {
-    fn group(self: &Arc<Self>) -> &Arc<RangePerms> {
+    fn group(self: &Rc<Self>) -> &Rc<RangePerms> {
         &self.range_perms
     }
 
-    fn set(self: &Arc<Self>) -> &Arc<FunctionsStructure<Domain, Range>> {
+    fn set(self: &Rc<Self>) -> &Rc<FunctionsStructure<Domain, Range>> {
         &self.functions
     }
 
     fn apply(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         g: &<RangePerms>::Elem,
         f: &<FunctionsStructure<Domain, Range> as SetSignature>::Elem,
     ) -> <FunctionsStructure<Domain, Range> as SetSignature>::Elem {

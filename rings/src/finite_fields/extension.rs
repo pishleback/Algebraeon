@@ -3,12 +3,12 @@ use crate::{
 };
 use algebraeon_structures::*;
 use itertools::Itertools;
-use std::sync::Arc;
+use std::rc::Rc;
 
 impl<FS: FiniteFieldSignature> CountableSetSignature
     for MultiplicativeMonoidUnitsStructure<PolynomialQuotientRingStructure<FS, true>>
 {
-    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
+    fn generate_all_elements(self: Rc<Self>) -> impl Iterator<Item = Self::Elem> {
         self.list_all_elements().into_iter()
     }
 }
@@ -16,7 +16,7 @@ impl<FS: FiniteFieldSignature> CountableSetSignature
 impl<FS: FiniteFieldSignature> FiniteSetSignature
     for MultiplicativeMonoidUnitsStructure<PolynomialQuotientRingStructure<FS, true>>
 {
-    fn list_all_elements(self: &Arc<Self>) -> Vec<Self::Elem> {
+    fn list_all_elements(self: &Rc<Self>) -> Vec<Self::Elem> {
         let mut all_base_elements = vec![self.monoid().ring().coeff_ring().zero()];
         for unit in self.monoid().ring().coeff_ring().all_units() {
             all_base_elements.push(unit);
@@ -41,7 +41,7 @@ impl<FS: FiniteFieldSignature> FiniteSetSignature
 }
 
 impl<FS: FiniteFieldSignature> FiniteFieldSignature for PolynomialQuotientRingStructure<FS, true> {
-    fn characteristic_and_power(self: &Arc<Self>) -> (Natural, Natural) {
+    fn characteristic_and_power(self: &Rc<Self>) -> (Natural, Natural) {
         let (p, t) = self.ring().coeff_ring().characteristic_and_power();
         let d = Natural::from(self.degree());
         (p, d * t)
@@ -49,9 +49,9 @@ impl<FS: FiniteFieldSignature> FiniteFieldSignature for PolynomialQuotientRingSt
 }
 
 pub fn new_finite_field_extension<FS: FiniteFieldSignature>(
-    finite_field: Arc<FS>,
+    finite_field: Rc<FS>,
     poly: Polynomial<FS::Elem>,
-) -> Arc<PolynomialQuotientRingStructure<FS, true>>
+) -> Rc<PolynomialQuotientRingStructure<FS, true>>
 where
     PolynomialStructure<FS>: FactoringMonoidSignature<Elem = Polynomial<FS::Elem>>,
 {
@@ -59,7 +59,7 @@ where
 }
 
 #[allow(unused)]
-pub(crate) fn f9() -> Arc<PolynomialQuotientRingStructure<ModuloCanonicalStructure<3>, true>> {
+pub(crate) fn f9() -> Rc<PolynomialQuotientRingStructure<ModuloCanonicalStructure<3>, true>> {
     use crate::num_theory::modulo::const_naive::*;
     new_finite_field_extension::<ModuloCanonicalStructure<3>>(
         Modulo::<3>::structure(),

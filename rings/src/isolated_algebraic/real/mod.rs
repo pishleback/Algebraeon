@@ -7,7 +7,7 @@ use interval::*;
 use polynomial::*;
 use std::fmt::Display;
 use std::hash::Hash;
-use std::sync::Arc;
+use std::rc::Rc;
 
 mod bounds;
 mod interval;
@@ -408,7 +408,7 @@ impl RealAlgebraic {
 }
 
 impl PositiveRealNthRootSignature for RealAlgebraicCanonicalStructure {
-    fn nth_root(self: &Arc<Self>, x: &Self::Elem, n: usize) -> Result<Self::Elem, ()> {
+    fn nth_root(self: &Rc<Self>, x: &Self::Elem, n: usize) -> Result<Self::Elem, ()> {
         nth_root(x, n)
     }
 }
@@ -451,33 +451,33 @@ impl Display for RealAlgebraic {
 }
 
 impl ToStringSignature for RealAlgebraicCanonicalStructure {
-    fn to_string(self: &Arc<Self>, elem: &Self::Elem) -> String {
+    fn to_string(self: &Rc<Self>, elem: &Self::Elem) -> String {
         format!("{}", elem)
     }
 }
 
 impl RinglikeSpecializationSignature for RealAlgebraicCanonicalStructure {
     fn try_ring_restructure(
-        self: Arc<Self>,
-    ) -> Option<Arc<impl EqSignature<Elem = Self::Elem> + RingSignature>> {
+        self: Rc<Self>,
+    ) -> Option<Rc<impl EqSignature<Elem = Self::Elem> + RingSignature>> {
         Some(self)
     }
 
     fn try_char_zero_ring_restructure(
-        self: Arc<Self>,
-    ) -> Option<Arc<impl EqSignature<Elem = Self::Elem> + CharZeroRingSignature>> {
+        self: Rc<Self>,
+    ) -> Option<Rc<impl EqSignature<Elem = Self::Elem> + CharZeroRingSignature>> {
         Some(self)
     }
 }
 
 impl ZeroSignature for RealAlgebraicCanonicalStructure {
-    fn zero(self: &Arc<Self>) -> Self::Elem {
+    fn zero(self: &Rc<Self>) -> Self::Elem {
         RealAlgebraic::Rational(Rational::from(0))
     }
 }
 
 impl AdditionSignature for RealAlgebraicCanonicalStructure {
-    fn add(self: &Arc<Self>, alg1: &Self::Elem, alg2: &Self::Elem) -> Self::Elem {
+    fn add(self: &Rc<Self>, alg1: &Self::Elem, alg2: &Self::Elem) -> Self::Elem {
         // println!("add {:?} {:?}", alg1, alg2);
 
         fn add_rat(mut elem: RealAlgebraicRoot, rat: &Rational) -> RealAlgebraicRoot {
@@ -542,13 +542,13 @@ impl AdditionSignature for RealAlgebraicCanonicalStructure {
 }
 
 impl CancellativeAdditionSignature for RealAlgebraicCanonicalStructure {
-    fn try_sub(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_sub(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.sub(a, b))
     }
 }
 
 impl TryNegateSignature for RealAlgebraicCanonicalStructure {
-    fn try_neg(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_neg(self: &Rc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
     }
 }
@@ -556,7 +556,7 @@ impl TryNegateSignature for RealAlgebraicCanonicalStructure {
 impl AdditiveMonoidSignature for RealAlgebraicCanonicalStructure {}
 
 impl AdditiveGroupSignature for RealAlgebraicCanonicalStructure {
-    fn neg(self: &Arc<Self>, a: &Self::Elem) -> Self::Elem {
+    fn neg(self: &Rc<Self>, a: &Self::Elem) -> Self::Elem {
         match a {
             RealAlgebraic::Rational(a) => RealAlgebraic::Rational(-a),
             RealAlgebraic::Real(root) => RealAlgebraic::Real(root.clone().neg()),
@@ -565,13 +565,13 @@ impl AdditiveGroupSignature for RealAlgebraicCanonicalStructure {
 }
 
 impl OneSignature for RealAlgebraicCanonicalStructure {
-    fn one(self: &Arc<Self>) -> Self::Elem {
+    fn one(self: &Rc<Self>) -> Self::Elem {
         RealAlgebraic::Rational(Rational::from(1))
     }
 }
 
 impl MultiplicationSignature for RealAlgebraicCanonicalStructure {
-    fn mul(self: &Arc<Self>, elem1: &Self::Elem, elem2: &Self::Elem) -> Self::Elem {
+    fn mul(self: &Rc<Self>, elem1: &Self::Elem, elem2: &Self::Elem) -> Self::Elem {
         match elem1.cmp(&self.zero()) {
             std::cmp::Ordering::Less => {
                 return self.neg(&self.mul(&self.neg(elem1), elem2));
@@ -662,19 +662,19 @@ impl RightDistributiveMultiplicationOverAddition for RealAlgebraicCanonicalStruc
 impl SemiRingSignature for RealAlgebraicCanonicalStructure {}
 
 impl RingSignature for RealAlgebraicCanonicalStructure {
-    fn is_reduced(self: &Arc<Self>) -> Result<bool, String> {
+    fn is_reduced(self: &Rc<Self>) -> Result<bool, String> {
         Ok(true)
     }
 }
 
 impl CharacteristicSignature for RealAlgebraicCanonicalStructure {
-    fn characteristic(self: &Arc<Self>) -> Natural {
+    fn characteristic(self: &Rc<Self>) -> Natural {
         Natural::ZERO
     }
 }
 
 impl TryReciprocalSignature for RealAlgebraicCanonicalStructure {
-    fn try_reciprocal(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_reciprocal(self: &Rc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         let mut a = a.clone();
         match RealAlgebraic::cmp_mut(&mut a, &mut self.zero()) {
             std::cmp::Ordering::Less => Some(self.neg(&self.try_reciprocal(&self.neg(&a))?)),
@@ -753,7 +753,7 @@ impl TryReciprocalSignature for RealAlgebraicCanonicalStructure {
 }
 
 impl CancellativeMultiplicationSignature for RealAlgebraicCanonicalStructure {
-    fn try_divide(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_divide(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.mul(a, &self.try_reciprocal(b)?))
     }
 }
@@ -765,7 +765,7 @@ impl IntegralDomainSignature for RealAlgebraicCanonicalStructure {}
 impl FieldSignature for RealAlgebraicCanonicalStructure {}
 
 impl CharZeroRingSignature for RealAlgebraicCanonicalStructure {
-    fn try_to_int(self: &Arc<Self>, alg: &Self::Elem) -> Option<Integer> {
+    fn try_to_int(self: &Rc<Self>, alg: &Self::Elem) -> Option<Integer> {
         match alg {
             RealAlgebraic::Rational(rat) => rat.try_to_int(),
             RealAlgebraic::Real(_) => None,
@@ -774,7 +774,7 @@ impl CharZeroRingSignature for RealAlgebraicCanonicalStructure {
 }
 
 impl CharZeroFieldSignature for RealAlgebraicCanonicalStructure {
-    fn try_to_rat(self: &Arc<Self>, x: &Self::Elem) -> Option<Rational> {
+    fn try_to_rat(self: &Rc<Self>, x: &Self::Elem) -> Option<Rational> {
         match x {
             RealAlgebraic::Rational(rational) => Some(rational.clone()),
             RealAlgebraic::Real(_) => None,
@@ -783,17 +783,17 @@ impl CharZeroFieldSignature for RealAlgebraicCanonicalStructure {
 }
 
 impl ComplexSubsetSignature for RealAlgebraicCanonicalStructure {
-    fn as_f32_real_and_imaginary_parts(self: &Arc<Self>, z: &Self::Elem) -> (f32, f32) {
+    fn as_f32_real_and_imaginary_parts(self: &Rc<Self>, z: &Self::Elem) -> (f32, f32) {
         (z.as_f32(), 0.0)
     }
 
-    fn as_f64_real_and_imaginary_parts(self: &Arc<Self>, z: &Self::Elem) -> (f64, f64) {
+    fn as_f64_real_and_imaginary_parts(self: &Rc<Self>, z: &Self::Elem) -> (f64, f64) {
         (z.as_f64(), 0.0)
     }
 }
 
 impl RealSubsetSignature for RealAlgebraicCanonicalStructure {
-    fn as_f64(self: &Arc<Self>, x: &Self::Elem) -> f64 {
+    fn as_f64(self: &Rc<Self>, x: &Self::Elem) -> f64 {
         match x {
             RealAlgebraic::Rational(x) => x.as_f64(),
             RealAlgebraic::Real(x) => {
@@ -807,7 +807,7 @@ impl RealSubsetSignature for RealAlgebraicCanonicalStructure {
         }
     }
 
-    fn as_f32(self: &Arc<Self>, x: &Self::Elem) -> f32 {
+    fn as_f32(self: &Rc<Self>, x: &Self::Elem) -> f32 {
         self.as_f64(x) as f32
     }
 }
@@ -815,7 +815,7 @@ impl RealSubsetSignature for RealAlgebraicCanonicalStructure {
 impl OrderedRingSignature for RealAlgebraicCanonicalStructure {}
 
 impl RealRoundingSignature for RealAlgebraicCanonicalStructure {
-    fn floor(self: &Arc<Self>, x: &Self::Elem) -> Integer {
+    fn floor(self: &Rc<Self>, x: &Self::Elem) -> Integer {
         let mut x = x.clone();
         loop {
             match x.isolate() {
@@ -834,7 +834,7 @@ impl RealRoundingSignature for RealAlgebraicCanonicalStructure {
             }
         }
     }
-    fn ceil(self: &Arc<Self>, x: &Self::Elem) -> Integer {
+    fn ceil(self: &Rc<Self>, x: &Self::Elem) -> Integer {
         let mut x = x.clone();
         loop {
             match x.isolate() {
@@ -853,7 +853,7 @@ impl RealRoundingSignature for RealAlgebraicCanonicalStructure {
             }
         }
     }
-    fn round(self: &Arc<Self>, x: &Self::Elem) -> Integer {
+    fn round(self: &Rc<Self>, x: &Self::Elem) -> Integer {
         let mut x = x.clone();
         loop {
             match x.isolate() {
@@ -880,7 +880,7 @@ impl
         RealAlgebraicCanonicalStructure,
     > for PrincipalIntegerMap<RealAlgebraicCanonicalStructure>
 {
-    fn all_roots(self: &Arc<Self>, polynomial: &Polynomial<Integer>) -> Vec<RealAlgebraic> {
+    fn all_roots(self: &Rc<Self>, polynomial: &Polynomial<Integer>) -> Vec<RealAlgebraic> {
         polynomial.all_real_roots()
     }
 }
@@ -891,7 +891,7 @@ impl
         RealAlgebraicCanonicalStructure,
     > for PrincipalRationalMap<RealAlgebraicCanonicalStructure>
 {
-    fn all_roots(self: &Arc<Self>, polynomial: &Polynomial<Rational>) -> Vec<RealAlgebraic> {
+    fn all_roots(self: &Rc<Self>, polynomial: &Polynomial<Rational>) -> Vec<RealAlgebraic> {
         polynomial.all_real_roots()
     }
 }

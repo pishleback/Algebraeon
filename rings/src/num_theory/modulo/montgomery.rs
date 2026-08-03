@@ -15,11 +15,7 @@ use crate::{
 };
 use algebraeon_structures::*;
 use rand::{RngExt, SeedableRng, rngs::StdRng};
-use std::{
-    borrow::Cow,
-    ops::Rem,
-    sync::{Arc, Mutex},
-};
+use std::{borrow::Cow, ops::Rem, rc::Rc, sync::Mutex};
 
 fn xgcd_u64(mut x: u64, mut y: u64) -> (u64, i64, i64) {
     let mut pa = 1;
@@ -67,7 +63,7 @@ impl MontgomeryModuloOddStructure {
         1u64 << 31
     }
 
-    pub fn new_unchecked(n: u64) -> Arc<Self> {
+    pub fn new_unchecked(n: u64) -> Rc<Self> {
         debug_assert_eq!(n % 2, 1);
         // Need a bound such that all operations remain in u64
         debug_assert!(n < Self::max_modulus());
@@ -150,7 +146,7 @@ impl Signature for MontgomeryModuloOddStructure {}
 impl SetSignature for MontgomeryModuloOddStructure {
     type Elem = u64; // 0 <= x < n
 
-    fn validate_element(self: &Arc<Self>, x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Rc<Self>, x: &Self::Elem) -> Result<(), String> {
         if x >= &self.n {
             return Err(format!(
                 "{x} is out of the valid range 0 <= {x} < {}",
@@ -162,13 +158,13 @@ impl SetSignature for MontgomeryModuloOddStructure {
 }
 
 impl ToStringSignature for MontgomeryModuloOddStructure {
-    fn to_string(self: &Arc<Self>, elem: &Self::Elem) -> String {
+    fn to_string(self: &Rc<Self>, elem: &Self::Elem) -> String {
         format!("{}", self.from_montgomery_form(*elem))
     }
 }
 
 impl EqSignature for MontgomeryModuloOddStructure {
-    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn equal(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         #[cfg(debug_assertions)]
         {
             self.validate_element(a).unwrap();
@@ -181,13 +177,13 @@ impl EqSignature for MontgomeryModuloOddStructure {
 impl RinglikeSpecializationSignature for MontgomeryModuloOddStructure {}
 
 impl ZeroSignature for MontgomeryModuloOddStructure {
-    fn zero(self: &Arc<Self>) -> Self::Elem {
+    fn zero(self: &Rc<Self>) -> Self::Elem {
         0
     }
 }
 
 impl AdditionSignature for MontgomeryModuloOddStructure {
-    fn add(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn add(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         #[cfg(debug_assertions)]
         {
             self.validate_element(a).unwrap();
@@ -202,13 +198,13 @@ impl AdditionSignature for MontgomeryModuloOddStructure {
 }
 
 impl TryNegateSignature for MontgomeryModuloOddStructure {
-    fn try_neg(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_neg(self: &Rc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
     }
 }
 
 impl CancellativeAdditionSignature for MontgomeryModuloOddStructure {
-    fn try_sub(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_sub(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.add(a, &self.neg(b)))
     }
 }
@@ -216,7 +212,7 @@ impl CancellativeAdditionSignature for MontgomeryModuloOddStructure {
 impl AdditiveMonoidSignature for MontgomeryModuloOddStructure {}
 
 impl AdditiveGroupSignature for MontgomeryModuloOddStructure {
-    fn neg(self: &Arc<Self>, a: &Self::Elem) -> Self::Elem {
+    fn neg(self: &Rc<Self>, a: &Self::Elem) -> Self::Elem {
         #[cfg(debug_assertions)]
         self.validate_element(a).unwrap();
         let b = if *a == 0 { *a } else { self.n - a };
@@ -227,13 +223,13 @@ impl AdditiveGroupSignature for MontgomeryModuloOddStructure {
 }
 
 impl OneSignature for MontgomeryModuloOddStructure {
-    fn one(self: &Arc<Self>) -> Self::Elem {
+    fn one(self: &Rc<Self>) -> Self::Elem {
         self.r_mod_n
     }
 }
 
 impl MultiplicationSignature for MontgomeryModuloOddStructure {
-    fn mul(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn mul(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.montgomery_reduction(a * b)
     }
 }
@@ -249,7 +245,7 @@ impl LeftDistributiveMultiplicationOverAddition for MontgomeryModuloOddStructure
 impl MultiplicativeAbsorptionMonoidSignature for MontgomeryModuloOddStructure {}
 
 impl TryReciprocalSignature for MontgomeryModuloOddStructure {
-    fn try_reciprocal(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_reciprocal(self: &Rc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         let b = self.montgomery_reduction(inv_mod_n_u64(*a, self.n)? * self.r_cubed_mod_n);
         debug_assert!(self.equal(&self.mul(a, &b), &self.one()));
         Some(b)
@@ -261,23 +257,23 @@ impl SemiRingSignature for MontgomeryModuloOddStructure {}
 impl RingSignature for MontgomeryModuloOddStructure {}
 
 impl QuotientSetSignature<IntegerCanonicalStructure> for MontgomeryModuloOddStructure {
-    fn pre_quotient_set(self: &Arc<Self>) -> Arc<IntegerCanonicalStructure> {
+    fn pre_quotient_set(self: &Rc<Self>) -> Rc<IntegerCanonicalStructure> {
         Integer::structure()
     }
 
-    fn project(self: &Arc<Self>, x: Integer) -> Self::Elem {
+    fn project(self: &Rc<Self>, x: Integer) -> Self::Elem {
         self.to_montgomery_form(x.rem(Natural::from(self.n)).try_into().unwrap())
     }
 
-    fn project_ref(self: &Arc<Self>, x: &Integer) -> Self::Elem {
+    fn project_ref(self: &Rc<Self>, x: &Integer) -> Self::Elem {
         self.to_montgomery_form(x.rem(Natural::from(self.n)).try_into().unwrap())
     }
 
-    fn unproject(self: &Arc<Self>, x: Self::Elem) -> Integer {
+    fn unproject(self: &Rc<Self>, x: Self::Elem) -> Integer {
         Integer::from(self.from_montgomery_form(x))
     }
 
-    fn unproject_ref(self: &Arc<Self>, x: &Self::Elem) -> Integer {
+    fn unproject_ref(self: &Rc<Self>, x: &Self::Elem) -> Integer {
         self.unproject(*x)
     }
 }
@@ -293,13 +289,13 @@ impl QuotientRingGetPrincipalIdealSignature<IntegerCanonicalStructure>
 }
 
 impl CountableSetSignature for MontgomeryModuloOddStructure {
-    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
+    fn generate_all_elements(self: Rc<Self>) -> impl Iterator<Item = Self::Elem> {
         0..self.n
     }
 }
 
 impl FiniteSetSignature for MontgomeryModuloOddStructure {
-    fn generate_random_elements(self: Arc<Self>, seed: u64) -> impl Iterator<Item = Self::Elem> {
+    fn generate_random_elements(self: Rc<Self>, seed: u64) -> impl Iterator<Item = Self::Elem> {
         let mut rng = StdRng::seed_from_u64(seed);
         (0..).map(move |_| rng.random_range(0..self.n))
     }
@@ -307,8 +303,8 @@ impl FiniteSetSignature for MontgomeryModuloOddStructure {
 
 #[derive(Debug, Clone)]
 pub struct MontgomeryModuloOddPrimeStructure {
-    sup: Arc<MontgomeryModuloOddStructure>,
-    inv_cache: Arc<Mutex<Option<Vec<u64>>>>,
+    sup: Rc<MontgomeryModuloOddStructure>,
+    inv_cache: Rc<Mutex<Option<Vec<u64>>>>,
 }
 
 impl MontgomeryModuloOddPrimeStructure {
@@ -316,13 +312,13 @@ impl MontgomeryModuloOddPrimeStructure {
         MontgomeryModuloOddStructure::max_modulus()
     }
 
-    pub fn new_unchecked(n: u64) -> Arc<Self> {
+    pub fn new_unchecked(n: u64) -> Rc<Self> {
         let sup = MontgomeryModuloOddStructure::new_unchecked(n);
         #[cfg(debug_assertions)]
         debug_assert!(is_prime_nat(&Natural::from(n)));
         Self {
             sup,
-            inv_cache: Arc::new(Mutex::new(None)),
+            inv_cache: Rc::new(Mutex::new(None)),
         }
         .into()
     }
@@ -364,7 +360,7 @@ impl Signature for MontgomeryModuloOddPrimeStructure {}
 impl SetSignature for MontgomeryModuloOddPrimeStructure {
     type Elem = u64; // 0 <= x < n
 
-    fn validate_element(self: &Arc<Self>, x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Rc<Self>, x: &Self::Elem) -> Result<(), String> {
         let n = self.sup.n();
         if !is_prime_nat(&Natural::from(n)) {
             return Err(format!("Modulus {} is not prime", n));
@@ -375,13 +371,13 @@ impl SetSignature for MontgomeryModuloOddPrimeStructure {
 }
 
 impl ToStringSignature for MontgomeryModuloOddPrimeStructure {
-    fn to_string(self: &Arc<Self>, elem: &Self::Elem) -> String {
+    fn to_string(self: &Rc<Self>, elem: &Self::Elem) -> String {
         self.sup.to_string(elem)
     }
 }
 
 impl EqSignature for MontgomeryModuloOddPrimeStructure {
-    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn equal(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         self.sup.equal(a, b)
     }
 }
@@ -389,25 +385,25 @@ impl EqSignature for MontgomeryModuloOddPrimeStructure {
 impl RinglikeSpecializationSignature for MontgomeryModuloOddPrimeStructure {}
 
 impl ZeroSignature for MontgomeryModuloOddPrimeStructure {
-    fn zero(self: &Arc<Self>) -> Self::Elem {
+    fn zero(self: &Rc<Self>) -> Self::Elem {
         self.sup.zero()
     }
 }
 
 impl AdditionSignature for MontgomeryModuloOddPrimeStructure {
-    fn add(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn add(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.sup.add(a, b)
     }
 }
 
 impl TryNegateSignature for MontgomeryModuloOddPrimeStructure {
-    fn try_neg(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_neg(self: &Rc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         self.sup.try_neg(a)
     }
 }
 
 impl CancellativeAdditionSignature for MontgomeryModuloOddPrimeStructure {
-    fn try_sub(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_sub(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         self.sup.try_sub(a, b)
     }
 }
@@ -415,19 +411,19 @@ impl CancellativeAdditionSignature for MontgomeryModuloOddPrimeStructure {
 impl AdditiveMonoidSignature for MontgomeryModuloOddPrimeStructure {}
 
 impl AdditiveGroupSignature for MontgomeryModuloOddPrimeStructure {
-    fn neg(self: &Arc<Self>, a: &Self::Elem) -> Self::Elem {
+    fn neg(self: &Rc<Self>, a: &Self::Elem) -> Self::Elem {
         self.sup.neg(a)
     }
 }
 
 impl OneSignature for MontgomeryModuloOddPrimeStructure {
-    fn one(self: &Arc<Self>) -> Self::Elem {
+    fn one(self: &Rc<Self>) -> Self::Elem {
         self.sup.one()
     }
 }
 
 impl MultiplicationSignature for MontgomeryModuloOddPrimeStructure {
-    fn mul(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn mul(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.sup.mul(a, b)
     }
 }
@@ -447,23 +443,23 @@ impl SemiRingSignature for MontgomeryModuloOddPrimeStructure {}
 impl RingSignature for MontgomeryModuloOddPrimeStructure {}
 
 impl QuotientSetSignature<IntegerCanonicalStructure> for MontgomeryModuloOddPrimeStructure {
-    fn pre_quotient_set(self: &Arc<Self>) -> Arc<IntegerCanonicalStructure> {
+    fn pre_quotient_set(self: &Rc<Self>) -> Rc<IntegerCanonicalStructure> {
         self.sup.pre_quotient_set()
     }
 
-    fn project(self: &Arc<Self>, x: Integer) -> Self::Elem {
+    fn project(self: &Rc<Self>, x: Integer) -> Self::Elem {
         self.sup.project(x)
     }
 
-    fn project_ref(self: &Arc<Self>, x: &Integer) -> Self::Elem {
+    fn project_ref(self: &Rc<Self>, x: &Integer) -> Self::Elem {
         self.sup.project_ref(x)
     }
 
-    fn unproject(self: &Arc<Self>, x: Self::Elem) -> Integer {
+    fn unproject(self: &Rc<Self>, x: Self::Elem) -> Integer {
         self.sup.unproject(x)
     }
 
-    fn unproject_ref(self: &Arc<Self>, x: &Self::Elem) -> Integer {
+    fn unproject_ref(self: &Rc<Self>, x: &Self::Elem) -> Integer {
         self.sup.unproject_ref(x)
     }
 }
@@ -488,7 +484,7 @@ impl MontgomeryModuloOddPrimeStructure {
 }
 
 impl TryReciprocalSignature for MontgomeryModuloOddPrimeStructure {
-    fn try_reciprocal(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_reciprocal(self: &Rc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         if let Some(cache) = self.inv_cache.lock().unwrap().as_ref() {
             if *a == 0 {
                 None
@@ -502,7 +498,7 @@ impl TryReciprocalSignature for MontgomeryModuloOddPrimeStructure {
 }
 
 impl CancellativeMultiplicationSignature for MontgomeryModuloOddPrimeStructure {
-    fn try_divide(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_divide(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.mul(a, &self.try_reciprocal(b)?))
     }
 }
@@ -514,13 +510,13 @@ impl IntegralDomainSignature for MontgomeryModuloOddPrimeStructure {}
 impl FieldSignature for MontgomeryModuloOddPrimeStructure {}
 
 impl CountableSetSignature for MontgomeryModuloOddPrimeStructure {
-    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
+    fn generate_all_elements(self: Rc<Self>) -> impl Iterator<Item = Self::Elem> {
         self.sup.clone().generate_all_elements()
     }
 }
 
 impl FiniteSetSignature for MontgomeryModuloOddPrimeStructure {
-    fn generate_random_elements(self: Arc<Self>, seed: u64) -> impl Iterator<Item = Self::Elem> {
+    fn generate_random_elements(self: Rc<Self>, seed: u64) -> impl Iterator<Item = Self::Elem> {
         self.sup.clone().generate_random_elements(seed)
     }
 }
@@ -528,20 +524,20 @@ impl FiniteSetSignature for MontgomeryModuloOddPrimeStructure {
 impl CountableSetSignature
     for MultiplicativeMonoidUnitsStructure<MontgomeryModuloOddPrimeStructure>
 {
-    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
+    fn generate_all_elements(self: Rc<Self>) -> impl Iterator<Item = Self::Elem> {
         1..self.monoid().sup.n
     }
 }
 
 impl FiniteSetSignature for MultiplicativeMonoidUnitsStructure<MontgomeryModuloOddPrimeStructure> {
-    fn generate_random_elements(self: Arc<Self>, seed: u64) -> impl Iterator<Item = Self::Elem> {
+    fn generate_random_elements(self: Rc<Self>, seed: u64) -> impl Iterator<Item = Self::Elem> {
         let mut rng = StdRng::seed_from_u64(seed);
         (0..).map(move |_| rng.random_range(1..self.monoid().sup.n))
     }
 }
 
 impl FiniteFieldSignature for MontgomeryModuloOddPrimeStructure {
-    fn characteristic_and_power(self: &Arc<Self>) -> (Natural, Natural) {
+    fn characteristic_and_power(self: &Rc<Self>) -> (Natural, Natural) {
         (Natural::from(self.sup.n), Natural::ONE)
     }
 }

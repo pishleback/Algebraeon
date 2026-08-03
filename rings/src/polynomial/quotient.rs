@@ -5,7 +5,7 @@ use algebraeon_structures::*;
 use itertools::Itertools;
 use std::{
     borrow::{Borrow, Cow},
-    sync::Arc,
+    rc::Rc,
 };
 
 pub type PolynomialQuotientRingStructure<FS, const IS_FIELD: bool> =
@@ -16,7 +16,7 @@ impl<FS: FieldSignature + CharacteristicSignature, const IS_FIELD: bool> Charact
 where
     PolynomialStructure<FS>: SetSignature<Elem = Polynomial<FS::Elem>>,
 {
-    fn characteristic(self: &Arc<Self>) -> Natural {
+    fn characteristic(self: &Rc<Self>) -> Natural {
         self.ring().characteristic()
     }
 }
@@ -26,7 +26,7 @@ impl<FS: FieldSignature + CharZeroRingSignature, const IS_FIELD: bool> CharZeroR
 where
     PolynomialStructure<FS>: SetSignature<Elem = Polynomial<FS::Elem>>,
 {
-    fn try_to_int(self: &Arc<Self>, x: &Self::Elem) -> Option<Integer> {
+    fn try_to_int(self: &Rc<Self>, x: &Self::Elem) -> Option<Integer> {
         let x_reduced = self.reduce(x);
         self.ring().try_to_int(&x_reduced)
     }
@@ -37,8 +37,8 @@ where
     PolynomialStructure<FS>: SetSignature<Elem = Polynomial<FS::Elem>>,
 {
     pub fn coefficient_ring_inclusion(
-        self: &Arc<Self>,
-    ) -> Arc<PolynomialQuotientRingExtension<FS, IS_FIELD>> {
+        self: &Rc<Self>,
+    ) -> Rc<PolynomialQuotientRingExtension<FS, IS_FIELD>> {
         PolynomialQuotientRingExtension::new(self.clone())
     }
 }
@@ -47,12 +47,12 @@ impl<FS: FieldSignature, const IS_FIELD: bool> PolynomialQuotientRingStructure<F
 where
     PolynomialStructure<FS>: SetSignature<Elem = Polynomial<FS::Elem>>,
 {
-    pub fn generator(self: &Arc<Self>) -> Polynomial<FS::Elem> {
+    pub fn generator(self: &Rc<Self>) -> Polynomial<FS::Elem> {
         self.ring().var()
     }
 
     pub fn col_multiplication_matrix(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         a: &Polynomial<FS::Elem>,
     ) -> Matrix<FS::Elem> {
         self.coefficient_ring_inclusion()
@@ -60,44 +60,44 @@ where
     }
 
     pub fn row_multiplication_matrix(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         a: &Polynomial<FS::Elem>,
     ) -> Matrix<FS::Elem> {
         self.coefficient_ring_inclusion()
             .row_multiplication_matrix(a)
     }
 
-    pub fn to_col(self: &Arc<Self>, a: &Polynomial<FS::Elem>) -> Matrix<FS::Elem> {
+    pub fn to_col(self: &Rc<Self>, a: &Polynomial<FS::Elem>) -> Matrix<FS::Elem> {
         self.coefficient_ring_inclusion()
             .range_module_structure()
             .to_col(a)
     }
 
-    pub fn to_row(self: &Arc<Self>, a: &Polynomial<FS::Elem>) -> Matrix<FS::Elem> {
+    pub fn to_row(self: &Rc<Self>, a: &Polynomial<FS::Elem>) -> Matrix<FS::Elem> {
         self.coefficient_ring_inclusion()
             .range_module_structure()
             .to_row(a)
     }
 
-    pub fn to_vec(self: &Arc<Self>, a: &Polynomial<FS::Elem>) -> Vec<FS::Elem> {
+    pub fn to_vec(self: &Rc<Self>, a: &Polynomial<FS::Elem>) -> Vec<FS::Elem> {
         self.coefficient_ring_inclusion()
             .range_module_structure()
             .to_vec(a)
     }
 
-    pub fn from_col(self: &Arc<Self>, v: Matrix<FS::Elem>) -> Polynomial<FS::Elem> {
+    pub fn from_col(self: &Rc<Self>, v: Matrix<FS::Elem>) -> Polynomial<FS::Elem> {
         self.coefficient_ring_inclusion()
             .range_module_structure()
             .from_col(v)
     }
 
-    pub fn from_row(self: &Arc<Self>, v: Matrix<FS::Elem>) -> Polynomial<FS::Elem> {
+    pub fn from_row(self: &Rc<Self>, v: Matrix<FS::Elem>) -> Polynomial<FS::Elem> {
         self.coefficient_ring_inclusion()
             .range_module_structure()
             .from_row(v)
     }
 
-    pub fn from_vec(self: &Arc<Self>, v: Vec<impl Borrow<FS::Elem>>) -> Polynomial<FS::Elem> {
+    pub fn from_vec(self: &Rc<Self>, v: Vec<impl Borrow<FS::Elem>>) -> Polynomial<FS::Elem> {
         self.coefficient_ring_inclusion()
             .range_module_structure()
             .from_vec(v)
@@ -112,15 +112,15 @@ impl<FS: FieldSignature> PolynomialQuotientRingStructure<FS, true>
 where
     PolynomialStructure<FS>: SetSignature<Elem = Polynomial<FS::Elem>>,
 {
-    pub fn min_poly(self: &Arc<Self>, a: &Polynomial<FS::Elem>) -> Polynomial<FS::Elem> {
+    pub fn min_poly(self: &Rc<Self>, a: &Polynomial<FS::Elem>) -> Polynomial<FS::Elem> {
         self.coefficient_ring_inclusion().min_poly(a)
     }
 
-    pub fn norm(self: &Arc<Self>, a: &Polynomial<FS::Elem>) -> FS::Elem {
+    pub fn norm(self: &Rc<Self>, a: &Polynomial<FS::Elem>) -> FS::Elem {
         self.coefficient_ring_inclusion().norm(a)
     }
 
-    pub fn trace(self: &Arc<Self>, a: &Polynomial<FS::Elem>) -> FS::Elem {
+    pub fn trace(self: &Rc<Self>, a: &Polynomial<FS::Elem>) -> FS::Elem {
         self.coefficient_ring_inclusion().trace(a)
     }
 }
@@ -130,7 +130,7 @@ impl<const IS_FIELD: bool, FS: FieldSignature + FiniteSetSignature> CountableSet
 where
     PolynomialStructure<FS>: SetSignature<Elem = Polynomial<FS::Elem>>,
 {
-    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
+    fn generate_all_elements(self: Rc<Self>) -> impl Iterator<Item = Self::Elem> {
         let n = self.coefficient_ring_inclusion().degree();
         let ring_elements = self.ring().coeff_ring().list_all_elements();
         let hom = self.coefficient_ring_inclusion().clone();
@@ -150,13 +150,13 @@ where
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PolynomialQuotientRingExtension<Field: FieldSignature, const IS_FIELD: bool> {
-    polynomial_quotient_ring: Arc<PolynomialQuotientRingStructure<Field, IS_FIELD>>,
+    polynomial_quotient_ring: Rc<PolynomialQuotientRingStructure<Field, IS_FIELD>>,
 }
 
 impl<Field: FieldSignature, const IS_FIELD: bool> PolynomialQuotientRingExtension<Field, IS_FIELD> {
     pub fn new(
-        polynomial_quotient_ring: Arc<PolynomialQuotientRingStructure<Field, IS_FIELD>>,
-    ) -> Arc<Self> {
+        polynomial_quotient_ring: Rc<PolynomialQuotientRingStructure<Field, IS_FIELD>>,
+    ) -> Rc<Self> {
         Self {
             polynomial_quotient_ring,
         }
@@ -168,11 +168,11 @@ impl<Field: FieldSignature, const IS_FIELD: bool>
     Morphism<Field, PolynomialQuotientRingStructure<Field, IS_FIELD>>
     for PolynomialQuotientRingExtension<Field, IS_FIELD>
 {
-    fn domain(self: &Arc<Self>) -> Arc<Field> {
+    fn domain(self: &Rc<Self>) -> Rc<Field> {
         self.polynomial_quotient_ring.ring().coeff_ring()
     }
 
-    fn range(self: &Arc<Self>) -> Arc<PolynomialQuotientRingStructure<Field, IS_FIELD>> {
+    fn range(self: &Rc<Self>) -> Rc<PolynomialQuotientRingStructure<Field, IS_FIELD>> {
         self.polynomial_quotient_ring.clone()
     }
 }
@@ -181,7 +181,7 @@ impl<Field: FieldSignature, const IS_FIELD: bool>
     FunctionMorphism<Field, PolynomialQuotientRingStructure<Field, IS_FIELD>>
     for PolynomialQuotientRingExtension<Field, IS_FIELD>
 {
-    fn image(self: &Arc<Self>, x: &Field::Elem) -> Polynomial<Field::Elem> {
+    fn image(self: &Rc<Self>, x: &Field::Elem) -> Polynomial<Field::Elem> {
         Polynomial::constant(x.clone())
     }
 }
@@ -196,7 +196,7 @@ impl<Field: FieldSignature, const IS_FIELD: bool>
     InjectiveFunctionMorphism<Field, PolynomialQuotientRingStructure<Field, IS_FIELD>>
     for PolynomialQuotientRingExtension<Field, IS_FIELD>
 {
-    fn try_preimage(self: &Arc<Self>, x: &Polynomial<Field::Elem>) -> Option<Field::Elem> {
+    fn try_preimage(self: &Rc<Self>, x: &Polynomial<Field::Elem>) -> Option<Field::Elem> {
         self.domain()
             .polynomials()
             .as_constant(&self.range().reduce(x))
@@ -211,12 +211,12 @@ impl<Field: FieldSignature, const IS_FIELD: bool>
         PolynomialQuotientRingExtension<Field, IS_FIELD>,
     >
 {
-    fn basis_set(self: &Arc<Self>) -> Arc<EnumeratedFiniteSetStructure> {
+    fn basis_set(self: &Rc<Self>) -> Rc<EnumeratedFiniteSetStructure> {
         EnumeratedFiniteSetStructure::new(self.module().degree())
     }
 
     fn to_component<'a>(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         b: &usize,
         v: &'a Polynomial<Field::Elem>,
     ) -> Cow<'a, Field::Elem> {
@@ -228,7 +228,7 @@ impl<Field: FieldSignature, const IS_FIELD: bool>
         )
     }
 
-    fn from_component(self: &Arc<Self>, b: &usize, r: &Field::Elem) -> Polynomial<Field::Elem> {
+    fn from_component(self: &Rc<Self>, b: &usize, r: &Field::Elem) -> Polynomial<Field::Elem> {
         self.ring().polynomials().constant_var_pow(r.clone(), *b)
     }
 }

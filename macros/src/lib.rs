@@ -142,7 +142,7 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
             impl EqSignature for #newtype_name
                 where #name: Eq
             {
-                fn equal(self: &std::sync::Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
+                fn equal(self: &std::rc::Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
                     a == b
                 }
             }
@@ -156,7 +156,7 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
             impl PartialOrdSignature for #newtype_name
                 where #name: Ord
             {
-                fn partial_cmp(self: &std::sync::Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<std::cmp::Ordering> {
+                fn partial_cmp(self: &std::rc::Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<std::cmp::Ordering> {
                     Some(Ord::cmp(a, b))
                 }
             }
@@ -170,11 +170,11 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
             impl OrdSignature for #newtype_name
                 where #name: Ord
             {
-                fn cmp(self: &std::sync::Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> std::cmp::Ordering {
+                fn cmp(self: &std::rc::Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> std::cmp::Ordering {
                     Ord::cmp(a, b)
                 }
 
-                fn sort<S: std::borrow::Borrow<Self::Elem>>(self: &std::sync::Arc<Self>, mut a: Vec<S>) -> Vec<S> {
+                fn sort<S: std::borrow::Borrow<Self::Elem>>(self: &std::rc::Rc<Self>, mut a: Vec<S>) -> Vec<S> {
                     a.sort_unstable_by(|x, y| Ord::cmp(x.borrow(), y.borrow()));
                     a
                 }
@@ -187,17 +187,17 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
     let impl_finite_signature = if has_finite {
         quote! {
             impl CountableSetSignature for #newtype_name {
-                fn generate_all_elements(self: std::sync::Arc<Self>) -> impl Iterator<Item = Self::Elem> {
+                fn generate_all_elements(self: std::rc::Rc<Self>) -> impl Iterator<Item = Self::Elem> {
                     <#name as cantor::Finite>::iter()
                 }
             }
 
             impl FiniteSetSignature for #newtype_name {
-                fn list_all_elements(self: &std::sync::Arc<Self>) -> Vec<Self::Elem> {
+                fn list_all_elements(self: &std::rc::Rc<Self>) -> Vec<Self::Elem> {
                     self.list_all_elements_ordered()
                 }
 
-                fn size(self: &std::sync::Arc<Self>) -> Natural {
+                fn size(self: &std::rc::Rc<Self>) -> Natural {
                     Natural::from(<#name as cantor::Finite>::COUNT)
                 }
             }
@@ -214,15 +214,15 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
 
         quote! {
             impl OrderedFiniteSetSignature for #newtype_name {
-                fn list_all_elements_ordered(self: &std::sync::Arc<Self>) -> Vec<Self::Elem> {
+                fn list_all_elements_ordered(self: &std::rc::Rc<Self>) -> Vec<Self::Elem> {
                     <#name as cantor::Finite>::iter().collect()
                 }
 
-                fn element_to_enumeration(self: &std::sync::Arc<Self>, elem: &Self::Elem) -> Natural {
+                fn element_to_enumeration(self: &std::rc::Rc<Self>, elem: &Self::Elem) -> Natural {
                     Natural::from(<#name as cantor::Finite>::index_of(elem.clone()))
                 }
 
-                fn enumeration_to_element(self: &std::sync::Arc<Self>, num: &Natural) -> Option<Self::Elem> {
+                fn enumeration_to_element(self: &std::rc::Rc<Self>, num: &Natural) -> Option<Self::Elem> {
                     if let Ok(num) = TryInto::<usize>::try_into(num) {
                         <#name as cantor::Finite>::nth(num)
                     } else {
@@ -256,7 +256,7 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
         impl SetSignature for #newtype_name {
             type Elem = #name;
 
-            fn validate_element(self: &std::sync::Arc<Self>, _x : &Self::Elem) -> Result<(), String> {
+            fn validate_element(self: &std::rc::Rc<Self>, _x : &Self::Elem) -> Result<(), String> {
                 Ok(())
             }
         }
@@ -270,8 +270,8 @@ pub fn derive_newtype(input: TokenStream) -> TokenStream {
         impl MetaType for #name {
             type Signature = #newtype_name;
 
-            fn structure() -> std::sync::Arc<Self::Signature> {
-                std::sync::Arc::new(#newtype_name::new())
+            fn structure() -> std::rc::Rc<Self::Signature> {
+                std::rc::Rc::new(#newtype_name::new())
             }
         }
     };
@@ -374,7 +374,7 @@ pub fn signature_meta_trait(_args: TokenStream, input: TokenStream) -> TokenStre
     .into()
 }
 
-fn is_arc_self_type(ty: &Type) -> bool {
+fn is_rc_self_type(ty: &Type) -> bool {
     let Type::Path(tp) = ty else {
         return false;
     };
@@ -383,7 +383,7 @@ fn is_arc_self_type(ty: &Type) -> bool {
         return false;
     };
 
-    if seg.ident != "Arc" {
+    if seg.ident != "Rc" {
         return false;
     }
 
@@ -398,8 +398,8 @@ fn is_arc_self_type(ty: &Type) -> bool {
     )
 }
 
-// check for `self: &Arc<Self>`
-fn is_ref_arc_self(arg: &FnArg) -> bool {
+// check for `self: &Rc<Self>`
+fn is_ref_rc_self(arg: &FnArg) -> bool {
     let FnArg::Receiver(receiver) = arg else {
         return false;
     };
@@ -412,16 +412,16 @@ fn is_ref_arc_self(arg: &FnArg) -> bool {
         return false;
     };
 
-    is_arc_self_type(r.elem.as_ref())
+    is_rc_self_type(r.elem.as_ref())
 }
 
-// check for `self: Arc<Self>`
-fn is_arc_self(arg: &FnArg) -> bool {
+// check for `self: Rc<Self>`
+fn is_rc_self(arg: &FnArg) -> bool {
     let FnArg::Receiver(receiver) = arg else {
         return false;
     };
 
-    receiver.colon_token.is_some() && is_arc_self_type(receiver.ty.as_ref())
+    receiver.colon_token.is_some() && is_rc_self_type(receiver.ty.as_ref())
 }
 
 // check for `&self`
@@ -472,17 +472,17 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
             }
 
             enum ReceiverType {
-                RefArcSelf,
-                ArcSelf,
+                RefRcSelf,
+                RcSelf,
             }
 
             let meta_sig = sig.clone();
 
             let receiver_type = if let Some(first_arg) = meta_sig.inputs.first() {
-                if is_ref_arc_self(first_arg) {
-                    Some(ReceiverType::RefArcSelf)
-                } else if is_arc_self(first_arg) {
-                    Some(ReceiverType::ArcSelf)
+                if is_ref_rc_self(first_arg) {
+                    Some(ReceiverType::RefRcSelf)
+                } else if is_rc_self(first_arg) {
+                    Some(ReceiverType::RcSelf)
                 } else {
                     None
                 }
@@ -495,13 +495,13 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
                     errors.push(
                     Error::new_spanned(
                         meta_sig,
-                        "signature_meta_trait method must start `&self`, `self: &Arc<Self>` or `self: Arc<Self>`",
+                        "signature_meta_trait method must start `&self`, `self: &Rc<Self>` or `self: Rc<Self>`",
                     )
                     .to_compile_error(),
                 );
                 }
                 Some(receiver_type) => {
-                    // Receiver is `self: Arc<Self>`
+                    // Receiver is `self: Rc<Self>`
                     let mut meta_sig_without_self = meta_sig.clone();
                     meta_sig_without_self.inputs =
                         meta_sig_without_self.inputs.into_iter().skip(1).collect();
@@ -625,7 +625,7 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
                     let trait_ident = trait_item.ident.clone();
 
                     match receiver_type {
-                        ReceiverType::RefArcSelf => {
+                        ReceiverType::RefRcSelf => {
                             meta_methods.push(quote! {
                                 #(#attrs)*
                                 #meta_sig_without_self {
@@ -633,7 +633,7 @@ fn expand_meta_trait(trait_item: &ItemTrait) -> proc_macro2::TokenStream {
                                 }
                             });
                         }
-                        ReceiverType::ArcSelf => {
+                        ReceiverType::RcSelf => {
                             meta_methods.push(quote! {
                                 #(#attrs)*
                                 #meta_sig_without_self {

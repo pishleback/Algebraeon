@@ -6,19 +6,16 @@ use crate::{
     },
 };
 use algebraeon_structures::*;
-use std::{rc::Rc, sync::Arc};
+use std::{rc::Rc};
 
 impl GreatestCommonDivisorSignature for PolynomialStructure<IntegerCanonicalStructure> {
-    fn gcd(self: &Arc<Self>, x: &Self::Elem, y: &Self::Elem) -> Self::Elem {
+    fn gcd(self: &Rc<Self>, x: &Self::Elem, y: &Self::Elem) -> Self::Elem {
         self.gcd_by_primitive_subresultant(x.clone(), y.clone())
     }
 }
 
 impl FactoringMonoidSignature for PolynomialStructure<IntegerCanonicalStructure> {
-    fn factor_unchecked(
-        self: &Arc<Self>,
-        p: &Self::Elem,
-    ) -> Factored<Polynomial<Integer>, Natural> {
+    fn factor_unchecked(self: &Rc<Self>, p: &Self::Elem) -> Factored<Polynomial<Integer>, Natural> {
         // self.factorize_by_kroneckers_method(p)
         factorize_by_berlekamp_zassenhaus_algorithm(p.clone())
     }
@@ -61,7 +58,7 @@ impl Polynomial<Integer> {
 }
 
 impl FactoringMonoidSignature for MultiPolynomialStructure<IntegerCanonicalStructure> {
-    fn factor_unchecked(self: &Arc<Self>, p: &Self::Elem) -> Factored<Self::Elem, Natural> {
+    fn factor_unchecked(self: &Rc<Self>, p: &Self::Elem) -> Factored<Self::Elem, Natural> {
         self.factor_by_yuns_and_kroneckers_inductively(
             Rc::new(Integer::factor),
             Rc::new(Polynomial::factor),

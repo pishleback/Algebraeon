@@ -6,7 +6,6 @@ use crate::{
 };
 use algebraeon_rings::structure::{FieldSignature, OrderedRingSignature};
 use itertools::Itertools;
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use std::hash::Hash;
 
 pub trait MinkowskiSumRaw<Other> {
@@ -33,7 +32,7 @@ where
             .into_iter()
             .cartesian_product(other.simplexes().into_iter().collect::<Vec<_>>())
             .collect::<Vec<_>>()
-            .into_par_iter()
+            .into_iter()
             .map(|(self_spx, other_spx)| {
                 let mut points = vec![];
                 for p in self_spx.points() {
@@ -47,10 +46,8 @@ where
                     .interior()
                     .into_simplicial_disjoint_union()
             })
-            .reduce(
-                || space.empty_subset().into_simplicial_disjoint_union(),
-                |left, right| left.union_raw(&right),
-            )
+            .reduce(|left, right| left.union_raw(&right))
+            .unwrap_or(space.empty_subset().into_simplicial_disjoint_union())
     }
 }
 

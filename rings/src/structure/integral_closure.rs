@@ -3,7 +3,7 @@ use crate::polynomial::*;
 use crate::valuation::Valuation;
 use algebraeon_structures::*;
 use std::fmt::Debug;
-use std::sync::Arc;
+use std::rc::Rc;
 
 /// Given a commuting square for an integral closure
 ///
@@ -14,11 +14,11 @@ use std::sync::Arc;
 /// Provide an implementation of K as the field of fractions of R
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct FieldOfFractionsInclusionForIntegralClosure<ICS: IntegralClosureExtension> {
-    square: Arc<ICS>,
+    square: Rc<ICS>,
 }
 
 impl<ICS: IntegralClosureExtension> FieldOfFractionsInclusionForIntegralClosure<ICS> {
-    fn new(square: Arc<ICS>) -> Arc<Self> {
+    fn new(square: Rc<ICS>) -> Rc<Self> {
         Self { square }.into()
     }
 }
@@ -26,11 +26,11 @@ impl<ICS: IntegralClosureExtension> FieldOfFractionsInclusionForIntegralClosure<
 impl<ICS: IntegralClosureExtension> Morphism<ICS::R, ICS::K>
     for FieldOfFractionsInclusionForIntegralClosure<ICS>
 {
-    fn domain(self: &Arc<Self>) -> Arc<ICS::R> {
+    fn domain(self: &Rc<Self>) -> Rc<ICS::R> {
         self.square.r_ring()
     }
 
-    fn range(self: &Arc<Self>) -> Arc<ICS::K> {
+    fn range(self: &Rc<Self>) -> Rc<ICS::K> {
         self.square.k_field()
     }
 }
@@ -39,7 +39,7 @@ impl<ICS: IntegralClosureExtension> FunctionMorphism<ICS::R, ICS::K>
     for FieldOfFractionsInclusionForIntegralClosure<ICS>
 {
     fn image(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         x: &<ICS::R as SetSignature>::Elem,
     ) -> <ICS::K as SetSignature>::Elem {
         self.square.r_to_k().image(x)
@@ -50,7 +50,7 @@ impl<ICS: IntegralClosureExtension> InjectiveFunctionMorphism<ICS::R, ICS::K>
     for FieldOfFractionsInclusionForIntegralClosure<ICS>
 {
     fn try_preimage(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         x: &<ICS::K as SetSignature>::Elem,
     ) -> Option<<ICS::R as SetSignature>::Elem> {
         self.square.r_to_k().try_preimage(x)
@@ -66,7 +66,7 @@ impl<ICS: IntegralClosureExtension> FieldOfFractionsInclusion<ICS::R, ICS::K>
     for FieldOfFractionsInclusionForIntegralClosure<ICS>
 {
     fn numerator_and_denominator(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         a: &<ICS::K as SetSignature>::Elem,
     ) -> (
         <ICS::R as SetSignature>::Elem,
@@ -104,7 +104,7 @@ impl<ICS: IntegralClosureExtension> FieldOfFractionsInclusion<ICS::R, ICS::K>
 ///  - Q → K is a finite dimensional field extension
 ///
 /// This trait expresses that R is the integral closure of Z in K
-pub trait IntegralClosureExtension: Debug + Clone + Send + Sync {
+pub trait IntegralClosureExtension: Debug + Clone {
     type QKBasis: FiniteSetSignature;
     type Z: IntegralDomainSignature;
     type Q: FieldSignature;
@@ -115,29 +115,29 @@ pub trait IntegralClosureExtension: Debug + Clone + Send + Sync {
     type QK: FiniteDimensionalFieldExtension<Self::QKBasis, Self::Q, Self::K>;
     type RK: RingHomomorphism<Self::R, Self::K> + InjectiveFunctionMorphism<Self::R, Self::K>;
 
-    fn z_ring(self: &Arc<Self>) -> Arc<Self::Z>;
-    fn q_field(self: &Arc<Self>) -> Arc<Self::Q>;
-    fn r_ring(self: &Arc<Self>) -> Arc<Self::R>;
-    fn k_field(self: &Arc<Self>) -> Arc<Self::K>;
+    fn z_ring(self: &Rc<Self>) -> Rc<Self::Z>;
+    fn q_field(self: &Rc<Self>) -> Rc<Self::Q>;
+    fn r_ring(self: &Rc<Self>) -> Rc<Self::R>;
+    fn k_field(self: &Rc<Self>) -> Rc<Self::K>;
 
-    fn z_to_q(self: &Arc<Self>) -> Arc<Self::ZQ>;
-    fn z_to_r(self: &Arc<Self>) -> Arc<Self::ZR>;
-    fn q_to_k(self: &Arc<Self>) -> Arc<Self::QK>;
-    fn r_to_k(self: &Arc<Self>) -> Arc<Self::RK>;
+    fn z_to_q(self: &Rc<Self>) -> Rc<Self::ZQ>;
+    fn z_to_r(self: &Rc<Self>) -> Rc<Self::ZR>;
+    fn q_to_k(self: &Rc<Self>) -> Rc<Self::QK>;
+    fn r_to_k(self: &Rc<Self>) -> Rc<Self::RK>;
 
     /// The square should commute, so this should be both
     /// - `z_to_q` followed by `q_to_k`
     /// - `z_to_r` followed by `r_to_k`
     fn z_to_k(
-        self: &Arc<Self>,
-    ) -> Arc<impl RingHomomorphism<Self::Z, Self::K> + InjectiveFunctionMorphism<Self::Z, Self::K>>
+        self: &Rc<Self>,
+    ) -> Rc<impl RingHomomorphism<Self::Z, Self::K> + InjectiveFunctionMorphism<Self::Z, Self::K>>
     {
         CompositionMorphism::new(self.z_to_q(), self.q_to_k())
     }
 
     /// The monic minimal polynomial of alpha in K over Q
     fn min_poly_k_over_q(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         alpha: &<Self::K as SetSignature>::Elem,
     ) -> Polynomial<<Self::Q as SetSignature>::Elem> {
         let alpha_min_poly_monic = self.q_to_k().min_poly(alpha);
@@ -152,7 +152,7 @@ pub trait IntegralClosureExtension: Debug + Clone + Send + Sync {
 
     /// By definition of R as the integral closure of Z in K every element of R, when considered as an element of K, has minimal polynomial over Q which is monic with coefficients in Z
     fn min_poly_r_over_z(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         alpha: &<Self::R as SetSignature>::Elem,
     ) -> Polynomial<<Self::Z as SetSignature>::Elem> {
         let alpha_min_poly_monic = self
@@ -169,12 +169,12 @@ pub trait IntegralClosureExtension: Debug + Clone + Send + Sync {
 
     /// For alpha in K return non-zero d in Z such that d*alpha is in R
     fn integralize_multiplier(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         alpha: &<Self::K as SetSignature>::Elem,
     ) -> <Self::Z as SetSignature>::Elem;
 
     fn integral_scalar_multiple_r(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         alpha: &<Self::K as SetSignature>::Elem,
     ) -> <Self::R as SetSignature>::Elem {
         self.r_to_k()
@@ -183,7 +183,7 @@ pub trait IntegralClosureExtension: Debug + Clone + Send + Sync {
     }
 
     fn integral_scalar_multiple_k(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         alpha: &<Self::K as SetSignature>::Elem,
     ) -> <Self::K as SetSignature>::Elem {
         let d = self.integralize_multiplier(alpha);
@@ -195,8 +195,8 @@ pub trait IntegralClosureExtension: Debug + Clone + Send + Sync {
 
     /// Every element of K is a fraction of elements of R
     fn r_to_k_field_of_fractions(
-        self: &Arc<Self>,
-    ) -> Arc<impl FieldOfFractionsInclusion<Self::R, Self::K>> {
+        self: &Rc<Self>,
+    ) -> Rc<impl FieldOfFractionsInclusion<Self::R, Self::K>> {
         FieldOfFractionsInclusionForIntegralClosure::new(self.clone())
     }
 }
@@ -222,17 +222,17 @@ where
     type IdealsZ: DedekindDomainIdealsSignature<Self::Z>;
     type IdealsR: DedekindDomainIdealsSignature<Self::R>;
 
-    fn z_ideals(self: &Arc<Self>) -> Arc<Self::IdealsZ>;
+    fn z_ideals(self: &Rc<Self>) -> Rc<Self::IdealsZ>;
 
-    fn r_ideals(self: &Arc<Self>) -> Arc<Self::IdealsR>;
+    fn r_ideals(self: &Rc<Self>) -> Rc<Self::IdealsR>;
 
     fn ideal_norm(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         ideal: &<Self::IdealsR as SetSignature>::Elem,
     ) -> <Self::IdealsZ as SetSignature>::Elem;
 
     fn factor_prime_ideal(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         prime_ideal: <Self::IdealsZ as SetSignature>::Elem,
     ) -> DedekindExtensionIdealFactorsAbovePrime<
         <Self::IdealsZ as SetSignature>::Elem,
@@ -240,7 +240,7 @@ where
     >;
 
     fn factor_ideal(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         ideal: &<Self::IdealsR as SetSignature>::Elem,
     ) -> Option<
         DedekindExtensionIdealFactorization<
@@ -250,7 +250,7 @@ where
     >;
 
     fn padic_k_element_valuation(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         prime: &<Self::IdealsR as SetSignature>::Elem,
         a: &<Self::K as SetSignature>::Elem,
     ) -> Valuation {
@@ -269,7 +269,7 @@ where
     // If S is the empty set, this coincides with the usual integrality.
     #[allow(non_snake_case)]
     fn is_S_integral(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         S: Vec<&<Self::IdealsR as SetSignature>::Elem>,
         a: &<Self::K as SetSignature>::Elem,
     ) -> bool {
@@ -312,7 +312,7 @@ where
     }
 
     fn expand_extension_ideal_factorization(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         f: &DedekindExtensionIdealFactorization<
             <Self::IdealsZ as SetSignature>::Elem,
             <Self::IdealsR as SetSignature>::Elem,

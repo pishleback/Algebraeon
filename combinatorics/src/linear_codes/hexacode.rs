@@ -17,10 +17,7 @@ use algebraeon_rings::{
 };
 use algebraeon_sets::sets::Function;
 use algebraeon_structures::*;
-use std::{
-    ops::Add,
-    sync::{Arc, OnceLock},
-};
+use std::{ops::Add, rc::Rc, sync::OnceLock};
 
 type F4 = QuaternaryField;
 type F4Structure = QuaternaryFieldCanonicalStructure;
@@ -102,7 +99,7 @@ type AmbientSpace =
     ConstFinitelyFreeModuleStructure<6, OrderedSynthemePointCanonicalStructure, F4Structure>;
 
 struct HexacodeCache {
-    subspace: Arc<
+    subspace: Rc<
         FinitelyFreeSubmoduleStructure<
             OrderedSynthemePointCanonicalStructure,
             F4Structure,
@@ -154,7 +151,7 @@ fn cache() -> &'static HexacodeCache {
 }
 
 /// The 6 dimensional vector space structure over F4 with basis given by the points of an ordered syntheme
-pub fn space_structure() -> Arc<AmbientSpace> {
+pub fn space_structure() -> Rc<AmbientSpace> {
     cache().subspace.module().clone()
 }
 
@@ -164,7 +161,7 @@ pub fn hexacode_subspace() -> &'static FinitelyFreeSubmodule<F4> {
 }
 
 /// The 3 dimensional vector subspace structure given by the hexacode
-pub fn hexacode_subspace_structure() -> Arc<
+pub fn hexacode_subspace_structure() -> Rc<
     FinitelyFreeSubmoduleStructure<
         OrderedSynthemePointCanonicalStructure,
         <F4 as MetaType>::Signature,

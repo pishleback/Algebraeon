@@ -7,7 +7,7 @@ use crate::{
 };
 use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 use algebraeon_structures::*;
-use std::{fmt::Debug, marker::PhantomData, sync::Arc};
+use std::{fmt::Debug, marker::PhantomData, rc::Rc};
 
 #[derive(Debug, Clone)]
 pub struct FinitelyFreeSubmoduleCoset<Set: Clone + Debug> {
@@ -46,7 +46,7 @@ pub struct FinitelyFreeSubmoduleCosetsStructure<
 > {
     _set: PhantomData<Set>,
     _ring: PhantomData<Ring>,
-    module: Arc<Module>,
+    module: Rc<Module>,
 }
 
 impl<
@@ -55,7 +55,7 @@ impl<
     Module: FinitelyFreeModuleSignature<Set, Ring>,
 > FinitelyFreeSubmoduleCosetsStructure<Set, Ring, Module>
 {
-    pub fn new(module: Arc<Module>) -> Arc<Self> {
+    pub fn new(module: Rc<Module>) -> Rc<Self> {
         Self {
             _set: PhantomData,
             _ring: PhantomData,
@@ -81,7 +81,7 @@ impl<
 {
     type Elem = FinitelyFreeSubmoduleCoset<Ring::Elem>;
 
-    fn validate_element(self: &Arc<Self>, _x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Rc<Self>, _x: &Self::Elem) -> Result<(), String> {
         //TODO: better checks here
         Ok(())
     }
@@ -93,16 +93,16 @@ impl<
     Module: FinitelyFreeModuleSignature<Set, Ring>,
 > FinitelyFreeSubmoduleCosetsStructure<Set, Ring, Module>
 {
-    pub fn ring(self: &Arc<Self>) -> Arc<Ring> {
+    pub fn ring(self: &Rc<Self>) -> Rc<Ring> {
         self.module().ring()
     }
 
-    pub fn module(self: &Arc<Self>) -> &Arc<Module> {
+    pub fn module(self: &Rc<Self>) -> &Rc<Module> {
         &self.module
     }
 
     pub fn from_offset_and_submodule(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         offset: &Module::Elem,
         submodule: FinitelyFreeSubmodule<Ring::Elem>,
     ) -> FinitelyFreeSubmoduleCoset<Ring::Elem> {
@@ -124,7 +124,7 @@ impl<
     }
 
     pub fn from_submodule(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         submodule: FinitelyFreeSubmodule<Ring::Elem>,
     ) -> FinitelyFreeSubmoduleCoset<Ring::Elem> {
         FinitelyFreeSubmoduleCoset {
@@ -134,7 +134,7 @@ impl<
     }
 
     pub fn equal_slow(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         x: &FinitelyFreeSubmoduleCoset<Ring::Elem>,
         y: &FinitelyFreeSubmoduleCoset<Ring::Elem>,
     ) -> bool {
@@ -157,7 +157,7 @@ impl<
     }
 
     pub fn add(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         x: FinitelyFreeSubmoduleCoset<Ring::Elem>,
         y: FinitelyFreeSubmoduleCoset<Ring::Elem>,
     ) -> FinitelyFreeSubmoduleCoset<Ring::Elem> {
@@ -173,7 +173,7 @@ impl<
     }
 
     pub fn intersect(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         x: &FinitelyFreeSubmoduleCoset<Ring::Elem>,
         y: &FinitelyFreeSubmoduleCoset<Ring::Elem>,
     ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Elem> {
@@ -292,7 +292,7 @@ impl<
     }
 
     pub fn contains_element(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         x: &FinitelyFreeSubmoduleCoset<Ring::Elem>,
         p: &Module::Elem,
     ) -> bool {
@@ -315,7 +315,7 @@ impl<
     Module: FinitelyFreeModuleSignature<Set, Ring> + EqSignature,
 > EqSignature for FinitelyFreeSubmoduleCosetsStructure<Set, Ring, Module>
 {
-    fn equal(self: &Arc<Self>, x: &Self::Elem, y: &Self::Elem) -> bool {
+    fn equal(self: &Rc<Self>, x: &Self::Elem, y: &Self::Elem) -> bool {
         self.module().equal(
             &self.module().from_vec(x.offset.iter().collect()),
             &self.module().from_vec(x.offset.iter().collect()),

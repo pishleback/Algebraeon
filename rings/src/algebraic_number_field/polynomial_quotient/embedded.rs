@@ -6,13 +6,13 @@ use crate::{
     polynomial::*,
 };
 use algebraeon_structures::*;
-use std::sync::Arc;
+use std::rc::Rc;
 
 #[derive(Debug, Clone)]
 pub struct EmbeddedAnf {
     // must have anf.modulus() equal to gen.min_poly()
     #[allow(unused)]
-    anf: Arc<AlgebraicNumberFieldPolynomialQuotientStructure>,
+    anf: Rc<AlgebraicNumberFieldPolynomialQuotientStructure>,
     generator: ComplexAlgebraic,
 }
 
@@ -68,7 +68,7 @@ impl AlgebraicNumberFieldPolynomialQuotientStructure {
 impl ComplexAlgebraic {
     pub fn generated_algebraic_number_field(
         &self,
-    ) -> Arc<AlgebraicNumberFieldPolynomialQuotientStructure> {
+    ) -> Rc<AlgebraicNumberFieldPolynomialQuotientStructure> {
         self.min_poly().algebraic_number_field_unchecked()
     }
 
@@ -87,15 +87,15 @@ impl ComplexAlgebraic {
 impl AlgebraicClosureSignature for ComplexAlgebraicCanonicalStructure {
     type BFS = <Rational as MetaType>::Signature;
 
-    fn base_field(self: &Arc<Self>) -> Arc<Self::BFS> {
+    fn base_field(self: &Rc<Self>) -> Rc<Self::BFS> {
         Rational::structure()
     }
 
-    fn base_field_inclusion(self: &Arc<Self>, x: &Rational) -> Self::Elem {
+    fn base_field_inclusion(self: &Rc<Self>, x: &Rational) -> Self::Elem {
         ComplexAlgebraic::Real(RealAlgebraic::Rational(x.clone()))
     }
 
-    fn all_roots_list(self: &Arc<Self>, poly: &Polynomial<Rational>) -> Option<Vec<Self::Elem>> {
+    fn all_roots_list(self: &Rc<Self>, poly: &Polynomial<Rational>) -> Option<Vec<Self::Elem>> {
         if poly.is_zero() {
             None
         } else {

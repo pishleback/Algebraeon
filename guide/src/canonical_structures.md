@@ -4,7 +4,7 @@ Sometimes the situation is simple and we only want to define one set with struct
 
 ```rust
 use algebraeon::structures::*;
-use std::sync::Arc;
+use std::rc::Rc;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MyRational {
@@ -19,13 +19,13 @@ impl Signature for MyRationalCanonicalStructure {}
 impl SetSignature for MyRationalCanonicalStructure {
     type Elem = MyRational;
 
-    fn validate_element(self: &Arc<Self>, _x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Rc<Self>, _x: &Self::Elem) -> Result<(), String> {
         Ok(())
     }
 }
 
 impl EqSignature for MyRationalCanonicalStructure {
-    fn equal(self: &Arc<Self>, x: &Self::Elem, y: &Self::Elem) -> bool {
+    fn equal(self: &Rc<Self>, x: &Self::Elem, y: &Self::Elem) -> bool {
         x == y
     }
 }

@@ -1,11 +1,11 @@
 use crate::structure::*;
 use algebraeon_structures::*;
-use std::{borrow::Cow, sync::Arc};
+use std::{borrow::Cow, rc::Rc};
 
 #[derive(Debug, Clone)]
 pub struct FreeModuleOverOrderedSetStructure<Set: OrdSignature, Ring: SemiRingSignature> {
-    set: Arc<Set>,
-    ring: Arc<Ring>,
+    set: Rc<Set>,
+    ring: Rc<Ring>,
 }
 
 impl<Set: OrdSignature, Ring: SemiRingSignature> PartialEq
@@ -24,11 +24,11 @@ impl<Set: OrdSignature, Ring: SemiRingSignature> Eq
 impl<Set: OrdSignature, Ring: SemiRingSignature + EqSignature>
     FreeModuleOverOrderedSetStructure<Set, Ring>
 {
-    pub fn new(set: Arc<Set>, ring: Arc<Ring>) -> Arc<Self> {
+    pub fn new(set: Rc<Set>, ring: Rc<Ring>) -> Rc<Self> {
         Self { set, ring }.into()
     }
 
-    pub fn set(&self) -> &Arc<Set> {
+    pub fn set(&self) -> &Rc<Set> {
         &self.set
     }
 
@@ -40,7 +40,7 @@ impl<Set: OrdSignature, Ring: SemiRingSignature + EqSignature>
     ///
     /// and is equal to the sum of the input vectors terms. In other words, the returned vector will pass self.is_element(..)
     pub fn collapse_terms(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         v: <Self as SetSignature>::Elem,
     ) -> <Self as SetSignature>::Elem {
         let mut v = self.set().sort_by_key(v, &|(x, _)| x).into_iter();
@@ -107,7 +107,7 @@ impl<Set: OrdSignature, Ring: SemiRingSignature + EqSignature> SetSignature
     // all ring elements in the second argument must be non-zero
     type Elem = Vec<(Set::Elem, Ring::Elem)>;
 
-    fn validate_element(self: &Arc<Self>, v: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Rc<Self>, v: &Self::Elem) -> Result<(), String> {
         if !self.set().is_sorted_and_unique_by_key(v, |(x, _)| x) {
             return Err("not sorted or has duplicate".to_string());
         }
@@ -123,7 +123,7 @@ impl<Set: OrdSignature, Ring: SemiRingSignature + EqSignature> SetSignature
 impl<Set: OrdSignature, Ring: SemiRingSignature + EqSignature> EqSignature
     for FreeModuleOverOrderedSetStructure<Set, Ring>
 {
-    fn equal(self: &Arc<Self>, v: &Self::Elem, w: &Self::Elem) -> bool {
+    fn equal(self: &Rc<Self>, v: &Self::Elem, w: &Self::Elem) -> bool {
         debug_assert!(self.validate_element(v).is_ok());
         debug_assert!(self.validate_element(w).is_ok());
         // since elements are sorted and exclude entries with zero coefficients, we just need to check if they are identically equal
@@ -148,7 +148,7 @@ impl<Set: OrdSignature, Ring: SemiRingSignature + EqSignature> RinglikeSpecializ
 impl<Set: OrdSignature, Ring: SemiRingSignature + EqSignature> ZeroSignature
     for FreeModuleOverOrderedSetStructure<Set, Ring>
 {
-    fn zero(self: &Arc<Self>) -> Self::Elem {
+    fn zero(self: &Rc<Self>) -> Self::Elem {
         vec![]
     }
 }
@@ -156,7 +156,7 @@ impl<Set: OrdSignature, Ring: SemiRingSignature + EqSignature> ZeroSignature
 impl<Set: OrdSignature, Ring: SemiRingSignature + EqSignature> AdditionSignature
     for FreeModuleOverOrderedSetStructure<Set, Ring>
 {
-    fn add(self: &Arc<Self>, v: &Self::Elem, w: &Self::Elem) -> Self::Elem {
+    fn add(self: &Rc<Self>, v: &Self::Elem, w: &Self::Elem) -> Self::Elem {
         self.collapse_terms(v.iter().chain(w.iter()).cloned().collect())
     }
 }
@@ -164,7 +164,7 @@ impl<Set: OrdSignature, Ring: SemiRingSignature + EqSignature> AdditionSignature
 impl<Set: OrdSignature, Ring: SemiRingSignature + EqSignature> CancellativeAdditionSignature
     for FreeModuleOverOrderedSetStructure<Set, Ring>
 {
-    fn try_sub(self: &Arc<Self>, _a: &Self::Elem, _b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_sub(self: &Rc<Self>, _a: &Self::Elem, _b: &Self::Elem) -> Option<Self::Elem> {
         todo!()
     }
 }
@@ -172,7 +172,7 @@ impl<Set: OrdSignature, Ring: SemiRingSignature + EqSignature> CancellativeAddit
 impl<Set: OrdSignature, Ring: SemiRingSignature + EqSignature> TryNegateSignature
     for FreeModuleOverOrderedSetStructure<Set, Ring>
 {
-    fn try_neg(self: &Arc<Self>, v: &Self::Elem) -> Option<Self::Elem> {
+    fn try_neg(self: &Rc<Self>, v: &Self::Elem) -> Option<Self::Elem> {
         v.iter()
             .map(|(x, a)| Some((x.clone(), self.ring().try_neg(a)?)))
             .collect::<Option<_>>()
@@ -187,7 +187,7 @@ impl<Set: OrdSignature, Ring: SemiRingSignature + EqSignature> AdditiveMonoidSig
 impl<Set: OrdSignature, Ring: RingSignature + EqSignature> AdditiveGroupSignature
     for FreeModuleOverOrderedSetStructure<Set, Ring>
 {
-    fn neg(self: &Arc<Self>, v: &Self::Elem) -> Self::Elem {
+    fn neg(self: &Rc<Self>, v: &Self::Elem) -> Self::Elem {
         v.iter()
             .map(|(x, a)| (x.clone(), self.ring().neg(a)))
             .collect()
@@ -197,11 +197,11 @@ impl<Set: OrdSignature, Ring: RingSignature + EqSignature> AdditiveGroupSignatur
 impl<Set: OrdSignature, Ring: SemiRingSignature + EqSignature> SemiModuleSignature<Ring>
     for FreeModuleOverOrderedSetStructure<Set, Ring>
 {
-    fn ring(self: &Arc<Self>) -> Arc<Ring> {
+    fn ring(self: &Rc<Self>) -> Rc<Ring> {
         self.ring.clone()
     }
 
-    fn scalar_mul(self: &Arc<Self>, v: &Self::Elem, b: &Ring::Elem) -> Self::Elem {
+    fn scalar_mul(self: &Rc<Self>, v: &Self::Elem, b: &Ring::Elem) -> Self::Elem {
         v.iter()
             .map(|(x, a)| (x.clone(), self.ring().mul(a, b)))
             .filter(|(_, a)| !self.ring().is_zero(a))
@@ -212,11 +212,11 @@ impl<Set: OrdSignature, Ring: SemiRingSignature + EqSignature> SemiModuleSignatu
 impl<Set: OrdSignature, Ring: RingSignature + EqSignature> FreeModuleSignature<Set, Ring>
     for FreeModuleOverOrderedSetStructure<Set, Ring>
 {
-    fn basis_set(self: &Arc<Self>) -> Arc<Set> {
+    fn basis_set(self: &Rc<Self>) -> Rc<Set> {
         self.set().clone()
     }
 
-    fn to_component<'a>(self: &Arc<Self>, x: &Set::Elem, v: &'a Self::Elem) -> Cow<'a, Ring::Elem> {
+    fn to_component<'a>(self: &Rc<Self>, x: &Set::Elem, v: &'a Self::Elem) -> Cow<'a, Ring::Elem> {
         if let Some((_, a)) = self.set().binary_search_by_key(v, x, |(x, _)| x) {
             Cow::Borrowed(a)
         } else {
@@ -224,7 +224,7 @@ impl<Set: OrdSignature, Ring: RingSignature + EqSignature> FreeModuleSignature<S
         }
     }
 
-    fn from_component(self: &Arc<Self>, x: &Set::Elem, a: &Ring::Elem) -> Self::Elem {
+    fn from_component(self: &Rc<Self>, x: &Set::Elem, a: &Ring::Elem) -> Self::Elem {
         if self.ring().is_zero(a) {
             vec![]
         } else {

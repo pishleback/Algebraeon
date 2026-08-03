@@ -3,7 +3,7 @@ use crate::{
     simplex_collection::LabelledSimplexCollection,
     simplicial_disjoint_union::SimplicialDisjointUnion, vector::Vector,
 };
-use std::sync::{Arc, atomic::AtomicUsize};
+use std::{rc::Rc, sync::atomic::AtomicUsize};
 
 /// An affine space over a field.
 /// affine_dimension = 0 => the empty space
@@ -13,7 +13,7 @@ use std::sync::{Arc, atomic::AtomicUsize};
 /// ...
 #[derive(Debug, Clone)]
 pub struct AffineSpace<FS: FieldSignature> {
-    field: Arc<FS>,
+    field: Rc<FS>,
     // linear dimension = affine dimension - 1
     affine_dimension: usize,
     ident: usize,
@@ -39,7 +39,7 @@ impl<FS: FieldSignature + Hash> Hash for AffineSpace<FS> {
 }
 
 impl<FS: FieldSignature> AffineSpace<FS> {
-    pub fn new_affine(field: Arc<FS>, affine_dimension: usize) -> Self {
+    pub fn new_affine(field: Rc<FS>, affine_dimension: usize) -> Self {
         static COUNTER: AtomicUsize = AtomicUsize::new(0);
         Self {
             field,
@@ -48,15 +48,15 @@ impl<FS: FieldSignature> AffineSpace<FS> {
         }
     }
 
-    pub fn new_empty(field: Arc<FS>) -> Self {
+    pub fn new_empty(field: Rc<FS>) -> Self {
         Self::new_affine(field, 0)
     }
 
-    pub fn new_linear(field: Arc<FS>, linear_dimension: usize) -> Self {
+    pub fn new_linear(field: Rc<FS>, linear_dimension: usize) -> Self {
         Self::new_affine(field, linear_dimension + 1)
     }
 
-    pub fn field(&self) -> &Arc<FS> {
+    pub fn field(&self) -> &Rc<FS> {
         &self.field
     }
 

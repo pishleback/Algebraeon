@@ -23,13 +23,13 @@ use crate::{
 };
 use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 use algebraeon_structures::*;
-use std::sync::Arc;
+use std::rc::Rc;
 
 pub type RingOfIntegersWithIntegralBasis<K> = OrderWithBasis<K, true>;
 
 #[derive(Debug, Clone)]
 pub struct OrderWithBasis<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> {
-    full_rank_z_integer_submodule: Arc<FullRankIntegerSubmoduleWithBasis<K>>,
+    full_rank_z_integer_submodule: Rc<FullRankIntegerSubmoduleWithBasis<K>>,
     products: SymmetricMatrix<Vec<Integer>>,
     one: Vec<Integer>,
 }
@@ -48,7 +48,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> OrderWithBasis<K, MA
         Ok(())
     }
 
-    fn new_impl(anf: Arc<K>, basis: Vec<K::Elem>) -> Result<Arc<Self>, String> {
+    fn new_impl(anf: Rc<K>, basis: Vec<K::Elem>) -> Result<Rc<Self>, String> {
         let n = anf.n();
         let products =
             SymmetricMatrix::construct_bottom_left(n, |r, c| anf.mul(&basis[r], &basis[c]));
@@ -82,7 +82,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> OrderWithBasis<K, MA
     }
 
     /// The conductor of an order is the ideal of the order consisting of all elements such that multiplying by any element of the ring of integers produces an element of the order.
-    pub fn conductor(self: &Arc<Self>) -> OrderIdeal {
+    pub fn conductor(self: &Rc<Self>) -> OrderIdeal {
         self.anf()
             .ring_of_integers()
             .suborder_conductor_as_ideal_of_order(self)
@@ -90,13 +90,13 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> OrderWithBasis<K, MA
 }
 
 impl<K: AlgebraicNumberFieldSignature> OrderWithBasis<K, false> {
-    pub fn new(anf: Arc<K>, basis: Vec<K::Elem>) -> Result<Arc<Self>, String> {
+    pub fn new(anf: Rc<K>, basis: Vec<K::Elem>) -> Result<Rc<Self>, String> {
         let s = Self::new_impl(anf, basis)?;
         s.check_is_order()?;
         Ok(s)
     }
 
-    pub fn new_unchecked(anf: Arc<K>, basis: Vec<K::Elem>) -> Arc<Self> {
+    pub fn new_unchecked(anf: Rc<K>, basis: Vec<K::Elem>) -> Rc<Self> {
         let s = Self::new_impl(anf, basis).unwrap();
         #[cfg(debug_assertions)]
         s.check_is_order().unwrap();
@@ -105,7 +105,7 @@ impl<K: AlgebraicNumberFieldSignature> OrderWithBasis<K, false> {
 }
 
 impl<K: AlgebraicNumberFieldSignature> OrderWithBasis<K, true> {
-    fn check_is_maximal(self: &Arc<Self>) -> Result<(), String> {
+    fn check_is_maximal(self: &Rc<Self>) -> Result<(), String> {
         let self_disc = self.discriminant();
         let anf_disc = FullRankIntegerSubmoduleWithBasisSignature::<K>::anf(self).discriminant();
         if self_disc != anf_disc {
@@ -115,14 +115,14 @@ impl<K: AlgebraicNumberFieldSignature> OrderWithBasis<K, true> {
         Ok(())
     }
 
-    pub fn new_maximal(anf: Arc<K>, basis: Vec<K::Elem>) -> Result<Arc<Self>, String> {
+    pub fn new_maximal(anf: Rc<K>, basis: Vec<K::Elem>) -> Result<Rc<Self>, String> {
         let s = Self::new_impl(anf, basis)?;
         s.check_is_order()?;
         s.check_is_maximal()?;
         Ok(s)
     }
 
-    pub fn new_maximal_unchecked(anf: Arc<K>, basis: Vec<K::Elem>) -> Arc<Self> {
+    pub fn new_maximal_unchecked(anf: Rc<K>, basis: Vec<K::Elem>) -> Rc<Self> {
         let s = Self::new_impl(anf, basis).unwrap();
         #[cfg(debug_assertions)]
         s.check_is_order().unwrap();
@@ -151,7 +151,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> SetSignature
 {
     type Elem = Vec<Integer>;
 
-    fn validate_element(self: &Arc<Self>, x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Rc<Self>, x: &Self::Elem) -> Result<(), String> {
         self.full_rank_z_integer_submodule.validate_element(x)
     }
 }
@@ -159,7 +159,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> SetSignature
 impl<K: AlgebraicNumberFieldSignature + ToStringSignature, const MAXIMAL: bool> ToStringSignature
     for OrderWithBasis<K, MAXIMAL>
 {
-    fn to_string(self: &Arc<Self>, elem: &Self::Elem) -> String {
+    fn to_string(self: &Rc<Self>, elem: &Self::Elem) -> String {
         self.full_rank_z_integer_submodule.to_string(elem)
     }
 }
@@ -167,7 +167,7 @@ impl<K: AlgebraicNumberFieldSignature + ToStringSignature, const MAXIMAL: bool> 
 impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> EqSignature
     for OrderWithBasis<K, MAXIMAL>
 {
-    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn equal(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         self.full_rank_z_integer_submodule.equal(a, b)
     }
 }
@@ -176,14 +176,14 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> RinglikeSpecializati
     for OrderWithBasis<K, MAXIMAL>
 {
     fn try_ring_restructure(
-        self: Arc<Self>,
-    ) -> Option<Arc<impl EqSignature<Elem = Self::Elem> + RingSignature>> {
+        self: Rc<Self>,
+    ) -> Option<Rc<impl EqSignature<Elem = Self::Elem> + RingSignature>> {
         Some(self)
     }
 
     fn try_char_zero_ring_restructure(
-        self: Arc<Self>,
-    ) -> Option<Arc<impl EqSignature<Elem = Self::Elem> + CharZeroRingSignature>> {
+        self: Rc<Self>,
+    ) -> Option<Rc<impl EqSignature<Elem = Self::Elem> + CharZeroRingSignature>> {
         Some(self)
     }
 }
@@ -191,7 +191,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> RinglikeSpecializati
 impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> ZeroSignature
     for OrderWithBasis<K, MAXIMAL>
 {
-    fn zero(self: &Arc<Self>) -> Self::Elem {
+    fn zero(self: &Rc<Self>) -> Self::Elem {
         self.full_rank_z_integer_submodule.zero()
     }
 }
@@ -199,7 +199,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> ZeroSignature
 impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> AdditionSignature
     for OrderWithBasis<K, MAXIMAL>
 {
-    fn add(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn add(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.full_rank_z_integer_submodule.add(a, b)
     }
 }
@@ -207,7 +207,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> AdditionSignature
 impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> CancellativeAdditionSignature
     for OrderWithBasis<K, MAXIMAL>
 {
-    fn try_sub(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_sub(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.sub(a, b))
     }
 }
@@ -215,7 +215,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> CancellativeAddition
 impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> TryNegateSignature
     for OrderWithBasis<K, MAXIMAL>
 {
-    fn try_neg(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_neg(self: &Rc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
     }
 }
@@ -228,11 +228,11 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> AdditiveMonoidSignat
 impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> AdditiveGroupSignature
     for OrderWithBasis<K, MAXIMAL>
 {
-    fn neg(self: &Arc<Self>, a: &Self::Elem) -> Self::Elem {
+    fn neg(self: &Rc<Self>, a: &Self::Elem) -> Self::Elem {
         self.full_rank_z_integer_submodule.neg(a)
     }
 
-    fn sub(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn sub(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.full_rank_z_integer_submodule.sub(a, b)
     }
 }
@@ -240,11 +240,11 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> AdditiveGroupSignatu
 impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool>
     FullRankIntegerSubmoduleWithBasisSignature<K> for OrderWithBasis<K, MAXIMAL>
 {
-    fn anf(self: &Arc<Self>) -> Arc<K> {
+    fn anf(self: &Rc<Self>) -> Rc<K> {
         self.full_rank_z_integer_submodule.anf()
     }
 
-    fn basis(self: &Arc<Self>) -> &Vec<<K>::Elem> {
+    fn basis(self: &Rc<Self>) -> &Vec<<K>::Elem> {
         self.full_rank_z_integer_submodule.basis()
     }
 }
@@ -252,7 +252,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool>
 impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> OneSignature
     for OrderWithBasis<K, MAXIMAL>
 {
-    fn one(self: &Arc<Self>) -> Self::Elem {
+    fn one(self: &Rc<Self>) -> Self::Elem {
         self.one.clone()
     }
 }
@@ -260,7 +260,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> OneSignature
 impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> MultiplicationSignature
     for OrderWithBasis<K, MAXIMAL>
 {
-    fn mul(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn mul(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         let n = self.n();
         debug_assert!(self.validate_element(a).is_ok());
         debug_assert!(self.validate_element(b).is_ok());
@@ -324,7 +324,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> SemiRingSignature
 
 impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> OrderWithBasis<K, MAXIMAL> {
     pub fn quotient_integer_submodule(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         a: &FinitelyFreeSubmodule<Integer>,
         b: &FinitelyFreeSubmodule<Integer>,
     ) -> FinitelyFreeSubmodule<Integer> {
@@ -373,7 +373,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> OrderWithBasis<K, MA
 impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> RingSignature
     for OrderWithBasis<K, MAXIMAL>
 {
-    fn is_reduced(self: &Arc<Self>) -> Result<bool, String> {
+    fn is_reduced(self: &Rc<Self>) -> Result<bool, String> {
         Ok(true)
     }
 }
@@ -381,7 +381,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> RingSignature
 impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> CharacteristicSignature
     for OrderWithBasis<K, MAXIMAL>
 {
-    fn characteristic(self: &Arc<Self>) -> Natural {
+    fn characteristic(self: &Rc<Self>) -> Natural {
         Natural::ZERO
     }
 }
@@ -389,7 +389,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> CharacteristicSignat
 impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> TryReciprocalSignature
     for OrderWithBasis<K, MAXIMAL>
 {
-    fn try_reciprocal(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_reciprocal(self: &Rc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         if self.is_zero(a) {
             None
         } else {
@@ -406,7 +406,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> TryReciprocalSignatu
 impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> CancellativeMultiplicationSignature
     for OrderWithBasis<K, MAXIMAL>
 {
-    fn try_divide(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_divide(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.mul(a, &self.try_reciprocal(b)?))
     }
 }
@@ -424,7 +424,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> IntegralDomainSignat
 impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> CharZeroRingSignature
     for OrderWithBasis<K, MAXIMAL>
 {
-    fn try_to_int(self: &Arc<Self>, x: &Self::Elem) -> Option<Integer> {
+    fn try_to_int(self: &Rc<Self>, x: &Self::Elem) -> Option<Integer> {
         self.anf()
             .try_to_int(&self.outbound_order_to_anf_inclusion().image(x))
     }
@@ -435,27 +435,27 @@ impl<K: AlgebraicNumberFieldSignature> DedekindDomainSignature for OrderWithBasi
 impl<K: AlgebraicNumberFieldSignature> AlgebraicIntegerRingSignature<K>
     for OrderWithBasis<K, true>
 {
-    fn anf(self: &Arc<Self>) -> Arc<K> {
+    fn anf(self: &Rc<Self>) -> Rc<K> {
         self.full_rank_z_integer_submodule.anf()
     }
 
-    fn to_anf(self: &Arc<Self>, x: &Self::Elem) -> K::Elem {
+    fn to_anf(self: &Rc<Self>, x: &Self::Elem) -> K::Elem {
         self.outbound_order_to_anf_inclusion().image(x)
     }
 
-    fn try_from_anf(self: &Arc<Self>, y: &K::Elem) -> Option<Self::Elem> {
+    fn try_from_anf(self: &Rc<Self>, y: &K::Elem) -> Option<Self::Elem> {
         self.outbound_order_to_anf_inclusion().try_preimage(y)
     }
 
-    fn integral_basis(self: &Arc<Self>) -> Vec<Self::Elem> {
+    fn integral_basis(self: &Rc<Self>) -> Vec<Self::Elem> {
         self.free_integer_submodule_restructure().basis_vecs()
     }
 }
 
 impl<K: AlgebraicNumberFieldSignature> OrderWithBasis<K, true> {
     pub fn suborder_conductor_as_ideal_of_order<const MAXIMAL: bool>(
-        self: &Arc<Self>,
-        order: &Arc<OrderWithBasis<K, MAXIMAL>>,
+        self: &Rc<Self>,
+        order: &Rc<OrderWithBasis<K, MAXIMAL>>,
     ) -> OrderIdeal {
         let anf = order.anf();
         debug_assert_eq!(FullRankIntegerSubmoduleWithBasisSignature::anf(self), anf);
@@ -497,8 +497,8 @@ impl<K: AlgebraicNumberFieldSignature> OrderWithBasis<K, true> {
     }
 
     pub fn suborder_conductor_as_ideal_of_self<const MAXIMAL: bool>(
-        self: &Arc<Self>,
-        order: &Arc<OrderWithBasis<K, MAXIMAL>>,
+        self: &Rc<Self>,
+        order: &Rc<OrderWithBasis<K, MAXIMAL>>,
     ) -> OrderIdeal {
         let anf = order.anf();
         debug_assert_eq!(FullRankIntegerSubmoduleWithBasisSignature::anf(self), anf);

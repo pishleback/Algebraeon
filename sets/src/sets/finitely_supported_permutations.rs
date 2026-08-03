@@ -3,7 +3,7 @@ use itertools::Itertools;
 use std::borrow::Borrow;
 use std::collections::HashSet;
 use std::hash::Hash;
-use std::sync::Arc;
+use std::rc::Rc;
 
 #[derive(Debug, Clone)]
 struct FromAndTo {
@@ -69,33 +69,33 @@ where
 {
     type Signature = FinitelySupportedPermutationsStructure<Elem::Signature>;
 
-    fn structure() -> Arc<Self::Signature> {
+    fn structure() -> Rc<Self::Signature> {
         FinitelySupportedPermutationsStructure::new(Elem::structure())
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FinitelySupportedPermutationsStructure<Set: SetSignature> {
-    set: Arc<Set>,
+    set: Rc<Set>,
 }
 
 impl<Set: SetSignature> FinitelySupportedPermutationsStructure<Set> {
-    pub fn new(set: Arc<Set>) -> Arc<Self> {
+    pub fn new(set: Rc<Set>) -> Rc<Self> {
         Self { set }.into()
     }
 }
 
 pub trait SetToFinitelySupportedPermutationsStructure: SetSignature {
     fn finitely_supported_permutations(
-        self: &Arc<Self>,
-    ) -> Arc<FinitelySupportedPermutationsStructure<Self>> {
+        self: &Rc<Self>,
+    ) -> Rc<FinitelySupportedPermutationsStructure<Self>> {
         FinitelySupportedPermutationsStructure::new(self.clone())
     }
 }
 impl<Set: SetSignature> SetToFinitelySupportedPermutationsStructure for Set {}
 
 pub trait FiniteSetToFinitelySupportedPermutationsStructure: FiniteSetSignature {
-    fn permutations(self: &Arc<Self>) -> Arc<FinitelySupportedPermutationsStructure<Self>> {
+    fn permutations(self: &Rc<Self>) -> Rc<FinitelySupportedPermutationsStructure<Self>> {
         FinitelySupportedPermutationsStructure::new(self.clone())
     }
 }
@@ -106,7 +106,7 @@ impl<Set: SetSignature> Signature for FinitelySupportedPermutationsStructure<Set
 impl<Set: OrdSignature> SetSignature for FinitelySupportedPermutationsStructure<Set> {
     type Elem = FinitelySupportedPermutation<Set::Elem>;
 
-    fn validate_element(self: &Arc<Self>, x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Rc<Self>, x: &Self::Elem) -> Result<(), String> {
         if !self.set().is_sorted_and_unique_by_key(&x.perm, |(a, _)| a) {
             return Err("Permutation first items are not sorted and unique".to_string());
         }
@@ -148,7 +148,7 @@ impl<Set: OrdSignature> SetSignature for FinitelySupportedPermutationsStructure<
 }
 
 impl<Set: OrdSignature> EqSignature for FinitelySupportedPermutationsStructure<Set> {
-    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn equal(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(b));
         let mut a_tos = vec![];
@@ -174,7 +174,7 @@ impl<Set: OrdSignature> EqSignature for FinitelySupportedPermutationsStructure<S
 
 impl<Set: OrdSignature> FinitelySupportedPermutationsStructure<Set> {
     pub fn map<T>(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         perm: <Self as SetSignature>::Elem,
         f: impl Fn(Set::Elem) -> T,
     ) -> FinitelySupportedPermutation<T> {
@@ -188,7 +188,7 @@ impl<Set: OrdSignature> FinitelySupportedPermutationsStructure<Set> {
     }
 
     fn image_ref<'a>(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         perm: &'a <Self as SetSignature>::Elem,
         elem: &'a Set::Elem,
     ) -> &'a Set::Elem {
@@ -204,7 +204,7 @@ impl<Set: OrdSignature> FinitelySupportedPermutationsStructure<Set> {
     }
 
     fn preimage_ref<'a>(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         perm: &'a <Self as SetSignature>::Elem,
         elem: &'a Set::Elem,
     ) -> &'a Set::Elem {
@@ -221,11 +221,11 @@ impl<Set: OrdSignature> FinitelySupportedPermutationsStructure<Set> {
 }
 
 impl<Set: OrdSignature> PermutationsSignature<Set> for FinitelySupportedPermutationsStructure<Set> {
-    fn set(self: &Arc<Self>) -> &Arc<Set> {
+    fn set(self: &Rc<Self>) -> &Rc<Set> {
         &self.set
     }
 
-    fn new_cycle(self: &Arc<Self>, cycle: Vec<Set::Elem>) -> Result<Self::Elem, ()> {
+    fn new_cycle(self: &Rc<Self>, cycle: Vec<Set::Elem>) -> Result<Self::Elem, ()> {
         let sorted_enumerated_cycle = self
             .set()
             .sort_by_key(cycle.iter().enumerate().collect(), &|item| item.1);
@@ -275,7 +275,7 @@ impl<Set: OrdSignature> PermutationsSignature<Set> for FinitelySupportedPermutat
     }
 
     fn new_perm(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         perm: Vec<(impl Borrow<Set::Elem>, impl Borrow<Set::Elem>)>,
     ) -> Result<Self::Elem, ()> {
         let perm_sorted_froms = self
@@ -369,25 +369,25 @@ impl<Set: OrdSignature> PermutationsSignature<Set> for FinitelySupportedPermutat
         Ok(s)
     }
 
-    fn support(self: &Arc<Self>, perm: &Self::Elem) -> Vec<Set::Elem> {
+    fn support(self: &Rc<Self>, perm: &Self::Elem) -> Vec<Set::Elem> {
         debug_assert!(self.is_element(perm));
         perm.perm.iter().map(|(elem, _)| elem.clone()).collect()
     }
 
-    fn support_size(self: &Arc<Self>, perm: &Self::Elem) -> usize {
+    fn support_size(self: &Rc<Self>, perm: &Self::Elem) -> usize {
         debug_assert!(self.is_element(perm));
         perm.perm.len()
     }
 
-    fn image(self: &Arc<Self>, perm: &Self::Elem, elem: &Set::Elem) -> Set::Elem {
+    fn image(self: &Rc<Self>, perm: &Self::Elem, elem: &Set::Elem) -> Set::Elem {
         self.image_ref(perm, elem).clone()
     }
 
-    fn preimage(self: &Arc<Self>, perm: &Self::Elem, elem: &Set::Elem) -> Set::Elem {
+    fn preimage(self: &Rc<Self>, perm: &Self::Elem, elem: &Set::Elem) -> Set::Elem {
         self.preimage_ref(perm, elem).clone()
     }
 
-    fn disjoint_cycles(self: &Arc<Self>, perm: &Self::Elem) -> Vec<Vec<Set::Elem>> {
+    fn disjoint_cycles(self: &Rc<Self>, perm: &Self::Elem) -> Vec<Vec<Set::Elem>> {
         debug_assert!(self.is_element(perm));
         // vector of pairs of moved elements and whether they have been accounted for
         let mut elems_todo = perm
@@ -424,7 +424,7 @@ impl<Set: OrdSignature> PermutationsSignature<Set> for FinitelySupportedPermutat
 }
 
 impl<Set: OrdSignature> CompositionSignature for FinitelySupportedPermutationsStructure<Set> {
-    fn compose(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn compose(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(b));
 
@@ -496,7 +496,7 @@ impl<Set: OrdSignature> AssociativeCompositionSignature
 impl<Set: OrdSignature> LeftCancellativeCompositionSignature
     for FinitelySupportedPermutationsStructure<Set>
 {
-    fn try_left_difference(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_left_difference(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.compose(&self.inverse(b), a))
     }
 }
@@ -504,17 +504,13 @@ impl<Set: OrdSignature> LeftCancellativeCompositionSignature
 impl<Set: OrdSignature> RightCancellativeCompositionSignature
     for FinitelySupportedPermutationsStructure<Set>
 {
-    fn try_right_difference(
-        self: &Arc<Self>,
-        a: &Self::Elem,
-        b: &Self::Elem,
-    ) -> Option<Self::Elem> {
+    fn try_right_difference(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.compose(a, &self.inverse(b)))
     }
 }
 
 impl<Set: OrdSignature> IdentitySignature for FinitelySupportedPermutationsStructure<Set> {
-    fn identity(self: &Arc<Self>) -> Self::Elem {
+    fn identity(self: &Rc<Self>) -> Self::Elem {
         FinitelySupportedPermutation::identity()
     }
 }
@@ -522,25 +518,25 @@ impl<Set: OrdSignature> IdentitySignature for FinitelySupportedPermutationsStruc
 impl<Set: OrdSignature> MonoidSignature for FinitelySupportedPermutationsStructure<Set> {}
 
 impl<Set: OrdSignature> TryLeftInverseSignature for FinitelySupportedPermutationsStructure<Set> {
-    fn try_left_inverse(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_left_inverse(self: &Rc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.inverse(a))
     }
 }
 
 impl<Set: OrdSignature> TryRightInverseSignature for FinitelySupportedPermutationsStructure<Set> {
-    fn try_right_inverse(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_right_inverse(self: &Rc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.inverse(a))
     }
 }
 
 impl<Set: OrdSignature> TryInverseSignature for FinitelySupportedPermutationsStructure<Set> {
-    fn try_inverse(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_inverse(self: &Rc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.inverse(a))
     }
 }
 
 impl<Set: OrdSignature> GroupSignature for FinitelySupportedPermutationsStructure<Set> {
-    fn inverse(self: &Arc<Self>, a: &Self::Elem) -> Self::Elem {
+    fn inverse(self: &Rc<Self>, a: &Self::Elem) -> Self::Elem {
         a.clone().inverse()
     }
 }
@@ -548,7 +544,7 @@ impl<Set: OrdSignature> GroupSignature for FinitelySupportedPermutationsStructur
 impl<Set: OrdSignature + FiniteSetSignature> CountableSetSignature
     for FinitelySupportedPermutationsStructure<Set>
 {
-    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
+    fn generate_all_elements(self: Rc<Self>) -> impl Iterator<Item = Self::Elem> {
         let all_elems = self.set().list_all_elements();
         let n = all_elems.len();
         (0..n)

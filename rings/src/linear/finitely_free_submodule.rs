@@ -6,7 +6,7 @@ use crate::{
 };
 use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 use algebraeon_structures::*;
-use std::{cmp::Ordering, marker::PhantomData, sync::Arc};
+use std::{cmp::Ordering, marker::PhantomData, rc::Rc};
 
 #[derive(Debug, Clone)]
 pub struct FinitelyFreeSubmoduleStructure<
@@ -15,7 +15,7 @@ pub struct FinitelyFreeSubmoduleStructure<
     Module: FinitelyFreeModuleSignature<Set, Ring>,
 > {
     _phantom: PhantomData<(Set, Ring, Module)>,
-    module: Arc<Module>,
+    module: Rc<Module>,
     submodule: FinitelyFreeSubmodule<Ring::Elem>,
 }
 
@@ -56,7 +56,7 @@ impl<
     Module: FinitelyFreeModuleSignature<Set, Ring>,
 > FinitelyFreeSubmoduleStructure<Set, Ring, Module>
 {
-    pub fn new(module: Arc<Module>, submodule: FinitelyFreeSubmodule<Ring::Elem>) -> Arc<Self> {
+    pub fn new(module: Rc<Module>, submodule: FinitelyFreeSubmodule<Ring::Elem>) -> Rc<Self> {
         Self {
             _phantom: PhantomData,
             module,
@@ -65,7 +65,7 @@ impl<
         .into()
     }
 
-    pub fn module(&self) -> &Arc<Module> {
+    pub fn module(&self) -> &Rc<Module> {
         &self.module
     }
 
@@ -94,7 +94,7 @@ impl<
 {
     type Elem = Module::Elem;
 
-    fn validate_element(self: &Arc<Self>, x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Rc<Self>, x: &Self::Elem) -> Result<(), String> {
         self.module().validate_element(x)?;
         if !self
             .module()
@@ -113,7 +113,7 @@ impl<
     Module: FinitelyFreeModuleSignature<Set, Ring> + EqSignature,
 > EqSignature for FinitelyFreeSubmoduleStructure<Set, Ring, Module>
 {
-    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn equal(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         self.module().equal(a, b)
     }
 }
@@ -124,7 +124,7 @@ impl<
     Module: FinitelyFreeModuleSignature<Set, Ring> + OrdSignature,
 > PartialOrdSignature for FinitelyFreeSubmoduleStructure<Set, Ring, Module>
 {
-    fn partial_cmp(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Ordering> {
+    fn partial_cmp(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Ordering> {
         self.module().partial_cmp(a, b)
     }
 }
@@ -135,7 +135,7 @@ impl<
     Module: FinitelyFreeModuleSignature<Set, Ring> + OrdSignature,
 > OrdSignature for FinitelyFreeSubmoduleStructure<Set, Ring, Module>
 {
-    fn cmp(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Ordering {
+    fn cmp(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Ordering {
         self.module().cmp(a, b)
     }
 }
@@ -146,7 +146,7 @@ impl<
     Module: FinitelyFreeModuleSignature<Set, Ring>,
 > CountableSetSignature for FinitelyFreeSubmoduleStructure<Set, Ring, Module>
 {
-    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
+    fn generate_all_elements(self: Rc<Self>) -> impl Iterator<Item = Self::Elem> {
         self.list_all_elements().into_iter()
     }
 }
@@ -157,7 +157,7 @@ impl<
     Module: FinitelyFreeModuleSignature<Set, Ring>,
 > FiniteSetSignature for FinitelyFreeSubmoduleStructure<Set, Ring, Module>
 {
-    fn list_all_elements(self: &Arc<Self>) -> Vec<Self::Elem> {
+    fn list_all_elements(self: &Rc<Self>) -> Vec<Self::Elem> {
         let row_basis = self.submodule.row_basis_matrix();
         self.ring()
             .free_module(EnumeratedFiniteSetStructure::new(row_basis.rows()))
@@ -169,7 +169,7 @@ impl<
             .collect()
     }
 
-    fn size(self: &Arc<Self>) -> Natural {
+    fn size(self: &Rc<Self>) -> Natural {
         self.ring().size().pow(&self.rank().into())
     }
 }
@@ -180,18 +180,18 @@ impl<
     Module: FinitelyFreeModuleSignature<Set, Ring> + OrdSignature,
 > OrderedFiniteSetSignature for FinitelyFreeSubmoduleStructure<Set, Ring, Module>
 {
-    fn list_all_elements_ordered(self: &Arc<Self>) -> Vec<Self::Elem> {
+    fn list_all_elements_ordered(self: &Rc<Self>) -> Vec<Self::Elem> {
         self.sort(self.list_all_elements())
     }
 
-    fn element_to_enumeration(self: &Arc<Self>, elem: &Self::Elem) -> Natural {
+    fn element_to_enumeration(self: &Rc<Self>, elem: &Self::Elem) -> Natural {
         debug_assert!(self.is_element(elem));
         self.binary_search_index(&self.list_all_elements_ordered(), elem)
             .unwrap()
             .into()
     }
 
-    fn enumeration_to_element(self: &Arc<Self>, num: &Natural) -> Option<Self::Elem> {
+    fn enumeration_to_element(self: &Rc<Self>, num: &Natural) -> Option<Self::Elem> {
         if let Ok(num) = TryInto::<usize>::try_into(num) {
             self.list_all_elements_ordered().into_iter().nth(num)
         } else {
@@ -214,7 +214,7 @@ impl<
     Module: FinitelyFreeModuleSignature<Set, Ring>,
 > ZeroSignature for FinitelyFreeSubmoduleStructure<Set, Ring, Module>
 {
-    fn zero(self: &Arc<Self>) -> Self::Elem {
+    fn zero(self: &Rc<Self>) -> Self::Elem {
         self.module().zero()
     }
 }
@@ -225,7 +225,7 @@ impl<
     Module: FinitelyFreeModuleSignature<Set, Ring>,
 > AdditionSignature for FinitelyFreeSubmoduleStructure<Set, Ring, Module>
 {
-    fn add(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn add(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.module().add(a, b)
     }
 }
@@ -236,7 +236,7 @@ impl<
     Module: FinitelyFreeModuleSignature<Set, Ring>,
 > CancellativeAdditionSignature for FinitelyFreeSubmoduleStructure<Set, Ring, Module>
 {
-    fn try_sub(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_sub(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         self.module().try_sub(a, b)
     }
 }
@@ -247,7 +247,7 @@ impl<
     Module: FinitelyFreeModuleSignature<Set, Ring>,
 > TryNegateSignature for FinitelyFreeSubmoduleStructure<Set, Ring, Module>
 {
-    fn try_neg(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_neg(self: &Rc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         self.module().try_neg(a)
     }
 }
@@ -266,7 +266,7 @@ impl<
     Module: FinitelyFreeModuleSignature<Set, Ring>,
 > AdditiveGroupSignature for FinitelyFreeSubmoduleStructure<Set, Ring, Module>
 {
-    fn neg(self: &Arc<Self>, a: &Self::Elem) -> Self::Elem {
+    fn neg(self: &Rc<Self>, a: &Self::Elem) -> Self::Elem {
         self.module().neg(a)
     }
 }
@@ -277,11 +277,11 @@ impl<
     Module: FinitelyFreeModuleSignature<Set, Ring>,
 > SemiModuleSignature<Ring> for FinitelyFreeSubmoduleStructure<Set, Ring, Module>
 {
-    fn ring(self: &Arc<Self>) -> Arc<Ring> {
+    fn ring(self: &Rc<Self>) -> Rc<Ring> {
         self.module().ring()
     }
 
-    fn scalar_mul(self: &Arc<Self>, a: &Self::Elem, x: &Ring::Elem) -> Self::Elem {
+    fn scalar_mul(self: &Rc<Self>, a: &Self::Elem, x: &Ring::Elem) -> Self::Elem {
         self.module().scalar_mul(a, x)
     }
 }

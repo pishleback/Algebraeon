@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::rc::Rc;
 
 use crate::{
     linear::finitely_free_module::FinitelyFreeModuleStructure,
@@ -16,9 +16,9 @@ pub struct FreeModuleFiniteNumberedBasisLinearTransformation<
     const INJECTIVE: bool,
     const SURJECTIVE: bool,
 > {
-    ring: Arc<Ring>,
-    domain: Arc<FinitelyFreeModuleStructure<SetDomain, Ring>>,
-    range: Arc<FinitelyFreeModuleStructure<SetRange, Ring>>,
+    ring: Rc<Ring>,
+    domain: Rc<FinitelyFreeModuleStructure<SetDomain, Ring>>,
+    range: Rc<FinitelyFreeModuleStructure<SetRange, Ring>>,
     matrix: Matrix<Ring::Elem>, // v -> Mv
 }
 
@@ -38,11 +38,11 @@ impl<
     >
 {
     pub fn new(
-        ring: Arc<Ring>,
-        domain: Arc<FinitelyFreeModuleStructure<SetDomain, Ring>>,
-        range: Arc<FinitelyFreeModuleStructure<SetRange, Ring>>,
+        ring: Rc<Ring>,
+        domain: Rc<FinitelyFreeModuleStructure<SetDomain, Ring>>,
+        range: Rc<FinitelyFreeModuleStructure<SetRange, Ring>>,
         matrix: Matrix<Ring::Elem>,
-    ) -> Arc<Self> {
+    ) -> Rc<Self> {
         debug_assert_eq!(ring, domain.ring());
         debug_assert_eq!(ring, range.ring());
         debug_assert_eq!(domain.rank(), matrix.cols());
@@ -67,11 +67,11 @@ impl<
     }
 
     fn construct_impl(
-        ring: Arc<Ring>,
-        domain: Arc<FinitelyFreeModuleStructure<SetDomain, Ring>>,
-        range: Arc<FinitelyFreeModuleStructure<SetRange, Ring>>,
+        ring: Rc<Ring>,
+        domain: Rc<FinitelyFreeModuleStructure<SetDomain, Ring>>,
+        range: Rc<FinitelyFreeModuleStructure<SetRange, Ring>>,
         basis_image: impl Fn(usize) -> Vec<Ring::Elem>,
-    ) -> Arc<Self> {
+    ) -> Rc<Self> {
         let matrix = Matrix::from_cols(
             (0..domain.rank())
                 .map(|i| {
@@ -92,11 +92,11 @@ impl<
 > FreeModuleFiniteNumberedBasisLinearTransformation<SetDomain, SetRange, Ring, false, false>
 {
     pub fn construct(
-        ring: Arc<Ring>,
-        domain: Arc<FinitelyFreeModuleStructure<SetDomain, Ring>>,
-        range: Arc<FinitelyFreeModuleStructure<SetRange, Ring>>,
+        ring: Rc<Ring>,
+        domain: Rc<FinitelyFreeModuleStructure<SetDomain, Ring>>,
+        range: Rc<FinitelyFreeModuleStructure<SetRange, Ring>>,
         basis_image: impl Fn(usize) -> Vec<Ring::Elem>,
-    ) -> Arc<Self> {
+    ) -> Rc<Self> {
         Self::construct_impl(ring, domain, range, basis_image)
     }
 }
@@ -108,11 +108,11 @@ impl<
 > FreeModuleFiniteNumberedBasisLinearTransformation<SetDomain, SetRange, Ring, true, false>
 {
     pub fn construct_injective(
-        ring: Arc<Ring>,
-        domain: Arc<FinitelyFreeModuleStructure<SetDomain, Ring>>,
-        range: Arc<FinitelyFreeModuleStructure<SetRange, Ring>>,
+        ring: Rc<Ring>,
+        domain: Rc<FinitelyFreeModuleStructure<SetDomain, Ring>>,
+        range: Rc<FinitelyFreeModuleStructure<SetRange, Ring>>,
         basis_image: impl Fn(usize) -> Vec<Ring::Elem>,
-    ) -> Arc<Self> {
+    ) -> Rc<Self> {
         Self::construct_impl(ring, domain, range, basis_image)
     }
 }
@@ -124,11 +124,11 @@ impl<
 > FreeModuleFiniteNumberedBasisLinearTransformation<SetDomain, SetRange, Ring, false, true>
 {
     pub fn construct_surjective(
-        ring: Arc<Ring>,
-        domain: Arc<FinitelyFreeModuleStructure<SetDomain, Ring>>,
-        range: Arc<FinitelyFreeModuleStructure<SetRange, Ring>>,
+        ring: Rc<Ring>,
+        domain: Rc<FinitelyFreeModuleStructure<SetDomain, Ring>>,
+        range: Rc<FinitelyFreeModuleStructure<SetRange, Ring>>,
         basis_image: impl Fn(usize) -> Vec<Ring::Elem>,
-    ) -> Arc<Self> {
+    ) -> Rc<Self> {
         Self::construct_impl(ring, domain, range, basis_image)
     }
 }
@@ -140,11 +140,11 @@ impl<
 > FreeModuleFiniteNumberedBasisLinearTransformation<SetDomain, SetRange, Ring, true, true>
 {
     pub fn construct_bijective(
-        ring: Arc<Ring>,
-        domain: Arc<FinitelyFreeModuleStructure<SetDomain, Ring>>,
-        range: Arc<FinitelyFreeModuleStructure<SetRange, Ring>>,
+        ring: Rc<Ring>,
+        domain: Rc<FinitelyFreeModuleStructure<SetDomain, Ring>>,
+        range: Rc<FinitelyFreeModuleStructure<SetRange, Ring>>,
         basis_image: impl Fn(usize) -> Vec<Ring::Elem>,
-    ) -> Arc<Self> {
+    ) -> Rc<Self> {
         Self::construct_impl(ring, domain, range, basis_image)
     }
 }
@@ -168,11 +168,11 @@ impl<
         SURJECTIVE,
     >
 {
-    fn domain(self: &Arc<Self>) -> Arc<FinitelyFreeModuleStructure<SetDomain, Ring>> {
+    fn domain(self: &Rc<Self>) -> Rc<FinitelyFreeModuleStructure<SetDomain, Ring>> {
         self.domain.clone()
     }
 
-    fn range(self: &Arc<Self>) -> Arc<FinitelyFreeModuleStructure<SetRange, Ring>> {
+    fn range(self: &Rc<Self>) -> Rc<FinitelyFreeModuleStructure<SetRange, Ring>> {
         self.range.clone()
     }
 }
@@ -196,7 +196,7 @@ impl<
         SURJECTIVE,
     >
 {
-    fn image(self: &Arc<Self>, x: &Vec<Ring::Elem>) -> Vec<Ring::Elem> {
+    fn image(self: &Rc<Self>, x: &Vec<Ring::Elem>) -> Vec<Ring::Elem> {
         self.range.from_col(
             &MatrixStructure::new(self.ring.clone())
                 .mul(&self.matrix, &self.domain.to_col(x))
@@ -223,7 +223,7 @@ impl<
         SURJECTIVE,
     >
 {
-    fn try_preimage(self: &Arc<Self>, y: &Vec<Ring::Elem>) -> Option<Vec<Ring::Elem>> {
+    fn try_preimage(self: &Rc<Self>, y: &Vec<Ring::Elem>) -> Option<Vec<Ring::Elem>> {
         MatrixStructure::new(self.ring.clone()).col_solve(self.matrix.clone(), y)
     }
 }
@@ -238,7 +238,7 @@ impl<
         FinitelyFreeModuleStructure<SetRange, Ring>,
     > for FreeModuleFiniteNumberedBasisLinearTransformation<SetDomain, SetRange, Ring, true, true>
 {
-    fn preimage(self: &Arc<Self>, y: &Vec<Ring::Elem>) -> Vec<Ring::Elem> {
+    fn preimage(self: &Rc<Self>, y: &Vec<Ring::Elem>) -> Vec<Ring::Elem> {
         self.try_preimage(y).unwrap()
     }
 }

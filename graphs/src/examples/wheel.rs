@@ -3,19 +3,19 @@ use crate::structure::{
 };
 use algebraeon_sets::sets::*;
 use algebraeon_structures::*;
-use std::sync::Arc;
+use std::rc::Rc;
 
 /// A wheel graph `W_n` with vertices `{0, …, n-1}` where vertex `0` is the center
 /// joined to every rim vertex `1..n-1`, which themselves form a cycle.
 /// Requires `n >= 4`, where `W_4` is the complete graph `K_4`.
 #[derive(Debug, Clone)]
 pub struct WheelGraph {
-    vertices: Arc<EnumeratedFiniteSetStructure>,
+    vertices: Rc<EnumeratedFiniteSetStructure>,
     n: usize,
 }
 
 impl WheelGraph {
-    pub fn new(n: usize) -> Result<Arc<Self>, String> {
+    pub fn new(n: usize) -> Result<Rc<Self>, String> {
         if n < 4 {
             return Err("Wheel graphs require at least 4 vertices".to_string());
         }
@@ -27,7 +27,7 @@ impl WheelGraph {
         .into())
     }
 
-    pub fn vertices(&self) -> &Arc<EnumeratedFiniteSetStructure> {
+    pub fn vertices(&self) -> &Rc<EnumeratedFiniteSetStructure> {
         &self.vertices
     }
 
@@ -60,7 +60,7 @@ impl GraphSignature for WheelGraph {
     type Vertices = EnumeratedFiniteSetStructure;
 
     fn has_directed_edge(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         source: &<Self::Vertices as SetSignature>::Elem,
         target: &<Self::Vertices as SetSignature>::Elem,
     ) -> Result<(), String> {
@@ -112,7 +112,7 @@ impl GraphWithEdgesSignature for WheelGraph {
     type Edges = UnorderedPairs<EnumeratedFiniteSetStructure>;
 
     fn endpoints(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         edge: &<Self::Edges as SetSignature>::Elem,
     ) -> UnorderedPair<<Self::Vertices as SetSignature>::Elem> {
         edge.clone()

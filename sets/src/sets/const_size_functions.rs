@@ -10,7 +10,7 @@ use std::{
     fmt::Debug,
     marker::PhantomData,
     ops::{Index, IndexMut},
-    sync::Arc,
+    rc::Rc,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -145,7 +145,7 @@ where
 {
     type Signature = ConstSizeFunctionsStructure<N, DomainElem::Signature, RangeElem::Signature>;
 
-    fn structure() -> Arc<Self::Signature> {
+    fn structure() -> Rc<Self::Signature> {
         ConstSizeFunctionsStructure::new(DomainElem::structure(), RangeElem::structure())
     }
 }
@@ -157,27 +157,27 @@ pub struct ConstSizeFunctionsStructure<
     Domain: ConstSizeFiniteSetSignature<N>,
     Range: SetSignature,
 > {
-    domain: Arc<Domain>,
-    range: Arc<Range>,
+    domain: Rc<Domain>,
+    range: Rc<Range>,
 }
 
 impl<const N: usize, Domain: ConstSizeFiniteSetSignature<N>, Range: SetSignature>
     ConstSizeFunctionsStructure<N, Domain, Range>
 {
-    pub fn new(domain: Arc<Domain>, range: Arc<Range>) -> Arc<Self> {
+    pub fn new(domain: Rc<Domain>, range: Rc<Range>) -> Rc<Self> {
         Self { domain, range }.into()
     }
 
-    pub fn forget_const(self: &Arc<Self>) -> Arc<FunctionsStructure<Domain, Range>> {
+    pub fn forget_const(self: &Rc<Self>) -> Rc<FunctionsStructure<Domain, Range>> {
         FunctionsStructure::new(self.domain.clone(), self.range.clone())
     }
 }
 
 pub trait SetToConstSizeFunctionsToSignature: SetSignature {
     fn const_size_functions_to<const N: usize, Range: SetSignature>(
-        self: &Arc<Self>,
-        range: &Arc<Range>,
-    ) -> Arc<ConstSizeFunctionsStructure<N, Self, Range>>
+        self: &Rc<Self>,
+        range: &Rc<Range>,
+    ) -> Rc<ConstSizeFunctionsStructure<N, Self, Range>>
     where
         Self: ConstSizeFiniteSetSignature<N>,
     {
@@ -188,9 +188,9 @@ impl<Set: SetSignature> SetToConstSizeFunctionsToSignature for Set {}
 
 pub trait SetToConstSizeFunctionsFromSignature: SetSignature {
     fn functions_from<const N: usize, Domain: ConstSizeFiniteSetSignature<N>>(
-        self: &Arc<Self>,
-        domain: &Arc<Domain>,
-    ) -> Arc<ConstSizeFunctionsStructure<N, Domain, Self>> {
+        self: &Rc<Self>,
+        domain: &Rc<Domain>,
+    ) -> Rc<ConstSizeFunctionsStructure<N, Domain, Self>> {
         ConstSizeFunctionsStructure::new(domain.clone(), self.clone())
     }
 }
@@ -199,11 +199,11 @@ impl<Set: SetSignature> SetToConstSizeFunctionsFromSignature for Set {}
 impl<const N: usize, Domain: ConstSizeFiniteSetSignature<N>, Range: SetSignature>
     ConstSizeFunctionsStructure<N, Domain, Range>
 {
-    pub fn domain(&self) -> &Arc<Domain> {
+    pub fn domain(&self) -> &Rc<Domain> {
         &self.domain
     }
 
-    pub fn range(&self) -> &Arc<Range> {
+    pub fn range(&self) -> &Rc<Range> {
         &self.range
     }
 }
@@ -220,7 +220,7 @@ impl<
 > FunctionsSignature<Domain, Range> for ConstSizeFunctionsStructure<N, Domain, Range>
 {
     fn function(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         f: impl Fn(&Domain::Elem) -> Range::Elem,
     ) -> Option<Function<N, Domain::Elem, Range::Elem>> {
         let s: [_; N] = self
@@ -240,7 +240,7 @@ impl<
     }
 
     fn image<'a>(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         f: &'a <Self as SetSignature>::Elem,
         x: &Domain::Elem,
     ) -> &'a Range::Elem {
@@ -258,7 +258,7 @@ impl<
 {
     type Elem = Function<N, Domain::Elem, Range::Elem>;
 
-    fn validate_element(self: &Arc<Self>, x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Rc<Self>, x: &Self::Elem) -> Result<(), String> {
         for y in &x.images {
             self.range().validate_element(y)?;
         }
@@ -272,7 +272,7 @@ impl<
     Range: EqSignature,
 > EqSignature for ConstSizeFunctionsStructure<N, Domain, Range>
 {
-    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn equal(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(b));
         (0..N).all(|i| self.range().equal(&a[i], &b[i]))
@@ -285,7 +285,7 @@ impl<
     Range: OrdSignature,
 > PartialOrdSignature for ConstSizeFunctionsStructure<N, Domain, Range>
 {
-    fn partial_cmp(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<std::cmp::Ordering> {
+    fn partial_cmp(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<std::cmp::Ordering> {
         Some(self.cmp(a, b))
     }
 }
@@ -296,7 +296,7 @@ impl<
     Range: OrdSignature,
 > OrdSignature for ConstSizeFunctionsStructure<N, Domain, Range>
 {
-    fn cmp(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Ordering {
+    fn cmp(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Ordering {
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(b));
         for i in (0..N).rev() {
@@ -320,7 +320,7 @@ impl<
     Range: OrderedFiniteSetSignature,
 > CountableSetSignature for ConstSizeFunctionsStructure<N, Domain, Range>
 {
-    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
+    fn generate_all_elements(self: Rc<Self>) -> impl Iterator<Item = Self::Elem> {
         let n: usize = self.domain().size().try_into().unwrap_or(usize::MAX);
         (0..n)
             .map(|_| self.range().list_all_elements())
@@ -335,7 +335,7 @@ impl<
     Range: OrderedFiniteSetSignature,
 > FiniteSetSignature for ConstSizeFunctionsStructure<N, Domain, Range>
 {
-    fn size(self: &Arc<Self>) -> Natural {
+    fn size(self: &Rc<Self>) -> Natural {
         self.range().size().pow(&self.domain().size())
     }
 }
@@ -346,7 +346,7 @@ impl<
     Range: OrderedFiniteSetSignature,
 > OrderedFiniteSetSignature for ConstSizeFunctionsStructure<N, Domain, Range>
 {
-    fn list_all_elements_ordered(self: &Arc<Self>) -> Vec<Self::Elem> {
+    fn list_all_elements_ordered(self: &Rc<Self>) -> Vec<Self::Elem> {
         let n: usize = self.domain().size().try_into().unwrap_or(usize::MAX);
         (0..n)
             .map(|_| {
@@ -371,7 +371,7 @@ impl<
             .collect()
     }
 
-    fn element_to_enumeration(self: &Arc<Self>, elem: &Self::Elem) -> Natural {
+    fn element_to_enumeration(self: &Rc<Self>, elem: &Self::Elem) -> Natural {
         debug_assert!(self.is_element(elem));
         let r = self.range().size();
         debug_assert_eq!(self.range().size(), (&r).into());
@@ -382,7 +382,7 @@ impl<
         num
     }
 
-    fn enumeration_to_element(self: &Arc<Self>, num: &Natural) -> Option<Self::Elem> {
+    fn enumeration_to_element(self: &Rc<Self>, num: &Natural) -> Option<Self::Elem> {
         if *num >= self.size() {
             return None;
         }
@@ -408,8 +408,8 @@ struct RightPermutationActionOnConstSizeFunctionsStructure<
     Range: SetSignature,
     DomainPerms: PermutationsSignature<Domain>,
 > {
-    functions: Arc<ConstSizeFunctionsStructure<N, Domain, Range>>,
-    domain_perms: Arc<DomainPerms>,
+    functions: Rc<ConstSizeFunctionsStructure<N, Domain, Range>>,
+    domain_perms: Rc<DomainPerms>,
 }
 
 impl<
@@ -420,9 +420,9 @@ impl<
 > RightPermutationActionOnConstSizeFunctionsStructure<N, Domain, Range, DomainPerms>
 {
     fn new(
-        functions: Arc<ConstSizeFunctionsStructure<N, Domain, Range>>,
-        domain_perms: Arc<DomainPerms>,
-    ) -> Arc<Self> {
+        functions: Rc<ConstSizeFunctionsStructure<N, Domain, Range>>,
+        domain_perms: Rc<DomainPerms>,
+    ) -> Rc<Self> {
         Self {
             functions,
             domain_perms,
@@ -447,8 +447,8 @@ impl<
 > ConstSizeFunctionsStructure<N, Domain, Range>
 {
     pub fn domain_finitely_supported_permutation_action(
-        self: &Arc<Self>,
-    ) -> Arc<impl RightGroupActionSignature<Self, FinitelySupportedPermutationsStructure<Domain>>>
+        self: &Rc<Self>,
+    ) -> Rc<impl RightGroupActionSignature<Self, FinitelySupportedPermutationsStructure<Domain>>>
     {
         RightPermutationActionOnConstSizeFunctionsStructure::new(
             self.clone(),
@@ -464,8 +464,8 @@ impl<
 > ConstSizeFunctionsStructure<N, Domain, Range>
 {
     pub fn domain_const_size_permutation_action(
-        self: &Arc<Self>,
-    ) -> Arc<impl RightGroupActionSignature<Self, ConstSizePermutationsStructure<N, Domain>>> {
+        self: &Rc<Self>,
+    ) -> Rc<impl RightGroupActionSignature<Self, ConstSizePermutationsStructure<N, Domain>>> {
         RightPermutationActionOnConstSizeFunctionsStructure::new(
             self.clone(),
             self.domain().const_size_permutations(),
@@ -482,16 +482,16 @@ impl<
 > RightGroupActionSignature<ConstSizeFunctionsStructure<N, Domain, Range>, DomainPerms>
     for RightPermutationActionOnConstSizeFunctionsStructure<N, Domain, Range, DomainPerms>
 {
-    fn group(self: &Arc<Self>) -> &Arc<DomainPerms> {
+    fn group(self: &Rc<Self>) -> &Rc<DomainPerms> {
         &self.domain_perms
     }
 
-    fn set(self: &Arc<Self>) -> &Arc<ConstSizeFunctionsStructure<N, Domain, Range>> {
+    fn set(self: &Rc<Self>) -> &Rc<ConstSizeFunctionsStructure<N, Domain, Range>> {
         &self.functions
     }
 
     fn apply(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         g: &<DomainPerms>::Elem,
         f: &<ConstSizeFunctionsStructure<N, Domain, Range> as SetSignature>::Elem,
     ) -> <ConstSizeFunctionsStructure<N, Domain, Range> as SetSignature>::Elem {
@@ -512,8 +512,8 @@ struct LeftPermutationActionOnConstSizeFunctionsStructure<
     Range: OrderedFiniteSetSignature,
     RangePerms: PermutationsSignature<Range>,
 > {
-    functions: Arc<ConstSizeFunctionsStructure<N, Domain, Range>>,
-    range_perms: Arc<RangePerms>,
+    functions: Rc<ConstSizeFunctionsStructure<N, Domain, Range>>,
+    range_perms: Rc<RangePerms>,
 }
 
 impl<
@@ -524,9 +524,9 @@ impl<
 > LeftPermutationActionOnConstSizeFunctionsStructure<N, Domain, Range, RangePerms>
 {
     fn new(
-        functions: Arc<ConstSizeFunctionsStructure<N, Domain, Range>>,
-        range_perms: Arc<RangePerms>,
-    ) -> Arc<Self> {
+        functions: Rc<ConstSizeFunctionsStructure<N, Domain, Range>>,
+        range_perms: Rc<RangePerms>,
+    ) -> Rc<Self> {
         Self {
             functions,
             range_perms,
@@ -551,8 +551,8 @@ impl<
 > ConstSizeFunctionsStructure<N, Domain, Range>
 {
     pub fn range_finitely_supported_permutation_action(
-        self: &Arc<Self>,
-    ) -> Arc<impl LeftGroupActionSignature<FinitelySupportedPermutationsStructure<Range>, Self>>
+        self: &Rc<Self>,
+    ) -> Rc<impl LeftGroupActionSignature<FinitelySupportedPermutationsStructure<Range>, Self>>
     {
         LeftPermutationActionOnConstSizeFunctionsStructure::new(
             self.clone(),
@@ -568,8 +568,8 @@ impl<
 > ConstSizeFunctionsStructure<N, Domain, Range>
 {
     pub fn range_const_size_permutation_action<const M: usize>(
-        self: &Arc<Self>,
-    ) -> Arc<impl LeftGroupActionSignature<ConstSizePermutationsStructure<M, Range>, Self>>
+        self: &Rc<Self>,
+    ) -> Rc<impl LeftGroupActionSignature<ConstSizePermutationsStructure<M, Range>, Self>>
     where
         Range: ConstSizeFiniteSetSignature<M>,
     {
@@ -589,16 +589,16 @@ impl<
 > LeftGroupActionSignature<RangePerms, ConstSizeFunctionsStructure<N, Domain, Range>>
     for LeftPermutationActionOnConstSizeFunctionsStructure<N, Domain, Range, RangePerms>
 {
-    fn group(self: &Arc<Self>) -> &Arc<RangePerms> {
+    fn group(self: &Rc<Self>) -> &Rc<RangePerms> {
         &self.range_perms
     }
 
-    fn set(self: &Arc<Self>) -> &Arc<ConstSizeFunctionsStructure<N, Domain, Range>> {
+    fn set(self: &Rc<Self>) -> &Rc<ConstSizeFunctionsStructure<N, Domain, Range>> {
         &self.functions
     }
 
     fn apply(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         g: &<RangePerms>::Elem,
         f: &<ConstSizeFunctionsStructure<N, Domain, Range> as SetSignature>::Elem,
     ) -> <ConstSizeFunctionsStructure<N, Domain, Range> as SetSignature>::Elem {

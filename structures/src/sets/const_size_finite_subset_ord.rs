@@ -1,6 +1,6 @@
 use crate::*;
 use std::cmp::Ordering;
-use std::sync::Arc;
+use std::rc::Rc;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ConstSizeFiniteSubsetByOrd<const N: usize, Elem> {
@@ -25,16 +25,16 @@ impl<const N: usize, Set: OrdSignature> ConstSizeFiniteSubsetByOrd<N, Set> {
 // A finite subset of a set
 #[derive(Debug, Clone)]
 pub struct ConstSizeFiniteSubsetByOrdStructure<const N: usize, Set: OrdSignature> {
-    set: Arc<Set>,
+    set: Rc<Set>,
     // ordered
     subset: ConstSizeFiniteSubsetByOrd<N, Set::Elem>,
 }
 
 pub trait SetToConstSizeFiniteSubsetByOrdSignature: OrdSignature {
     fn const_size_finite_subset<const N: usize>(
-        self: Arc<Self>,
+        self: Rc<Self>,
         elems: [Self::Elem; N],
-    ) -> Arc<ConstSizeFiniteSubsetByOrdStructure<N, Self>> {
+    ) -> Rc<ConstSizeFiniteSubsetByOrdStructure<N, Self>> {
         ConstSizeFiniteSubsetByOrdStructure::new(self, elems).into()
     }
 }
@@ -70,7 +70,7 @@ impl<const N: usize, Set: OrdSignature> PartialEq for ConstSizeFiniteSubsetByOrd
 impl<const N: usize, Set: OrdSignature> Eq for ConstSizeFiniteSubsetByOrdStructure<N, Set> {}
 
 impl<const N: usize, Set: OrdSignature> ConstSizeFiniteSubsetByOrdStructure<N, Set> {
-    pub fn new(set: Arc<Set>, elems: [Set::Elem; N]) -> Self {
+    pub fn new(set: Rc<Set>, elems: [Set::Elem; N]) -> Self {
         debug_assert!(set.is_sorted_and_unique(&elems));
         Self {
             set,
@@ -78,7 +78,7 @@ impl<const N: usize, Set: OrdSignature> ConstSizeFiniteSubsetByOrdStructure<N, S
         }
     }
 
-    pub fn set(&self) -> &Arc<Set> {
+    pub fn set(&self) -> &Rc<Set> {
         &self.set
     }
 }
@@ -90,7 +90,7 @@ impl<const N: usize, Set: OrdSignature> SetSignature
 {
     type Elem = Set::Elem;
 
-    fn validate_element(self: &Arc<Self>, x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Rc<Self>, x: &Self::Elem) -> Result<(), String> {
         if !self.set().binary_search(&self.subset.elems, x) {
             return Err("element not in finite subset".to_string());
         }
@@ -101,7 +101,7 @@ impl<const N: usize, Set: OrdSignature> SetSignature
 impl<const N: usize, Set: OrdSignature> EqSignature
     for ConstSizeFiniteSubsetByOrdStructure<N, Set>
 {
-    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn equal(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(b));
         self.set().equal(a, b)
@@ -111,7 +111,7 @@ impl<const N: usize, Set: OrdSignature> EqSignature
 impl<const N: usize, Set: OrdSignature> PartialOrdSignature
     for ConstSizeFiniteSubsetByOrdStructure<N, Set>
 {
-    fn partial_cmp(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Ordering> {
+    fn partial_cmp(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Ordering> {
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(b));
         self.set().partial_cmp(a, b)
@@ -121,7 +121,7 @@ impl<const N: usize, Set: OrdSignature> PartialOrdSignature
 impl<const N: usize, Set: OrdSignature> OrdSignature
     for ConstSizeFiniteSubsetByOrdStructure<N, Set>
 {
-    fn cmp(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Ordering {
+    fn cmp(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Ordering {
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(b));
         self.set().cmp(a, b)
@@ -131,7 +131,7 @@ impl<const N: usize, Set: OrdSignature> OrdSignature
 impl<const N: usize, Set: OrdSignature> CountableSetSignature
     for ConstSizeFiniteSubsetByOrdStructure<N, Set>
 {
-    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
+    fn generate_all_elements(self: Rc<Self>) -> impl Iterator<Item = Self::Elem> {
         self.subset.elems.clone().into_iter()
     }
 }
@@ -139,7 +139,7 @@ impl<const N: usize, Set: OrdSignature> CountableSetSignature
 impl<const N: usize, Set: OrdSignature> FiniteSetSignature
     for ConstSizeFiniteSubsetByOrdStructure<N, Set>
 {
-    fn size(self: &Arc<Self>) -> Natural {
+    fn size(self: &Rc<Self>) -> Natural {
         Natural::from(N)
     }
 }
@@ -147,11 +147,11 @@ impl<const N: usize, Set: OrdSignature> FiniteSetSignature
 impl<const N: usize, Set: OrderedFiniteSetSignature> OrderedFiniteSetSignature
     for ConstSizeFiniteSubsetByOrdStructure<N, Set>
 {
-    fn list_all_elements_ordered(self: &Arc<Self>) -> Vec<Self::Elem> {
+    fn list_all_elements_ordered(self: &Rc<Self>) -> Vec<Self::Elem> {
         self.list_all_elements()
     }
 
-    fn element_to_enumeration(self: &Arc<Self>, elem: &Self::Elem) -> Natural {
+    fn element_to_enumeration(self: &Rc<Self>, elem: &Self::Elem) -> Natural {
         #[cfg(debug_assertions)]
         self.validate_element(elem).unwrap();
         Natural::from(
@@ -161,7 +161,7 @@ impl<const N: usize, Set: OrderedFiniteSetSignature> OrderedFiniteSetSignature
         )
     }
 
-    fn enumeration_to_element(self: &Arc<Self>, num: &Natural) -> Option<Self::Elem> {
+    fn enumeration_to_element(self: &Rc<Self>, num: &Natural) -> Option<Self::Elem> {
         let num: Result<usize, ()> = num.try_into();
         if let Ok(num) = num {
             self.subset.elems.get(num).cloned()

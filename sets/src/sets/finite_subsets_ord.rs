@@ -1,27 +1,27 @@
 use algebraeon_structures::*;
-use std::{cmp::Ordering, sync::Arc};
+use std::{cmp::Ordering, rc::Rc};
 
 use crate::combinatorics::all_subsets;
 
 /// The set of all finite subsets of a set
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FiniteSubsetsByOrdStructure<Set: OrdSignature> {
-    set: Arc<Set>,
+    set: Rc<Set>,
 }
 
 pub trait SetToFiniteSubsetsByOrdSignature: OrdSignature {
-    fn finite_subsets(self: &Arc<Self>) -> Arc<FiniteSubsetsByOrdStructure<Self>> {
+    fn finite_subsets(self: &Rc<Self>) -> Rc<FiniteSubsetsByOrdStructure<Self>> {
         FiniteSubsetsByOrdStructure::new(self.clone())
     }
 }
 impl<Set: OrdSignature> SetToFiniteSubsetsByOrdSignature for Set {}
 
 impl<Set: OrdSignature> FiniteSubsetsByOrdStructure<Set> {
-    pub fn new(set: Arc<Set>) -> Arc<Self> {
+    pub fn new(set: Rc<Set>) -> Rc<Self> {
         Self { set }.into()
     }
 
-    pub fn set(&self) -> &Arc<Set> {
+    pub fn set(&self) -> &Rc<Set> {
         &self.set
     }
 }
@@ -31,7 +31,7 @@ impl<Set: OrdSignature> Signature for FiniteSubsetsByOrdStructure<Set> {}
 impl<Set: OrdSignature> SetSignature for FiniteSubsetsByOrdStructure<Set> {
     type Elem = FiniteSubsetByOrd<Set::Elem>;
 
-    fn validate_element(self: &Arc<Self>, x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Rc<Self>, x: &Self::Elem) -> Result<(), String> {
         if !self.set().is_sorted_and_unique(&x.elems) {
             return Err("elems is not sorted and unique".to_string());
         }
@@ -40,19 +40,19 @@ impl<Set: OrdSignature> SetSignature for FiniteSubsetsByOrdStructure<Set> {
 }
 
 impl<Set: OrdSignature> EqSignature for FiniteSubsetsByOrdStructure<Set> {
-    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn equal(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         self.cmp(a, b).is_eq()
     }
 }
 
 impl<Set: OrdSignature> PartialOrdSignature for FiniteSubsetsByOrdStructure<Set> {
-    fn partial_cmp(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Ordering> {
+    fn partial_cmp(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Ordering> {
         Some(self.cmp(a, b))
     }
 }
 
 impl<Set: OrdSignature> OrdSignature for FiniteSubsetsByOrdStructure<Set> {
-    fn cmp(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Ordering {
+    fn cmp(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Ordering {
         // needs to be such that a < b iff self.element_to_enumeration(a) < self.element_to_enumeration(b)
         // element_to_enumeration assigns a binary number with bits set based on the enumeration on the underlying set
         // so here we need to implement a generalized binary number comparission
@@ -80,7 +80,7 @@ impl<Set: OrdSignature> OrdSignature for FiniteSubsetsByOrdStructure<Set> {
 impl<Set: OrdSignature + CountableSetSignature> CountableSetSignature
     for FiniteSubsetsByOrdStructure<Set>
 {
-    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
+    fn generate_all_elements(self: Rc<Self>) -> impl Iterator<Item = Self::Elem> {
         // if the set has more than 64 elements then we'll never generate subsets including anything beyond the 64th element, so this is fine
         let elems = self
             .set()
@@ -100,7 +100,7 @@ impl<Set: OrdSignature + CountableSetSignature> CountableSetSignature
 impl<Set: OrdSignature + FiniteSetSignature> FiniteSetSignature
     for FiniteSubsetsByOrdStructure<Set>
 {
-    fn size(self: &Arc<Self>) -> Natural {
+    fn size(self: &Rc<Self>) -> Natural {
         Natural::TWO.pow(&self.set().size())
     }
 }
@@ -108,11 +108,11 @@ impl<Set: OrdSignature + FiniteSetSignature> FiniteSetSignature
 impl<Set: OrderedFiniteSetSignature> OrderedFiniteSetSignature
     for FiniteSubsetsByOrdStructure<Set>
 {
-    fn list_all_elements_ordered(self: &Arc<Self>) -> Vec<Self::Elem> {
+    fn list_all_elements_ordered(self: &Rc<Self>) -> Vec<Self::Elem> {
         self.list_all_elements()
     }
 
-    fn element_to_enumeration(self: &Arc<Self>, elem: &Self::Elem) -> Natural {
+    fn element_to_enumeration(self: &Rc<Self>, elem: &Self::Elem) -> Natural {
         let mut t = Natural::ZERO;
         for x in &elem.elems {
             let i: usize = self
@@ -125,7 +125,7 @@ impl<Set: OrderedFiniteSetSignature> OrderedFiniteSetSignature
         t
     }
 
-    fn enumeration_to_element(self: &Arc<Self>, num: &Natural) -> Option<Self::Elem> {
+    fn enumeration_to_element(self: &Rc<Self>, num: &Natural) -> Option<Self::Elem> {
         let len = num.bitcount();
         if Natural::from(len) > self.set().size() {
             return None;
@@ -149,7 +149,7 @@ impl<Set: OrderedFiniteSetSignature> OrderedFiniteSetSignature
 }
 
 impl<Set: OrdSignature> FiniteSubsetsByOrdStructure<Set> {
-    pub fn subset(self: &Arc<Self>, elems: Vec<Set::Elem>) -> <Self as SetSignature>::Elem {
+    pub fn subset(self: &Rc<Self>, elems: Vec<Set::Elem>) -> <Self as SetSignature>::Elem {
         #[cfg(debug_assertions)]
         for elem in &elems {
             self.set().validate_element(elem).unwrap();
@@ -160,7 +160,7 @@ impl<Set: OrdSignature> FiniteSubsetsByOrdStructure<Set> {
     }
 
     pub fn is_disjoint(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         subset_1: &<Self as SetSignature>::Elem,
         subset_2: &<Self as SetSignature>::Elem,
     ) -> bool {

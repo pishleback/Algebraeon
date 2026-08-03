@@ -5,7 +5,7 @@ use crate::{
     valuation::*,
 };
 use algebraeon_structures::*;
-use std::sync::Arc;
+use std::rc::Rc;
 
 mod isolate;
 
@@ -106,7 +106,7 @@ pub enum PAdicAlgebraic {
 }
 
 impl PAdicAlgebraic {
-    pub fn structure(p: Natural) -> Arc<PAdicAlgebraicStructure> {
+    pub fn structure(p: Natural) -> Rc<PAdicAlgebraicStructure> {
         PAdicAlgebraicStructure::new(p)
     }
 }
@@ -725,7 +725,7 @@ pub struct PAdicAlgebraicStructure {
 }
 
 impl PAdicAlgebraicStructure {
-    pub fn new(p: Natural) -> Arc<Self> {
+    pub fn new(p: Natural) -> Rc<Self> {
         assert!(p.is_irreducible(), "{} is not prime", p);
         Self { p }.into()
     }
@@ -740,7 +740,7 @@ impl Signature for PAdicAlgebraicStructure {}
 impl SetSignature for PAdicAlgebraicStructure {
     type Elem = PAdicAlgebraic;
 
-    fn validate_element(self: &Arc<Self>, x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Rc<Self>, x: &Self::Elem) -> Result<(), String> {
         if &self.p != x.p() {
             return Err("primes don't match".to_string());
         }
@@ -749,7 +749,7 @@ impl SetSignature for PAdicAlgebraicStructure {
 }
 
 impl EqSignature for PAdicAlgebraicStructure {
-    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn equal(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         debug_assert!(self.validate_element(a).is_ok());
         debug_assert!(self.validate_element(b).is_ok());
         match (a, b) {
@@ -768,7 +768,7 @@ impl EqSignature for PAdicAlgebraicStructure {
 impl RinglikeSpecializationSignature for PAdicAlgebraicStructure {}
 
 impl ZeroSignature for PAdicAlgebraicStructure {
-    fn zero(self: &Arc<Self>) -> Self::Elem {
+    fn zero(self: &Rc<Self>) -> Self::Elem {
         PAdicAlgebraic::Rational(PAdicRational {
             p: self.p.clone(),
             rat: Rational::ZERO,
@@ -777,7 +777,7 @@ impl ZeroSignature for PAdicAlgebraicStructure {
 }
 
 impl AdditionSignature for PAdicAlgebraicStructure {
-    fn add(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn add(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         debug_assert!(self.validate_element(a).is_ok());
         debug_assert!(self.validate_element(b).is_ok());
         match (a, b) {
@@ -798,13 +798,13 @@ impl AdditionSignature for PAdicAlgebraicStructure {
 }
 
 impl CancellativeAdditionSignature for PAdicAlgebraicStructure {
-    fn try_sub(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_sub(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.sub(a, b))
     }
 }
 
 impl TryNegateSignature for PAdicAlgebraicStructure {
-    fn try_neg(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_neg(self: &Rc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
     }
 }
@@ -812,14 +812,14 @@ impl TryNegateSignature for PAdicAlgebraicStructure {
 impl AdditiveMonoidSignature for PAdicAlgebraicStructure {}
 
 impl AdditiveGroupSignature for PAdicAlgebraicStructure {
-    fn neg(self: &Arc<Self>, a: &Self::Elem) -> Self::Elem {
+    fn neg(self: &Rc<Self>, a: &Self::Elem) -> Self::Elem {
         debug_assert!(self.validate_element(a).is_ok());
         a.clone().neg()
     }
 }
 
 impl OneSignature for PAdicAlgebraicStructure {
-    fn one(self: &Arc<Self>) -> Self::Elem {
+    fn one(self: &Rc<Self>) -> Self::Elem {
         PAdicAlgebraic::Rational(PAdicRational {
             p: self.p.clone(),
             rat: Rational::ONE,
@@ -828,7 +828,7 @@ impl OneSignature for PAdicAlgebraicStructure {
 }
 
 impl MultiplicationSignature for PAdicAlgebraicStructure {
-    fn mul(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn mul(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         debug_assert!(self.validate_element(a).is_ok());
         debug_assert!(self.validate_element(b).is_ok());
         match (a, b) {
@@ -860,19 +860,19 @@ impl RightDistributiveMultiplicationOverAddition for PAdicAlgebraicStructure {}
 impl SemiRingSignature for PAdicAlgebraicStructure {}
 
 impl RingSignature for PAdicAlgebraicStructure {
-    fn is_reduced(self: &Arc<Self>) -> Result<bool, String> {
+    fn is_reduced(self: &Rc<Self>) -> Result<bool, String> {
         Ok(true)
     }
 }
 
 impl CharacteristicSignature for PAdicAlgebraicStructure {
-    fn characteristic(self: &Arc<Self>) -> Natural {
+    fn characteristic(self: &Rc<Self>) -> Natural {
         Natural::ZERO
     }
 }
 
 impl TryReciprocalSignature for PAdicAlgebraicStructure {
-    fn try_reciprocal(self: &Arc<Self>, a: &PAdicAlgebraic) -> Option<PAdicAlgebraic> {
+    fn try_reciprocal(self: &Rc<Self>, a: &PAdicAlgebraic) -> Option<PAdicAlgebraic> {
         debug_assert!(self.validate_element(a).is_ok());
         match a {
             PAdicAlgebraic::Rational(a) => Some(PAdicAlgebraic::Rational(a.clone().try_inv()?)),
@@ -882,7 +882,7 @@ impl TryReciprocalSignature for PAdicAlgebraicStructure {
 }
 
 impl CancellativeMultiplicationSignature for PAdicAlgebraicStructure {
-    fn try_divide(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_divide(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         debug_assert!(self.validate_element(a).is_ok());
         debug_assert!(self.validate_element(b).is_ok());
         #[allow(clippy::single_match)]
@@ -902,7 +902,7 @@ impl CancellativeMultiplicationSignature for PAdicAlgebraicStructure {
 impl MultiplicativeIntegralMonoidSignature for PAdicAlgebraicStructure {}
 
 impl IntegralDomainSignature for PAdicAlgebraicStructure {
-    fn try_from_rat(self: &Arc<Self>, x: &Rational) -> Option<Self::Elem> {
+    fn try_from_rat(self: &Rc<Self>, x: &Rational) -> Option<Self::Elem> {
         Some(PAdicAlgebraic::Rational(PAdicRational {
             p: self.p.clone(),
             rat: x.clone(),
@@ -913,7 +913,7 @@ impl IntegralDomainSignature for PAdicAlgebraicStructure {
 impl FieldSignature for PAdicAlgebraicStructure {}
 
 impl CharZeroRingSignature for PAdicAlgebraicStructure {
-    fn try_to_int(self: &Arc<Self>, x: &Self::Elem) -> Option<Integer> {
+    fn try_to_int(self: &Rc<Self>, x: &Self::Elem) -> Option<Integer> {
         match x {
             PAdicAlgebraic::Rational(padic_rational) => {
                 Rational::structure().try_to_int(&padic_rational.rat)
@@ -924,7 +924,7 @@ impl CharZeroRingSignature for PAdicAlgebraicStructure {
 }
 
 impl CharZeroFieldSignature for PAdicAlgebraicStructure {
-    fn try_to_rat(self: &Arc<Self>, x: &Self::Elem) -> Option<Rational> {
+    fn try_to_rat(self: &Rc<Self>, x: &Self::Elem) -> Option<Rational> {
         match x {
             PAdicAlgebraic::Rational(padic_rational) => Some(padic_rational.rat.clone()),
             PAdicAlgebraic::Algebraic(_) => None,
@@ -935,7 +935,7 @@ impl CharZeroFieldSignature for PAdicAlgebraicStructure {
 impl IntegralDomainExtensionAllPolynomialRoots<IntegerCanonicalStructure, PAdicAlgebraicStructure>
     for PrincipalIntegerMap<PAdicAlgebraicStructure>
 {
-    fn all_roots(self: &Arc<Self>, polynomial: &Polynomial<Integer>) -> Vec<PAdicAlgebraic> {
+    fn all_roots(self: &Rc<Self>, polynomial: &Polynomial<Integer>) -> Vec<PAdicAlgebraic> {
         polynomial.all_padic_roots(&self.range().p)
     }
 }
@@ -943,13 +943,13 @@ impl IntegralDomainExtensionAllPolynomialRoots<IntegerCanonicalStructure, PAdicA
 impl IntegralDomainExtensionAllPolynomialRoots<RationalCanonicalStructure, PAdicAlgebraicStructure>
     for PrincipalRationalMap<PAdicAlgebraicStructure>
 {
-    fn all_roots(self: &Arc<Self>, polynomial: &Polynomial<Rational>) -> Vec<PAdicAlgebraic> {
+    fn all_roots(self: &Rc<Self>, polynomial: &Polynomial<Rational>) -> Vec<PAdicAlgebraic> {
         polynomial.all_padic_roots(&self.range().p)
     }
 }
 
 impl PAdicAlgebraicStructure {
-    pub fn nth_roots(self: &Arc<Self>, a: &PAdicAlgebraic, n: usize) -> Vec<PAdicAlgebraic> {
+    pub fn nth_roots(self: &Rc<Self>, a: &PAdicAlgebraic, n: usize) -> Vec<PAdicAlgebraic> {
         let mut roots = vec![];
         for root in a
             .min_poly()
@@ -964,7 +964,7 @@ impl PAdicAlgebraicStructure {
     }
 
     pub fn square_roots(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         a: &PAdicAlgebraic,
     ) -> Option<(PAdicAlgebraic, PAdicAlgebraic)> {
         let square_roots = self.nth_roots(a, 2);
@@ -979,7 +979,7 @@ impl PAdicAlgebraicStructure {
         }
     }
 
-    pub fn is_square(self: &Arc<Self>, a: &PAdicAlgebraic) -> bool {
+    pub fn is_square(self: &Rc<Self>, a: &PAdicAlgebraic) -> bool {
         self.square_roots(a).is_some()
     }
 }

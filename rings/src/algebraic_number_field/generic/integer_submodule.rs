@@ -10,17 +10,17 @@ use crate::{
     },
 };
 use algebraeon_structures::*;
-use std::sync::Arc;
+use std::rc::Rc;
 
 #[derive(Debug, Clone)]
 pub struct FullRankIntegerSubmoduleWithBasis<K: AlgebraicNumberFieldSignature> {
-    anf: Arc<K>,
+    anf: Rc<K>,
     // length = degree of k
     basis: Vec<K::Elem>,
 }
 
 impl<K: AlgebraicNumberFieldSignature> FullRankIntegerSubmoduleWithBasis<K> {
-    fn check(self: &Arc<Self>) -> Result<(), String> {
+    fn check(self: &Rc<Self>) -> Result<(), String> {
         let n = self.anf.n();
         if n != self.basis.len() {
             return Err("Basis has wrong length".to_string());
@@ -49,17 +49,17 @@ impl<K: AlgebraicNumberFieldSignature> FullRankIntegerSubmoduleWithBasis<K> {
         Ok(())
     }
 
-    fn new_impl(anf: Arc<K>, basis: Vec<K::Elem>) -> Arc<Self> {
+    fn new_impl(anf: Rc<K>, basis: Vec<K::Elem>) -> Rc<Self> {
         Self { anf, basis }.into()
     }
 
-    pub fn new(anf: Arc<K>, basis: Vec<K::Elem>) -> Result<Arc<Self>, String> {
+    pub fn new(anf: Rc<K>, basis: Vec<K::Elem>) -> Result<Rc<Self>, String> {
         let s = Self::new_impl(anf, basis);
         s.check()?;
         Ok(s)
     }
 
-    pub fn new_unchecked(anf: Arc<K>, basis: Vec<K::Elem>) -> Arc<Self> {
+    pub fn new_unchecked(anf: Rc<K>, basis: Vec<K::Elem>) -> Rc<Self> {
         let s = Self::new_impl(anf, basis);
         #[cfg(debug_assertions)]
         s.check().unwrap();
@@ -92,7 +92,7 @@ impl<K: AlgebraicNumberFieldSignature> Signature for FullRankIntegerSubmoduleWit
 impl<K: AlgebraicNumberFieldSignature> SetSignature for FullRankIntegerSubmoduleWithBasis<K> {
     type Elem = Vec<Integer>;
 
-    fn validate_element(self: &Arc<Self>, x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Rc<Self>, x: &Self::Elem) -> Result<(), String> {
         if x.len() != self.n() {
             return Err("wrong length".to_string());
         }
@@ -103,14 +103,14 @@ impl<K: AlgebraicNumberFieldSignature> SetSignature for FullRankIntegerSubmodule
 impl<K: AlgebraicNumberFieldSignature + ToStringSignature> ToStringSignature
     for FullRankIntegerSubmoduleWithBasis<K>
 {
-    fn to_string(self: &Arc<Self>, elem: &Self::Elem) -> String {
+    fn to_string(self: &Rc<Self>, elem: &Self::Elem) -> String {
         self.anf()
             .to_string(&self.outbound_order_to_anf_inclusion().image(elem))
     }
 }
 
 impl<K: AlgebraicNumberFieldSignature> EqSignature for FullRankIntegerSubmoduleWithBasis<K> {
-    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn equal(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         self.free_integer_submodule_restructure().equal(a, b)
     }
 }
@@ -121,13 +121,13 @@ impl<K: AlgebraicNumberFieldSignature> RinglikeSpecializationSignature
 }
 
 impl<K: AlgebraicNumberFieldSignature> ZeroSignature for FullRankIntegerSubmoduleWithBasis<K> {
-    fn zero(self: &Arc<Self>) -> Self::Elem {
+    fn zero(self: &Rc<Self>) -> Self::Elem {
         self.free_integer_submodule_restructure().zero()
     }
 }
 
 impl<K: AlgebraicNumberFieldSignature> AdditionSignature for FullRankIntegerSubmoduleWithBasis<K> {
-    fn add(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn add(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.free_integer_submodule_restructure().add(a, b)
     }
 }
@@ -135,13 +135,13 @@ impl<K: AlgebraicNumberFieldSignature> AdditionSignature for FullRankIntegerSubm
 impl<K: AlgebraicNumberFieldSignature> CancellativeAdditionSignature
     for FullRankIntegerSubmoduleWithBasis<K>
 {
-    fn try_sub(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_sub(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.sub(a, b))
     }
 }
 
 impl<K: AlgebraicNumberFieldSignature> TryNegateSignature for FullRankIntegerSubmoduleWithBasis<K> {
-    fn try_neg(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_neg(self: &Rc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
     }
 }
@@ -154,11 +154,11 @@ impl<K: AlgebraicNumberFieldSignature> AdditiveMonoidSignature
 impl<K: AlgebraicNumberFieldSignature> AdditiveGroupSignature
     for FullRankIntegerSubmoduleWithBasis<K>
 {
-    fn neg(self: &Arc<Self>, a: &Self::Elem) -> Self::Elem {
+    fn neg(self: &Rc<Self>, a: &Self::Elem) -> Self::Elem {
         self.free_integer_submodule_restructure().neg(a)
     }
 
-    fn sub(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn sub(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.free_integer_submodule_restructure().sub(a, b)
     }
 }
@@ -166,11 +166,11 @@ impl<K: AlgebraicNumberFieldSignature> AdditiveGroupSignature
 impl<K: AlgebraicNumberFieldSignature> FullRankIntegerSubmoduleWithBasisSignature<K>
     for FullRankIntegerSubmoduleWithBasis<K>
 {
-    fn anf(self: &Arc<Self>) -> Arc<K> {
+    fn anf(self: &Rc<Self>) -> Rc<K> {
         self.anf.clone()
     }
 
-    fn basis(self: &Arc<Self>) -> &Vec<<K>::Elem> {
+    fn basis(self: &Rc<Self>) -> &Vec<<K>::Elem> {
         &self.basis
     }
 }

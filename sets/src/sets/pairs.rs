@@ -1,23 +1,19 @@
 use algebraeon_structures::*;
-use std::{fmt::Debug, sync::Arc};
+use std::{fmt::Debug, rc::Rc};
 
 /// The set of Pairs
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PairsStructure<S> {
-    set: Arc<S>,
+    set: Rc<S>,
 }
 
 impl<S: SetSignature> PairsStructure<S> {
-    pub fn new(set: Arc<S>) -> Arc<Self> {
+    pub fn new(set: Rc<S>) -> Rc<Self> {
         Self { set }.into()
     }
 
     /// Construct a new pair from two elements of a set
-    pub fn new_pair(
-        self: &Arc<Self>,
-        a: S::Elem,
-        b: S::Elem,
-    ) -> Result<(S::Elem, S::Elem), String> {
+    pub fn new_pair(self: &Rc<Self>, a: S::Elem, b: S::Elem) -> Result<(S::Elem, S::Elem), String> {
         self.set.validate_element(&a)?;
         self.set.validate_element(&b)?;
         Ok((a, b))
@@ -29,7 +25,7 @@ impl<S: SetSignature> Signature for PairsStructure<S> {}
 impl<S: SetSignature> SetSignature for PairsStructure<S> {
     type Elem = (S::Elem, S::Elem);
 
-    fn validate_element(self: &Arc<Self>, x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Rc<Self>, x: &Self::Elem) -> Result<(), String> {
         self.set.validate_element(&x.0)?;
         self.set.validate_element(&x.1)?;
         Ok(())
@@ -37,7 +33,7 @@ impl<S: SetSignature> SetSignature for PairsStructure<S> {
 }
 
 impl<S: SetSignature + EqSignature> EqSignature for PairsStructure<S> {
-    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn equal(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         self.set.equal(&a.0, &b.0) && self.set.equal(&a.1, &b.1)
     }
 }
@@ -45,11 +41,11 @@ impl<S: SetSignature + EqSignature> EqSignature for PairsStructure<S> {
 /// The set of unordered Pairs of distinct elements
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UnorderedPairs<Set> {
-    set: Arc<Set>,
+    set: Rc<Set>,
 }
 
 impl<Set: SetSignature> UnorderedPairs<Set> {
-    pub fn new(set: Arc<Set>) -> Arc<Self> {
+    pub fn new(set: Rc<Set>) -> Rc<Self> {
         Self { set }.into()
     }
 }
@@ -59,7 +55,7 @@ pub struct UnorderedPair<T>(T, T);
 
 impl<S: SetSignature + EqSignature> UnorderedPairs<S> {
     pub fn new_pair(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         a: &S::Elem,
         b: &S::Elem,
     ) -> Result<UnorderedPair<S::Elem>, String> {
@@ -76,7 +72,7 @@ impl<S: SetSignature> Signature for UnorderedPairs<S> {}
 impl<S: SetSignature + EqSignature> SetSignature for UnorderedPairs<S> {
     type Elem = UnorderedPair<S::Elem>;
 
-    fn validate_element(self: &Arc<Self>, x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Rc<Self>, x: &Self::Elem) -> Result<(), String> {
         self.set.validate_element(&x.0)?;
         self.set.validate_element(&x.1)?;
         if self.set.equal(&x.0, &x.1) {
@@ -88,7 +84,7 @@ impl<S: SetSignature + EqSignature> SetSignature for UnorderedPairs<S> {
 }
 
 impl<S: SetSignature + EqSignature> EqSignature for UnorderedPairs<S> {
-    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn equal(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         self.set.equal(&a.0, &b.0) && self.set.equal(&a.1, &b.1)
             || self.set.equal(&a.0, &b.1) && self.set.equal(&a.1, &b.0)
     }

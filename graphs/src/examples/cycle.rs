@@ -3,19 +3,19 @@ use crate::structure::{
 };
 use algebraeon_sets::sets::*;
 use algebraeon_structures::*;
-use std::sync::Arc;
+use std::rc::Rc;
 
 /// An undirected cycle graph with n vertices arranged in a cycle.
 /// Each vertex has exactly degree 2, forming a closed loop.
 /// Also known as a circular graph or n-gon.
 #[derive(Debug, Clone)]
 pub struct UndirectedCycleGraph<Vertices: SetSignature> {
-    vertices: Arc<Vertices>,
+    vertices: Rc<Vertices>,
     n: usize,
 }
 
 impl<Vertices: SetSignature> UndirectedCycleGraph<Vertices> {
-    pub fn new(vertices: Arc<Vertices>, n: usize) -> Result<Arc<Self>, String> {
+    pub fn new(vertices: Rc<Vertices>, n: usize) -> Result<Rc<Self>, String> {
         if n < 3 {
             return Err("Cycle graphs must have at least 3 vertices for simple graphs".to_string());
         }
@@ -44,7 +44,7 @@ impl GraphSignature for UndirectedCycleGraph<EnumeratedFiniteSetStructure> {
     type Vertices = EnumeratedFiniteSetStructure;
 
     fn has_directed_edge(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         source: &<Self::Vertices as SetSignature>::Elem,
         target: &<Self::Vertices as SetSignature>::Elem,
     ) -> Result<(), String> {
@@ -86,7 +86,7 @@ impl GraphWithEdgesSignature for UndirectedCycleGraph<EnumeratedFiniteSetStructu
     type Edges = UnorderedPairs<EnumeratedFiniteSetStructure>;
 
     fn endpoints(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         edge: &<Self::Edges as SetSignature>::Elem,
     ) -> UnorderedPair<<Self::Vertices as SetSignature>::Elem> {
         edge.clone()
@@ -98,12 +98,12 @@ impl GraphWithEdgesSignature for UndirectedCycleGraph<EnumeratedFiniteSetStructu
 /// Each vertex has in-degree 1 and out-degree 1.
 #[derive(Debug, Clone)]
 pub struct DirectedCycleGraph<Vertices: SetSignature> {
-    vertices: Arc<Vertices>,
+    vertices: Rc<Vertices>,
     n: usize,
 }
 
 impl<Vertices: SetSignature> DirectedCycleGraph<Vertices> {
-    pub fn new(vertices: Arc<Vertices>, n: usize) -> Result<Arc<Self>, String> {
+    pub fn new(vertices: Rc<Vertices>, n: usize) -> Result<Rc<Self>, String> {
         if n < 3 {
             return Err("Cycle graphs must have at least 3 vertices for simple graphs".to_string());
         }
@@ -128,7 +128,7 @@ impl GraphSignature for DirectedCycleGraph<EnumeratedFiniteSetStructure> {
     type Vertices = EnumeratedFiniteSetStructure;
 
     fn has_directed_edge(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         source: &<Self::Vertices as SetSignature>::Elem,
         target: &<Self::Vertices as SetSignature>::Elem,
     ) -> Result<(), String> {

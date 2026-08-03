@@ -5,7 +5,7 @@ use algebraeon_sets::sets::{
     SetToFiniteSubsetsByOrdSignature,
 };
 use algebraeon_structures::*;
-use std::{cmp::Ordering, sync::Arc};
+use std::{cmp::Ordering, rc::Rc};
 
 #[derive(Debug, Clone)]
 pub struct Syntheme<Elem> {
@@ -16,16 +16,16 @@ pub struct Syntheme<Elem> {
 /// The 15-element set of duads on a 6-element set
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SynthemesStructure<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> {
-    set: Arc<Set>,
+    set: Rc<Set>,
 }
 
 impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> SynthemesStructure<Set> {
-    pub fn new(set: Arc<Set>) -> Arc<Self> {
+    pub fn new(set: Rc<Set>) -> Rc<Self> {
         debug_assert_eq!(set.size(), Natural::from(6usize));
         Self { set }.into()
     }
 
-    pub fn set(&self) -> &Arc<Set> {
+    pub fn set(&self) -> &Rc<Set> {
         &self.set
     }
 }
@@ -33,7 +33,7 @@ impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> SynthemesS
 pub trait SetToSynthemesSignature:
     ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature
 {
-    fn synthemes(self: &Arc<Self>) -> Arc<SynthemesStructure<Self>> {
+    fn synthemes(self: &Rc<Self>) -> Rc<SynthemesStructure<Self>> {
         SynthemesStructure::new(self.clone())
     }
 }
@@ -52,7 +52,7 @@ impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> SetSignatu
 {
     type Elem = Syntheme<Set::Elem>;
 
-    fn validate_element(self: &Arc<Self>, s: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Rc<Self>, s: &Self::Elem) -> Result<(), String> {
         let duads = self.set().duads();
         for duad in &s.duads {
             duads.validate_element(duad)?;
@@ -82,7 +82,7 @@ impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> SetSignatu
 impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> EqSignature
     for SynthemesStructure<Set>
 {
-    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn equal(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(b));
         let duads = self.set().duads();
@@ -93,7 +93,7 @@ impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> EqSignatur
 impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> PartialOrdSignature
     for SynthemesStructure<Set>
 {
-    fn partial_cmp(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Ordering> {
+    fn partial_cmp(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Ordering> {
         Some(self.cmp(a, b))
     }
 }
@@ -101,7 +101,7 @@ impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> PartialOrd
 impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> OrdSignature
     for SynthemesStructure<Set>
 {
-    fn cmp(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Ordering {
+    fn cmp(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Ordering {
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(b));
         Natural::cmp(
@@ -114,7 +114,7 @@ impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> OrdSignatu
 impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> CountableSetSignature
     for SynthemesStructure<Set>
 {
-    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
+    fn generate_all_elements(self: Rc<Self>) -> impl Iterator<Item = Self::Elem> {
         (0usize..15).map(move |i| self.enumeration_to_element(&Natural::from(i)).unwrap())
     }
 }
@@ -122,7 +122,7 @@ impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> CountableS
 impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> FiniteSetSignature
     for SynthemesStructure<Set>
 {
-    fn size(self: &Arc<Self>) -> Natural {
+    fn size(self: &Rc<Self>) -> Natural {
         Natural::from(15usize)
     }
 }
@@ -135,11 +135,11 @@ impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature>
 impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> OrderedFiniteSetSignature
     for SynthemesStructure<Set>
 {
-    fn list_all_elements_ordered(self: &Arc<Self>) -> Vec<Self::Elem> {
+    fn list_all_elements_ordered(self: &Rc<Self>) -> Vec<Self::Elem> {
         self.list_all_elements()
     }
 
-    fn element_to_enumeration(self: &Arc<Self>, elem: &Self::Elem) -> Natural {
+    fn element_to_enumeration(self: &Rc<Self>, elem: &Self::Elem) -> Natural {
         assert!(self.validate_element(elem).is_ok());
         for (i, s) in self.clone().generate_all_elements().enumerate() {
             if self.equal(&s, elem) {
@@ -149,7 +149,7 @@ impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> OrderedFin
         unreachable!()
     }
 
-    fn enumeration_to_element(self: &Arc<Self>, num: &Natural) -> Option<Self::Elem> {
+    fn enumeration_to_element(self: &Rc<Self>, num: &Natural) -> Option<Self::Elem> {
         let p = |i: usize| {
             self.set()
                 .enumeration_to_element(&Natural::from(i))
@@ -409,7 +409,7 @@ impl<Set: OrderedFiniteSetSignature> SynthemeOverlapResult<Set> {
 
 impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> SynthemesStructure<Set> {
     pub fn syntheme(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         duads: [Duad<Set::Elem>; 3],
     ) -> Result<Syntheme<Set::Elem>, &'static str> {
         let duads_set = self.set().duads();
@@ -435,7 +435,7 @@ impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> SynthemesS
     }
 
     pub fn overlap(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         s1: &Syntheme<Set::Elem>,
         s2: &Syntheme<Set::Elem>,
     ) -> SynthemeOverlapResult<Set> {
@@ -466,7 +466,7 @@ impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> SynthemesS
 
     /// Convert a syntheme into a 2^3-cycle
     pub fn to_permutation(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         syntheme: &Syntheme<Set::Elem>,
     ) -> FinitelySupportedPermutation<Set::Elem> {
         let p1 = &syntheme.duads[0].points[0];
@@ -490,7 +490,7 @@ impl<Set: ConstSizeFiniteSetSignature<6> + OrderedFiniteSetSignature> SynthemesS
 
     /// Convert a 2^3-cycle into a syntheme, or return None if the permutation is not a 2^3-cycle
     pub fn try_from_permutation(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         swap: &FinitelySupportedPermutation<Set::Elem>,
     ) -> Option<Syntheme<Set::Elem>> {
         let disjoint_cycles = self.set().permutations().disjoint_cycles(swap);
@@ -528,7 +528,7 @@ pub trait SetPermutationAsSynthemePermutation<
 >: PermutationsSignature<Set>
 {
     fn syntheme_image(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         set_perm: &Self::Elem,
         syntheme: &Syntheme<Set::Elem>,
     ) -> Syntheme<Set::Elem> {
@@ -545,7 +545,7 @@ pub trait SetPermutationAsSynthemePermutation<
     }
 
     fn syntheme_action(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         set_perm: &Self::Elem,
     ) -> FinitelySupportedPermutation<Syntheme<Set::Elem>> {
         let set = self.set();

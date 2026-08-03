@@ -21,7 +21,7 @@ use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 use algebraeon_structures::*;
 use itertools::Itertools;
 use std::borrow::Cow;
-use std::sync::Arc;
+use std::rc::Rc;
 
 type FinitelyFreeIntegerSubmodulesStructure = FinitelyFreeSubmodulesStructure<
     EnumeratedFiniteSetStructure,
@@ -47,11 +47,11 @@ impl OrderIdeal {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OrderIdealsStructure<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> {
-    order: Arc<OrderWithBasis<K, MAXIMAL>>,
+    order: Rc<OrderWithBasis<K, MAXIMAL>>,
 }
 
 impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> OrderIdealsStructure<K, MAXIMAL> {
-    pub fn order(self: &Arc<Self>) -> &Arc<OrderWithBasis<K, MAXIMAL>> {
+    pub fn order(self: &Rc<Self>) -> &Rc<OrderWithBasis<K, MAXIMAL>> {
         &self.order
     }
 }
@@ -61,7 +61,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> RingToIdealsSignatur
 {
     type Ideals = OrderIdealsStructure<K, MAXIMAL>;
 
-    fn ideals(self: &Arc<Self>) -> Arc<Self::Ideals> {
+    fn ideals(self: &Rc<Self>) -> Rc<Self::Ideals> {
         OrderIdealsStructure {
             order: self.clone(),
         }
@@ -76,7 +76,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> Signature
 
 impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> OrderIdealsStructure<K, MAXIMAL> {
     fn does_integer_submodule_define_an_ideal(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         integer_submodule: &FinitelyFreeSubmodule<Integer>,
     ) -> bool {
         #[cfg(debug_assertions)]
@@ -115,7 +115,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> SetSignature
 {
     type Elem = OrderIdeal;
 
-    fn validate_element(self: &Arc<Self>, ideal: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Rc<Self>, ideal: &Self::Elem) -> Result<(), String> {
         match ideal {
             OrderIdeal::Zero => Ok(()),
             OrderIdeal::NonZero(integer_submodule) => {
@@ -139,15 +139,15 @@ mod integer_submodules_to_ideals {
 
     #[derive(Debug, Clone)]
     pub struct SubmoduleToIdeals<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> {
-        ideals: Arc<OrderIdealsStructure<K, MAXIMAL>>,
-        integer_submodules: Arc<FinitelyFreeIntegerSubmodulesStructure>,
+        ideals: Rc<OrderIdealsStructure<K, MAXIMAL>>,
+        integer_submodules: Rc<FinitelyFreeIntegerSubmodulesStructure>,
     }
 
     impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> SubmoduleToIdeals<K, MAXIMAL> {
         pub fn new(
-            ideals: Arc<OrderIdealsStructure<K, MAXIMAL>>,
-            integer_submodules: Arc<FinitelyFreeIntegerSubmodulesStructure>,
-        ) -> Arc<Self> {
+            ideals: Rc<OrderIdealsStructure<K, MAXIMAL>>,
+            integer_submodules: Rc<FinitelyFreeIntegerSubmodulesStructure>,
+        ) -> Rc<Self> {
             Self {
                 ideals,
                 integer_submodules,
@@ -155,11 +155,11 @@ mod integer_submodules_to_ideals {
             .into()
         }
 
-        fn ideals(&self) -> &Arc<OrderIdealsStructure<K, MAXIMAL>> {
+        fn ideals(&self) -> &Rc<OrderIdealsStructure<K, MAXIMAL>> {
             &self.ideals
         }
 
-        fn integer_submodules(&self) -> &Arc<FinitelyFreeIntegerSubmodulesStructure> {
+        fn integer_submodules(&self) -> &Rc<FinitelyFreeIntegerSubmodulesStructure> {
             &self.integer_submodules
         }
     }
@@ -168,11 +168,11 @@ mod integer_submodules_to_ideals {
         Morphism<OrderIdealsStructure<K, MAXIMAL>, FinitelyFreeIntegerSubmodulesStructure>
         for SubmoduleToIdeals<K, MAXIMAL>
     {
-        fn domain(self: &Arc<Self>) -> Arc<OrderIdealsStructure<K, MAXIMAL>> {
+        fn domain(self: &Rc<Self>) -> Rc<OrderIdealsStructure<K, MAXIMAL>> {
             self.ideals().clone()
         }
 
-        fn range(self: &Arc<Self>) -> Arc<FinitelyFreeIntegerSubmodulesStructure> {
+        fn range(self: &Rc<Self>) -> Rc<FinitelyFreeIntegerSubmodulesStructure> {
             self.integer_submodules().clone()
         }
     }
@@ -181,7 +181,7 @@ mod integer_submodules_to_ideals {
         FunctionMorphism<OrderIdealsStructure<K, MAXIMAL>, FinitelyFreeIntegerSubmodulesStructure>
         for SubmoduleToIdeals<K, MAXIMAL>
     {
-        fn image(self: &Arc<Self>, x: &OrderIdeal) -> FinitelyFreeSubmodule<Integer> {
+        fn image(self: &Rc<Self>, x: &OrderIdeal) -> FinitelyFreeSubmodule<Integer> {
             #[cfg(debug_assertions)]
             self.ideals().validate_element(x).unwrap();
             match x {
@@ -197,10 +197,7 @@ mod integer_submodules_to_ideals {
             FinitelyFreeIntegerSubmodulesStructure,
         > for SubmoduleToIdeals<K, MAXIMAL>
     {
-        fn try_preimage(
-            self: &Arc<Self>,
-            y: &FinitelyFreeSubmodule<Integer>,
-        ) -> Option<OrderIdeal> {
+        fn try_preimage(self: &Rc<Self>, y: &FinitelyFreeSubmodule<Integer>) -> Option<OrderIdeal> {
             #[cfg(debug_assertions)]
             self.integer_submodules().validate_element(y).unwrap();
             if y.rank() == 0 {
@@ -219,8 +216,8 @@ mod integer_submodules_to_ideals {
 
 impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> OrderIdealsStructure<K, MAXIMAL> {
     pub fn outbound_integer_submodules_inclusion(
-        self: &Arc<Self>,
-    ) -> Arc<integer_submodules_to_ideals::SubmoduleToIdeals<K, MAXIMAL>> {
+        self: &Rc<Self>,
+    ) -> Rc<integer_submodules_to_ideals::SubmoduleToIdeals<K, MAXIMAL>> {
         integer_submodules_to_ideals::SubmoduleToIdeals::new(
             self.clone(),
             self.order()
@@ -233,14 +230,14 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> OrderIdealsStructure
 impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool>
     IdealsSignature<OrderWithBasis<K, MAXIMAL>> for OrderIdealsStructure<K, MAXIMAL>
 {
-    fn ring(self: &Arc<Self>) -> Arc<OrderWithBasis<K, MAXIMAL>> {
+    fn ring(self: &Rc<Self>) -> Rc<OrderWithBasis<K, MAXIMAL>> {
         self.order().clone()
     }
 }
 
 impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> OrderIdealsStructure<K, MAXIMAL> {
     /// Construct an ideal from a Z-linear span
-    pub fn from_integer_span(self: &Arc<Self>, span: Vec<Vec<Integer>>) -> OrderIdeal {
+    pub fn from_integer_span(self: &Rc<Self>, span: Vec<Vec<Integer>>) -> OrderIdeal {
         for elem in &span {
             debug_assert!(self.order().validate_element(elem).is_ok());
         }
@@ -260,7 +257,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> OrderIdealsStructure
     }
 
     /// The cardinality of the quotient ring, or 0 if the ideal is 0
-    pub fn norm(self: &Arc<Self>, ideal: &OrderIdeal) -> Natural {
+    pub fn norm(self: &Rc<Self>, ideal: &OrderIdeal) -> Natural {
         debug_assert!(self.validate_element(ideal).is_ok());
         match ideal {
             OrderIdeal::Zero => Natural::ZERO,
@@ -279,7 +276,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> OrderIdealsStructure
 
     /// The sub z-module of points defining this ideal
     pub fn to_integer_submodule<'a>(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         i: &'a OrderIdeal,
     ) -> Cow<'a, FinitelyFreeSubmodule<Integer>> {
         match i {
@@ -297,7 +294,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> OrderIdealsStructure
 impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> EqSignature
     for OrderIdealsStructure<K, MAXIMAL>
 {
-    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn equal(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         debug_assert!(self.validate_element(a).is_ok());
         debug_assert!(self.validate_element(b).is_ok());
         match (a, b) {
@@ -323,7 +320,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> RinglikeSpecializati
 impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> ZeroSignature
     for OrderIdealsStructure<K, MAXIMAL>
 {
-    fn zero(self: &Arc<Self>) -> Self::Elem {
+    fn zero(self: &Rc<Self>) -> Self::Elem {
         Self::Elem::Zero
     }
 }
@@ -331,7 +328,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> ZeroSignature
 impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> AdditionSignature
     for OrderIdealsStructure<K, MAXIMAL>
 {
-    fn add(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn add(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         debug_assert!(self.validate_element(a).is_ok());
         debug_assert!(self.validate_element(b).is_ok());
         match (a, b) {
@@ -354,7 +351,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> AdditionSignature
 impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> TryNegateSignature
     for OrderIdealsStructure<K, MAXIMAL>
 {
-    fn try_neg(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_neg(self: &Rc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         if self.is_zero(a) {
             Some(self.zero())
         } else {
@@ -371,7 +368,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> AdditiveMonoidSignat
 impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> OneSignature
     for OrderIdealsStructure<K, MAXIMAL>
 {
-    fn one(self: &Arc<Self>) -> Self::Elem {
+    fn one(self: &Rc<Self>) -> Self::Elem {
         self.principal_ideal(&self.ring().one())
     }
 }
@@ -379,7 +376,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> OneSignature
 impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> MultiplicationSignature
     for OrderIdealsStructure<K, MAXIMAL>
 {
-    fn mul(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn mul(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         debug_assert!(self.validate_element(a).is_ok());
         debug_assert!(self.validate_element(b).is_ok());
         match (a, b) {
@@ -440,7 +437,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> SemiRingSignature
 impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> TryReciprocalSignature
     for OrderIdealsStructure<K, MAXIMAL>
 {
-    fn try_reciprocal(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_reciprocal(self: &Rc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         // (1)=R is the only unit since a product of proper ideals is always a proper ideal
         if self.equal(a, &self.one()) {
             Some(self.one())
@@ -453,7 +450,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> TryReciprocalSignatu
 impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> FavoriteAssociateSignature
     for OrderIdealsStructure<K, MAXIMAL>
 {
-    fn factor_fav_assoc(self: &Arc<Self>, a: &Self::Elem) -> (Self::Elem, Self::Elem) {
+    fn factor_fav_assoc(self: &Rc<Self>, a: &Self::Elem) -> (Self::Elem, Self::Elem) {
         (self.one(), a.clone())
     }
 }
@@ -461,7 +458,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> FavoriteAssociateSig
 impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool>
     IdealsArithmeticSignature<OrderWithBasis<K, MAXIMAL>> for OrderIdealsStructure<K, MAXIMAL>
 {
-    fn principal_ideal(self: &Arc<Self>, a: &Vec<Integer>) -> Self::Elem {
+    fn principal_ideal(self: &Rc<Self>, a: &Vec<Integer>) -> Self::Elem {
         if self.order().is_zero(a) {
             Self::Elem::Zero
         } else {
@@ -484,7 +481,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool>
         }
     }
 
-    fn contains_ideal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn contains_ideal(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         debug_assert!(self.validate_element(a).is_ok());
         debug_assert!(self.validate_element(b).is_ok());
         match (a, b) {
@@ -504,7 +501,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool>
         }
     }
 
-    fn contains_element(self: &Arc<Self>, a: &Self::Elem, x: &Vec<Integer>) -> bool {
+    fn contains_element(self: &Rc<Self>, a: &Self::Elem, x: &Vec<Integer>) -> bool {
         debug_assert!(self.validate_element(a).is_ok());
         debug_assert!(self.order().validate_element(x).is_ok());
         match a {
@@ -517,7 +514,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool>
         }
     }
 
-    fn intersect(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn intersect(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         debug_assert!(self.validate_element(a).is_ok());
         debug_assert!(self.validate_element(b).is_ok());
         match (a, b) {
@@ -534,7 +531,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool>
         }
     }
 
-    fn quotient(self: &Arc<Self>, i: &Self::Elem, j: &Self::Elem) -> Self::Elem {
+    fn quotient(self: &Rc<Self>, i: &Self::Elem, j: &Self::Elem) -> Self::Elem {
         let j = self.to_integer_submodule(j);
         let j = j.as_ref();
         self.quotient_ideal_by_integer_submodule(i, j)
@@ -543,7 +540,7 @@ impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool>
 
 impl<K: AlgebraicNumberFieldSignature, const MAXIMAL: bool> OrderIdealsStructure<K, MAXIMAL> {
     fn quotient_ideal_by_integer_submodule(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         i: &<Self as SetSignature>::Elem,
         s: &FinitelyFreeSubmodule<Integer>,
     ) -> <Self as SetSignature>::Elem {
@@ -574,19 +571,19 @@ impl<K: AlgebraicNumberFieldSignature> UniqueFactorizationMonoidSignature
 {
     type FactoredExponent = NaturalCanonicalStructure;
 
-    fn factorization_exponents(self: &Arc<Self>) -> Arc<Self::FactoredExponent> {
+    fn factorization_exponents(self: &Rc<Self>) -> Rc<Self::FactoredExponent> {
         Natural::structure()
     }
 
     fn factorization_pow(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         a: &Self::Elem,
         k: &<Self::FactoredExponent as SetSignature>::Elem,
     ) -> Self::Elem {
         self.nat_pow(a, k)
     }
 
-    fn try_is_irreducible(self: &Arc<Self>, _a: &Self::Elem) -> Option<bool> {
+    fn try_is_irreducible(self: &Rc<Self>, _a: &Self::Elem) -> Option<bool> {
         None
     }
 }
@@ -604,7 +601,7 @@ where
             IdealsR = OrderIdealsStructure<K, true>,
         >,
 {
-    fn factor_unchecked(self: &Arc<Self>, ideal: &Self::Elem) -> Factored<Self::Elem, Natural> {
+    fn factor_unchecked(self: &Rc<Self>, ideal: &Self::Elem) -> Factored<Self::Elem, Natural> {
         if let Some(factored_ideal) = self
             .order()
             .outbound_roi_to_anf_inclusion()
@@ -638,7 +635,7 @@ where
         >,
 {
     /// Determine whether an ideal is a square, i.e. every prime ideal in its factorization has even valuation.
-    fn is_square(self: &Arc<Self>, ideal: &Self::Elem) -> bool {
+    fn is_square(self: &Rc<Self>, ideal: &Self::Elem) -> bool {
         if let Some(powers) = self.factor(ideal).into_powers() {
             powers
                 .into_iter()
@@ -650,7 +647,7 @@ where
     }
 
     /// Return an ideal whose square equals the input, if it exists.
-    fn sqrt_if_square(self: &Arc<Self>, ideal: &Self::Elem) -> Option<Self::Elem> {
+    fn sqrt_if_square(self: &Rc<Self>, ideal: &Self::Elem) -> Option<Self::Elem> {
         if let Some(powers) = self.factor(ideal).into_powers() {
             let mut sqrt_factor_powers = vec![];
             for (prime, exponent) in powers {
@@ -687,7 +684,7 @@ where
         >,
 {
     /// The order of the multiplicative group of the quotient modulo the ideal.
-    pub fn euler_phi(self: &Arc<Self>, ideal: &OrderIdeal) -> Option<Natural> {
+    pub fn euler_phi(self: &Rc<Self>, ideal: &OrderIdeal) -> Option<Natural> {
         Some(
             self.factor(ideal)
                 .into_powers()?
@@ -703,7 +700,7 @@ where
 
     /// generate all ideals of norm equal to n
     pub fn all_ideals_norm_eq<'a>(
-        self: &'a Arc<Self>,
+        self: &'a Rc<Self>,
         n: &Natural,
     ) -> Box<dyn 'a + Iterator<Item = OrderIdeal>> {
         let roi_to_anf = RingOfIntegersToAlgebraicNumberFieldInclusion::from_ring_of_integers(
@@ -744,7 +741,7 @@ where
 
     /// generate all non-zero ideals of norm at most n
     pub fn all_nonzero_ideals_norm_le<'a>(
-        self: &'a Arc<Self>,
+        self: &'a Rc<Self>,
         n: &'a Natural,
     ) -> Box<dyn 'a + Iterator<Item = OrderIdeal>>
     where
@@ -759,7 +756,7 @@ where
     }
 
     /// generate all ideals
-    pub fn all_ideals<'a>(self: &'a Arc<Self>) -> Box<dyn 'a + Iterator<Item = OrderIdeal>>
+    pub fn all_ideals<'a>(self: &'a Rc<Self>) -> Box<dyn 'a + Iterator<Item = OrderIdeal>>
     where
         K: 'a,
     {
@@ -771,9 +768,7 @@ where
     }
 
     /// generate all non-zero ideals
-    pub fn all_nonzero_ideals<'a>(
-        self: &'a Arc<Self>,
-    ) -> Box<dyn 'a + Iterator<Item = OrderIdeal>> {
+    pub fn all_nonzero_ideals<'a>(self: &'a Rc<Self>) -> Box<dyn 'a + Iterator<Item = OrderIdeal>> {
         Box::new(
             (1usize..)
                 .map(Natural::from)
@@ -783,7 +778,7 @@ where
 
     /// given an ideal I and element a in I, find an element b such that I = (a, b)
     pub fn ideal_other_generator(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         g: &Vec<Integer>,
         ideal: &OrderIdeal,
     ) -> Vec<Integer> {
@@ -892,7 +887,7 @@ where
 
     /// return two elements which generate the ideal
     pub fn ideal_two_generators(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         ideal: &OrderIdeal,
     ) -> (Vec<Integer>, Vec<Integer>) {
         let (a, b) = match ideal {
@@ -919,20 +914,20 @@ impl<K: AlgebraicNumberFieldSignature> DedekindDomainExtension
     type IdealsZ = IntegerIdealsStructure;
     type IdealsR = OrderIdealsStructure<K, true>;
 
-    fn z_ideals(self: &Arc<Self>) -> Arc<Self::IdealsZ> {
+    fn z_ideals(self: &Rc<Self>) -> Rc<Self::IdealsZ> {
         self.z_ideals().clone()
     }
 
-    fn r_ideals(self: &Arc<Self>) -> Arc<Self::IdealsR> {
+    fn r_ideals(self: &Rc<Self>) -> Rc<Self::IdealsR> {
         self.r_ideals().clone()
     }
 
-    fn ideal_norm(self: &Arc<Self>, ideal: &<Self::IdealsR as SetSignature>::Elem) -> Natural {
+    fn ideal_norm(self: &Rc<Self>, ideal: &<Self::IdealsR as SetSignature>::Elem) -> Natural {
         self.r_ideals().norm(ideal)
     }
 
     fn factor_prime_ideal(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         prime_ideal: Natural,
     ) -> DedekindExtensionIdealFactorsAbovePrime<Natural, <Self::IdealsR as SetSignature>::Elem>
     {
@@ -982,7 +977,7 @@ impl<K: AlgebraicNumberFieldSignature> DedekindDomainExtension
     }
 
     fn factor_ideal(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         ideal: &OrderIdeal,
     ) -> Option<DedekindExtensionIdealFactorization<Natural, OrderIdeal>> {
         let norm = self.ideal_norm(ideal);

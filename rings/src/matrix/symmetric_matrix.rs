@@ -1,6 +1,6 @@
 use crate::matrix::{MatOppErr, Matrix};
 use algebraeon_structures::*;
-use std::{fmt::Debug, sync::Arc};
+use std::{fmt::Debug, rc::Rc};
 
 #[derive(Debug, Clone)]
 pub struct SymmetricMatrix<Set: Clone> {
@@ -154,7 +154,7 @@ impl<Set: Clone> SymmetricMatrix<Option<Set>> {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SymmetricMatrixStructure<RS: SetSignature> {
-    set: Arc<RS>,
+    set: Rc<RS>,
 }
 
 impl<RS: SetSignature> Signature for SymmetricMatrixStructure<RS> {}
@@ -162,23 +162,23 @@ impl<RS: SetSignature> Signature for SymmetricMatrixStructure<RS> {}
 impl<RS: SetSignature> SetSignature for SymmetricMatrixStructure<RS> {
     type Elem = SymmetricMatrix<RS::Elem>;
 
-    fn validate_element(self: &Arc<Self>, _x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Rc<Self>, _x: &Self::Elem) -> Result<(), String> {
         Ok(())
     }
 }
 
 impl<RS: SetSignature> SymmetricMatrixStructure<RS> {
-    pub fn new(set: Arc<RS>) -> Arc<Self> {
+    pub fn new(set: Rc<RS>) -> Rc<Self> {
         Self { set }.into()
     }
 
-    pub fn set(&self) -> &Arc<RS> {
+    pub fn set(&self) -> &Rc<RS> {
         &self.set
     }
 }
 
 pub trait ToSymmetrixMatricesSignature: SetSignature {
-    fn symmetric_matrix_structure(self: &Arc<Self>) -> Arc<SymmetricMatrixStructure<Self>> {
+    fn symmetric_matrix_structure(self: &Rc<Self>) -> Rc<SymmetricMatrixStructure<Self>> {
         SymmetricMatrixStructure::new(self.clone())
     }
 }

@@ -19,7 +19,8 @@ use algebraeon_structures::*;
 use cantor::Finite;
 use std::{
     ops::{Add, BitAnd, BitOr},
-    sync::{Arc, OnceLock},
+    rc::Rc,
+    sync::OnceLock,
 };
 
 type F2 = Modulo<2>;
@@ -183,7 +184,7 @@ type AmbientSpace = ConstFinitelyFreeModuleStructure<24, PointCanonicalStructure
 
 struct ExtendedBinaryGolayCodeCache {
     subspace:
-        Arc<FinitelyFreeSubmoduleStructure<PointCanonicalStructure, F2Structure, AmbientSpace>>,
+        Rc<FinitelyFreeSubmoduleStructure<PointCanonicalStructure, F2Structure, AmbientSpace>>,
 }
 
 static EXTENDED_BINARY_GOLAY_CODE_CACHE: OnceLock<ExtendedBinaryGolayCodeCache> = OnceLock::new();
@@ -277,7 +278,7 @@ pub fn extended_binary_golay_code_subspace() -> &'static FinitelyFreeSubmodule<F
 
 /// The 12 dimensional vector subspace structure given by the extended binary Golay code
 pub fn extended_binary_golay_code_subspace_structure()
--> Arc<FinitelyFreeSubmoduleStructure<PointCanonicalStructure, F2Structure, AmbientSpace>> {
+-> Rc<FinitelyFreeSubmoduleStructure<PointCanonicalStructure, F2Structure, AmbientSpace>> {
     cache().subspace.clone()
 }
 

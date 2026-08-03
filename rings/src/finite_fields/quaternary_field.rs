@@ -2,7 +2,7 @@ use crate::structure::*;
 use algebraeon_macros::CanonicalStructure;
 use algebraeon_structures::*;
 use cantor::Finite;
-use std::{fmt::Display, sync::Arc};
+use std::{fmt::Display, rc::Rc};
 
 //the finite field of 4 elements
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Ord, Eq, Hash, CanonicalStructure, Finite)]
@@ -15,7 +15,7 @@ pub enum QuaternaryField {
 }
 
 impl ToStringSignature for QuaternaryFieldCanonicalStructure {
-    fn to_string(self: &Arc<Self>, elem: &Self::Elem) -> String {
+    fn to_string(self: &Rc<Self>, elem: &Self::Elem) -> String {
         format!("{}", elem)
     }
 }
@@ -34,13 +34,13 @@ impl Display for QuaternaryField {
 impl RinglikeSpecializationSignature for QuaternaryFieldCanonicalStructure {}
 
 impl ZeroSignature for QuaternaryFieldCanonicalStructure {
-    fn zero(self: &Arc<Self>) -> Self::Elem {
+    fn zero(self: &Rc<Self>) -> Self::Elem {
         QuaternaryField::Zero
     }
 }
 
 impl AdditionSignature for QuaternaryFieldCanonicalStructure {
-    fn add(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn add(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         #[allow(clippy::match_same_arms)]
         match (a, b) {
             (_, QuaternaryField::Zero) => *a,
@@ -59,13 +59,13 @@ impl AdditionSignature for QuaternaryFieldCanonicalStructure {
 }
 
 impl CancellativeAdditionSignature for QuaternaryFieldCanonicalStructure {
-    fn try_sub(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_sub(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.sub(a, b))
     }
 }
 
 impl TryNegateSignature for QuaternaryFieldCanonicalStructure {
-    fn try_neg(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_neg(self: &Rc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
     }
 }
@@ -73,13 +73,13 @@ impl TryNegateSignature for QuaternaryFieldCanonicalStructure {
 impl AdditiveMonoidSignature for QuaternaryFieldCanonicalStructure {}
 
 impl OneSignature for QuaternaryFieldCanonicalStructure {
-    fn one(self: &Arc<Self>) -> Self::Elem {
+    fn one(self: &Rc<Self>) -> Self::Elem {
         QuaternaryField::One
     }
 }
 
 impl MultiplicationSignature for QuaternaryFieldCanonicalStructure {
-    fn mul(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn mul(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         #[allow(clippy::match_same_arms)]
         match (a, b) {
             (_, QuaternaryField::Zero) => QuaternaryField::Zero,
@@ -107,31 +107,31 @@ impl RightDistributiveMultiplicationOverAddition for QuaternaryFieldCanonicalStr
 impl SemiRingSignature for QuaternaryFieldCanonicalStructure {}
 
 impl RingSignature for QuaternaryFieldCanonicalStructure {
-    fn is_reduced(self: &Arc<Self>) -> Result<bool, String> {
+    fn is_reduced(self: &Rc<Self>) -> Result<bool, String> {
         Ok(true)
     }
 }
 
 impl CharacteristicSignature for QuaternaryFieldCanonicalStructure {
-    fn characteristic(self: &Arc<Self>) -> Natural {
+    fn characteristic(self: &Rc<Self>) -> Natural {
         Natural::TWO
     }
 }
 
 impl AdditiveGroupSignature for QuaternaryFieldCanonicalStructure {
-    fn neg(self: &Arc<Self>, a: &Self::Elem) -> Self::Elem {
+    fn neg(self: &Rc<Self>, a: &Self::Elem) -> Self::Elem {
         *a
     }
 }
 
 impl TryReciprocalSignature for QuaternaryFieldCanonicalStructure {
-    fn try_reciprocal(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_reciprocal(self: &Rc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         self.try_divide(&self.one(), a)
     }
 }
 
 impl CancellativeMultiplicationSignature for QuaternaryFieldCanonicalStructure {
-    fn try_divide(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_divide(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         #[allow(clippy::match_same_arms)]
         match (&a, &b) {
             (_, QuaternaryField::Zero) => None,
@@ -156,13 +156,13 @@ impl FieldSignature for QuaternaryFieldCanonicalStructure {}
 impl CountableSetSignature
     for MultiplicativeMonoidUnitsStructure<QuaternaryFieldCanonicalStructure>
 {
-    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
+    fn generate_all_elements(self: Rc<Self>) -> impl Iterator<Item = Self::Elem> {
         self.list_all_elements().into_iter()
     }
 }
 
 impl FiniteSetSignature for MultiplicativeMonoidUnitsStructure<QuaternaryFieldCanonicalStructure> {
-    fn list_all_elements(self: &Arc<Self>) -> Vec<Self::Elem> {
+    fn list_all_elements(self: &Rc<Self>) -> Vec<Self::Elem> {
         vec![
             QuaternaryField::One,
             QuaternaryField::Alpha,
@@ -172,7 +172,7 @@ impl FiniteSetSignature for MultiplicativeMonoidUnitsStructure<QuaternaryFieldCa
 }
 
 impl CountableSetSignature for QuaternaryFieldCanonicalStructure {
-    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
+    fn generate_all_elements(self: Rc<Self>) -> impl Iterator<Item = Self::Elem> {
         self.all_units_and_zero().into_iter()
     }
 }
@@ -180,7 +180,7 @@ impl CountableSetSignature for QuaternaryFieldCanonicalStructure {
 impl FiniteSetSignature for QuaternaryFieldCanonicalStructure {}
 
 impl OrderedFiniteSetSignature for QuaternaryFieldCanonicalStructure {
-    fn list_all_elements_ordered(self: &Arc<Self>) -> Vec<Self::Elem> {
+    fn list_all_elements_ordered(self: &Rc<Self>) -> Vec<Self::Elem> {
         vec![
             QuaternaryField::Zero,
             QuaternaryField::One,
@@ -189,7 +189,7 @@ impl OrderedFiniteSetSignature for QuaternaryFieldCanonicalStructure {
         ]
     }
 
-    fn element_to_enumeration(self: &Arc<Self>, elem: &Self::Elem) -> Natural {
+    fn element_to_enumeration(self: &Rc<Self>, elem: &Self::Elem) -> Natural {
         Natural::from(match elem {
             QuaternaryField::Zero => 0u8,
             QuaternaryField::One => 1,
@@ -198,7 +198,7 @@ impl OrderedFiniteSetSignature for QuaternaryFieldCanonicalStructure {
         })
     }
 
-    fn enumeration_to_element(self: &Arc<Self>, num: &Natural) -> Option<Self::Elem> {
+    fn enumeration_to_element(self: &Rc<Self>, num: &Natural) -> Option<Self::Elem> {
         if let Ok(num) = TryInto::<usize>::try_into(num) {
             match num {
                 0 => Some(QuaternaryField::Zero),
@@ -214,7 +214,7 @@ impl OrderedFiniteSetSignature for QuaternaryFieldCanonicalStructure {
 }
 
 impl FiniteFieldSignature for QuaternaryFieldCanonicalStructure {
-    fn characteristic_and_power(self: &Arc<Self>) -> (Natural, Natural) {
+    fn characteristic_and_power(self: &Rc<Self>) -> (Natural, Natural) {
         (Natural::from(2u8), Natural::from(2u8))
     }
 }

@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::rc::Rc;
 
 use crate::{matrix::*, polynomial::*, structure::*};
 use algebraeon_structures::*;
@@ -21,7 +21,7 @@ Cantor–Zassenhaus algorithm does 4.
 /// Store a monic factorization
 #[derive(Debug, Clone)]
 pub struct MonicFactored<FS: FieldSignature> {
-    poly_ring: Arc<PolynomialStructure<FS>>,
+    poly_ring: Rc<PolynomialStructure<FS>>,
     unit: FS::Elem,              // a unit
     monic: Polynomial<FS::Elem>, // a monic polynomial
 }
@@ -29,7 +29,7 @@ pub struct MonicFactored<FS: FieldSignature> {
 /// Store a squarefree factorization
 #[derive(Debug, Clone)]
 pub struct SquarefreeFactored<FS: FiniteFieldSignature> {
-    poly_ring: Arc<PolynomialStructure<FS>>,
+    poly_ring: Rc<PolynomialStructure<FS>>,
     unit: FS::Elem,                                           // a unit
     squarefree_factors: Vec<(Polynomial<FS::Elem>, Natural)>, // squarefree monic polynomials and their multiplicities
 }
@@ -42,7 +42,7 @@ struct DistinctDegreeFactor<FS: FiniteFieldSignature> {
 /// Store a distinct degree factorization
 #[derive(Debug, Clone)]
 pub struct DistinctDegreeFactored<FS: FiniteFieldSignature> {
-    poly_ring: Arc<PolynomialStructure<FS>>,
+    poly_ring: Rc<PolynomialStructure<FS>>,
     unit: FS::Elem, // a unit
     distinct_degree_factors: Vec<(DistinctDegreeFactor<FS>, Natural)>,
 }
@@ -60,7 +60,7 @@ impl<FS: FieldSignature> MonicFactored<FS> {
     // }
 
     pub fn new_monic_unchecked(
-        poly_ring: Arc<PolynomialStructure<FS>>,
+        poly_ring: Rc<PolynomialStructure<FS>>,
         monic: Polynomial<FS::Elem>,
     ) -> Self {
         debug_assert!(poly_ring.is_monic(&monic));
@@ -91,7 +91,7 @@ impl<FS: FieldSignature> MonicFactored<FS> {
 }
 
 impl<FS: FiniteFieldSignature> SquarefreeFactored<FS> {
-    pub fn unit_unchecked(poly_ring: Arc<PolynomialStructure<FS>>, unit: FS::Elem) -> Self {
+    pub fn unit_unchecked(poly_ring: Rc<PolynomialStructure<FS>>, unit: FS::Elem) -> Self {
         debug_assert!(poly_ring.coeff_ring().is_unit(&unit));
         Self {
             poly_ring,
@@ -105,7 +105,7 @@ impl<FS: FiniteFieldSignature> SquarefreeFactored<FS> {
     }
 
     pub fn new_squarefree_poly_unchecked(
-        poly_ring: Arc<PolynomialStructure<FS>>,
+        poly_ring: Rc<PolynomialStructure<FS>>,
         poly: Polynomial<FS::Elem>,
     ) -> Self {
         debug_assert!(!poly_ring.is_zero(&poly));
@@ -225,7 +225,7 @@ where
 {
     /// monic factorization
     pub fn factorize_monic(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         poly: &Polynomial<FS::Elem>,
     ) -> Option<MonicFactored<FS>> {
         if self.is_zero(poly) {
@@ -371,7 +371,7 @@ where
     // }
 
     fn factorize_monic_squarefree_by_berlekamps(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         f: &Polynomial<FS::Elem>,
     ) -> Factored<Polynomial<FS::Elem>, Natural> {
         debug_assert!(self.is_monic(f));

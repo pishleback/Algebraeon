@@ -1,11 +1,11 @@
 use algebraeon_structures::*;
-use std::sync::Arc;
+use std::rc::Rc;
 
 /// A sized finite set from an unsized finite set
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DisjointUnionSetStructure<Set0: SetSignature, Set1: SetSignature> {
-    set_0: Arc<Set0>,
-    set_1: Arc<Set1>,
+    set_0: Rc<Set0>,
+    set_1: Rc<Set1>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -15,15 +15,15 @@ pub enum DisjointUnionElem2<Elem0, Elem1> {
 }
 
 impl<Set0: SetSignature, Set1: SetSignature> DisjointUnionSetStructure<Set0, Set1> {
-    pub fn new(set_0: Arc<Set0>, set_1: Arc<Set1>) -> Arc<Self> {
+    pub fn new(set_0: Rc<Set0>, set_1: Rc<Set1>) -> Rc<Self> {
         Self { set_0, set_1 }.into()
     }
 
-    pub fn set_0(&self) -> &Arc<Set0> {
+    pub fn set_0(&self) -> &Rc<Set0> {
         &self.set_0
     }
 
-    pub fn set_1(&self) -> &Arc<Set1> {
+    pub fn set_1(&self) -> &Rc<Set1> {
         &self.set_1
     }
 }
@@ -35,7 +35,7 @@ impl<Set0: SetSignature, Set1: SetSignature> SetSignature
 {
     type Elem = DisjointUnionElem2<Set0::Elem, Set1::Elem>;
 
-    fn validate_element(self: &Arc<Self>, elem: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Rc<Self>, elem: &Self::Elem) -> Result<(), String> {
         match elem {
             DisjointUnionElem2::Elem0(elem) => self.set_0().validate_element(elem),
             DisjointUnionElem2::Elem1(elem) => self.set_1().validate_element(elem),
@@ -44,7 +44,7 @@ impl<Set0: SetSignature, Set1: SetSignature> SetSignature
 }
 
 impl<Set0: EqSignature, Set1: EqSignature> EqSignature for DisjointUnionSetStructure<Set0, Set1> {
-    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn equal(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         match (a, b) {
             (DisjointUnionElem2::Elem0(a), DisjointUnionElem2::Elem0(b)) => {
                 self.set_0().equal(a, b)

@@ -2,7 +2,7 @@ use crate::structure::*;
 use algebraeon_macros::CanonicalStructure;
 use algebraeon_structures::*;
 use cantor::Finite;
-use std::{borrow::Cow, fmt, sync::Arc};
+use std::{borrow::Cow, fmt, rc::Rc};
 
 pub mod quaternion_orders;
 
@@ -17,18 +17,18 @@ pub mod quaternion_orders;
 //  for some a and some non-zero b
 #[derive(Debug, Clone)]
 pub struct QuaternionAlgebraStructure<Field: FieldSignature> {
-    base: Arc<Field>,
+    base: Rc<Field>,
     is_char_2: bool,
     a: Field::Elem,
     b: Field::Elem,
 }
 
 impl<Field: FieldSignature + CharacteristicSignature> QuaternionAlgebraStructure<Field> {
-    pub fn base_field(&self) -> &Arc<Field> {
+    pub fn base_field(&self) -> &Rc<Field> {
         &self.base
     }
 
-    pub fn new(base: Arc<Field>, a: Field::Elem, b: Field::Elem) -> Arc<Self> {
+    pub fn new(base: Rc<Field>, a: Field::Elem, b: Field::Elem) -> Rc<Self> {
         let is_char_2 = base.characteristic() == Natural::TWO;
         Self {
             base,
@@ -83,7 +83,7 @@ impl<Field: FieldSignature> PartialEq for QuaternionAlgebraStructure<Field> {
 impl<Field: FieldSignature> Eq for QuaternionAlgebraStructure<Field> {}
 
 impl<Field: FieldSignature> EqSignature for QuaternionAlgebraStructure<Field> {
-    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn equal(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         self.base.equal(&a.x, &b.x)
             && self.base.equal(&a.y, &b.y)
             && self.base.equal(&a.z, &b.z)
@@ -96,21 +96,21 @@ impl<Field: FieldSignature> Signature for QuaternionAlgebraStructure<Field> {}
 impl<Field: FieldSignature> SetSignature for QuaternionAlgebraStructure<Field> {
     type Elem = QuaternionAlgebraElement<Field::Elem>;
 
-    fn validate_element(self: &Arc<Self>, _x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Rc<Self>, _x: &Self::Elem) -> Result<(), String> {
         Ok(())
     }
 }
 
 impl<Field: FieldSignature> RinglikeSpecializationSignature for QuaternionAlgebraStructure<Field> {
     fn try_ring_restructure(
-        self: Arc<Self>,
-    ) -> Option<Arc<impl EqSignature<Elem = Self::Elem> + RingSignature>> {
+        self: Rc<Self>,
+    ) -> Option<Rc<impl EqSignature<Elem = Self::Elem> + RingSignature>> {
         Some(self)
     }
 }
 
 impl<Field: FieldSignature> ZeroSignature for QuaternionAlgebraStructure<Field> {
-    fn zero(self: &Arc<Self>) -> Self::Elem {
+    fn zero(self: &Rc<Self>) -> Self::Elem {
         QuaternionAlgebraElement {
             x: self.base.zero(),
             y: self.base.zero(),
@@ -121,7 +121,7 @@ impl<Field: FieldSignature> ZeroSignature for QuaternionAlgebraStructure<Field> 
 }
 
 impl<Field: FieldSignature> AdditionSignature for QuaternionAlgebraStructure<Field> {
-    fn add(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn add(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         QuaternionAlgebraElement {
             x: self.base.add(&a.x, &b.x),
             y: self.base.add(&a.y, &b.y),
@@ -132,13 +132,13 @@ impl<Field: FieldSignature> AdditionSignature for QuaternionAlgebraStructure<Fie
 }
 
 impl<Field: FieldSignature> CancellativeAdditionSignature for QuaternionAlgebraStructure<Field> {
-    fn try_sub(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_sub(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.sub(a, b))
     }
 }
 
 impl<Field: FieldSignature> TryNegateSignature for QuaternionAlgebraStructure<Field> {
-    fn try_neg(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_neg(self: &Rc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
     }
 }
@@ -146,7 +146,7 @@ impl<Field: FieldSignature> TryNegateSignature for QuaternionAlgebraStructure<Fi
 impl<Field: FieldSignature> AdditiveMonoidSignature for QuaternionAlgebraStructure<Field> {}
 
 impl<Field: FieldSignature> AdditiveGroupSignature for QuaternionAlgebraStructure<Field> {
-    fn neg(self: &Arc<Self>, a: &Self::Elem) -> Self::Elem {
+    fn neg(self: &Rc<Self>, a: &Self::Elem) -> Self::Elem {
         QuaternionAlgebraElement {
             x: self.base.neg(&a.x),
             y: self.base.neg(&a.y),
@@ -155,7 +155,7 @@ impl<Field: FieldSignature> AdditiveGroupSignature for QuaternionAlgebraStructur
         }
     }
 
-    fn sub(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn sub(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         QuaternionAlgebraElement {
             x: self.base.sub(&a.x, &b.x),
             y: self.base.sub(&a.y, &b.y),
@@ -166,7 +166,7 @@ impl<Field: FieldSignature> AdditiveGroupSignature for QuaternionAlgebraStructur
 }
 
 impl<Field: FieldSignature> OneSignature for QuaternionAlgebraStructure<Field> {
-    fn one(self: &Arc<Self>) -> Self::Elem {
+    fn one(self: &Rc<Self>) -> Self::Elem {
         QuaternionAlgebraElement {
             x: self.base.one(),
             y: self.base.zero(),
@@ -177,7 +177,7 @@ impl<Field: FieldSignature> OneSignature for QuaternionAlgebraStructure<Field> {
 }
 
 impl<Field: FieldSignature> MultiplicationSignature for QuaternionAlgebraStructure<Field> {
-    fn mul(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn mul(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         let a_param = &self.a;
         let b_param = &self.b;
         let base = &self.base;
@@ -264,12 +264,12 @@ impl<Field: FieldSignature> RightDistributiveMultiplicationOverAddition
 impl<Field: FieldSignature> SemiRingSignature for QuaternionAlgebraStructure<Field> {}
 
 impl<Field: FieldSignature> TryReciprocalSignature for QuaternionAlgebraStructure<Field> {
-    fn try_reciprocal(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_reciprocal(self: &Rc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         let n_inv = self.base.try_reciprocal(&self.reduced_norm(a))?;
         Some(self.scalar_mul(&self.conjugate(a), &n_inv))
     }
 
-    fn is_unit(self: &Arc<Self>, a: &Self::Elem) -> bool {
+    fn is_unit(self: &Rc<Self>, a: &Self::Elem) -> bool {
         self.base.is_unit(&self.reduced_norm(a))
     }
 }
@@ -277,11 +277,11 @@ impl<Field: FieldSignature> TryReciprocalSignature for QuaternionAlgebraStructur
 impl<Field: FieldSignature> RingSignature for QuaternionAlgebraStructure<Field> {}
 
 impl<Field: FieldSignature> SemiModuleSignature<Field> for QuaternionAlgebraStructure<Field> {
-    fn ring(self: &Arc<Self>) -> Arc<Field> {
+    fn ring(self: &Rc<Self>) -> Rc<Field> {
         self.base.clone()
     }
 
-    fn scalar_mul(self: &Arc<Self>, a: &Self::Elem, x: &Field::Elem) -> Self::Elem {
+    fn scalar_mul(self: &Rc<Self>, a: &Self::Elem, x: &Field::Elem) -> Self::Elem {
         let base = &self.base;
         QuaternionAlgebraElement {
             x: base.mul(x, &a.x),
@@ -297,12 +297,12 @@ impl<Field: FieldSignature> AlgebraSignature<Field> for QuaternionAlgebraStructu
 impl<Field: FieldSignature> FreeModuleSignature<QuaternionAlgebraBasisCanonicalStructure, Field>
     for QuaternionAlgebraStructure<Field>
 {
-    fn basis_set(self: &Arc<Self>) -> Arc<QuaternionAlgebraBasisCanonicalStructure> {
+    fn basis_set(self: &Rc<Self>) -> Rc<QuaternionAlgebraBasisCanonicalStructure> {
         QuaternionAlgebraBasis::structure()
     }
 
     fn to_component<'a>(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         b: &QuaternionAlgebraBasis,
         v: &'a Self::Elem,
     ) -> Cow<'a, Field::Elem> {
@@ -314,7 +314,7 @@ impl<Field: FieldSignature> FreeModuleSignature<QuaternionAlgebraBasisCanonicalS
         })
     }
 
-    fn from_component(self: &Arc<Self>, b: &QuaternionAlgebraBasis, r: &Field::Elem) -> Self::Elem {
+    fn from_component(self: &Rc<Self>, b: &QuaternionAlgebraBasis, r: &Field::Elem) -> Self::Elem {
         let mut v = self.zero();
         match b {
             QuaternionAlgebraBasis::R => v.x = r.clone(),
@@ -329,13 +329,13 @@ impl<Field: FieldSignature> FreeModuleSignature<QuaternionAlgebraBasisCanonicalS
 impl<Field: FieldSignature + CharacteristicSignature> CharacteristicSignature
     for QuaternionAlgebraStructure<Field>
 {
-    fn characteristic(self: &Arc<Self>) -> Natural {
+    fn characteristic(self: &Rc<Self>) -> Natural {
         self.base.characteristic()
     }
 }
 
 impl<Field: CharZeroFieldSignature> CharZeroRingSignature for QuaternionAlgebraStructure<Field> {
-    fn try_to_int(self: &Arc<Self>, a: &Self::Elem) -> Option<algebraeon_structures::Integer> {
+    fn try_to_int(self: &Rc<Self>, a: &Self::Elem) -> Option<algebraeon_structures::Integer> {
         // The element must be of the form [a.x, 0, 0, 0]
         if self.base.is_zero(&a.y) && self.base.is_zero(&a.z) && self.base.is_zero(&a.w) {
             self.base.try_to_int(&a.x)

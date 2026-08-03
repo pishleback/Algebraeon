@@ -5,7 +5,7 @@ use crate::algebraic_number_field::{
 use crate::num_theory::integer_ideal::IntegerIdealsStructure;
 use crate::structure::*;
 use algebraeon_structures::*;
-use std::sync::Arc;
+use std::rc::Rc;
 
 /// Q -> K
 /// ↑    ↑
@@ -18,21 +18,21 @@ pub struct RingOfIntegersIntegralExtension<
     K: AlgebraicNumberFieldSignature,
     R: AlgebraicIntegerRingSignature<K>,
 > {
-    r_to_k: Arc<RingOfIntegersToAlgebraicNumberFieldInclusion<K, R>>,
+    r_to_k: Rc<RingOfIntegersToAlgebraicNumberFieldInclusion<K, R>>,
 }
 
 impl<K: AlgebraicNumberFieldSignature, R: AlgebraicIntegerRingSignature<K>>
     RingOfIntegersIntegralExtension<K, R>
 {
     pub fn new_integer_extension(
-        r_to_k: Arc<RingOfIntegersToAlgebraicNumberFieldInclusion<K, R>>,
-    ) -> Arc<Self> {
+        r_to_k: Rc<RingOfIntegersToAlgebraicNumberFieldInclusion<K, R>>,
+    ) -> Rc<Self> {
         Self { r_to_k }.into()
     }
 
     pub fn with_ideals(
-        self: &Arc<Self>,
-    ) -> Arc<
+        self: &Rc<Self>,
+    ) -> Rc<
         RingOfIntegersIntegralExtensionWithIdeals<
             K,
             R,
@@ -66,37 +66,34 @@ impl<K: AlgebraicNumberFieldSignature, R: AlgebraicIntegerRingSignature<K>> Inte
     type QK = K::RationalInclusion;
     type RK = RingOfIntegersToAlgebraicNumberFieldInclusion<K, R>;
 
-    fn z_ring(self: &Arc<Self>) -> Arc<Self::Z> {
+    fn z_ring(self: &Rc<Self>) -> Rc<Self::Z> {
         Integer::structure()
     }
-    fn r_ring(self: &Arc<Self>) -> Arc<Self::R> {
+    fn r_ring(self: &Rc<Self>) -> Rc<Self::R> {
         self.r_to_k.domain()
     }
-    fn q_field(self: &Arc<Self>) -> Arc<Self::Q> {
+    fn q_field(self: &Rc<Self>) -> Rc<Self::Q> {
         Rational::structure()
     }
-    fn k_field(self: &Arc<Self>) -> Arc<Self::K> {
+    fn k_field(self: &Rc<Self>) -> Rc<Self::K> {
         self.r_to_k.range()
     }
 
-    fn z_to_q(self: &Arc<Self>) -> Arc<Self::ZQ> {
+    fn z_to_q(self: &Rc<Self>) -> Rc<Self::ZQ> {
         Rational::structure().inbound_principal_integer_map()
     }
-    fn z_to_r(self: &Arc<Self>) -> Arc<Self::ZR> {
+    fn z_to_r(self: &Rc<Self>) -> Rc<Self::ZR> {
         self.r_ring().inbound_principal_integer_map()
     }
-    fn q_to_k(self: &Arc<Self>) -> Arc<Self::QK> {
+    fn q_to_k(self: &Rc<Self>) -> Rc<Self::QK> {
         self.k_field()
             .inbound_finite_dimensional_rational_extension()
     }
-    fn r_to_k(self: &Arc<Self>) -> Arc<Self::RK> {
+    fn r_to_k(self: &Rc<Self>) -> Rc<Self::RK> {
         self.r_to_k.clone()
     }
 
-    fn integralize_multiplier(
-        self: &Arc<Self>,
-        alpha: &<Self::K as SetSignature>::Elem,
-    ) -> Integer {
+    fn integralize_multiplier(self: &Rc<Self>, alpha: &<Self::K as SetSignature>::Elem) -> Integer {
         if self.k_field().is_algebraic_integer(alpha) {
             Integer::ONE
         } else {
@@ -118,9 +115,9 @@ pub struct RingOfIntegersIntegralExtensionWithIdeals<
     IdealsZ: IdealsSignature<IntegerCanonicalStructure>,
     IdealsR: IdealsSignature<R>,
 > {
-    r_to_k: Arc<RingOfIntegersToAlgebraicNumberFieldInclusion<K, R>>,
-    ideals_z: Arc<IdealsZ>,
-    ideals_r: Arc<IdealsR>,
+    r_to_k: Rc<RingOfIntegersToAlgebraicNumberFieldInclusion<K, R>>,
+    ideals_z: Rc<IdealsZ>,
+    ideals_r: Rc<IdealsR>,
 }
 
 impl<
@@ -131,10 +128,10 @@ impl<
 > RingOfIntegersIntegralExtensionWithIdeals<K, R, IdealsZ, IdealsR>
 {
     pub fn new_integer_extension(
-        r_to_k: Arc<RingOfIntegersToAlgebraicNumberFieldInclusion<K, R>>,
-        ideals_z: Arc<IdealsZ>,
-        ideals_r: Arc<IdealsR>,
-    ) -> Arc<Self> {
+        r_to_k: Rc<RingOfIntegersToAlgebraicNumberFieldInclusion<K, R>>,
+        ideals_z: Rc<IdealsZ>,
+        ideals_r: Rc<IdealsR>,
+    ) -> Rc<Self> {
         Self {
             r_to_k,
             ideals_z,
@@ -143,11 +140,11 @@ impl<
         .into()
     }
 
-    pub fn z_ideals(self: &Arc<Self>) -> &Arc<IdealsZ> {
+    pub fn z_ideals(self: &Rc<Self>) -> &Rc<IdealsZ> {
         &self.ideals_z
     }
 
-    pub fn r_ideals(self: &Arc<Self>) -> &Arc<IdealsR> {
+    pub fn r_ideals(self: &Rc<Self>) -> &Rc<IdealsR> {
         &self.ideals_r
     }
 }
@@ -169,37 +166,34 @@ impl<
     type QK = K::RationalInclusion;
     type RK = RingOfIntegersToAlgebraicNumberFieldInclusion<K, R>;
 
-    fn z_ring(self: &Arc<Self>) -> Arc<Self::Z> {
+    fn z_ring(self: &Rc<Self>) -> Rc<Self::Z> {
         Integer::structure()
     }
-    fn r_ring(self: &Arc<Self>) -> Arc<Self::R> {
+    fn r_ring(self: &Rc<Self>) -> Rc<Self::R> {
         self.r_to_k.domain()
     }
-    fn q_field(self: &Arc<Self>) -> Arc<Self::Q> {
+    fn q_field(self: &Rc<Self>) -> Rc<Self::Q> {
         Rational::structure()
     }
-    fn k_field(self: &Arc<Self>) -> Arc<Self::K> {
+    fn k_field(self: &Rc<Self>) -> Rc<Self::K> {
         self.r_to_k.range()
     }
 
-    fn z_to_q(self: &Arc<Self>) -> Arc<Self::ZQ> {
+    fn z_to_q(self: &Rc<Self>) -> Rc<Self::ZQ> {
         Rational::structure().inbound_principal_integer_map()
     }
-    fn z_to_r(self: &Arc<Self>) -> Arc<Self::ZR> {
+    fn z_to_r(self: &Rc<Self>) -> Rc<Self::ZR> {
         self.r_ring().inbound_principal_integer_map()
     }
-    fn q_to_k(self: &Arc<Self>) -> Arc<Self::QK> {
+    fn q_to_k(self: &Rc<Self>) -> Rc<Self::QK> {
         self.k_field()
             .inbound_finite_dimensional_rational_extension()
     }
-    fn r_to_k(self: &Arc<Self>) -> Arc<Self::RK> {
+    fn r_to_k(self: &Rc<Self>) -> Rc<Self::RK> {
         self.r_to_k.clone()
     }
 
-    fn integralize_multiplier(
-        self: &Arc<Self>,
-        alpha: &<Self::K as SetSignature>::Elem,
-    ) -> Integer {
+    fn integralize_multiplier(self: &Rc<Self>, alpha: &<Self::K as SetSignature>::Elem) -> Integer {
         if self.k_field().is_algebraic_integer(alpha) {
             Integer::ONE
         } else {

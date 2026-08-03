@@ -5,7 +5,7 @@ use crate::{
 };
 use algebraeon_structures::*;
 use itertools::Itertools;
-use std::{borrow::Borrow, collections::HashSet, sync::Arc};
+use std::{borrow::Borrow, collections::HashSet, rc::Rc};
 
 pub fn ss_num(n: usize) -> String {
     let mut ss = String::new();
@@ -36,7 +36,7 @@ where
         SetSignature<Elem = MultiPolynomial<RS::Elem>> + ToStringSignature,
 {
     pub fn is_symmetric(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         vars: Vec<impl Borrow<Variable>>,
         poly: &MultiPolynomial<RS::Elem>,
     ) -> bool {
@@ -114,7 +114,7 @@ where
     }
 
     fn as_elementary_symmetric_polynomials_homogeneous_impl(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         vars: &Vec<Variable>,
         p: &MultiPolynomial<RS::Elem>,
         e: &Vec<Variable>,
@@ -166,7 +166,7 @@ where
     }
 
     fn as_elementary_symmetric_polynomials_impl(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         vars: &Vec<Variable>,
         poly: &MultiPolynomial<RS::Elem>,
         e: &Vec<Variable>,
@@ -187,7 +187,7 @@ where
 
     //assume input is symmetrical
     pub fn as_elementary_symmetric_polynomials_unchecked(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         vars: Vec<impl Borrow<Variable>>,
         poly: &MultiPolynomial<RS::Elem>,
     ) -> (Vec<Variable>, MultiPolynomial<RS::Elem>) {
@@ -220,7 +220,7 @@ where
 
     //return None if not symmetrical
     pub fn as_elementary_symmetric_polynomials(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         vars: Vec<impl Borrow<Variable>>,
         poly: &MultiPolynomial<RS::Elem>,
     ) -> Option<(Vec<Variable>, MultiPolynomial<RS::Elem>)> {

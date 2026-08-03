@@ -11,12 +11,12 @@ use crate::{
     },
 };
 use algebraeon_structures::*;
-use std::sync::Arc;
+use std::rc::Rc;
 
 #[derive(Debug, Clone)]
 pub struct QuadraticNumberFieldIsomorphism {
-    anf_polyquo: Arc<AlgebraicNumberFieldPolynomialQuotientStructure>,
-    anf_quadratic: Arc<QuadraticNumberFieldStructure<Integer>>,
+    anf_polyquo: Rc<AlgebraicNumberFieldPolynomialQuotientStructure>,
+    anf_quadratic: Rc<QuadraticNumberFieldStructure<Integer>>,
     // where does the generator of anf_polyquo get mapped to inside anf_quadratic?
     generator_image: QuadraticNumberFieldElement,
 }
@@ -24,8 +24,8 @@ pub struct QuadraticNumberFieldIsomorphism {
 impl QuadraticNumberFieldIsomorphism {
     #[allow(unused)]
     fn new(
-        anf_polyquo: Arc<AlgebraicNumberFieldPolynomialQuotientStructure>,
-    ) -> Result<Arc<Self>, ()> {
+        anf_polyquo: Rc<AlgebraicNumberFieldPolynomialQuotientStructure>,
+    ) -> Result<Rc<Self>, ()> {
         if anf_polyquo.degree() == 2 {
             // let g be the generator of this ANF, so we are QQ[g]
             // g is a root of an integer polynomial
@@ -76,11 +76,11 @@ impl
         QuadraticNumberFieldStructure<Integer>,
     > for QuadraticNumberFieldIsomorphism
 {
-    fn domain(self: &Arc<Self>) -> Arc<AlgebraicNumberFieldPolynomialQuotientStructure> {
+    fn domain(self: &Rc<Self>) -> Rc<AlgebraicNumberFieldPolynomialQuotientStructure> {
         self.anf_polyquo.clone()
     }
 
-    fn range(self: &Arc<Self>) -> Arc<QuadraticNumberFieldStructure<Integer>> {
+    fn range(self: &Rc<Self>) -> Rc<QuadraticNumberFieldStructure<Integer>> {
         self.anf_quadratic.clone()
     }
 }
@@ -91,7 +91,7 @@ impl
         QuadraticNumberFieldStructure<Integer>,
     > for QuadraticNumberFieldIsomorphism
 {
-    fn image(self: &Arc<Self>, x: &Polynomial<Rational>) -> QuadraticNumberFieldElement {
+    fn image(self: &Rc<Self>, x: &Polynomial<Rational>) -> QuadraticNumberFieldElement {
         let x = self.anf_polyquo.to_vec(x);
         debug_assert!(x.len() == 2);
         self.anf_quadratic.add(
@@ -112,7 +112,7 @@ impl
     > for QuadraticNumberFieldIsomorphism
 {
     fn try_preimage(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         y: &QuadraticNumberFieldElement,
     ) -> Option<Polynomial<Rational>> {
         Some(self.preimage(y))
@@ -125,7 +125,7 @@ impl
         QuadraticNumberFieldStructure<Integer>,
     > for QuadraticNumberFieldIsomorphism
 {
-    fn preimage(self: &Arc<Self>, y: &QuadraticNumberFieldElement) -> Polynomial<Rational> {
+    fn preimage(self: &Rc<Self>, y: &QuadraticNumberFieldElement) -> Polynomial<Rational> {
         let gen_coeff = &y.algebraic_part / &self.generator_image.algebraic_part;
         let rat_coeff = &y.rational_part - &gen_coeff * &self.generator_image.rational_part;
         Polynomial::from_coeffs(vec![rat_coeff, gen_coeff])
@@ -144,8 +144,8 @@ impl AlgebraicNumberFieldPolynomialQuotientStructure {
     /// Returns an isomorphism from this degree 2 polynomial quotient number field representation to the quadratic number field implementation .
     /// Returns `Err` if this number field is not quadratic.
     pub fn quadratic_anf_isomorphism(
-        self: &Arc<Self>,
-    ) -> Result<Arc<QuadraticNumberFieldIsomorphism>, ()> {
+        self: &Rc<Self>,
+    ) -> Result<Rc<QuadraticNumberFieldIsomorphism>, ()> {
         QuadraticNumberFieldIsomorphism::new(self.clone())
     }
 }

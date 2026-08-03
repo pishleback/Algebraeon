@@ -1,17 +1,17 @@
 use crate::*;
-use std::{cmp::Ordering, sync::Arc};
+use std::{cmp::Ordering, rc::Rc};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OptionalStructure<Set: SetSignature> {
-    set: Arc<Set>,
+    set: Rc<Set>,
 }
 
 impl<Set: SetSignature> OptionalStructure<Set> {
-    pub fn new(set: Arc<Set>) -> Arc<Self> {
+    pub fn new(set: Rc<Set>) -> Rc<Self> {
         Self { set }.into()
     }
 
-    pub fn set(self: &Arc<Self>) -> &Arc<Set> {
+    pub fn set(self: &Rc<Self>) -> &Rc<Set> {
         &self.set
     }
 }
@@ -21,7 +21,7 @@ impl<Set: SetSignature> Signature for OptionalStructure<Set> {}
 impl<Set: SetSignature> SetSignature for OptionalStructure<Set> {
     type Elem = Option<Set::Elem>;
 
-    fn validate_element(self: &Arc<Self>, x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Rc<Self>, x: &Self::Elem) -> Result<(), String> {
         if let Some(x) = x {
             self.set().validate_element(x)
         } else {
@@ -31,7 +31,7 @@ impl<Set: SetSignature> SetSignature for OptionalStructure<Set> {
 }
 
 impl<Set: EqSignature> EqSignature for OptionalStructure<Set> {
-    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn equal(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         match (a, b) {
             (None, None) => true,
             (None, Some(_)) | (Some(_), None) => false,
@@ -41,14 +41,14 @@ impl<Set: EqSignature> EqSignature for OptionalStructure<Set> {
 }
 
 impl<Set: OrdSignature> PartialOrdSignature for OptionalStructure<Set> {
-    fn partial_cmp(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<std::cmp::Ordering> {
+    fn partial_cmp(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<std::cmp::Ordering> {
         Some(self.cmp(a, b))
     }
 }
 
 // take None to be +inf in terms of ordering
 impl<Set: OrdSignature> OrdSignature for OptionalStructure<Set> {
-    fn cmp(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Ordering {
+    fn cmp(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Ordering {
         match (a, b) {
             (None, None) => Ordering::Equal,
             (None, Some(_)) => Ordering::Greater,
@@ -59,7 +59,7 @@ impl<Set: OrdSignature> OrdSignature for OptionalStructure<Set> {
 }
 
 impl<Set: CountableSetSignature> CountableSetSignature for OptionalStructure<Set> {
-    fn generate_all_elements(self: Arc<Self>) -> impl Iterator<Item = Self::Elem> {
+    fn generate_all_elements(self: Rc<Self>) -> impl Iterator<Item = Self::Elem> {
         [None]
             .into_iter()
             .chain(self.set().clone().generate_all_elements().map(Some))
@@ -67,13 +67,13 @@ impl<Set: CountableSetSignature> CountableSetSignature for OptionalStructure<Set
 }
 
 impl<Set: FiniteSetSignature> FiniteSetSignature for OptionalStructure<Set> {
-    fn size(self: &Arc<Self>) -> Natural {
+    fn size(self: &Rc<Self>) -> Natural {
         self.set().size() + Natural::ONE
     }
 }
 
 impl<Set: OrderedFiniteSetSignature> OrderedFiniteSetSignature for OptionalStructure<Set> {
-    fn list_all_elements_ordered(self: &Arc<Self>) -> Vec<Self::Elem> {
+    fn list_all_elements_ordered(self: &Rc<Self>) -> Vec<Self::Elem> {
         self.set()
             .list_all_elements_ordered()
             .into_iter()
@@ -82,14 +82,14 @@ impl<Set: OrderedFiniteSetSignature> OrderedFiniteSetSignature for OptionalStruc
             .collect()
     }
 
-    fn element_to_enumeration(self: &Arc<Self>, elem: &Self::Elem) -> Natural {
+    fn element_to_enumeration(self: &Rc<Self>, elem: &Self::Elem) -> Natural {
         match elem {
             Some(elem) => self.set().element_to_enumeration(elem),
             None => self.set().size(),
         }
     }
 
-    fn enumeration_to_element(self: &Arc<Self>, num: &Natural) -> Option<Self::Elem> {
+    fn enumeration_to_element(self: &Rc<Self>, num: &Natural) -> Option<Self::Elem> {
         if *num == self.set().size() {
             Some(None)
         } else {
@@ -101,7 +101,7 @@ impl<Set: OrderedFiniteSetSignature> OrderedFiniteSetSignature for OptionalStruc
 impl<Elem: MetaType> MetaType for Option<Elem> {
     type Signature = OptionalStructure<Elem::Signature>;
 
-    fn structure() -> Arc<Self::Signature> {
+    fn structure() -> Rc<Self::Signature> {
         OptionalStructure::new(Elem::structure())
     }
 }

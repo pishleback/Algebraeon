@@ -6,7 +6,6 @@ use crate::{
     simplex::Simplex,
     simplex_collection::{InteriorOrBoundarySimplexCollection, LabelledSimplexCollection},
 };
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use std::collections::{HashMap, HashSet};
 
 /// A collection of disjoint simplices labelled by T with no additional structure
@@ -135,7 +134,7 @@ where
         for (spx_i, spx_j) in (0..simplexes.len())
             .flat_map(|i| ((i + 1)..simplexes.len()).map(move |j| (i, j)))
             .collect::<Vec<_>>()
-            .into_par_iter()
+            .into_iter()
             .filter_map(|(i, j)| {
                 let spx_i = simplexes[i];
                 let spx_j = simplexes[j];

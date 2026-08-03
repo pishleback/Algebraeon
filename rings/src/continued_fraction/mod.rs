@@ -4,10 +4,11 @@ use algebraeon_structures::*;
 use std::{
     borrow::Cow,
     fmt::Debug,
+    rc::Rc,
     sync::{Arc, Mutex},
 };
 
-pub trait SimpleContinuedFraction: Debug + Clone + Send + Sync {
+pub trait SimpleContinuedFraction: Debug + Clone {
     /// Return the nth continued fraction coefficient
     /// n=0 must return Some(any Integer)
     /// n>0 must return Some(any Integer >= 1) or None
@@ -31,7 +32,7 @@ pub trait SimpleContinuedFraction: Debug + Clone + Send + Sync {
 
 #[derive(Debug, Clone)]
 pub struct RationalApproximations<SCF: SimpleContinuedFraction> {
-    pqs: Arc<Mutex<Vec<(Integer, Integer)>>>,
+    pqs: Rc<Mutex<Vec<(Integer, Integer)>>>,
     scf: SCF,
 }
 
@@ -46,7 +47,7 @@ impl<SCF: SimpleContinuedFraction> RationalApproximations<SCF> {
         let q1 = a1.into_owned();
 
         Self {
-            pqs: Arc::new(Mutex::new(vec![(p0, q0), (p1, q1)])),
+            pqs: Rc::new(Mutex::new(vec![(p0, q0), (p1, q1)])),
             scf,
         }
     }
@@ -119,7 +120,7 @@ impl SimpleContinuedFraction for PeriodicSimpleContinuedFraction {
     }
 }
 
-pub trait IrrationalSimpleContinuedFractionGenerator: Debug + Send + Sync {
+pub trait IrrationalSimpleContinuedFractionGenerator: Debug {
     /// First value returned can be any integer
     /// All subsequent values must be >= 1
     fn next(&mut self) -> Integer;
@@ -145,7 +146,7 @@ struct IrrationalSimpleContinuedFractionCache {
 
 #[derive(Debug, Clone)]
 pub struct IrrationalSimpleContinuedFraction {
-    cache: Arc<Mutex<IrrationalSimpleContinuedFractionCache>>,
+    cache: Rc<Mutex<IrrationalSimpleContinuedFractionCache>>,
 }
 
 impl<G: IrrationalSimpleContinuedFractionGenerator + 'static> From<G>
@@ -153,7 +154,7 @@ impl<G: IrrationalSimpleContinuedFractionGenerator + 'static> From<G>
 {
     fn from(g: G) -> Self {
         Self {
-            cache: Arc::new(Mutex::new(IrrationalSimpleContinuedFractionCache {
+            cache: Rc::new(Mutex::new(IrrationalSimpleContinuedFractionCache {
                 coeffs: vec![],
                 coeff_gen: Box::new(g),
             })),
@@ -186,12 +187,12 @@ struct SimpleContinuedFractionFromRealStructureCache<R: ToSimpleContinuedFractio
 
 #[derive(Debug, Clone)]
 pub struct SimpleContinuedFractionFromRealStructure<R: ToSimpleContinuedFractionSignature> {
-    ring: Arc<R>,
+    ring: Rc<R>,
     cache: Arc<Mutex<SimpleContinuedFractionFromRealStructureCache<R>>>,
 }
 
 impl<R: ToSimpleContinuedFractionSignature> SimpleContinuedFractionFromRealStructure<R> {
-    fn new(ring: Arc<R>, value: R::Elem) -> Arc<Self> {
+    fn new(ring: Rc<R>, value: R::Elem) -> Rc<Self> {
         Self {
             ring,
             cache: Arc::new(Mutex::new(SimpleContinuedFractionFromRealStructureCache {
@@ -233,9 +234,9 @@ pub trait ToSimpleContinuedFractionSignature: RealRoundingSignature + RingUnitsS
     /// `value` should be irrational.
     /// If `value` is not irrational then calls to `.next()` on the resulting `SimpleContinuedFraction` may panic.
     fn simple_continued_fraction(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         value: Self::Elem,
-    ) -> Arc<SimpleContinuedFractionFromRealStructure<Self>> {
+    ) -> Rc<SimpleContinuedFractionFromRealStructure<Self>> {
         SimpleContinuedFractionFromRealStructure::new(self.clone(), value)
     }
 }
@@ -246,9 +247,8 @@ impl<R: RealRoundingSignature + FieldSignature + RingUnitsSignature>
 
 #[cfg(test)]
 mod tests {
-    use std::str::FromStr;
-
     use super::*;
+    use std::str::FromStr;
 
     fn rat_cf(rat: &'static str) -> Vec<Integer> {
         Rational::from_str(rat)

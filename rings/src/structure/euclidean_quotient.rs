@@ -1,23 +1,23 @@
 use crate::structure::*;
 use algebraeon_structures::*;
-use std::{borrow::Cow, sync::Arc};
+use std::{borrow::Cow, rc::Rc};
 
 /// A quotient of a Euclidean domain by a non-zero element.
 #[derive(Debug, Clone)]
 pub struct EuclideanRemainderQuotientStructure<RS: EuclideanDomainSignature, const IS_FIELD: bool> {
-    ring: Arc<RS>,
+    ring: Rc<RS>,
     modulus: RS::Elem,
 }
 
 impl<RS: EuclideanDomainSignature, const IS_FIELD: bool>
     EuclideanRemainderQuotientStructure<RS, IS_FIELD>
 {
-    pub fn new_unchecked(ring: Arc<RS>, modulus: RS::Elem) -> Arc<Self> {
+    pub fn new_unchecked(ring: Rc<RS>, modulus: RS::Elem) -> Rc<Self> {
         debug_assert!(!ring.is_zero(&modulus));
         Self { ring, modulus }.into()
     }
 
-    pub fn ring(&self) -> &Arc<RS> {
+    pub fn ring(&self) -> &Rc<RS> {
         &self.ring
     }
 
@@ -28,7 +28,7 @@ impl<RS: EuclideanDomainSignature, const IS_FIELD: bool>
 }
 
 impl<RS: EuclideanDomainSignature> EuclideanRemainderQuotientStructure<RS, false> {
-    fn try_new_ring(ring: Arc<RS>, modulus: RS::Elem) -> Option<Arc<Self>> {
+    fn try_new_ring(ring: Rc<RS>, modulus: RS::Elem) -> Option<Rc<Self>> {
         if ring.is_zero(&modulus) {
             None
         } else {
@@ -40,12 +40,12 @@ impl<RS: EuclideanDomainSignature> EuclideanRemainderQuotientStructure<RS, false
 impl<RS: EuclideanDomainSignature + FactoringMonoidSignature>
     EuclideanRemainderQuotientStructure<RS, true>
 {
-    fn new_field_unchecked(ring: Arc<RS>, modulus: RS::Elem) -> Arc<Self> {
+    fn new_field_unchecked(ring: Rc<RS>, modulus: RS::Elem) -> Rc<Self> {
         debug_assert!(ring.is_irreducible(&modulus));
         Self::new_unchecked(ring, modulus)
     }
 
-    fn try_new_field(ring: Arc<RS>, modulus: RS::Elem) -> Option<Arc<Self>> {
+    fn try_new_field(ring: Rc<RS>, modulus: RS::Elem) -> Option<Rc<Self>> {
         if ring.is_zero(&modulus) || !ring.is_irreducible(&modulus) {
             None
         } else {
@@ -56,9 +56,9 @@ impl<RS: EuclideanDomainSignature + FactoringMonoidSignature>
 
 pub trait RingToQuotientRingSignature: EuclideanDomainSignature {
     fn euclidean_quotient_ring(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         modulus: Self::Elem,
-    ) -> Option<Arc<EuclideanRemainderQuotientStructure<Self, false>>> {
+    ) -> Option<Rc<EuclideanRemainderQuotientStructure<Self, false>>> {
         EuclideanRemainderQuotientStructure::try_new_ring(self.clone(), modulus)
     }
 }
@@ -68,16 +68,16 @@ pub trait RingToQuotientFieldSignature:
     EuclideanDomainSignature + FactoringMonoidSignature
 {
     fn quotient_field(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         modulus: Self::Elem,
-    ) -> Option<Arc<EuclideanRemainderQuotientStructure<Self, true>>> {
+    ) -> Option<Rc<EuclideanRemainderQuotientStructure<Self, true>>> {
         EuclideanRemainderQuotientStructure::try_new_field(self.clone(), modulus)
     }
 
     fn quotient_field_unchecked(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         modulus: Self::Elem,
-    ) -> Arc<EuclideanRemainderQuotientStructure<Self, true>> {
+    ) -> Rc<EuclideanRemainderQuotientStructure<Self, true>> {
         EuclideanRemainderQuotientStructure::new_field_unchecked(self.clone(), modulus)
     }
 }
@@ -117,7 +117,7 @@ impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> SetSignature
 {
     type Elem = RS::Elem;
 
-    fn validate_element(self: &Arc<Self>, _x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Rc<Self>, _x: &Self::Elem) -> Result<(), String> {
         Ok(())
     }
 }
@@ -125,7 +125,7 @@ impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> SetSignature
 impl<RS: EuclideanDomainSignature + ToStringSignature, const IS_FIELD: bool> ToStringSignature
     for EuclideanRemainderQuotientStructure<RS, IS_FIELD>
 {
-    fn to_string(self: &Arc<Self>, elem: &Self::Elem) -> String {
+    fn to_string(self: &Rc<Self>, elem: &Self::Elem) -> String {
         self.ring().to_string(elem)
     }
 }
@@ -133,23 +133,23 @@ impl<RS: EuclideanDomainSignature + ToStringSignature, const IS_FIELD: bool> ToS
 impl<RS: EuclideanDomainSignature + FavoriteAssociateSignature, const IS_FIELD: bool>
     QuotientSetSignature<RS> for EuclideanRemainderQuotientStructure<RS, IS_FIELD>
 {
-    fn pre_quotient_set(self: &Arc<Self>) -> Arc<RS> {
+    fn pre_quotient_set(self: &Rc<Self>) -> Rc<RS> {
         self.ring().clone()
     }
 
-    fn project(self: &Arc<Self>, x: <RS as SetSignature>::Elem) -> Self::Elem {
+    fn project(self: &Rc<Self>, x: <RS as SetSignature>::Elem) -> Self::Elem {
         x
     }
 
-    fn project_ref(self: &Arc<Self>, x: &<RS as SetSignature>::Elem) -> Self::Elem {
+    fn project_ref(self: &Rc<Self>, x: &<RS as SetSignature>::Elem) -> Self::Elem {
         x.clone()
     }
 
-    fn unproject(self: &Arc<Self>, x: Self::Elem) -> <RS as SetSignature>::Elem {
+    fn unproject(self: &Rc<Self>, x: Self::Elem) -> <RS as SetSignature>::Elem {
         x
     }
 
-    fn unproject_ref(self: &Arc<Self>, x: &Self::Elem) -> <RS as SetSignature>::Elem {
+    fn unproject_ref(self: &Rc<Self>, x: &Self::Elem) -> <RS as SetSignature>::Elem {
         x.clone()
     }
 }
@@ -171,7 +171,7 @@ impl<RS: EuclideanDomainSignature + FavoriteAssociateSignature, const IS_FIELD: 
 impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> EqSignature
     for EuclideanRemainderQuotientStructure<RS, IS_FIELD>
 {
-    fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
+    fn equal(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
         self.ring().is_zero(
             &self
                 .ring()
@@ -184,8 +184,8 @@ impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> RinglikeSpecializationS
     for EuclideanRemainderQuotientStructure<RS, IS_FIELD>
 {
     fn try_ring_restructure(
-        self: Arc<Self>,
-    ) -> Option<Arc<impl EqSignature<Elem = Self::Elem> + RingSignature>> {
+        self: Rc<Self>,
+    ) -> Option<Rc<impl EqSignature<Elem = Self::Elem> + RingSignature>> {
         Some(self)
     }
 }
@@ -193,7 +193,7 @@ impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> RinglikeSpecializationS
 impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> ZeroSignature
     for EuclideanRemainderQuotientStructure<RS, IS_FIELD>
 {
-    fn zero(self: &Arc<Self>) -> Self::Elem {
+    fn zero(self: &Rc<Self>) -> Self::Elem {
         self.ring().zero()
     }
 }
@@ -201,7 +201,7 @@ impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> ZeroSignature
 impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> AdditionSignature
     for EuclideanRemainderQuotientStructure<RS, IS_FIELD>
 {
-    fn add(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn add(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.ring().rem(&self.ring().add(a, b), &self.modulus)
     }
 }
@@ -209,7 +209,7 @@ impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> AdditionSignature
 impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> CancellativeAdditionSignature
     for EuclideanRemainderQuotientStructure<RS, IS_FIELD>
 {
-    fn try_sub(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
+    fn try_sub(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
         Some(self.sub(a, b))
     }
 }
@@ -217,7 +217,7 @@ impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> CancellativeAdditionSig
 impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> TryNegateSignature
     for EuclideanRemainderQuotientStructure<RS, IS_FIELD>
 {
-    fn try_neg(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
+    fn try_neg(self: &Rc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
         Some(self.neg(a))
     }
 }
@@ -230,11 +230,11 @@ impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> AdditiveMonoidSignature
 impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> AdditiveGroupSignature
     for EuclideanRemainderQuotientStructure<RS, IS_FIELD>
 {
-    fn neg(self: &Arc<Self>, a: &Self::Elem) -> Self::Elem {
+    fn neg(self: &Rc<Self>, a: &Self::Elem) -> Self::Elem {
         self.ring().neg(a)
     }
 
-    fn sub(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn sub(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.ring().sub(a, b)
     }
 }
@@ -242,7 +242,7 @@ impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> AdditiveGroupSignature
 impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> OneSignature
     for EuclideanRemainderQuotientStructure<RS, IS_FIELD>
 {
-    fn one(self: &Arc<Self>) -> Self::Elem {
+    fn one(self: &Rc<Self>) -> Self::Elem {
         self.ring().one()
     }
 }
@@ -250,7 +250,7 @@ impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> OneSignature
 impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> MultiplicationSignature
     for EuclideanRemainderQuotientStructure<RS, IS_FIELD>
 {
-    fn mul(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn mul(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.ring().rem(&self.ring().mul(a, b), &self.modulus)
     }
 }
@@ -263,7 +263,7 @@ impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> CommutativeMultiplicati
 impl<RS: EuclideanDomainSignature + FavoriteAssociateSignature, const IS_FIELD: bool>
     TryReciprocalSignature for EuclideanRemainderQuotientStructure<RS, IS_FIELD>
 {
-    fn try_reciprocal(self: &Arc<Self>, x: &Self::Elem) -> Option<Self::Elem> {
+    fn try_reciprocal(self: &Rc<Self>, x: &Self::Elem) -> Option<Self::Elem> {
         if self.is_zero(x) {
             None
         } else {
@@ -313,7 +313,7 @@ impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> SemiRingSignature
 impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> RingSignature
     for EuclideanRemainderQuotientStructure<RS, IS_FIELD>
 {
-    fn is_reduced(self: &Arc<Self>) -> Result<bool, String> {
+    fn is_reduced(self: &Rc<Self>) -> Result<bool, String> {
         if IS_FIELD {
             return Ok(true);
         }
@@ -324,7 +324,7 @@ impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> RingSignature
 impl<RS: EuclideanDomainSignature + FavoriteAssociateSignature> CancellativeMultiplicationSignature
     for EuclideanRemainderQuotientStructure<RS, true>
 {
-    fn try_divide(self: &Arc<Self>, top: &Self::Elem, bot: &Self::Elem) -> Option<Self::Elem> {
+    fn try_divide(self: &Rc<Self>, top: &Self::Elem, bot: &Self::Elem) -> Option<Self::Elem> {
         Some(self.mul(top, &self.try_reciprocal(bot)?))
     }
 }

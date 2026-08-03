@@ -9,7 +9,6 @@ use crate::{
     simplicial_complex::{LabelledSimplicialComplex, SimplicialComplex},
     simplicial_disjoint_union::{LabelledSimplicialDisjointUnion, SimplicialDisjointUnion},
 };
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -112,8 +111,8 @@ where
             self.labelled_simplexes()
                 .into_iter()
                 .collect::<Vec<_>>()
-                .into_par_iter()
-                .map(|(self_spx, self_spx_label)| {
+                .into_iter()
+                .flat_map(|(self_spx, self_spx_label)| {
                     let mut self_leftover = HashSet::from([self_spx.clone()]);
                     for other_spx in other.simplexes() {
                         self_leftover = self_leftover
@@ -130,7 +129,6 @@ where
                         .map(|spx| (spx, self_spx_label.clone()))
                         .collect::<Vec<_>>()
                 })
-                .flatten()
                 .collect(),
         )
     }

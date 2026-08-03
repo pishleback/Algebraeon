@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::rc::Rc;
 
 use super::*;
 use crate::{
@@ -152,7 +152,7 @@ impl<FS: OrderedRingSignature + FieldSignature> AffineSpace<FS> {
 }
 
 impl<FS: OrderedRingSignature + FieldSignature> EmbeddedAffineSubspace<FS> {
-    pub fn field(&self) -> &Arc<FS> {
+    pub fn field(&self) -> &Rc<FS> {
         self.ambient_space.field()
     }
 

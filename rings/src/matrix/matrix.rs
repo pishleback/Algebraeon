@@ -3,7 +3,7 @@ use algebraeon_sets::sets::*;
 use algebraeon_structures::*;
 use std::borrow::Borrow;
 use std::hash::Hash;
-use std::sync::Arc;
+use std::rc::Rc;
 
 #[derive(Debug)]
 pub enum MatOppErr {
@@ -334,7 +334,7 @@ impl<Set: Clone> Matrix<Set> {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MatrixStructure<RS: SetSignature> {
-    set: Arc<RS>,
+    set: Rc<RS>,
 }
 
 impl<RS: SetSignature> Signature for MatrixStructure<RS> {}
@@ -342,23 +342,23 @@ impl<RS: SetSignature> Signature for MatrixStructure<RS> {}
 impl<RS: SetSignature> SetSignature for MatrixStructure<RS> {
     type Elem = Matrix<RS::Elem>;
 
-    fn validate_element(self: &Arc<Self>, _x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Rc<Self>, _x: &Self::Elem) -> Result<(), String> {
         Ok(())
     }
 }
 
 impl<RS: SetSignature> MatrixStructure<RS> {
-    pub fn new(set: Arc<RS>) -> Arc<Self> {
+    pub fn new(set: Rc<RS>) -> Rc<Self> {
         Self { set }.into()
     }
 
-    pub fn ring(&self) -> Arc<RS> {
+    pub fn ring(&self) -> Rc<RS> {
         self.set.clone()
     }
 }
 
 pub trait RingMatricesSignature: SetSignature {
-    fn matrix_structure(self: &Arc<Self>) -> Arc<MatrixStructure<Self>> {
+    fn matrix_structure(self: &Rc<Self>) -> Rc<MatrixStructure<Self>> {
         MatrixStructure::new(self.clone())
     }
 }
@@ -704,7 +704,7 @@ where
 {
     type Signature = MatrixStructure<R::Signature>;
 
-    fn structure() -> Arc<Self::Signature> {
+    fn structure() -> Rc<Self::Signature> {
         MatrixStructure::new(R::structure())
     }
 }

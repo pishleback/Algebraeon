@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::rc::Rc;
 
 use super::polynomial_quotient_number_field::AlgebraicNumberFieldPolynomialQuotientStructure;
 use crate::{matrix::Matrix, polynomial::*, structure::*};
@@ -87,7 +87,7 @@ impl PolynomialStructure<AlgebraicNumberFieldPolynomialQuotientStructure> {
                 The elementary symmetric polynomials in σ₀(θ) σ₁(θ) σ₂(θ) are (up to sign flips) the (rational) coefficients of the minimal polynomial of θ
     */
     pub fn polynomial_norm_by_symmetric_polynomials(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         f: &Polynomial<Polynomial<Rational>>,
     ) -> Polynomial<Rational> {
         // println!("f = {}", f);
@@ -165,7 +165,7 @@ impl PolynomialStructure<AlgebraicNumberFieldPolynomialQuotientStructure> {
     }
 
     pub fn factor_monic_sqfree_by_polynomial_norm(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         p: &<Self as SetSignature>::Elem,
     ) -> Factored<<Self as SetSignature>::Elem, Natural> {
         // See
@@ -257,7 +257,7 @@ impl PolynomialStructure<AlgebraicNumberFieldPolynomialQuotientStructure> {
     }
 
     pub fn factor_primitive_sqfree_by_reduced_ring(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         p: &<Self as SetSignature>::Elem,
     ) -> Factored<<Self as SetSignature>::Elem, Natural> {
         debug_assert!(!self.is_zero(p));
@@ -567,7 +567,7 @@ impl PolynomialStructure<AlgebraicNumberFieldPolynomialQuotientStructure> {
 
     //factor over the rationals first, then factor each irreducible rational factor over the anf
     pub fn factorize_rational_factorize_first(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         f: &<Self as SetSignature>::Elem,
         factorize: &impl Fn(
             &<Self as SetSignature>::Elem,
@@ -611,7 +611,7 @@ impl PolynomialStructure<AlgebraicNumberFieldPolynomialQuotientStructure> {
 impl FactoringMonoidSignature
     for PolynomialStructure<AlgebraicNumberFieldPolynomialQuotientStructure>
 {
-    fn factor_unchecked(self: &Arc<Self>, f: &Self::Elem) -> Factored<Self::Elem, Natural> {
+    fn factor_unchecked(self: &Rc<Self>, f: &Self::Elem) -> Factored<Self::Elem, Natural> {
         if self.is_zero(f) {
             Factored::Zero
         } else {

@@ -5,13 +5,13 @@ use crate::{
         RealSubsetSignature, RingSignature,
     },
 };
-use std::{borrow::Borrow, sync::Arc};
+use std::{borrow::Borrow, rc::Rc};
 
 pub trait ComplexInnerProduct<Ring: ComplexSubsetSignature> {
     /// # Panics
     /// If the dimensions of `a` and `b` do not match.
     fn inner_product(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         a: &[impl Borrow<Ring::Elem>],
         b: &[impl Borrow<Ring::Elem>],
     ) -> Ring::Elem;
@@ -20,15 +20,15 @@ pub trait ComplexInnerProduct<Ring: ComplexSubsetSignature> {
 pub trait RealInnerProduct<Ring: RealSubsetSignature>: ComplexInnerProduct<Ring> {}
 
 pub struct StandardInnerProduct<Ring: ComplexSubsetSignature + ComplexConjugateSignature> {
-    ring: Arc<Ring>,
+    ring: Rc<Ring>,
 }
 
 impl<Ring: ComplexSubsetSignature + ComplexConjugateSignature> StandardInnerProduct<Ring> {
-    pub fn new(ring: Arc<Ring>) -> Arc<Self> {
+    pub fn new(ring: Rc<Ring>) -> Rc<Self> {
         Self { ring }.into()
     }
 
-    pub fn ring(&self) -> &Arc<Ring> {
+    pub fn ring(&self) -> &Rc<Ring> {
         &self.ring
     }
 }
@@ -37,7 +37,7 @@ impl<Ring: ComplexSubsetSignature + ComplexConjugateSignature + RingSignature>
     ComplexInnerProduct<Ring> for StandardInnerProduct<Ring>
 {
     fn inner_product(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         a: &[impl Borrow<Ring::Elem>],
         b: &[impl Borrow<Ring::Elem>],
     ) -> Ring::Elem {
@@ -62,12 +62,12 @@ impl<Ring: RealSubsetSignature + RingSignature> RealInnerProduct<Ring>
 }
 
 pub struct RealSymmetricInnerProduct<Ring: RealSubsetSignature> {
-    ring: Arc<Ring>,
+    ring: Rc<Ring>,
     mat: SymmetricMatrix<Ring::Elem>, // symmetric and positive-definite
 }
 
 fn is_positive_definite<Ring: OrderedRingSignature + RealSubsetSignature>(
-    ring: &Arc<Ring>,
+    ring: &Rc<Ring>,
     mat: &SymmetricMatrix<Ring::Elem>,
 ) -> bool {
     let ring_mat = ring.matrix_structure();
@@ -90,7 +90,7 @@ fn is_positive_definite<Ring: OrderedRingSignature + RealSubsetSignature>(
 }
 
 impl<Ring: RealSubsetSignature> RealSymmetricInnerProduct<Ring> {
-    pub fn new(ring: Arc<Ring>, mat: SymmetricMatrix<Ring::Elem>) -> Arc<Self>
+    pub fn new(ring: Rc<Ring>, mat: SymmetricMatrix<Ring::Elem>) -> Rc<Self>
     where
         Ring: OrderedRingSignature,
     {
@@ -98,7 +98,7 @@ impl<Ring: RealSubsetSignature> RealSymmetricInnerProduct<Ring> {
         Self { ring, mat }.into()
     }
 
-    pub fn ring(&self) -> &Arc<Ring> {
+    pub fn ring(&self) -> &Rc<Ring> {
         &self.ring
     }
 }
@@ -107,7 +107,7 @@ impl<Ring: RingSignature + RealSubsetSignature> ComplexInnerProduct<Ring>
     for RealSymmetricInnerProduct<Ring>
 {
     fn inner_product(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         a: &[impl Borrow<Ring::Elem>],
         b: &[impl Borrow<Ring::Elem>],
     ) -> <Ring>::Elem {

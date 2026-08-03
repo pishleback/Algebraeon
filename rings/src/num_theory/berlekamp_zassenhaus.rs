@@ -69,7 +69,7 @@ use algebraeon_structures::*;
 use itertools::Itertools;
 use std::collections::BTreeSet;
 use std::ops::Rem;
-use std::sync::Arc;
+use std::rc::Rc;
 
 fn compute_polynomial_factor_bound(poly: &Polynomial<Integer>) -> Natural {
     poly.mignotte_factor_coefficient_bound().unwrap()
@@ -151,7 +151,7 @@ impl<'a> StateAtGoodPrime<'a> {
 }
 
 struct MemoryStack<SG: AssociativeCompositionSignature> {
-    semigroup: Arc<SG>,
+    semigroup: Rc<SG>,
     modular_factor_values: Vec<SG::Elem>,
     // Store the partial products of a previous calculation
     // Since subsets are visited in lexcographic order, if a test is performed frequently, values towards the right will need to be updated
@@ -167,7 +167,7 @@ struct MemoryStack<SG: AssociativeCompositionSignature> {
 }
 
 impl<SG: AssociativeCompositionSignature> MemoryStack<SG> {
-    fn new(semigroup: Arc<SG>, modular_factor_values: Vec<SG::Elem>) -> Self {
+    fn new(semigroup: Rc<SG>, modular_factor_values: Vec<SG::Elem>) -> Self {
         Self {
             semigroup,
             modular_factor_values,
@@ -244,12 +244,12 @@ mod dminusone_test {
     impl SetSignature for DMinusOneTestSemigroup {
         type Elem = DMinusOneTestSemigroupElem;
 
-        fn validate_element(self: &Arc<Self>, _x: &Self::Elem) -> Result<(), String> {
+        fn validate_element(self: &Rc<Self>, _x: &Self::Elem) -> Result<(), String> {
             Ok(())
         }
     }
     impl CompositionSignature for DMinusOneTestSemigroup {
-        fn compose(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+        fn compose(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
             DMinusOneTestSemigroupElem {
                 approx_coeff_lower_bound: a
                     .approx_coeff_lower_bound
@@ -352,7 +352,7 @@ mod dminusone_test {
 type ModularFactorMultSemigrp =
     PolynomialStructure<EuclideanRemainderQuotientStructure<IntegerCanonicalStructure, false>>;
 impl CompositionSignature for ModularFactorMultSemigrp {
-    fn compose(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn compose(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         self.mul(a, b)
     }
 }
@@ -364,12 +364,12 @@ struct ModularFactorDegreeSumSemigrp {}
 impl Signature for ModularFactorDegreeSumSemigrp {}
 impl SetSignature for ModularFactorDegreeSumSemigrp {
     type Elem = usize;
-    fn validate_element(self: &Arc<Self>, _x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Rc<Self>, _x: &Self::Elem) -> Result<(), String> {
         Ok(())
     }
 }
 impl CompositionSignature for ModularFactorDegreeSumSemigrp {
-    fn compose(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn compose(self: &Rc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         a + b
     }
 }

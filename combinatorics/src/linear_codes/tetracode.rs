@@ -16,10 +16,7 @@ use algebraeon_rings::{
 };
 use algebraeon_sets::sets::{Function, SetToConstSizeFunctionsToSignature};
 use algebraeon_structures::*;
-use std::{
-    ops::Add,
-    sync::{Arc, OnceLock},
-};
+use std::{ops::Add, rc::Rc, sync::OnceLock};
 
 type F3 = Modulo<3>;
 pub const ZERO: F3 = F3::new(0);
@@ -108,7 +105,7 @@ type AmbientSpace = ConstFinitelyFreeModuleStructure<
 >;
 
 struct TetracodeCache {
-    subspace: Arc<
+    subspace: Rc<
         FinitelyFreeSubmoduleStructure<
             PointedOrdered3CycleCanonicalStructure,
             <F3 as MetaType>::Signature,
@@ -150,7 +147,7 @@ fn cache() -> &'static TetracodeCache {
 }
 
 /// The 4 dimensional vector space structure over F3 with basis given by the points of a pointed ordered 3-cycle
-pub fn space_structure() -> Arc<AmbientSpace> {
+pub fn space_structure() -> Rc<AmbientSpace> {
     cache().subspace.module().clone()
 }
 
@@ -160,7 +157,7 @@ pub fn tetracode_subspace() -> &'static FinitelyFreeSubmodule<F3> {
 }
 
 /// The 2 dimensional vector subspace structure given by the tetracode
-pub fn tetracode_subspace_structure() -> Arc<
+pub fn tetracode_subspace_structure() -> Rc<
     FinitelyFreeSubmoduleStructure<
         PointedOrdered3CycleCanonicalStructure,
         <F3 as MetaType>::Signature,

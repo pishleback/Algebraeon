@@ -2,7 +2,7 @@ use super::{finitely_free_cosets::*, finitely_free_module::*};
 use crate::{matrix::*, structure::*};
 use algebraeon_sets::sets::EnumeratedFiniteSetStructure;
 use algebraeon_structures::*;
-use std::{borrow::Borrow, fmt::Debug, marker::PhantomData, sync::Arc};
+use std::{borrow::Borrow, fmt::Debug, marker::PhantomData, rc::Rc};
 
 #[derive(Debug, Clone)]
 pub struct FinitelyFreeSubmodule<Elem: Clone + Debug> {
@@ -52,7 +52,7 @@ pub struct FinitelyFreeSubmodulesStructure<
 > {
     _set: PhantomData<Set>,
     _ring: PhantomData<Ring>,
-    module: Arc<Module>,
+    module: Rc<Module>,
 }
 
 impl<
@@ -61,7 +61,7 @@ impl<
     Module: FinitelyFreeModuleSignature<Set, Ring>,
 > FinitelyFreeSubmodulesStructure<Set, Ring, Module>
 {
-    pub fn new(module: Arc<Module>) -> Arc<Self> {
+    pub fn new(module: Rc<Module>) -> Rc<Self> {
         Self {
             _set: PhantomData,
             _ring: PhantomData,
@@ -87,7 +87,7 @@ impl<
 {
     type Elem = FinitelyFreeSubmodule<Ring::Elem>;
 
-    fn validate_element(self: &Arc<Self>, x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Rc<Self>, x: &Self::Elem) -> Result<(), String> {
         if x.row_basis.cols() != self.module().rank() {
             return Err("dimensions don't match".to_string());
         }
@@ -102,11 +102,11 @@ impl<
     Module: FinitelyFreeModuleSignature<Set, Ring>,
 > FinitelyFreeSubmodulesStructure<Set, Ring, Module>
 {
-    pub fn module(&self) -> &Arc<Module> {
+    pub fn module(&self) -> &Rc<Module> {
         &self.module
     }
 
-    pub fn ring(&self) -> Arc<Ring> {
+    pub fn ring(&self) -> Rc<Ring> {
         self.module().ring()
     }
 
@@ -247,7 +247,7 @@ impl<
     }
 
     pub fn reduce_element(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         submodule: &FinitelyFreeSubmodule<Ring::Elem>,
         element: &Module::Elem,
     ) -> (Vec<Ring::Elem>, Module::Elem) {
@@ -278,7 +278,7 @@ impl<
     }
 
     pub fn equal_slow(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         x: &FinitelyFreeSubmodule<Ring::Elem>,
         y: &FinitelyFreeSubmodule<Ring::Elem>,
     ) -> bool {
@@ -288,7 +288,7 @@ impl<
     }
 
     pub fn contains_element(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         submodule: &FinitelyFreeSubmodule<Ring::Elem>,
         element: &Module::Elem,
     ) -> bool {
@@ -302,7 +302,7 @@ impl<
     }
 
     pub fn contains(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         x: &FinitelyFreeSubmodule<Ring::Elem>,
         y: &FinitelyFreeSubmodule<Ring::Elem>,
     ) -> bool {
@@ -317,7 +317,7 @@ impl<
     }
 
     pub fn add(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         x: FinitelyFreeSubmodule<Ring::Elem>,
         y: FinitelyFreeSubmodule<Ring::Elem>,
     ) -> FinitelyFreeSubmodule<Ring::Elem> {
@@ -325,7 +325,7 @@ impl<
     }
 
     pub fn sum(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         xs: Vec<FinitelyFreeSubmodule<Ring::Elem>>,
     ) -> FinitelyFreeSubmodule<Ring::Elem> {
         for x in &xs {
@@ -339,7 +339,7 @@ impl<
     }
 
     pub fn intersect(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         x: FinitelyFreeSubmodule<Ring::Elem>,
         y: FinitelyFreeSubmodule<Ring::Elem>,
     ) -> FinitelyFreeSubmodule<Ring::Elem> {
@@ -368,7 +368,7 @@ impl<
     }
 
     pub fn intersect_list(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         mut xs: Vec<FinitelyFreeSubmodule<Ring::Elem>>,
     ) -> FinitelyFreeSubmodule<Ring::Elem> {
         if let Some(a) = xs.pop() {
@@ -388,7 +388,7 @@ impl<
 
     //given x contained in y, find rank(y) - rank(x) basis vectors needed to extend x to y
     pub fn extension_basis(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         x: &FinitelyFreeSubmodule<Ring::Elem>,
         y: &FinitelyFreeSubmodule<Ring::Elem>,
     ) -> Vec<Vec<Ring::Elem>> {
@@ -420,7 +420,7 @@ impl<
     }
 
     pub fn coset(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         x: &FinitelyFreeSubmodule<Ring::Elem>,
         offset: &Module::Elem,
     ) -> FinitelyFreeSubmoduleCoset<Ring::Elem> {
@@ -430,7 +430,7 @@ impl<
     }
 
     pub fn into_coset(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         x: FinitelyFreeSubmodule<Ring::Elem>,
     ) -> FinitelyFreeSubmoduleCoset<Ring::Elem> {
         self.module()
@@ -446,7 +446,7 @@ impl<
 > EqSignature for FinitelyFreeSubmodulesStructure<Set, Ring, Module>
 {
     fn equal(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         x: &FinitelyFreeSubmodule<Ring::Elem>,
         y: &FinitelyFreeSubmodule<Ring::Elem>,
     ) -> bool {

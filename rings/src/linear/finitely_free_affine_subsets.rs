@@ -5,7 +5,7 @@ use algebraeon_structures::*;
 use std::borrow::Borrow;
 use std::fmt::Debug;
 use std::marker::PhantomData;
-use std::sync::Arc;
+use std::rc::Rc;
 
 #[derive(Debug, Clone)]
 pub enum FinitelyFreeSubmoduleAffineSubset<Set: Clone + Debug> {
@@ -61,7 +61,7 @@ pub struct FinitelyFreeSubmoduleAffineSubsetsStructure<
 > {
     _set: PhantomData<Set>,
     _ring: PhantomData<Ring>,
-    module: Arc<Module>,
+    module: Rc<Module>,
 }
 
 impl<
@@ -70,7 +70,7 @@ impl<
     Module: FinitelyFreeModuleSignature<Set, Ring>,
 > FinitelyFreeSubmoduleAffineSubsetsStructure<Set, Ring, Module>
 {
-    pub fn new(module: Arc<Module>) -> Arc<Self> {
+    pub fn new(module: Rc<Module>) -> Rc<Self> {
         Self {
             _set: PhantomData,
             _ring: PhantomData,
@@ -96,7 +96,7 @@ impl<
 {
     type Elem = FinitelyFreeSubmoduleAffineSubset<Ring::Elem>;
 
-    fn validate_element(self: &Arc<Self>, _x: &Self::Elem) -> Result<(), String> {
+    fn validate_element(self: &Rc<Self>, _x: &Self::Elem) -> Result<(), String> {
         //TODO: better checks
         Ok(())
     }
@@ -108,11 +108,11 @@ impl<
     Module: FinitelyFreeModuleSignature<Set, Ring>,
 > FinitelyFreeSubmoduleAffineSubsetsStructure<Set, Ring, Module>
 {
-    pub fn ring(&self) -> Arc<Ring> {
+    pub fn ring(&self) -> Rc<Ring> {
         self.module().ring()
     }
 
-    pub fn module(&self) -> &Arc<Module> {
+    pub fn module(&self) -> &Rc<Module> {
         &self.module
     }
 
@@ -159,7 +159,7 @@ impl<
     }
 
     pub fn add(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         x: FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
         y: FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
     ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Elem> {
@@ -180,7 +180,7 @@ impl<
     }
 
     pub fn intersect(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         x: &FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
         y: &FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
     ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Elem> {
@@ -199,7 +199,7 @@ impl<
     }
 
     pub fn intersect_list(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         xs: Vec<impl Borrow<FinitelyFreeSubmoduleAffineSubset<Ring::Elem>>>,
     ) -> FinitelyFreeSubmoduleAffineSubset<Ring::Elem> {
         for x in &xs {
@@ -218,7 +218,7 @@ impl<
     }
 
     pub fn contains_element(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         x: &FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
         p: &Module::Elem,
     ) -> bool {
@@ -233,7 +233,7 @@ impl<
     }
 
     pub fn equal_slow(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         x: &FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
         y: &FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
     ) -> bool {
@@ -268,7 +268,7 @@ impl<
 > EqSignature for FinitelyFreeSubmoduleAffineSubsetsStructure<Set, Ring, Module>
 {
     fn equal(
-        self: &Arc<Self>,
+        self: &Rc<Self>,
         x: &FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
         y: &FinitelyFreeSubmoduleAffineSubset<Ring::Elem>,
     ) -> bool {
