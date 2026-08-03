@@ -6,7 +6,7 @@ use crate::{
     },
 };
 use algebraeon_structures::*;
-use std::{rc::Rc};
+use std::rc::Rc;
 
 impl GreatestCommonDivisorSignature for PolynomialStructure<IntegerCanonicalStructure> {
     fn gcd(self: &Rc<Self>, x: &Self::Elem, y: &Self::Elem) -> Self::Elem {
