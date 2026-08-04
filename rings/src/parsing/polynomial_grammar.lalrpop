@@ -25,11 +25,11 @@ SumRest: SumTerm = {
 };
 
 Product: Box<Expr> = {
-    <l:Product> "*" <r:Power> => Box::new(Expr::Product(Product { left: l, right: r })),
+    <l:Product> "*" <r:Power> => Box::new(Expr::Product(Product { left: l, right: r, implicit: false })),
     // A numeric coefficient may be juxtaposed with what follows, so that "3i" means "3*i".
-    // Only a number is allowed on the left so that "xy" remains a parse error rather than
-    // silently meaning "x*y".
-    <l:Num> <r:VarPower> => Box::new(Expr::Product(Product { left: Box::new(Expr::Num(l)), right: r })),
+    // Only a number is allowed on the left so that "xy" is not silently read as "x*y". Whether
+    // this is accepted is up to the caller, see `parse_expression`.
+    <l:Num> <r:VarPower> => Box::new(Expr::Product(Product { left: Box::new(Expr::Num(l)), right: r, implicit: true })),
     Power,
 };
 

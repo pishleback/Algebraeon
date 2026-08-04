@@ -34,7 +34,7 @@ pub fn parse_algebra_expression<
     algebra: &Arc<Algebra>,
     variables: &HashMap<&str, Algebra::Elem>,
 ) -> Result<Algebra::Elem, String> {
-    let expression = parse_expression(expression_str)?;
+    let expression = parse_expression(expression_str, true)?;
     expression.validate()?;
     evaluate(&expression, algebra, variables)
 }
