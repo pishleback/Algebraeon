@@ -97,7 +97,15 @@ mod range_module {
     impl<Domain: RingSignature, Range: RingSignature, Hom: RingHomomorphism<Domain, Range>>
         AdditionSignature for RingHomomorphismRangeModuleStructure<Domain, Range, Hom>
     {
-        fn add(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+        fn add<'a>(
+            self: &Arc<Self>,
+            a: impl Into<Arg<'a, Self::Elem>>,
+            b: impl Into<Arg<'a, Self::Elem>>,
+        ) -> Self::Elem
+        where
+            Self: 'a,
+            Self::Elem: 'a,
+        {
             self.hom.range().add(a, b)
         }
     }

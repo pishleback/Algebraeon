@@ -12,8 +12,21 @@ impl ZeroSignature for NaturalCanonicalStructure {
 }
 
 impl AdditionSignature for NaturalCanonicalStructure {
-    fn add(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
-        a + b
+    fn add<'a>(
+        self: &Arc<Self>,
+        a: impl Into<Arg<'a, Self::Elem>>,
+        b: impl Into<Arg<'a, Self::Elem>>,
+    ) -> Self::Elem
+    where
+        Self: 'a,
+        Self::Elem: 'a,
+    {
+        match (a.into(), b.into()) {
+            (Arg::Borrowed(a), Arg::Borrowed(b)) => a + b,
+            (Arg::Borrowed(a), Arg::Owned(b)) => a + b,
+            (Arg::Owned(a), Arg::Borrowed(b)) => a + b,
+            (Arg::Owned(a), Arg::Owned(b)) => a + b,
+        }
     }
 }
 
