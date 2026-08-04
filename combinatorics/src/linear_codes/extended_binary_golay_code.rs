@@ -191,7 +191,7 @@ static EXTENDED_BINARY_GOLAY_CODE_CACHE: OnceLock<ExtendedBinaryGolayCodeCache> 
 fn cache() -> &'static ExtendedBinaryGolayCodeCache {
     EXTENDED_BINARY_GOLAY_CODE_CACHE.get_or_init(|| {
         let points = Point::structure();
-        let space = F2::structure().free_module(points);
+        let space = F2::structure().free_module(&points);
         const Z: F2 = ZERO;
         const O: F2 = ONE;
         #[rustfmt::skip]

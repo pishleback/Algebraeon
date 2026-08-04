@@ -121,7 +121,7 @@ static TETRACODE_CACHE: OnceLock<TetracodeCache> = OnceLock::new();
 
 fn cache() -> &'static TetracodeCache {
     TETRACODE_CACHE.get_or_init(|| {
-        let space = F3::structure().free_module(PointedOrdered3Cycle::structure());
+        let space = F3::structure().free_module(&PointedOrdered3Cycle::structure());
         let subspace = space.generated_submodule(vec![
             &PointedOrdered3Cycle::structure()
                 .const_size_functions_to(&F3::structure())
