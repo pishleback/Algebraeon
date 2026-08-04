@@ -346,6 +346,17 @@ impl<Field: CharZeroFieldSignature> CharZeroRingSignature for QuaternionAlgebraS
 }
 
 impl<Field: FieldSignature> QuaternionAlgebraStructure<Field> {
+    /// The element `x + y*i + z*j + w*k`.
+    pub fn from_components(
+        &self,
+        x: Field::Elem,
+        y: Field::Elem,
+        z: Field::Elem,
+        w: Field::Elem,
+    ) -> QuaternionAlgebraElement<Field::Elem> {
+        QuaternionAlgebraElement { x, y, z, w }
+    }
+
     pub fn i(&self) -> QuaternionAlgebraElement<Field::Elem> {
         QuaternionAlgebraElement {
             x: self.base.zero(),

@@ -26,12 +26,29 @@ SumRest: SumTerm = {
 
 Product: Box<Expr> = {
     <l:Product> "*" <r:Power> => Box::new(Expr::Product(Product { left: l, right: r })),
+    // A numeric coefficient may be juxtaposed with what follows, so that "3i" means "3*i".
+    // Only a number is allowed on the left so that "xy" remains a parse error rather than
+    // silently meaning "x*y".
+    <l:Num> <r:VarPower> => Box::new(Expr::Product(Product { left: Box::new(Expr::Num(l)), right: r })),
     Power,
 };
 
 Power: Box<Expr> = {
     <l:Atom> "^" <r:Atom> => Box::new(Expr::Power(Power { base: l, exponent: r })),
     Atom,
+};
+
+// Like `Power`, but never starting with a number or a unary minus, so that "2-x" is
+// unambiguously a subtraction and "2 3" is not a product.
+VarPower: Box<Expr> = {
+    <l:VarAtom> "^" <r:Atom> => Box::new(Expr::Power(Power { base: l, exponent: r })),
+    VarAtom,
+};
+
+VarAtom: Box<Expr> = {
+    SingleVar => Box::new(Expr::Var(<>)),
+    BracedVar => Box::new(Expr::Var(<>)),
+    "(" <e:Expr> ")" => Box::new(Expr::Grouped(e)),
 };
 
 Atom: Box<Expr> = {

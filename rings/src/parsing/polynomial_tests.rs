@@ -383,11 +383,35 @@ fn test_invalid_polynomial() {
 }
 
 #[test]
-fn test_invalid_implicit_multiplication() {
-    // These should fail because implicit multiplication is not allowed
-    let result = parse_rational_polynomial("2x", "x");
-    assert!(result.is_err());
+fn test_numeric_implicit_multiplication() {
+    // A number may be juxtaposed with what follows it
+    let result = parse_rational_polynomial("2x", "x").unwrap();
+    assert_eq!(
+        result,
+        Polynomial::from_coeffs(vec![Rational::from(0), Rational::from(2)])
+    );
 
+    let result = parse_rational_polynomial("2x^2 - 3(x + 1)", "x").unwrap();
+    assert_eq!(
+        result,
+        Polynomial::from_coeffs(vec![
+            Rational::from(-3),
+            Rational::from(-3),
+            Rational::from(2)
+        ])
+    );
+
+    // Subtraction is not implicit multiplication by a negative number
+    let result = parse_rational_polynomial("2 - x", "x").unwrap();
+    assert_eq!(
+        result,
+        Polynomial::from_coeffs(vec![Rational::from(2), Rational::from(-1)])
+    );
+}
+
+#[test]
+fn test_invalid_implicit_multiplication() {
+    // These should fail because implicit multiplication is only allowed after a number
     let result = parse_rational_polynomial("xy", "x");
     assert!(result.is_err());
 
@@ -398,10 +422,6 @@ fn test_invalid_implicit_multiplication() {
     // so we can use empty variable mappings
     let empty_mapping = HashMap::new();
 
-    let result = parse_multivariate_rational_polynomial("2x", empty_mapping);
-    assert!(result.is_err());
-
-    let empty_mapping = HashMap::new();
     let result = parse_multivariate_rational_polynomial("x{foo}", empty_mapping);
     assert!(result.is_err());
 }
