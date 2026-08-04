@@ -87,12 +87,46 @@ fn test_parse_quaternion_over_finite_field() {
 }
 
 #[test]
-fn test_parse_quaternion_nonlinear() {
+fn test_parse_quaternion_products_are_not_commutative() {
     let h = hamilton();
-    // i*j is not determined by the commutative polynomial i*j, so it is rejected
-    assert!(parse_quaternion("i*j", &h).is_err());
-    assert!(parse_quaternion("i^2", &h).is_err());
-    assert!(parse_quaternion("(1 + i)*(1 + j)", &h).is_err());
+    let ij = parse_quaternion("i*j", &h).unwrap();
+    let ji = parse_quaternion("j*i", &h).unwrap();
+    assert!(h.equal(&ij, &h.k()));
+    assert!(h.equal(&ji, &h.neg(&h.k())));
+}
+
+#[test]
+fn test_parse_quaternion_powers() {
+    let h = hamilton();
+    // i^2 = j^2 = k^2 = -1 in the Hamilton quaternions
+    assert!(h.equal(&parse_quaternion("i^2", &h).unwrap(), &h.neg(&h.one())));
+    assert!(h.equal(&parse_quaternion("j^2", &h).unwrap(), &h.neg(&h.one())));
+    assert!(h.equal(&parse_quaternion("k^2", &h).unwrap(), &h.neg(&h.one())));
+    assert!(h.equal(&parse_quaternion("i^0", &h).unwrap(), &h.one()));
+    // (1 + i)^2 = 1 + 2i + i^2 = 2i
+    assert!(h.equal(
+        &parse_quaternion("(1 + i)^2", &h).unwrap(),
+        &quaternion(&h, 0, 2, 0, 0)
+    ));
+}
+
+#[test]
+fn test_parse_quaternion_expands_products() {
+    let h = hamilton();
+    // (1 + i)*(1 + j) = 1 + i + j + ij = 1 + i + j + k
+    let q = parse_quaternion("(1 + i)*(1 + j)", &h).unwrap();
+    assert!(h.equal(&q, &quaternion(&h, 1, 1, 1, 1)));
+}
+
+#[test]
+fn test_parse_quaternion_linear_in_characteristic_two() {
+    // Multiplication in characteristic 2 is not implemented, but expressions which are linear in
+    // i, j and k only need scalar multiplication
+    let f2 = ConwayFiniteFieldStructure::new(2, 1).unwrap();
+    let algebra = QuaternionAlgebraStructure::new(f2.clone(), f2.from_int(1), f2.from_int(1));
+    let q = parse_quaternion("3 + 2i + j", &algebra).unwrap();
+    let expected = algebra.from_components(f2.one(), f2.zero(), f2.one(), f2.zero());
+    assert!(algebra.equal(&q, &expected));
 }
 
 #[test]
@@ -100,6 +134,10 @@ fn test_parse_quaternion_invalid() {
     let h = hamilton();
     // only i, j and k are valid variables
     assert!(parse_quaternion("1 + x", &h).is_err());
+    // division and negative or fractional exponents are not supported
+    assert!(parse_quaternion("1/(1 + i)", &h).is_err());
+    assert!(parse_quaternion("i^-1", &h).is_err());
+    assert!(parse_quaternion("i^(1/2)", &h).is_err());
     // implicit multiplication of two variables is still not allowed
     assert!(parse_quaternion("ij", &h).is_err());
     assert!(parse_quaternion("1 +", &h).is_err());

@@ -10,6 +10,14 @@ use std::collections::HashMap;
 
 lalrpop_mod!(polynomial_parser, "/parsing/polynomial_grammar.rs");
 
+/// Parse a string into an abstract syntax tree.
+pub(super) fn parse_expression(expression_str: &str) -> Result<Expr, String> {
+    match polynomial_parser::ExprParser::new().parse(expression_str) {
+        Ok(expr) => Ok(*expr),
+        Err(e) => Err(format!("Failed to parse expression: {:?}", e)),
+    }
+}
+
 impl Expr {
     // pub fn from_string(input: String) -> Result<Self, String> {
     //     match polynomial_parser::ExprParser::new().parse(&input) {
@@ -662,10 +670,7 @@ pub fn parse_integer_polynomial(
     polynomial_str: &str,
     var: &str,
 ) -> Result<Polynomial<Integer>, String> {
-    match polynomial_parser::ExprParser::new().parse(polynomial_str) {
-        Ok(expr) => Expr::build_univariate_integer_polynomial(&expr, var),
-        Err(e) => Err(format!("Failed to parse expression: {:?}", e)),
-    }
+    Expr::build_univariate_integer_polynomial(&parse_expression(polynomial_str)?, var)
 }
 
 /// Create a polynomial with rational coefficients from a string
@@ -673,10 +678,7 @@ pub fn parse_rational_polynomial(
     polynomial_str: &str,
     var: &str,
 ) -> Result<Polynomial<Rational>, String> {
-    match polynomial_parser::ExprParser::new().parse(polynomial_str) {
-        Ok(expr) => Expr::build_univariate_rational_polynomial(&expr, var),
-        Err(e) => Err(format!("Failed to parse expression: {:?}", e)),
-    }
+    Expr::build_univariate_rational_polynomial(&parse_expression(polynomial_str)?, var)
 }
 
 /// Create a multivariate polynomial with integer coefficients from a string
@@ -684,10 +686,10 @@ pub fn parse_multivariate_integer_polynomial(
     polynomial_str: &str,
     variable_mapping: HashMap<&str, Variable>,
 ) -> Result<MultiPolynomial<Integer>, String> {
-    match polynomial_parser::ExprParser::new().parse(polynomial_str) {
-        Ok(expr) => Expr::build_multivariate_integer_polynomial(&expr, variable_mapping),
-        Err(e) => Err(format!("Failed to parse expression: {:?}", e)),
-    }
+    Expr::build_multivariate_integer_polynomial(
+        &parse_expression(polynomial_str)?,
+        variable_mapping,
+    )
 }
 
 /// Create a multivariate polynomial with integer coefficients from a string
@@ -695,8 +697,8 @@ pub fn parse_multivariate_rational_polynomial(
     polynomial_str: &str,
     variable_mapping: HashMap<&str, Variable>,
 ) -> Result<MultiPolynomial<Rational>, String> {
-    match polynomial_parser::ExprParser::new().parse(polynomial_str) {
-        Ok(expr) => Expr::build_multivariate_rational_polynomial(&expr, variable_mapping),
-        Err(e) => Err(format!("Failed to parse expression: {:?}", e)),
-    }
+    Expr::build_multivariate_rational_polynomial(
+        &parse_expression(polynomial_str)?,
+        variable_mapping,
+    )
 }
