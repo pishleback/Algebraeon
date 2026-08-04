@@ -2,13 +2,16 @@
 
 use crate::{
     linear::{
-        const_finitely_free_module::ConstFinitelyFreeModuleStructure,
+        const_finitely_free_module::{
+            ConstFinitelyFreeModuleStructure, RingToConstFinitelyFreeModuleSignature,
+        },
         monomial_transformations::MonomialTransformationsSignature,
     },
     structure::{RingSignature, TryReciprocalSignature},
 };
 use algebraeon_sets::sets::{
-    ConstSizePermutation, ConstSizePermutationsStructure, SetToConstSizePermutationsStructure,
+    ConstSizePermutation, ConstSizePermutationsStructure, Function,
+    SetToConstSizeFunctionsToSignature, SetToConstSizePermutationsStructure,
 };
 use algebraeon_structures::*;
 use std::sync::Arc;
@@ -20,7 +23,7 @@ pub struct ConstSizeMonomialTransformation<const N: usize, BasisElem, RingElem> 
     //  - Applying the permutation to the coordinates
     //  - Then applying the scalar multiplications component-wise
     permutation: ConstSizePermutation<N, BasisElem>,
-    scalars: [RingElem; N],
+    scalars: Function<N, BasisElem, RingElem>,
 }
 
 impl<const N: usize, BasisElem: MetaType, RingElem: MetaType> MetaType
@@ -58,6 +61,13 @@ impl<
 {
     pub fn new(basis: Arc<Basis>, ring: Arc<Ring>) -> Arc<Self> {
         Self { basis, ring }.into()
+    }
+
+    fn identity_scalars(self: &Arc<Self>) -> Function<N, Basis::Elem, Ring::Elem> {
+        self.basis()
+            .const_size_functions_to(self.ring())
+            .function(|_| self.ring().one())
+            .unwrap()
     }
 }
 
@@ -125,8 +135,22 @@ impl<
     fn compose(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(b));
+        let mod_fns = self.module().functions_restructure();
         let s = ConstSizeMonomialTransformation {
-            scalars: todo!(),
+            scalars: mod_fns
+                .function(|i| {
+                    self.ring().mul(
+                        mod_fns.image(&a.scalars, i),
+                        mod_fns.image(
+                            &b.scalars,
+                            &self
+                                .basis()
+                                .const_size_permutations()
+                                .preimage(&a.permutation, i),
+                        ),
+                    )
+                })
+                .unwrap(),
             permutation: self
                 .basis()
                 .const_size_permutations()
@@ -181,7 +205,7 @@ impl<
 {
     fn identity(self: &Arc<Self>) -> Self::Elem {
         ConstSizeMonomialTransformation {
-            scalars: std::array::from_fn(|_| self.ring().one()),
+            scalars: self.identity_scalars(),
             permutation: self.basis().const_size_permutations().identity(),
         }
     }
@@ -235,8 +259,22 @@ impl<
 > GroupSignature for ConstSizeMonomialTransformationsStructure<N, Basis, Ring>
 {
     fn inverse(self: &Arc<Self>, a: &Self::Elem) -> Self::Elem {
+        let mod_fns = self.module().functions_restructure();
         ConstSizeMonomialTransformation {
-            scalars: todo!(),
+            scalars: self
+                .module()
+                .functions_restructure()
+                .output_const_size_permutation_action()
+                .apply(
+                    &self.basis_permutations().inverse(&a.permutation),
+                    &mod_fns
+                        .function(|i| {
+                            self.ring()
+                                .try_reciprocal(mod_fns.image(&a.scalars, i))
+                                .unwrap()
+                        })
+                        .unwrap(),
+                ),
             permutation: self
                 .basis()
                 .const_size_permutations()
@@ -253,97 +291,193 @@ impl<
     for ConstSizeMonomialTransformationsStructure<N, Basis, Ring>
 {
     type Permutations = ConstSizePermutationsStructure<N, Basis>;
+    type FinitelyFreeModule = ConstFinitelyFreeModuleStructure<N, Basis, Ring>;
 
     fn basis(self: &Arc<Self>) -> &Arc<Basis> {
         &self.basis
+    }
+
+    fn basis_permutations(self: &Arc<Self>) -> Arc<Self::Permutations> {
+        self.basis().const_size_permutations()
     }
 
     fn ring(self: &Arc<Self>) -> &Arc<Ring> {
         &self.ring
     }
 
+    fn module(self: &Arc<Self>) -> Arc<Self::FinitelyFreeModule> {
+        self.ring().free_module(self.basis())
+    }
+
     fn new_permutation(
         self: &Arc<Self>,
         permutation: &<Self::Permutations as SetSignature>::Elem,
     ) -> Self::Elem {
-        todo!()
+        debug_assert!(self.basis_permutations().is_element(permutation));
+        ConstSizeMonomialTransformation {
+            permutation: permutation.clone(),
+            scalars: self.identity_scalars(),
+        }
     }
 
-    fn new_scalars(self: &Arc<Self>, scalars: Vec<Ring::Elem>) -> Self::Elem {
-        todo!()
+    fn new_scalars(
+        self: &Arc<Self>,
+        scalars: &<Self::FinitelyFreeModule as SetSignature>::Elem,
+    ) -> Self::Elem {
+        debug_assert!(self.module().is_element(scalars));
+        ConstSizeMonomialTransformation {
+            permutation: self.basis_permutations().identity(),
+            scalars: scalars.clone(),
+        }
     }
 
     fn permutation_part(
         self: &Arc<Self>,
         monomial_transformation: &Self::Elem,
     ) -> <Self::Permutations as SetSignature>::Elem {
-        todo!()
+        debug_assert!(self.is_element(monomial_transformation));
+        monomial_transformation.permutation.clone()
     }
 
     fn permutation_then_scalars(
         self: &Arc<Self>,
         monomial_transformation: &Self::Elem,
-    ) -> (<Self::Permutations as SetSignature>::Elem, Vec<Ring::Elem>) {
-        todo!()
+    ) -> (
+        <Self::FinitelyFreeModule as SetSignature>::Elem,
+        <Self::Permutations as SetSignature>::Elem,
+    ) {
+        debug_assert!(self.is_element(monomial_transformation));
+        (
+            monomial_transformation.scalars.clone(),
+            monomial_transformation.permutation.clone(),
+        )
     }
 
     fn scalars_then_permutation(
         self: &Arc<Self>,
         monomial_transformation: &Self::Elem,
-    ) -> (Vec<Ring::Elem>, <Self::Permutations as SetSignature>::Elem) {
-        todo!()
+    ) -> (
+        <Self::Permutations as SetSignature>::Elem,
+        <Self::FinitelyFreeModule as SetSignature>::Elem,
+    ) {
+        debug_assert!(self.is_element(monomial_transformation));
+        (
+            monomial_transformation.permutation.clone(),
+            self.module()
+                .functions_restructure()
+                .output_const_size_permutation_action()
+                .apply(
+                    &self
+                        .basis_permutations()
+                        .inverse(&monomial_transformation.permutation),
+                    &monomial_transformation.scalars,
+                ),
+        )
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::{
+        finite_fields::quaternary_field::QuaternaryField,
+        linear::{
+            const_finitely_free_module::RingToConstFinitelyFreeModuleSignature,
+            monomial_transformations::MonomialTransformationsSignature,
+        },
+    };
     use algebraeon_sets::sets::{
         ConstSizeEnumeratedFiniteSet, ConstSizeEnumeratedFiniteSetStructure,
         SetToConstSizePermutationsStructure,
     };
     use algebraeon_structures::{
-        MetaCompositionSignature, MetaPermutationsSignature, MetaType, PermutationsSignature,
-    };
-
-    use crate::{
-        finite_fields::quaternary_field::QuaternaryField,
-        linear::const_finitely_free_module::RingToConstFinitelyFreeModuleSignature,
+        CompositionSignature, EqSignature, GroupSignature, IdentitySignature, MetaType,
+        PermutationsSignature,
     };
 
     #[test]
     fn monomial_transformations_group_operations_and_decomposition() {
         let f4 = QuaternaryField::structure();
-        let basis = ConstSizeEnumeratedFiniteSetStructure::<4>::new();
+        let basis = ConstSizeEnumeratedFiniteSetStructure::<3>::new();
         let space = f4.free_module(&basis);
         let mon_trans = space.monomial_transformations();
 
-        let b = |i: usize| -> ConstSizeEnumeratedFiniteSet<4> { i.try_into().unwrap() };
+        let b = |i: usize| -> ConstSizeEnumeratedFiniteSet<3> { i.try_into().unwrap() };
 
-        let perm1 = basis
-            .const_size_permutations()
-            .new_cycle(vec![b(0), b(1), b(2)])
-            .unwrap();
+        let perm = mon_trans.new_permutation(
+            &basis
+                .const_size_permutations()
+                .new_cycle(vec![b(0), b(1), b(2)])
+                .unwrap(),
+        );
 
-        let perm2 = basis
-            .const_size_permutations()
-            .new_cycle(vec![b(1), b(2), b(3)])
-            .unwrap();
+        let scalars0 = mon_trans.new_scalars(
+            &[
+                QuaternaryField::One,
+                QuaternaryField::Alpha,
+                QuaternaryField::Beta,
+            ]
+            .into(),
+        );
 
-        let scalars1 = [
-            QuaternaryField::One,
-            QuaternaryField::One,
-            QuaternaryField::Alpha,
-            QuaternaryField::Alpha,
-        ];
+        let scalars1 = mon_trans.new_scalars(
+            &[
+                QuaternaryField::Beta,
+                QuaternaryField::One,
+                QuaternaryField::Alpha,
+            ]
+            .into(),
+        );
 
-        let scalars2 = [
-            QuaternaryField::Zero,
-            QuaternaryField::Beta,
-            QuaternaryField::Alpha,
-            QuaternaryField::One,
-        ];
+        let scalars2 = mon_trans.new_scalars(
+            &[
+                QuaternaryField::Alpha,
+                QuaternaryField::Beta,
+                QuaternaryField::One,
+            ]
+            .into(),
+        );
 
-        println!("{:?}", perm1.compose(&perm2).disjoint_cycles());
-        todo!();
+        for scalars in [&scalars0, &scalars1, &scalars2] {
+            assert!(
+                mon_trans.equal(
+                    &mon_trans.new_scalars(
+                        &mon_trans
+                            .permutation_then_scalars(&mon_trans.compose(scalars, &perm))
+                            .0
+                    ),
+                    scalars
+                )
+            );
+        }
+
+        for scalars in [&scalars0, &scalars1, &scalars2] {
+            assert!(
+                mon_trans.equal(
+                    &mon_trans.new_scalars(
+                        &mon_trans
+                            .scalars_then_permutation(&mon_trans.compose(&perm, scalars))
+                            .1
+                    ),
+                    scalars
+                )
+            );
+        }
+
+        assert!(
+            mon_trans.equal(
+                &mon_trans.new_scalars(
+                    &mon_trans
+                        .permutation_then_scalars(&mon_trans.compose(&perm, &scalars0))
+                        .0
+                ),
+                &scalars1
+            )
+        );
+
+        for scalars in [&scalars0, &scalars1, &scalars2] {
+            let t = mon_trans.compose(scalars, &perm);
+            let t_inv = mon_trans.inverse(&t);
+            assert!(mon_trans.equal(&mon_trans.identity(), &mon_trans.compose(&t, &t_inv)));
+        }
     }
 }

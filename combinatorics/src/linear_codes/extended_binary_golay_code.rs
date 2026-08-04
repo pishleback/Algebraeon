@@ -406,7 +406,7 @@ mod tests {
         // The right action given by precomposition with domain elements moves labels according to the inverse permutation
         assert_eq!(
             LabelledPoints::<F2>::structure()
-                .domain_const_size_permutation_action()
+                .domain_precomposition_const_size_permutation_action()
                 .apply(&cycle012, &a),
             c
         );
@@ -414,8 +414,7 @@ mod tests {
         // The left action given by precomposition of the inverse with domain elements moves labels according to the permutation
         assert_eq!(
             LabelledPoints::<F2>::structure()
-                .domain_const_size_permutation_action()
-                .opposite()
+                .output_const_size_permutation_action()
                 .apply(&cycle012, &a),
             b
         );
