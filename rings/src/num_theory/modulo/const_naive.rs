@@ -172,7 +172,17 @@ impl<const N: usize> ZeroSignature for ModuloCanonicalStructure<N> {
 }
 
 impl<const N: usize> AdditionSignature for ModuloCanonicalStructure<N> {
-    fn add(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn add<'a>(
+        self: &Arc<Self>,
+        a: impl Into<Arg<'a, Self::Elem>>,
+        b: impl Into<Arg<'a, Self::Elem>>,
+    ) -> Self::Elem
+    where
+        Self: 'a,
+        Self::Elem: 'a,
+    {
+        let a = a.into();
+        let b = b.into();
         Modulo { x: (a.x + b.x) % N }
     }
 }
