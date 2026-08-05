@@ -390,8 +390,8 @@ mod tests {
         SetToConstSizePermutationsStructure,
     };
     use algebraeon_structures::{
-        CompositionSignature, EqSignature, GroupSignature, IdentitySignature, MetaType,
-        PermutationsSignature,
+        CompositionSignature, EqSignature, GroupSignature, IdentitySignature,
+        LeftGroupActionSignature, MetaType, PermutationsSignature,
     };
 
     #[test]
@@ -479,5 +479,42 @@ mod tests {
             let t_inv = mon_trans.inverse(&t);
             assert!(mon_trans.equal(&mon_trans.identity(), &mon_trans.compose(&t, &t_inv)));
         }
+    }
+
+    #[test]
+    fn monomial_transformation_application() {
+        type F4 = QuaternaryField;
+
+        let f4 = F4::structure();
+        let basis = ConstSizeEnumeratedFiniteSetStructure::<3>::new();
+        let space = f4.free_module(&basis);
+        let mon_trans = space.monomial_transformations();
+
+        let b = |i: usize| -> ConstSizeEnumeratedFiniteSet<3> { i.try_into().unwrap() };
+
+        let trans = mon_trans.new_permutation_then_scalars(
+            &basis
+                .const_size_permutations()
+                .new_cycle(vec![b(0), b(1), b(2)])
+                .unwrap(),
+            &[F4::Alpha, F4::Alpha, F4::Beta].into(),
+        );
+
+        let mon_trans_action = space.monomial_transformation_action();
+
+        assert!(space.equal(
+            &mon_trans_action.apply(&trans, &[F4::One, F4::Zero, F4::Zero].into()),
+            &[F4::Zero, F4::Alpha, F4::Zero].into(),
+        ));
+
+        assert!(space.equal(
+            &mon_trans_action.apply(&trans, &[F4::Zero, F4::One, F4::Zero].into()),
+            &[F4::Zero, F4::Zero, F4::Beta].into(),
+        ));
+
+        assert!(space.equal(
+            &mon_trans_action.apply(&trans, &[F4::Zero, F4::Zero, F4::One].into()),
+            &[F4::Alpha, F4::Zero, F4::Zero].into(),
+        ));
     }
 }
