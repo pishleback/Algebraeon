@@ -126,6 +126,27 @@ impl Expr {
         vars
     }
 
+    /// Whether any factors in the expression were juxtaposed rather than separated by "*".
+    pub fn contains_implicit_multiplication(&self) -> bool {
+        match self {
+            Expr::Var(_) | Expr::Num(_) => false,
+            Expr::Sum(s) => s
+                .terms
+                .iter()
+                .any(|term| term.term.contains_implicit_multiplication()),
+            Expr::Product(p) => {
+                p.implicit
+                    || p.left.contains_implicit_multiplication()
+                    || p.right.contains_implicit_multiplication()
+            }
+            Expr::Power(p) => {
+                p.base.contains_implicit_multiplication()
+                    || p.exponent.contains_implicit_multiplication()
+            }
+            Expr::Grouped(e) => e.contains_implicit_multiplication(),
+        }
+    }
+
     pub fn add_variables(&self, vars: &mut HashSet<String>) {
         match self {
             Expr::Var(v) => {
@@ -168,6 +189,8 @@ impl fmt::Display for Expr {
 pub struct Product {
     pub left: Box<Expr>,
     pub right: Box<Expr>,
+    /// Whether the factors were juxtaposed, as in "3x", rather than separated by "*".
+    pub implicit: bool,
 }
 
 impl Product {

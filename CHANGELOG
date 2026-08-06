@@ -20,6 +20,8 @@ All notable changes to this project will be documented in this file.
  - Added methods for working with the Hexacode, Tetracode, and Extended Binary Golay Code.
  - Moved all structure types into `Arc`s to simplify code.
  - Added Van-Hoeij knapsack algorithm for factoring integer polynomials.
+ - Added parsing of expressions in an algebra over a field, respecting the order of the factors of each product so that algebras with non-commutative multiplication are supported.
+ - Added parsing of quaternion algebra elements from strings such as `"2+3i+5j-2k"`.
 
 ## [0.0.17] - 2026-03-06
 

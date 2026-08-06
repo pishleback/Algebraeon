@@ -24,3 +24,30 @@ let k = h.mul(&i, &j);
 assert!(h.equal(&k, &h.k()));
 assert!(h.equal(&h.mul(&j, &i), &h.neg(&k)));
 ```
+
+Elements can also be written as strings and read with `parse_quaternion`. The factors of a product are multiplied in the order they are written, so `"i*j"` and `"j*i"` give different elements.
+
+```rust
+use algebraeon::structures::Rational;
+use algebraeon::rings::parsing::parse_quaternion;
+use algebraeon::rings::quaternion_algebra::QuaternionAlgebraStructure;
+use algebraeon::rings::structure::*;
+use algebraeon::structures::{EqSignature, MetaType};
+
+let h = QuaternionAlgebraStructure::new(
+    Rational::structure(),
+    -Rational::ONE,
+    -Rational::TWO,
+);
+
+let q = parse_quaternion("2 + 3i + 5j - 2k", &h).unwrap();
+assert!(h.equal(&q, &h.from_components(
+    Rational::from(2),
+    Rational::from(3),
+    Rational::from(5),
+    Rational::from(-2),
+)));
+
+assert!(h.equal(&parse_quaternion("i*j", &h).unwrap(), &h.k()));
+assert!(h.equal(&parse_quaternion("j*i", &h).unwrap(), &h.neg(&h.k())));
+```
