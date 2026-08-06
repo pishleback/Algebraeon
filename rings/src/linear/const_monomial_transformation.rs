@@ -265,8 +265,8 @@ impl<
                 .module()
                 .functions_restructure()
                 .output_const_size_permutation_action()
-                .apply(
-                    &self.basis_permutations().inverse(&a.permutation),
+                .apply_inverse(
+                    &a.permutation,
                     &mod_fns
                         .function(|i| {
                             self.ring()
@@ -366,10 +366,8 @@ impl<
             self.module()
                 .functions_restructure()
                 .output_const_size_permutation_action()
-                .apply(
-                    &self
-                        .basis_permutations()
-                        .inverse(&monomial_transformation.permutation),
+                .apply_inverse(
+                    &monomial_transformation.permutation,
                     &monomial_transformation.scalars,
                 ),
         )

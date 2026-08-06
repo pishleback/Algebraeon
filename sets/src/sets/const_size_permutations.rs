@@ -410,6 +410,58 @@ impl<const N: usize, Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSigna
 {
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct PermutationActionStructure<
+    const N: usize,
+    Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
+> {
+    set: Arc<Set>,
+}
+
+impl<const N: usize, Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature>
+    PermutationActionStructure<N, Set>
+{
+    fn new(set: Arc<Set>) -> Arc<Self> {
+        Self { set }.into()
+    }
+}
+
+pub trait SetToConstSizePermutationAction<const N: usize>:
+    ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature
+{
+    fn const_size_permutation_action(
+        self: Arc<Self>,
+    ) -> Arc<impl LeftGroupActionSignature<ConstSizePermutationsStructure<N, Self>, Self>> {
+        PermutationActionStructure::new(self)
+    }
+}
+impl<const N: usize, Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature>
+    SetToConstSizePermutationAction<N> for Set
+{
+}
+
+impl<const N: usize, Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature> Signature
+    for PermutationActionStructure<N, Set>
+{
+}
+
+impl<const N: usize, Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature>
+    LeftGroupActionSignature<ConstSizePermutationsStructure<N, Set>, Set>
+    for PermutationActionStructure<N, Set>
+{
+    fn group(self: &Arc<Self>) -> Arc<ConstSizePermutationsStructure<N, Set>> {
+        self.set.const_size_permutations()
+    }
+
+    fn set(self: &Arc<Self>) -> Arc<Set> {
+        self.set.clone()
+    }
+
+    fn apply(self: &Arc<Self>, g: &ConstSizePermutation<N, Set::Elem>, x: &Set::Elem) -> Set::Elem {
+        self.group().image(g, x)
+    }
+}
+
 #[cfg(test)]
 mod partition_tests {
     use super::*;

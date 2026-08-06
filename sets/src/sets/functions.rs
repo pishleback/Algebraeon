@@ -274,12 +274,12 @@ impl<
 > RightGroupActionSignature<FunctionsStructure<Domain, Range>, DomainPerms>
     for RightPermutationActionOnFunctionsStructure<Domain, Range, DomainPerms>
 {
-    fn group(self: &Arc<Self>) -> &Arc<DomainPerms> {
-        &self.domain_perms
+    fn group(self: &Arc<Self>) -> Arc<DomainPerms> {
+        self.domain_perms.clone()
     }
 
-    fn set(self: &Arc<Self>) -> &Arc<FunctionsStructure<Domain, Range>> {
-        &self.functions
+    fn set(self: &Arc<Self>) -> Arc<FunctionsStructure<Domain, Range>> {
+        self.functions.clone()
     }
 
     fn apply(
@@ -352,12 +352,12 @@ impl<
 > LeftGroupActionSignature<RangePerms, FunctionsStructure<Domain, Range>>
     for LeftPermutationActionOnFunctionsStructure<Domain, Range, RangePerms>
 {
-    fn group(self: &Arc<Self>) -> &Arc<RangePerms> {
-        &self.range_perms
+    fn group(self: &Arc<Self>) -> Arc<RangePerms> {
+        self.range_perms.clone()
     }
 
-    fn set(self: &Arc<Self>) -> &Arc<FunctionsStructure<Domain, Range>> {
-        &self.functions
+    fn set(self: &Arc<Self>) -> Arc<FunctionsStructure<Domain, Range>> {
+        self.functions.clone()
     }
 
     fn apply(

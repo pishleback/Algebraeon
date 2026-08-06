@@ -179,6 +179,8 @@ impl CountableSetSignature for QuaternaryFieldCanonicalStructure {
 
 impl FiniteSetSignature for QuaternaryFieldCanonicalStructure {}
 
+impl ConstSizeFiniteSetSignature<4> for QuaternaryFieldCanonicalStructure {}
+
 impl OrderedFiniteSetSignature for QuaternaryFieldCanonicalStructure {
     fn list_all_elements_ordered(self: &Arc<Self>) -> Vec<Self::Elem> {
         vec![

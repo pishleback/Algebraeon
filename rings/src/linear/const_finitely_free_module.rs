@@ -395,12 +395,12 @@ impl<
         ConstFinitelyFreeModuleStructure<N, Basis, Ring>,
     > for LeftMonomialTransformationActionOnConstFinitelyFreeModuleStructure<N, Basis, Ring>
 {
-    fn group(self: &Arc<Self>) -> &Arc<ConstSizeMonomialTransformationsStructure<N, Basis, Ring>> {
-        &self.group
+    fn group(self: &Arc<Self>) -> Arc<ConstSizeMonomialTransformationsStructure<N, Basis, Ring>> {
+        self.group.clone()
     }
 
-    fn set(self: &Arc<Self>) -> &Arc<ConstFinitelyFreeModuleStructure<N, Basis, Ring>> {
-        &self.module
+    fn set(self: &Arc<Self>) -> Arc<ConstFinitelyFreeModuleStructure<N, Basis, Ring>> {
+        self.module.clone()
     }
 
     fn apply(
