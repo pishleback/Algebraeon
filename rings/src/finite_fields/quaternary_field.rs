@@ -268,6 +268,16 @@ impl QuaternaryField {
     }
 }
 
+impl GaloisFieldWithGroupSignature for QuaternaryFieldCanonicalStructure {
+    type GaloisGroup = C2CanonicalStructure;
+
+    fn galois_group_action(
+        self: Arc<Self>,
+    ) -> Arc<impl LeftGroupActionSignature<Self::GaloisGroup, Self>> {
+        QuaternaryField::c2_galois_action()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -876,6 +876,16 @@ pub trait FiniteFieldSignature: FieldSignature + FiniteUnitsSignature + FiniteSe
     fn characteristic_and_power(self: &Arc<Self>) -> (Natural, Natural);
 }
 
+/// For a field which is Galois over its principal subfield this trait gives access to its Galois group
+#[signature_meta_trait]
+pub trait GaloisFieldWithGroupSignature: FieldSignature {
+    type GaloisGroup: GroupSignature;
+
+    fn galois_group_action(
+        self: Arc<Self>,
+    ) -> Arc<impl LeftGroupActionSignature<Self::GaloisGroup, Self>>;
+}
+
 //is a subset of the complex numbers
 #[signature_meta_trait]
 pub trait ComplexSubsetSignature: RinglikeSpecializationSignature {
