@@ -1093,7 +1093,7 @@ where
     fn list_all_elements(self: &Arc<Self>) -> Vec<Self::Elem> {
         self.monoid()
             .coeff_ring()
-            .units()
+            .units_group()
             .list_all_elements()
             .into_iter()
             .map(Polynomial::constant)

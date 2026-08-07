@@ -5,9 +5,13 @@ use crate::{
         const_finitely_free_module::{
             ConstFinitelyFreeModuleStructure, RingToConstFinitelyFreeModuleSignature,
         },
+        const_size_functions_to_ring_units_group::{
+            ConstSizeFunctionsToRingUnitsGroup,
+            ConstSizeLeftPermutationActionOnFunctionsToRingUnitsGroupStructure,
+        },
         monomial_transformations::MonomialTransformationsSignature,
     },
-    structure::{RingSignature, TryReciprocalSignature},
+    structure::{GaloisFieldWithGroupSignature, RingSignature, TryReciprocalSignature},
 };
 use algebraeon_sets::sets::{
     ConstSizePermutation, ConstSizePermutationsStructure, Function,
@@ -22,8 +26,33 @@ pub struct ConstSizeMonomialTransformation<const N: usize, BasisElem, RingElem> 
     // Represents the operations of:
     //  - Applying the permutation to the coordinates
     //  - Then applying the scalar multiplications component-wise
-    permutation: ConstSizePermutation<N, BasisElem>,
-    scalars: Function<N, BasisElem, RingElem>,
+    repr:
+        SemidirectProductElem<Function<N, BasisElem, RingElem>, ConstSizePermutation<N, BasisElem>>,
+}
+
+impl<const N: usize, BasisElem, RingElem>
+    From<
+        SemidirectProductElem<Function<N, BasisElem, RingElem>, ConstSizePermutation<N, BasisElem>>,
+    > for ConstSizeMonomialTransformation<N, BasisElem, RingElem>
+{
+    fn from(
+        repr: SemidirectProductElem<
+            Function<N, BasisElem, RingElem>,
+            ConstSizePermutation<N, BasisElem>,
+        >,
+    ) -> Self {
+        Self { repr }
+    }
+}
+
+impl<const N: usize, BasisElem, RingElem> ConstSizeMonomialTransformation<N, BasisElem, RingElem> {
+    pub fn scalars(&self) -> &Function<N, BasisElem, RingElem> {
+        &self.repr.n
+    }
+
+    pub fn permutation(&self) -> &ConstSizePermutation<N, BasisElem> {
+        &self.repr.h
+    }
 }
 
 impl<const N: usize, BasisElem: MetaType, RingElem: MetaType> MetaType
@@ -63,11 +92,21 @@ impl<
         Self { basis, ring }.into()
     }
 
-    fn identity_scalars(self: &Arc<Self>) -> Function<N, Basis::Elem, Ring::Elem> {
-        self.basis()
-            .const_size_functions_to(self.ring())
-            .function(|_| self.ring().one())
-            .unwrap()
+    fn semidirect_product_structure(
+        self: &Arc<Self>,
+    ) -> Arc<
+        SemidirectProductStructure<
+            ConstSizeFunctionsToRingUnitsGroup<N, Basis, Ring>,
+            ConstSizePermutationsStructure<N, Basis>,
+            ConstSizeLeftPermutationActionOnFunctionsToRingUnitsGroupStructure<N, Basis, Ring>,
+        >,
+    > {
+        SemidirectProductStructure::new(
+            ConstSizeLeftPermutationActionOnFunctionsToRingUnitsGroupStructure::new(
+                self.basis.clone(),
+                self.ring.clone(),
+            ),
+        )
     }
 }
 
@@ -101,13 +140,8 @@ impl<
     type Elem = ConstSizeMonomialTransformation<N, Basis::Elem, Ring::Elem>;
 
     fn validate_element(self: &Arc<Self>, x: &Self::Elem) -> Result<(), String> {
-        self.basis
-            .const_size_permutations()
-            .validate_element(&x.permutation)?;
-        if !x.scalars.iter().all(|lambda| self.ring.is_unit(lambda)) {
-            return Err("Scalars are not all units".to_string());
-        }
-        Ok(())
+        self.semidirect_product_structure()
+            .validate_element(&x.repr)
     }
 }
 
@@ -118,11 +152,7 @@ impl<
 > EqSignature for ConstSizeMonomialTransformationsStructure<N, Basis, Ring>
 {
     fn equal(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> bool {
-        (0..N).all(|i| self.ring().equal(&a.scalars[i], &b.scalars[i]))
-            && self
-                .basis()
-                .const_size_permutations()
-                .equal(&a.permutation, &b.permutation)
+        self.semidirect_product_structure().equal(&a.repr, &b.repr)
     }
 }
 
@@ -135,27 +165,10 @@ impl<
     fn compose(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
         debug_assert!(self.is_element(a));
         debug_assert!(self.is_element(b));
-        let mod_fns = self.module().functions_restructure();
-        let s = ConstSizeMonomialTransformation {
-            scalars: mod_fns
-                .function(|i| {
-                    self.ring().mul(
-                        mod_fns.image(&a.scalars, i),
-                        mod_fns.image(
-                            &b.scalars,
-                            &self
-                                .basis()
-                                .const_size_permutations()
-                                .preimage(&a.permutation, i),
-                        ),
-                    )
-                })
-                .unwrap(),
-            permutation: self
-                .basis()
-                .const_size_permutations()
-                .compose(&a.permutation, &b.permutation),
-        };
+        let s = self
+            .semidirect_product_structure()
+            .compose(&a.repr, &b.repr)
+            .into();
         debug_assert!(self.is_element(&s));
         s
     }
@@ -177,7 +190,9 @@ impl<
     for ConstSizeMonomialTransformationsStructure<N, Basis, Ring>
 {
     fn try_left_difference(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<Self::Elem> {
-        Some(self.compose(&self.inverse(b), a))
+        self.semidirect_product_structure()
+            .try_left_difference(&a.repr, &b.repr)
+            .map(|repr| repr.into())
     }
 }
 
@@ -193,7 +208,9 @@ impl<
         a: &Self::Elem,
         b: &Self::Elem,
     ) -> Option<Self::Elem> {
-        Some(self.compose(a, &self.inverse(b)))
+        self.semidirect_product_structure()
+            .try_right_difference(&a.repr, &b.repr)
+            .map(|repr| repr.into())
     }
 }
 
@@ -204,10 +221,7 @@ impl<
 > IdentitySignature for ConstSizeMonomialTransformationsStructure<N, Basis, Ring>
 {
     fn identity(self: &Arc<Self>) -> Self::Elem {
-        ConstSizeMonomialTransformation {
-            scalars: self.identity_scalars(),
-            permutation: self.basis().const_size_permutations().identity(),
-        }
+        self.semidirect_product_structure().identity().into()
     }
 }
 
@@ -226,7 +240,9 @@ impl<
 > TryLeftInverseSignature for ConstSizeMonomialTransformationsStructure<N, Basis, Ring>
 {
     fn try_left_inverse(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
-        Some(self.inverse(a))
+        self.semidirect_product_structure()
+            .try_left_inverse(&a.repr)
+            .map(|repr| repr.into())
     }
 }
 
@@ -237,7 +253,9 @@ impl<
 > TryRightInverseSignature for ConstSizeMonomialTransformationsStructure<N, Basis, Ring>
 {
     fn try_right_inverse(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
-        Some(self.inverse(a))
+        self.semidirect_product_structure()
+            .try_right_inverse(&a.repr)
+            .map(|repr| repr.into())
     }
 }
 
@@ -248,7 +266,9 @@ impl<
 > TryInverseSignature for ConstSizeMonomialTransformationsStructure<N, Basis, Ring>
 {
     fn try_inverse(self: &Arc<Self>, a: &Self::Elem) -> Option<Self::Elem> {
-        Some(self.inverse(a))
+        self.semidirect_product_structure()
+            .try_inverse(&a.repr)
+            .map(|repr| repr.into())
     }
 }
 
@@ -259,27 +279,10 @@ impl<
 > GroupSignature for ConstSizeMonomialTransformationsStructure<N, Basis, Ring>
 {
     fn inverse(self: &Arc<Self>, a: &Self::Elem) -> Self::Elem {
-        let mod_fns = self.module().functions_restructure();
-        ConstSizeMonomialTransformation {
-            scalars: self
-                .module()
-                .functions_restructure()
-                .output_const_size_permutation_action()
-                .apply_inverse(
-                    &a.permutation,
-                    &mod_fns
-                        .function(|i| {
-                            self.ring()
-                                .try_reciprocal(mod_fns.image(&a.scalars, i))
-                                .unwrap()
-                        })
-                        .unwrap(),
-                ),
-            permutation: self
-                .basis()
-                .const_size_permutations()
-                .inverse(&a.permutation),
-        }
+        debug_assert!(self.is_element(a));
+        let s = self.semidirect_product_structure().inverse(&a.repr).into();
+        debug_assert!(self.is_element(&s));
+        s
     }
 }
 
@@ -314,10 +317,9 @@ impl<
         permutation: &<Self::Permutations as SetSignature>::Elem,
     ) -> Self::Elem {
         debug_assert!(self.basis_permutations().is_element(permutation));
-        ConstSizeMonomialTransformation {
-            permutation: permutation.clone(),
-            scalars: self.identity_scalars(),
-        }
+        self.semidirect_product_structure()
+            .new_h(permutation)
+            .into()
     }
 
     fn new_scalars(
@@ -325,10 +327,27 @@ impl<
         scalars: &<Self::FinitelyFreeModule as SetSignature>::Elem,
     ) -> Self::Elem {
         debug_assert!(self.module().is_element(scalars));
-        ConstSizeMonomialTransformation {
-            permutation: self.basis_permutations().identity(),
-            scalars: scalars.clone(),
-        }
+        self.semidirect_product_structure().new_n(scalars).into()
+    }
+
+    fn new_permutation_then_scalars(
+        self: &Arc<Self>,
+        scalars: &<Self::FinitelyFreeModule as SetSignature>::Elem,
+        permutation: &<Self::Permutations as SetSignature>::Elem,
+    ) -> Self::Elem {
+        self.semidirect_product_structure()
+            .new_n_compose_h(scalars, permutation)
+            .into()
+    }
+
+    fn new_scalars_then_permutation(
+        self: &Arc<Self>,
+        permutation: &<Self::Permutations as SetSignature>::Elem,
+        scalars: &<Self::FinitelyFreeModule as SetSignature>::Elem,
+    ) -> Self::Elem {
+        self.semidirect_product_structure()
+            .new_h_compose_n(permutation, scalars)
+            .into()
     }
 
     fn permutation_part(
@@ -336,7 +355,8 @@ impl<
         monomial_transformation: &Self::Elem,
     ) -> <Self::Permutations as SetSignature>::Elem {
         debug_assert!(self.is_element(monomial_transformation));
-        monomial_transformation.permutation.clone()
+        self.semidirect_product_structure()
+            .h_quotient_project(&monomial_transformation.repr)
     }
 
     fn permutation_then_scalars(
@@ -347,10 +367,8 @@ impl<
         <Self::Permutations as SetSignature>::Elem,
     ) {
         debug_assert!(self.is_element(monomial_transformation));
-        (
-            monomial_transformation.scalars.clone(),
-            monomial_transformation.permutation.clone(),
-        )
+        self.semidirect_product_structure()
+            .n_compose_h(&monomial_transformation.repr)
     }
 
     fn scalars_then_permutation(
@@ -361,35 +379,85 @@ impl<
         <Self::FinitelyFreeModule as SetSignature>::Elem,
     ) {
         debug_assert!(self.is_element(monomial_transformation));
-        (
-            monomial_transformation.permutation.clone(),
-            self.module()
-                .functions_restructure()
-                .output_const_size_permutation_action()
-                .apply_inverse(
-                    &monomial_transformation.permutation,
-                    &monomial_transformation.scalars,
-                ),
+        self.semidirect_product_structure()
+            .h_compose_n(&monomial_transformation.repr)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConstSizeGaloisActionOnMonomialTransformationsStructure<
+    const N: usize,
+    Basis: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
+    Field: GaloisFieldWithGroupSignature + TryReciprocalSignature,
+> {
+    basis: Arc<Basis>,
+    field: Arc<Field>,
+}
+
+impl<
+    const N: usize,
+    Basis: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
+    Field: GaloisFieldWithGroupSignature + TryReciprocalSignature,
+> ConstSizeGaloisActionOnMonomialTransformationsStructure<N, Basis, Field>
+{
+    pub fn new(basis: Arc<Basis>, field: Arc<Field>) -> Arc<Self> {
+        Self { basis, field }.into()
+    }
+}
+
+impl<
+    const N: usize,
+    Basis: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
+    Field: GaloisFieldWithGroupSignature + TryReciprocalSignature,
+> Signature for ConstSizeGaloisActionOnMonomialTransformationsStructure<N, Basis, Field>
+{
+}
+
+impl<
+    const N: usize,
+    Basis: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
+    Field: GaloisFieldWithGroupSignature + TryReciprocalSignature,
+>
+    LeftGroupActionSignature<
+        Field::GaloisGroup,
+        ConstSizeMonomialTransformationsStructure<N, Basis, Field>,
+    > for ConstSizeGaloisActionOnMonomialTransformationsStructure<N, Basis, Field>
+{
+    fn group(self: &Arc<Self>) -> Arc<Field::GaloisGroup> {
+        self.field.clone().galois_group_action().group()
+    }
+
+    fn set(self: &Arc<Self>) -> Arc<ConstSizeMonomialTransformationsStructure<N, Basis, Field>> {
+        self.field
+            .free_module(&self.basis)
+            .monomial_transformations()
+    }
+
+    fn apply(
+        self: &Arc<Self>,
+        g: &<Field::GaloisGroup as SetSignature>::Elem,
+        x: &ConstSizeMonomialTransformation<N, Basis::Elem, Field::Elem>,
+    ) -> ConstSizeMonomialTransformation<N, Basis::Elem, Field::Elem> {
+        let fns = self.basis.const_size_functions_to(&self.field);
+        self.set().new_scalars_then_permutation(
+            x.permutation(),
+            &fns.function(|i| {
+                self.field
+                    .clone()
+                    .galois_group_action()
+                    .apply(g, fns.image(x.scalars(), i))
+            })
+            .unwrap(),
         )
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        finite_fields::quaternary_field::QuaternaryField,
-        linear::{
-            const_finitely_free_module::RingToConstFinitelyFreeModuleSignature,
-            monomial_transformations::MonomialTransformationsSignature,
-        },
-    };
+    use super::*;
+    use crate::finite_fields::quaternary_field::QuaternaryField;
     use algebraeon_sets::sets::{
         ConstSizeEnumeratedFiniteSet, ConstSizeEnumeratedFiniteSetStructure,
-        SetToConstSizePermutationsStructure,
-    };
-    use algebraeon_structures::{
-        CompositionSignature, EqSignature, GroupSignature, IdentitySignature,
-        LeftGroupActionSignature, MetaType, PermutationsSignature,
     };
 
     #[test]
@@ -491,11 +559,11 @@ mod tests {
         let b = |i: usize| -> ConstSizeEnumeratedFiniteSet<3> { i.try_into().unwrap() };
 
         let trans = mon_trans.new_permutation_then_scalars(
+            &[F4::Alpha, F4::Alpha, F4::Beta].into(),
             &basis
                 .const_size_permutations()
                 .new_cycle(vec![b(0), b(1), b(2)])
                 .unwrap(),
-            &[F4::Alpha, F4::Alpha, F4::Beta].into(),
         );
 
         let mon_trans_action = space.monomial_transformation_action();

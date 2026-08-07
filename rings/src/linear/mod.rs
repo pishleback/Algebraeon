@@ -1,5 +1,7 @@
 pub mod const_finitely_free_module;
+pub mod const_galois_monomial_transformation;
 pub mod const_monomial_transformation;
+pub mod const_size_functions_to_ring_units_group;
 pub mod finitely_free_affine_subsets;
 pub mod finitely_free_cosets;
 pub mod finitely_free_module;

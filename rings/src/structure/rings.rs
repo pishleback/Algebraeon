@@ -330,7 +330,7 @@ pub trait TryReciprocalSignature: OneSignature + MultiplicationSignature {
     }
 
     #[skip_meta]
-    fn units(self: &Arc<Self>) -> Arc<MultiplicativeMonoidUnitsStructure<Self>> {
+    fn units_group(self: &Arc<Self>) -> Arc<MultiplicativeMonoidUnitsStructure<Self>> {
         MultiplicativeMonoidUnitsStructure::new(self.clone())
     }
 }
@@ -609,7 +609,7 @@ where
     MultiplicativeMonoidUnitsStructure<R>: FiniteSetSignature<Elem = R::Elem>,
 {
     fn all_units(self: &Arc<Self>) -> Vec<Self::Elem> {
-        self.units().list_all_elements()
+        self.units_group().list_all_elements()
     }
 }
 

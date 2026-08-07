@@ -37,8 +37,8 @@ pub trait MonomialTransformationsSignature<Basis: OrderedFiniteSetSignature, Rin
     /// Construct a monomial transformation which acts as a permutation followed by scalar multiplications
     fn new_permutation_then_scalars(
         self: &Arc<Self>,
-        permutation: &<Self::Permutations as SetSignature>::Elem,
         scalars: &<Self::FinitelyFreeModule as SetSignature>::Elem,
+        permutation: &<Self::Permutations as SetSignature>::Elem,
     ) -> Self::Elem {
         debug_assert!(self.module().is_element(scalars));
         debug_assert!(self.basis_permutations().is_element(permutation));
@@ -51,8 +51,8 @@ pub trait MonomialTransformationsSignature<Basis: OrderedFiniteSetSignature, Rin
     /// Construct a monomial transformation which acts as scalar multiplications followed by a permutation
     fn new_scalars_then_permutation(
         self: &Arc<Self>,
-        scalars: &<Self::FinitelyFreeModule as SetSignature>::Elem,
         permutation: &<Self::Permutations as SetSignature>::Elem,
+        scalars: &<Self::FinitelyFreeModule as SetSignature>::Elem,
     ) -> Self::Elem {
         debug_assert!(self.module().is_element(scalars));
         debug_assert!(self.basis_permutations().is_element(permutation));
