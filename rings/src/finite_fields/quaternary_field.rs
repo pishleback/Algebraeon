@@ -1,4 +1,5 @@
 use crate::structure::*;
+use algebraeon_groups::examples::c2::{C2, C2CanonicalStructure};
 use algebraeon_macros::CanonicalStructure;
 use algebraeon_structures::*;
 use cantor::Finite;
@@ -179,6 +180,8 @@ impl CountableSetSignature for QuaternaryFieldCanonicalStructure {
 
 impl FiniteSetSignature for QuaternaryFieldCanonicalStructure {}
 
+impl ConstSizeFiniteSetSignature<4> for QuaternaryFieldCanonicalStructure {}
+
 impl OrderedFiniteSetSignature for QuaternaryFieldCanonicalStructure {
     fn list_all_elements_ordered(self: &Arc<Self>) -> Vec<Self::Elem> {
         vec![
@@ -216,6 +219,62 @@ impl OrderedFiniteSetSignature for QuaternaryFieldCanonicalStructure {
 impl FiniteFieldSignature for QuaternaryFieldCanonicalStructure {
     fn characteristic_and_power(self: &Arc<Self>) -> (Natural, Natural) {
         (Natural::from(2u8), Natural::from(2u8))
+    }
+}
+
+impl QuaternaryField {
+    pub fn conjugate(&self) -> Self {
+        match *self {
+            QuaternaryField::Zero => QuaternaryField::Zero,
+            QuaternaryField::One => QuaternaryField::One,
+            QuaternaryField::Alpha => QuaternaryField::Beta,
+            QuaternaryField::Beta => QuaternaryField::Alpha,
+        }
+    }
+}
+
+mod c2_galois_action {
+    use super::*;
+
+    // The action of C2 on F4 swapping Alpha <-> Beta
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    pub struct GaloisAction {}
+
+    impl Signature for GaloisAction {}
+
+    impl LeftGroupActionSignature<C2CanonicalStructure, QuaternaryFieldCanonicalStructure>
+        for GaloisAction
+    {
+        fn group(self: &Arc<Self>) -> Arc<C2CanonicalStructure> {
+            C2::structure()
+        }
+
+        fn set(self: &Arc<Self>) -> Arc<QuaternaryFieldCanonicalStructure> {
+            QuaternaryField::structure()
+        }
+
+        fn apply(self: &Arc<Self>, g: &C2, x: &QuaternaryField) -> QuaternaryField {
+            match g {
+                C2::Identity => *x,
+                C2::Flip => x.conjugate(),
+            }
+        }
+    }
+}
+
+impl QuaternaryField {
+    pub fn c2_galois_action() -> Arc<c2_galois_action::GaloisAction> {
+        c2_galois_action::GaloisAction {}.into()
+    }
+}
+
+impl GaloisFieldWithGroupSignature for QuaternaryFieldCanonicalStructure {
+    type GaloisGroup = C2CanonicalStructure;
+
+    fn galois_group_action(
+        self: Arc<Self>,
+    ) -> Arc<impl LeftGroupActionSignature<Self::GaloisGroup, Self>> {
+        QuaternaryField::c2_galois_action()
     }
 }
 

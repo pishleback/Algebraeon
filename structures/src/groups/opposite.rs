@@ -149,11 +149,11 @@ impl<Group: GroupSignature, Set: SetSignature, Action: RightGroupActionSignature
 impl<Group: GroupSignature, Set: SetSignature, Action: LeftGroupActionSignature<Group, Set>>
     RightGroupActionSignature<Set, Group> for OppositeGroupAction<Action>
 {
-    fn group(self: &Arc<Self>) -> &Arc<Group> {
+    fn group(self: &Arc<Self>) -> Arc<Group> {
         self.action().group()
     }
 
-    fn set(self: &Arc<Self>) -> &Arc<Set> {
+    fn set(self: &Arc<Self>) -> Arc<Set> {
         self.action().set()
     }
 
@@ -162,18 +162,26 @@ impl<Group: GroupSignature, Set: SetSignature, Action: LeftGroupActionSignature<
         g: &<Group>::Elem,
         x: &<Set as SetSignature>::Elem,
     ) -> <Set as SetSignature>::Elem {
-        self.action().apply(&self.group().inverse(g), x)
+        self.action().apply_inverse(g, x)
+    }
+
+    fn apply_inverse(
+        self: &Arc<Self>,
+        g: &<Group>::Elem,
+        x: &<Set as SetSignature>::Elem,
+    ) -> <Set as SetSignature>::Elem {
+        self.action().apply(g, x)
     }
 }
 
 impl<Group: GroupSignature, Set: SetSignature, Action: RightGroupActionSignature<Set, Group>>
     LeftGroupActionSignature<Group, Set> for OppositeGroupAction<Action>
 {
-    fn group(self: &Arc<Self>) -> &Arc<Group> {
+    fn group(self: &Arc<Self>) -> Arc<Group> {
         self.action().group()
     }
 
-    fn set(self: &Arc<Self>) -> &Arc<Set> {
+    fn set(self: &Arc<Self>) -> Arc<Set> {
         self.action().set()
     }
 
@@ -182,6 +190,14 @@ impl<Group: GroupSignature, Set: SetSignature, Action: RightGroupActionSignature
         g: &<Group>::Elem,
         x: &<Set as SetSignature>::Elem,
     ) -> <Set as SetSignature>::Elem {
-        self.action().apply(&self.group().inverse(g), x)
+        self.action().apply_inverse(g, x)
+    }
+
+    fn apply_inverse(
+        self: &Arc<Self>,
+        g: &<Group>::Elem,
+        x: &<Set as SetSignature>::Elem,
+    ) -> <Set as SetSignature>::Elem {
+        self.action().apply(g, x)
     }
 }

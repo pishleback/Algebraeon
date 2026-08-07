@@ -204,7 +204,7 @@ impl<
             Factored::NonZero(b) => match a {
                 Factored::Zero => {}
                 Factored::NonZero(a) => {
-                    a.unit = self.objects().units().compose(&a.unit, &b.unit);
+                    a.unit = self.objects().units_group().compose(&a.unit, &b.unit);
                     for (b_p, b_k) in &b.powers {
                         debug_assert!(self.objects().is_fav_assoc(b_p));
                         'A_LOOP: {
@@ -236,7 +236,7 @@ impl<
                     *a = Factored::NonZero(b.clone());
                 }
                 Factored::NonZero(a) => {
-                    a.unit = self.objects().units().compose(&a.unit, &b.unit);
+                    a.unit = self.objects().units_group().compose(&a.unit, &b.unit);
                     for (b_p, b_k) in &b.powers {
                         debug_assert!(self.objects().is_fav_assoc(b_p));
                         'A_LOOP: {
@@ -261,7 +261,7 @@ impl<
         a: &mut NonZeroFactored<Object::Elem, Exponent::Elem>,
         b: &NonZeroFactored<Object::Elem, Exponent::Elem>,
     ) {
-        a.unit = self.objects().units().compose(&a.unit, &b.unit);
+        a.unit = self.objects().units_group().compose(&a.unit, &b.unit);
         for (b_p, b_k) in &b.powers {
             debug_assert!(self.objects().is_fav_assoc(b_p));
             'A_LOOP: {
@@ -293,8 +293,8 @@ impl<
                 Some(Factored::NonZero(a_nz)) => {
                     a_nz.unit = self
                         .objects()
-                        .units()
-                        .compose(&a_nz.unit, &self.objects().units().inverse(&b.unit));
+                        .units_group()
+                        .compose(&a_nz.unit, &self.objects().units_group().inverse(&b.unit));
                     for (b_p, b_k) in &b.powers {
                         debug_assert!(self.objects().is_fav_assoc(b_p));
                         'A_LOOP: {
@@ -359,7 +359,7 @@ impl<
         match x {
             Factored::Zero => Ok(()),
             Factored::NonZero(x) => {
-                self.objects().units().validate_element(&x.unit)?;
+                self.objects().units_group().validate_element(&x.unit)?;
                 for (prime, exponent) in &x.powers {
                     if !self.objects().is_fav_assoc(prime) {
                         return Err("Factors should be their favorite associate".to_string());
@@ -476,7 +476,7 @@ impl<
         match a {
             Factored::Zero => None,
             Factored::NonZero(a) => Some(Factored::NonZero(NonZeroFactored {
-                unit: self.objects().units().inverse(&a.unit),
+                unit: self.objects().units_group().inverse(&a.unit),
                 powers: a
                     .powers
                     .iter()

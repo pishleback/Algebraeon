@@ -330,7 +330,7 @@ pub trait TryReciprocalSignature: OneSignature + MultiplicationSignature {
     }
 
     #[skip_meta]
-    fn units(self: &Arc<Self>) -> Arc<MultiplicativeMonoidUnitsStructure<Self>> {
+    fn units_group(self: &Arc<Self>) -> Arc<MultiplicativeMonoidUnitsStructure<Self>> {
         MultiplicativeMonoidUnitsStructure::new(self.clone())
     }
 }
@@ -609,7 +609,7 @@ where
     MultiplicativeMonoidUnitsStructure<R>: FiniteSetSignature<Elem = R::Elem>,
 {
     fn all_units(self: &Arc<Self>) -> Vec<Self::Elem> {
-        self.units().list_all_elements()
+        self.units_group().list_all_elements()
     }
 }
 
@@ -874,6 +874,16 @@ pub trait CharZeroFieldSignature: FieldSignature + CharZeroRingSignature {
 pub trait FiniteFieldSignature: FieldSignature + FiniteUnitsSignature + FiniteSetSignature {
     // Return (p, k) where p is a prime and |F| = p^k
     fn characteristic_and_power(self: &Arc<Self>) -> (Natural, Natural);
+}
+
+/// For a field which is Galois over its principal subfield this trait gives access to its Galois group
+#[signature_meta_trait]
+pub trait GaloisFieldWithGroupSignature: FieldSignature {
+    type GaloisGroup: GroupSignature;
+
+    fn galois_group_action(
+        self: Arc<Self>,
+    ) -> Arc<impl LeftGroupActionSignature<Self::GaloisGroup, Self>>;
 }
 
 //is a subset of the complex numbers

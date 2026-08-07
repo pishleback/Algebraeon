@@ -233,14 +233,20 @@ impl<Set> FiniteSubgroup<Set> {
 
 /// A left group action on a set
 pub trait LeftGroupActionSignature<Group: GroupSignature, Set: SetSignature>: Signature {
-    fn group(self: &Arc<Self>) -> &Arc<Group>;
-    fn set(self: &Arc<Self>) -> &Arc<Set>;
+    fn group(self: &Arc<Self>) -> Arc<Group>;
+    fn set(self: &Arc<Self>) -> Arc<Set>;
     fn apply(self: &Arc<Self>, g: &Group::Elem, x: &Set::Elem) -> Set::Elem;
+    fn apply_inverse(self: &Arc<Self>, g: &Group::Elem, x: &Set::Elem) -> Set::Elem {
+        self.apply(&self.group().inverse(g), x)
+    }
 }
 
 /// A right group action on a set
 pub trait RightGroupActionSignature<Set: SetSignature, Group: GroupSignature>: Signature {
-    fn group(self: &Arc<Self>) -> &Arc<Group>;
-    fn set(self: &Arc<Self>) -> &Arc<Set>;
+    fn group(self: &Arc<Self>) -> Arc<Group>;
+    fn set(self: &Arc<Self>) -> Arc<Set>;
     fn apply(self: &Arc<Self>, g: &Group::Elem, x: &Set::Elem) -> Set::Elem;
+    fn apply_inverse(self: &Arc<Self>, g: &Group::Elem, x: &Set::Elem) -> Set::Elem {
+        self.apply(&self.group().inverse(g), x)
+    }
 }

@@ -446,7 +446,7 @@ impl<
     Range: SetSignature,
 > ConstSizeFunctionsStructure<N, Domain, Range>
 {
-    pub fn domain_finitely_supported_permutation_action(
+    pub fn domain_precomposition_finitely_supported_permutation_action(
         self: &Arc<Self>,
     ) -> Arc<impl RightGroupActionSignature<Self, FinitelySupportedPermutationsStructure<Domain>>>
     {
@@ -463,13 +463,42 @@ impl<
     Range: SetSignature,
 > ConstSizeFunctionsStructure<N, Domain, Range>
 {
-    pub fn domain_const_size_permutation_action(
+    pub fn output_finitely_supported_permutation_action(
+        self: &Arc<Self>,
+    ) -> Arc<impl LeftGroupActionSignature<FinitelySupportedPermutationsStructure<Domain>, Self>>
+    {
+        self.domain_precomposition_finitely_supported_permutation_action()
+            .opposite()
+    }
+}
+
+impl<
+    const N: usize,
+    Domain: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
+    Range: SetSignature,
+> ConstSizeFunctionsStructure<N, Domain, Range>
+{
+    pub fn domain_precomposition_const_size_permutation_action(
         self: &Arc<Self>,
     ) -> Arc<impl RightGroupActionSignature<Self, ConstSizePermutationsStructure<N, Domain>>> {
         RightPermutationActionOnConstSizeFunctionsStructure::new(
             self.clone(),
             self.domain().const_size_permutations(),
         )
+    }
+}
+
+impl<
+    const N: usize,
+    Domain: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
+    Range: SetSignature,
+> ConstSizeFunctionsStructure<N, Domain, Range>
+{
+    pub fn output_const_size_permutation_action(
+        self: &Arc<Self>,
+    ) -> Arc<impl LeftGroupActionSignature<ConstSizePermutationsStructure<N, Domain>, Self>> {
+        self.domain_precomposition_const_size_permutation_action()
+            .opposite()
     }
 }
 
@@ -482,12 +511,12 @@ impl<
 > RightGroupActionSignature<ConstSizeFunctionsStructure<N, Domain, Range>, DomainPerms>
     for RightPermutationActionOnConstSizeFunctionsStructure<N, Domain, Range, DomainPerms>
 {
-    fn group(self: &Arc<Self>) -> &Arc<DomainPerms> {
-        &self.domain_perms
+    fn group(self: &Arc<Self>) -> Arc<DomainPerms> {
+        self.domain_perms.clone()
     }
 
-    fn set(self: &Arc<Self>) -> &Arc<ConstSizeFunctionsStructure<N, Domain, Range>> {
-        &self.functions
+    fn set(self: &Arc<Self>) -> Arc<ConstSizeFunctionsStructure<N, Domain, Range>> {
+        self.functions.clone()
     }
 
     fn apply(
@@ -505,31 +534,36 @@ impl<
     }
 }
 
+// Given a left/rig group action on Range we get a left group action on the functions Domain -> Range
 #[derive(Debug, Clone, PartialEq, Eq)]
-struct LeftPermutationActionOnConstSizeFunctionsStructure<
+struct ForwardedRangeLeftActionToConstSizeFunctionsStructure<
     const N: usize,
     Domain: ConstSizeFiniteSetSignature<N>,
     Range: OrderedFiniteSetSignature,
-    RangePerms: PermutationsSignature<Range>,
+    Group: GroupSignature,
+    Action: LeftGroupActionSignature<Group, Range>,
 > {
+    _group: PhantomData<Group>,
     functions: Arc<ConstSizeFunctionsStructure<N, Domain, Range>>,
-    range_perms: Arc<RangePerms>,
+    range_action: Arc<Action>,
 }
 
 impl<
     const N: usize,
     Domain: ConstSizeFiniteSetSignature<N>,
     Range: OrderedFiniteSetSignature,
-    RangePerms: PermutationsSignature<Range>,
-> LeftPermutationActionOnConstSizeFunctionsStructure<N, Domain, Range, RangePerms>
+    Group: GroupSignature,
+    Action: LeftGroupActionSignature<Group, Range>,
+> ForwardedRangeLeftActionToConstSizeFunctionsStructure<N, Domain, Range, Group, Action>
 {
     fn new(
         functions: Arc<ConstSizeFunctionsStructure<N, Domain, Range>>,
-        range_perms: Arc<RangePerms>,
+        range_action: Arc<Action>,
     ) -> Arc<Self> {
         Self {
+            _group: PhantomData,
             functions,
-            range_perms,
+            range_action,
         }
         .into()
     }
@@ -539,8 +573,10 @@ impl<
     const N: usize,
     Domain: ConstSizeFiniteSetSignature<N>,
     Range: OrderedFiniteSetSignature,
-    RangePerms: PermutationsSignature<Range>,
-> Signature for LeftPermutationActionOnConstSizeFunctionsStructure<N, Domain, Range, RangePerms>
+    Group: GroupSignature,
+    Action: LeftGroupActionSignature<Group, Range>,
+> Signature
+    for ForwardedRangeLeftActionToConstSizeFunctionsStructure<N, Domain, Range, Group, Action>
 {
 }
 
@@ -548,70 +584,78 @@ impl<
     const N: usize,
     Domain: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
     Range: OrderedFiniteSetSignature,
-> ConstSizeFunctionsStructure<N, Domain, Range>
+    Group: GroupSignature,
+    Action: LeftGroupActionSignature<Group, Range>,
+> LeftGroupActionSignature<Group, ConstSizeFunctionsStructure<N, Domain, Range>>
+    for ForwardedRangeLeftActionToConstSizeFunctionsStructure<N, Domain, Range, Group, Action>
 {
-    pub fn range_finitely_supported_permutation_action(
-        self: &Arc<Self>,
-    ) -> Arc<impl LeftGroupActionSignature<FinitelySupportedPermutationsStructure<Range>, Self>>
-    {
-        LeftPermutationActionOnConstSizeFunctionsStructure::new(
-            self.clone(),
-            self.range().permutations(),
-        )
-    }
-}
-
-impl<
-    const N: usize,
-    Domain: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
-    Range: OrderedFiniteSetSignature,
-> ConstSizeFunctionsStructure<N, Domain, Range>
-{
-    pub fn range_const_size_permutation_action<const M: usize>(
-        self: &Arc<Self>,
-    ) -> Arc<impl LeftGroupActionSignature<ConstSizePermutationsStructure<M, Range>, Self>>
-    where
-        Range: ConstSizeFiniteSetSignature<M>,
-    {
-        LeftPermutationActionOnConstSizeFunctionsStructure::new(
-            self.clone(),
-            self.range().const_size_permutations(),
-        )
-    }
-}
-
-/// Sym(R) has a left action on Fun(D -> R) by composition on the left
-impl<
-    const N: usize,
-    Domain: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
-    Range: OrderedFiniteSetSignature,
-    RangePerms: PermutationsSignature<Range>,
-> LeftGroupActionSignature<RangePerms, ConstSizeFunctionsStructure<N, Domain, Range>>
-    for LeftPermutationActionOnConstSizeFunctionsStructure<N, Domain, Range, RangePerms>
-{
-    fn group(self: &Arc<Self>) -> &Arc<RangePerms> {
-        &self.range_perms
+    fn group(self: &Arc<Self>) -> Arc<Group> {
+        self.range_action.group()
     }
 
-    fn set(self: &Arc<Self>) -> &Arc<ConstSizeFunctionsStructure<N, Domain, Range>> {
-        &self.functions
+    fn set(self: &Arc<Self>) -> Arc<ConstSizeFunctionsStructure<N, Domain, Range>> {
+        self.functions.clone()
     }
 
     fn apply(
         self: &Arc<Self>,
-        g: &<RangePerms>::Elem,
-        f: &<ConstSizeFunctionsStructure<N, Domain, Range> as SetSignature>::Elem,
+        g: &<Group>::Elem,
+        x: &<ConstSizeFunctionsStructure<N, Domain, Range> as SetSignature>::Elem,
     ) -> <ConstSizeFunctionsStructure<N, Domain, Range> as SetSignature>::Elem {
         self.functions
-            .function(|x| self.range_perms.image(g, self.functions.image(f, x)))
+            .function(|i| self.range_action.apply(g, self.functions.image(x, i)))
             .unwrap()
+    }
+
+    fn apply_inverse(
+        self: &Arc<Self>,
+        g: &<Group>::Elem,
+        x: &<ConstSizeFunctionsStructure<N, Domain, Range> as SetSignature>::Elem,
+    ) -> <ConstSizeFunctionsStructure<N, Domain, Range> as SetSignature>::Elem {
+        self.functions
+            .function(|i| {
+                self.range_action
+                    .apply_inverse(g, self.functions.image(x, i))
+            })
+            .unwrap()
+    }
+}
+
+impl<
+    const N: usize,
+    Domain: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
+    Range: OrderedFiniteSetSignature,
+> ConstSizeFunctionsStructure<N, Domain, Range>
+{
+    pub fn left_action_from_range_action<
+        Group: GroupSignature,
+        Action: LeftGroupActionSignature<Group, Range>,
+    >(
+        self: Arc<Self>,
+        range_action: Arc<Action>,
+    ) -> Arc<impl LeftGroupActionSignature<Group, Self>> {
+        ForwardedRangeLeftActionToConstSizeFunctionsStructure::new(self, range_action)
+    }
+
+    pub fn right_action_from_range_action<
+        Group: GroupSignature,
+        Action: RightGroupActionSignature<Range, Group>,
+    >(
+        self: Arc<Self>,
+        range_action: Arc<Action>,
+    ) -> Arc<impl RightGroupActionSignature<Self, Group>> {
+        self.left_action_from_range_action(range_action.opposite())
+            .opposite()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::sets::FiniteSetToFinitelySupportedPermutationsStructure;
+    use crate::sets::{
+        FiniteSetToFinitelySupportedPermutationsStructure, SetToConstSizePermutationAction,
+        SetToFinitelySupportedPermutationAction,
+    };
 
     #[test]
     fn enumerate() {
@@ -644,7 +688,7 @@ mod tests {
     }
 
     #[test]
-    fn test_permutation_actions() {
+    fn test_finitely_supported_permutation_actions() {
         let set_a = i32::structure().const_size_finite_subset([1, 2, 3, 4, 5]);
         let set_a_perms = set_a.permutations();
         let set_b = i32::structure().const_size_finite_subset([1, 2, 3]);
@@ -664,7 +708,7 @@ mod tests {
 
         assert!(
             fns.equal(
-                &fns.domain_finitely_supported_permutation_action()
+                &fns.domain_precomposition_finitely_supported_permutation_action()
                     .apply(&set_a_perms.new_cycle(vec![1, 2, 3, 4, 5]).unwrap(), &x),
                 &fns.function(|i| match i {
                     1 => 2,
@@ -680,17 +724,73 @@ mod tests {
 
         assert!(
             fns.equal(
-                &fns.range_finitely_supported_permutation_action()
+                &fns.clone()
+                    .left_action_from_range_action(set_b.finitely_supported_permutation_action())
                     .apply(&set_b_perms.new_cycle(vec![1, 2, 3]).unwrap(), &x),
+                &fns.clone()
+                    .function(|i| match i {
+                        1 => 2,
+                        2 => 3,
+                        3 => 1,
+                        4 => 3,
+                        5 => 2,
+                        _ => unreachable!(),
+                    })
+                    .unwrap()
+            )
+        );
+    }
+
+    #[test]
+    fn test_const_size_permutation_actions() {
+        let set_a = i32::structure().const_size_finite_subset([1, 2, 3, 4, 5]);
+        let set_a_perms = set_a.const_size_permutations();
+        let set_b = i32::structure().const_size_finite_subset([1, 2, 3]);
+        let set_b_perms = set_b.const_size_permutations();
+        let fns = set_a.const_size_functions_to(&set_b);
+
+        let x = fns
+            .function(|i| match i {
+                1 => 1,
+                2 => 2,
+                3 => 3,
+                4 => 2,
+                5 => 1,
+                _ => unreachable!(),
+            })
+            .unwrap();
+
+        assert!(
+            fns.equal(
+                &fns.domain_precomposition_const_size_permutation_action()
+                    .apply(&set_a_perms.new_cycle(vec![1, 2, 3, 4, 5]).unwrap(), &x),
                 &fns.function(|i| match i {
                     1 => 2,
                     2 => 3,
-                    3 => 1,
-                    4 => 3,
-                    5 => 2,
+                    3 => 2,
+                    4 => 1,
+                    5 => 1,
                     _ => unreachable!(),
                 })
                 .unwrap()
+            )
+        );
+
+        assert!(
+            fns.equal(
+                &fns.clone()
+                    .left_action_from_range_action(set_b.const_size_permutation_action())
+                    .apply(&set_b_perms.new_cycle(vec![1, 2, 3]).unwrap(), &x),
+                &fns.clone()
+                    .function(|i| match i {
+                        1 => 2,
+                        2 => 3,
+                        3 => 1,
+                        4 => 3,
+                        5 => 2,
+                        _ => unreachable!(),
+                    })
+                    .unwrap()
             )
         );
     }

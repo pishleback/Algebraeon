@@ -572,6 +572,49 @@ impl<Set: OrdSignature + FiniteSetSignature> FiniteSetSignature
 {
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct PermutationActionStructure<Set: OrdSignature> {
+    set: Arc<Set>,
+}
+
+impl<Set: OrdSignature> PermutationActionStructure<Set> {
+    fn new(set: Arc<Set>) -> Arc<Self> {
+        Self { set }.into()
+    }
+}
+
+pub trait SetToFinitelySupportedPermutationAction: OrdSignature {
+    fn finitely_supported_permutation_action(
+        self: Arc<Self>,
+    ) -> Arc<impl LeftGroupActionSignature<FinitelySupportedPermutationsStructure<Self>, Self>>
+    {
+        PermutationActionStructure::new(self)
+    }
+}
+impl<Set: OrdSignature> SetToFinitelySupportedPermutationAction for Set {}
+
+impl<Set: OrdSignature> Signature for PermutationActionStructure<Set> {}
+
+impl<Set: OrdSignature> LeftGroupActionSignature<FinitelySupportedPermutationsStructure<Set>, Set>
+    for PermutationActionStructure<Set>
+{
+    fn group(self: &Arc<Self>) -> Arc<FinitelySupportedPermutationsStructure<Set>> {
+        self.set.finitely_supported_permutations()
+    }
+
+    fn set(self: &Arc<Self>) -> Arc<Set> {
+        self.set.clone()
+    }
+
+    fn apply(
+        self: &Arc<Self>,
+        g: &FinitelySupportedPermutation<Set::Elem>,
+        x: &Set::Elem,
+    ) -> Set::Elem {
+        self.group().image(g, x)
+    }
+}
+
 #[cfg(test)]
 mod partition_tests {
     use super::*;

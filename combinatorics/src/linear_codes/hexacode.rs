@@ -116,7 +116,7 @@ static HEXACODE_CACHE: OnceLock<HexacodeCache> = OnceLock::new();
 fn cache() -> &'static HexacodeCache {
     HEXACODE_CACHE.get_or_init(|| {
         let points = OrderedSynthemePoint::structure();
-        let space = F4::structure().free_module(points);
+        let space = F4::structure().free_module(&points);
         let subspace = space.generated_submodule(vec![
             &[
                 F4::Alpha,

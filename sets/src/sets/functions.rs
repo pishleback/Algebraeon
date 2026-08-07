@@ -248,11 +248,21 @@ impl<
 }
 
 impl<Domain: OrderedFiniteSetSignature, Range: SetSignature> FunctionsStructure<Domain, Range> {
-    pub fn domain_finitely_supported_permutation_action(
+    pub fn domain_precomposition_finitely_supported_permutation_action(
         self: &Arc<Self>,
     ) -> Arc<impl RightGroupActionSignature<Self, FinitelySupportedPermutationsStructure<Domain>>>
     {
         RightPermutationActionOnFunctionsStructure::new(self.clone(), self.domain().permutations())
+    }
+}
+
+impl<Domain: OrderedFiniteSetSignature, Range: SetSignature> FunctionsStructure<Domain, Range> {
+    pub fn output_finitely_supported_permutation_action(
+        self: &Arc<Self>,
+    ) -> Arc<impl LeftGroupActionSignature<FinitelySupportedPermutationsStructure<Domain>, Self>>
+    {
+        self.domain_precomposition_finitely_supported_permutation_action()
+            .opposite()
     }
 }
 
@@ -264,12 +274,12 @@ impl<
 > RightGroupActionSignature<FunctionsStructure<Domain, Range>, DomainPerms>
     for RightPermutationActionOnFunctionsStructure<Domain, Range, DomainPerms>
 {
-    fn group(self: &Arc<Self>) -> &Arc<DomainPerms> {
-        &self.domain_perms
+    fn group(self: &Arc<Self>) -> Arc<DomainPerms> {
+        self.domain_perms.clone()
     }
 
-    fn set(self: &Arc<Self>) -> &Arc<FunctionsStructure<Domain, Range>> {
-        &self.functions
+    fn set(self: &Arc<Self>) -> Arc<FunctionsStructure<Domain, Range>> {
+        self.functions.clone()
     }
 
     fn apply(
@@ -342,12 +352,12 @@ impl<
 > LeftGroupActionSignature<RangePerms, FunctionsStructure<Domain, Range>>
     for LeftPermutationActionOnFunctionsStructure<Domain, Range, RangePerms>
 {
-    fn group(self: &Arc<Self>) -> &Arc<RangePerms> {
-        &self.range_perms
+    fn group(self: &Arc<Self>) -> Arc<RangePerms> {
+        self.range_perms.clone()
     }
 
-    fn set(self: &Arc<Self>) -> &Arc<FunctionsStructure<Domain, Range>> {
-        &self.functions
+    fn set(self: &Arc<Self>) -> Arc<FunctionsStructure<Domain, Range>> {
+        self.functions.clone()
     }
 
     fn apply(
@@ -417,7 +427,7 @@ mod tests {
 
         assert!(
             fns.equal(
-                &fns.domain_finitely_supported_permutation_action()
+                &fns.domain_precomposition_finitely_supported_permutation_action()
                     .apply(&set_a_perms.new_cycle(vec![1, 2, 3, 4, 5]).unwrap(), &x),
                 &fns.function(|i| match i {
                     1 => 2,
