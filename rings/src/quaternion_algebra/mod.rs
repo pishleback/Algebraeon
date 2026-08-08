@@ -177,11 +177,11 @@ impl<Field: FieldSignature> OneSignature for QuaternionAlgebraStructure<Field> {
 }
 
 impl<Field: FieldSignature> MultiplicationSignature for QuaternionAlgebraStructure<Field> {
-    fn mul(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
-        let a_param = &self.a;
-        let b_param = &self.b;
+    fn mul(self: &Arc<Self>, s: &Self::Elem, t: &Self::Elem) -> Self::Elem {
+        let a = &self.a;
+        let b = &self.b;
         let base = &self.base;
-        let ab = base.mul(a_param, b_param);
+        let ab = base.mul(a, b);
 
         if self.is_char_2 {
             // Quaternion multiplication in characteristic 2.
@@ -197,44 +197,42 @@ impl<Field: FieldSignature> MultiplicationSignature for QuaternionAlgebraStructu
             //   j^2 = b
             //   ij = k = -ji
 
-            let z0 = base.sub(
+            //   ( x + yi + zj + wk ) * ( x' + y'i + z'j + w'k )
+            // = ( xx' + ayy' + bzz' + abww' )
+            // + ( xy' + yx' - bzw' + bwz' ) i
+            // + ( xz' + zx' + ayw' - awy' ) j
+            // + ( xw' + wx' + yz' - zy' ) k
+
+            let x = base.sub(
                 &base.add(
-                    &base.add(
-                        &base.mul(&a.x, &b.x),
-                        &base.mul(&base.mul(&a.y, &b.y), a_param),
-                    ),
-                    &base.mul(&base.mul(&a.z, &b.z), b_param),
+                    &base.add(&base.mul(&s.x, &t.x), &base.mul(&base.mul(&s.y, &t.y), a)),
+                    &base.mul(&base.mul(&s.z, &t.z), b),
                 ),
-                &base.mul(&base.mul(&a.w, &b.w), &ab),
+                &base.mul(&base.mul(&s.w, &t.w), &ab),
             );
-            let z1 = base.sub(
+            let y = base.add(
+                &base.sub(
+                    &base.add(&base.mul(&s.x, &t.y), &base.mul(&s.y, &t.x)),
+                    &base.mul(&base.mul(&s.z, &t.w), b),
+                ),
+                &base.mul(&base.mul(&s.w, &t.z), b),
+            );
+            let z = base.sub(
                 &base.add(
-                    &base.add(&base.mul(&a.x, &b.y), &base.mul(&a.y, &b.x)),
-                    &base.mul(&base.mul(&a.z, &b.w), b_param),
+                    &base.add(&base.mul(&s.x, &t.z), &base.mul(&s.z, &t.x)),
+                    &base.mul(&base.mul(&s.y, &t.w), a),
                 ),
-                &base.mul(&base.mul(&a.w, &b.z), b_param),
+                &base.mul(&base.mul(&s.w, &t.y), a),
             );
-            let z2 = base.add(
-                &base.sub(
-                    &base.add(&base.mul(&a.x, &b.z), &base.mul(&a.z, &b.x)),
-                    &base.mul(&base.mul(&a.y, &b.w), a_param),
+            let w = base.sub(
+                &base.add(
+                    &base.add(&base.mul(&s.x, &t.w), &base.mul(&s.w, &t.x)),
+                    &base.mul(&s.y, &t.z),
                 ),
-                &base.mul(&base.mul(&a.w, &b.y), a_param),
-            );
-            let z3 = base.add(
-                &base.sub(
-                    &base.add(&base.mul(&a.x, &b.w), &base.mul(&a.w, &b.x)),
-                    &base.mul(&a.z, &b.y),
-                ),
-                &base.mul(&a.y, &b.z),
+                &base.mul(&s.z, &t.y),
             );
 
-            QuaternionAlgebraElement {
-                x: z0,
-                y: z1,
-                z: z2,
-                w: z3,
-            }
+            QuaternionAlgebraElement { x, y, z, w }
         }
     }
 }
@@ -458,6 +456,16 @@ mod tests {
 
         let i = h.i();
         let j = h.j();
+        let k = h.k();
+
+        println!("{:?}", h.mul(&i, &j));
+        println!("{:?}", h.mul(&j, &k));
+        println!("{:?}", h.mul(&k, &i));
+
+        assert!(h.equal(&h.mul(&i, &j), &h.k()));
+        assert!(h.equal(&h.mul(&j, &k), &h.i()));
+        assert!(h.equal(&h.mul(&k, &i), &h.j()));
+
         let i_plus_j = h.add(&i, &j);
         let j_plus_i = h.add(&j, &i);
         let i_times_j = h.mul(&i, &j);
@@ -465,6 +473,29 @@ mod tests {
 
         assert!(h.equal(&i_plus_j, &j_plus_i));
         assert!(h.equal(&i_times_j, &h.neg(&j_times_i)));
+
+        assert!(h.equal(
+            &h.mul(
+                &QuaternionAlgebraElement {
+                    x: Rational::from(1),
+                    y: Rational::from(2),
+                    z: Rational::from(3),
+                    w: Rational::from(4),
+                },
+                &QuaternionAlgebraElement {
+                    x: Rational::from(5),
+                    y: Rational::from(6),
+                    z: Rational::from(7),
+                    w: Rational::from(8),
+                },
+            ),
+            &QuaternionAlgebraElement {
+                x: Rational::from(-60),
+                y: Rational::from(12),
+                z: Rational::from(30),
+                w: Rational::from(24),
+            }
+        ));
     }
 
     #[test]
