@@ -10,6 +10,7 @@ use algebraeon_rings::{
         const_finitely_free_module::{
             ConstFinitelyFreeModuleStructure, RingToConstFinitelyFreeModuleSignature,
         },
+        const_galois_monomial_transformation::ConstSizeGaloisMonomialTransformationsStructure,
         finitely_free_submodule::FinitelyFreeSubmoduleStructure,
         finitely_free_submodules::FinitelyFreeSubmodule,
     },
@@ -250,11 +251,56 @@ pub fn correct_hexacodeword_from_5(given: LabelledPoints<Option<F4>>) -> Option<
     }
 }
 
+type OrderedSynthemeGaloisAutomorphismsStructure = ConstSizeGaloisMonomialTransformationsStructure<
+    6,
+    OrderedSynthemePointCanonicalStructure,
+    F4Structure,
+>;
+type OrderedSynthemeGaloisAutomorphism =
+    <OrderedSynthemeGaloisAutomorphismsStructure as SetSignature>::Elem;
+
+/// Does this automorphism of F4^6 preserve the hexacode?
+pub fn is_hexacode_automorphism(aut: &OrderedSynthemeGaloisAutomorphism) -> bool {
+    todo!()
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::linear_codes::ordered_syntheme::{OrderedSynthemePair, OrderedSynthemeSide};
-
     use super::*;
+    use algebraeon_groups::examples::c2::C2;
+    use algebraeon_rings::{
+        linear::monomial_transformations::{
+            GaloisMonomialTransformationsSignature as _,
+            MetaGaloisMonomialTransformationsSignature, MonomialTransformationsSubsetSignature,
+        },
+        structure::FreeModuleSignature,
+    };
+    use algebraeon_sets::sets::SetToConstSizePermutationsStructure;
+
+    #[test]
+    fn test() {
+        let basis_perms = space_structure().basis_set().const_size_permutations();
+        let space_aut = space_structure().galois_monomial_transformations();
+
+        let p = |n: u8| -> OrderedSynthemePoint {
+            OrderedSynthemePoint::enumeration_to_element(&n.into()).unwrap()
+        };
+
+        let aut1 = space_aut.new_galois_automorphism(&C2::Flip);
+        let aut2 = space_aut.new_permutation(
+            &basis_perms
+                .new_cycles(vec![vec![p(0), p(1)], vec![p(2), p(3)], vec![p(4), p(5)]])
+                .unwrap(),
+        );
+        let aut3 =
+            space_aut.new_scalars(&[F4::One, F4::One, F4::One, F4::One, F4::One, F4::One].into());
+
+        println!("{:?} {:?} {:?}", aut1, aut2, aut3);
+
+        println!("{:?}", aut1.galois_automorphism_part());
+        println!("{:?}", aut2.galois_automorphism_part());
+        println!("{:?}", aut3.galois_automorphism_part());
+    }
 
     #[test]
     fn test_is_hexacodeword() {

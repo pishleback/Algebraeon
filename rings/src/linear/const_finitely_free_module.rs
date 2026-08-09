@@ -4,7 +4,9 @@ use crate::{
             ConstSizeMonomialTransformation, ConstSizeMonomialTransformationsStructure,
         },
         finitely_free_module::FinitelyFreeModuleStructure,
-        monomial_transformations::MonomialTransformationsSignature,
+        monomial_transformations::{
+            MonomialTransformationsSignature, MonomialTransformationsSubsetSignature,
+        },
     },
     matrix::Matrix,
     structure::*,

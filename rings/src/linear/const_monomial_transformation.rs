@@ -9,7 +9,9 @@ use crate::{
             ConstSizeFunctionsToRingUnitsGroup,
             ConstSizeLeftPermutationActionOnFunctionsToRingUnitsGroupStructure,
         },
-        monomial_transformations::MonomialTransformationsSignature,
+        monomial_transformations::{
+            MonomialTransformationsSignature, MonomialTransformationsSubsetSignature,
+        },
     },
     structure::{GaloisFieldWithGroupSignature, RingSignature, TryReciprocalSignature},
 };
@@ -290,26 +292,26 @@ impl<
     const N: usize,
     Basis: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
     Ring: RingSignature + TryReciprocalSignature,
-> MonomialTransformationsSignature<Basis, Ring>
+> MonomialTransformationsSubsetSignature<Basis, Ring>
     for ConstSizeMonomialTransformationsStructure<N, Basis, Ring>
 {
     type Permutations = ConstSizePermutationsStructure<N, Basis>;
     type FinitelyFreeModule = ConstFinitelyFreeModuleStructure<N, Basis, Ring>;
 
-    fn basis(self: &Arc<Self>) -> &Arc<Basis> {
-        &self.basis
+    fn basis(self: &Arc<Self>) -> Arc<Basis> {
+        self.basis.clone()
     }
 
     fn basis_permutations(self: &Arc<Self>) -> Arc<Self::Permutations> {
         self.basis().const_size_permutations()
     }
 
-    fn ring(self: &Arc<Self>) -> &Arc<Ring> {
-        &self.ring
+    fn ring(self: &Arc<Self>) -> Arc<Ring> {
+        self.ring.clone()
     }
 
     fn module(self: &Arc<Self>) -> Arc<Self::FinitelyFreeModule> {
-        self.ring().free_module(self.basis())
+        self.ring().free_module(&self.basis())
     }
 
     fn new_permutation(
@@ -349,7 +351,15 @@ impl<
             .new_h_compose_n(permutation, scalars)
             .into()
     }
+}
 
+impl<
+    const N: usize,
+    Basis: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
+    Ring: RingSignature + TryReciprocalSignature,
+> MonomialTransformationsSignature<Basis, Ring>
+    for ConstSizeMonomialTransformationsStructure<N, Basis, Ring>
+{
     fn permutation_part(
         self: &Arc<Self>,
         monomial_transformation: &Self::Elem,
