@@ -7,7 +7,7 @@ use algebraeon_structures::*;
 use std::sync::Arc;
 
 #[signature_meta_trait]
-pub trait MonomialTransformationsSubsetSignature<
+pub trait MonomialTransformationsSupersetSignature<
     Basis: OrderedFiniteSetSignature,
     Ring: RingSignature,
 >: GroupSignature
@@ -70,21 +70,21 @@ pub trait MonomialTransformationsSubsetSignature<
 
 #[signature_meta_trait]
 pub trait MonomialTransformationsSignature<Basis: OrderedFiniteSetSignature, Ring: RingSignature>:
-    MonomialTransformationsSubsetSignature<Basis, Ring>
+    MonomialTransformationsSupersetSignature<Basis, Ring>
 {
     /// Get the permutation part of a monomial transformation
     fn permutation_part(
         self: &Arc<Self>,
         monomial_transformation: &Self::Elem,
-    ) -> <<Self as MonomialTransformationsSubsetSignature<Basis, Ring>>::Permutations as SetSignature>::Elem;
+    ) -> <<Self as MonomialTransformationsSupersetSignature<Basis, Ring>>::Permutations as SetSignature>::Elem;
 
     /// Decompose a monomial transformation as a permutation followed by scalar multiplications
     fn permutation_then_scalars(
         self: &Arc<Self>,
         monomial_transformation: &Self::Elem,
     ) -> (
-        <<Self as MonomialTransformationsSubsetSignature<Basis, Ring>>::FinitelyFreeModule as SetSignature>::Elem,
-        <<Self as MonomialTransformationsSubsetSignature<Basis, Ring>>::Permutations as SetSignature>::Elem,
+        <<Self as MonomialTransformationsSupersetSignature<Basis, Ring>>::FinitelyFreeModule as SetSignature>::Elem,
+        <<Self as MonomialTransformationsSupersetSignature<Basis, Ring>>::Permutations as SetSignature>::Elem,
     );
 
     /// Decompose a monomial transformation as scalar multiplications followed by a permutation
@@ -92,8 +92,8 @@ pub trait MonomialTransformationsSignature<Basis: OrderedFiniteSetSignature, Rin
         self: &Arc<Self>,
         monomial_transformation: &Self::Elem,
     ) -> (
-        <<Self as MonomialTransformationsSubsetSignature<Basis, Ring>>::Permutations as SetSignature>::Elem,
-        <<Self as MonomialTransformationsSubsetSignature<Basis, Ring>>::FinitelyFreeModule as SetSignature>::Elem,
+        <<Self as MonomialTransformationsSupersetSignature<Basis, Ring>>::Permutations as SetSignature>::Elem,
+        <<Self as MonomialTransformationsSupersetSignature<Basis, Ring>>::FinitelyFreeModule as SetSignature>::Elem,
     );
 }
 
@@ -101,7 +101,7 @@ pub trait MonomialTransformationsSignature<Basis: OrderedFiniteSetSignature, Rin
 pub trait GaloisMonomialTransformationsSignature<
     Basis: OrderedFiniteSetSignature,
     Field: GaloisFieldWithGroupSignature + TryReciprocalSignature,
->: MonomialTransformationsSubsetSignature<Basis, Field>
+>: MonomialTransformationsSupersetSignature<Basis, Field>
 {
     type MonomialTransformations: MonomialTransformationsSignature<Basis, Field>;
 

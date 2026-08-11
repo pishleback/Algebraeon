@@ -10,12 +10,14 @@ use crate::{
             ConstSizeMonomialTransformation, ConstSizeMonomialTransformationsStructure,
         },
         monomial_transformations::{
-            GaloisMonomialTransformationsSignature, MonomialTransformationsSubsetSignature,
+            GaloisMonomialTransformationsSignature, MonomialTransformationsSupersetSignature,
         },
     },
     structure::{GaloisFieldWithGroupSignature, TryReciprocalSignature},
 };
-use algebraeon_sets::sets::{ConstSizePermutationsStructure, SetToConstSizePermutationsStructure};
+use algebraeon_sets::sets::{
+    ConstSizePermutationsStructure, Function, SetToConstSizePermutationsStructure,
+};
 use algebraeon_structures::*;
 use std::sync::Arc;
 
@@ -294,7 +296,7 @@ impl<
     const N: usize,
     Basis: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
     Field: GaloisFieldWithGroupSignature + TryReciprocalSignature,
-> MonomialTransformationsSubsetSignature<Basis, Field>
+> MonomialTransformationsSupersetSignature<Basis, Field>
     for ConstSizeGaloisMonomialTransformationsStructure<N, Basis, Field>
 {
     type Permutations = ConstSizePermutationsStructure<N, Basis>;
@@ -414,6 +416,110 @@ impl<
         ConstSizeMonomialTransformation<N, Basis::Elem, Field::Elem>,
     ) {
         self.semidirect_product_structure().h_compose_n(&elem.repr)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct LeftGaloisMonomialTransformationActionOnConstFinitelyFreeModuleStructure<
+    const N: usize,
+    Basis: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
+    Field: GaloisFieldWithGroupSignature + TryReciprocalSignature,
+> {
+    module: Arc<ConstFinitelyFreeModuleStructure<N, Basis, Field>>,
+    group: Arc<ConstSizeGaloisMonomialTransformationsStructure<N, Basis, Field>>,
+}
+
+impl<
+    const N: usize,
+    Basis: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
+    Field: GaloisFieldWithGroupSignature + TryReciprocalSignature,
+> LeftGaloisMonomialTransformationActionOnConstFinitelyFreeModuleStructure<N, Basis, Field>
+{
+    fn new(
+        module: Arc<ConstFinitelyFreeModuleStructure<N, Basis, Field>>,
+        group: Arc<ConstSizeGaloisMonomialTransformationsStructure<N, Basis, Field>>,
+    ) -> Arc<Self> {
+        Self { module, group }.into()
+    }
+}
+
+impl<
+    const N: usize,
+    Basis: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
+    Field: GaloisFieldWithGroupSignature + TryReciprocalSignature,
+> Signature
+    for LeftGaloisMonomialTransformationActionOnConstFinitelyFreeModuleStructure<N, Basis, Field>
+{
+}
+
+impl<
+    const N: usize,
+    Basis: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
+    Field: GaloisFieldWithGroupSignature + TryReciprocalSignature,
+> ConstFinitelyFreeModuleStructure<N, Basis, Field>
+{
+    pub fn galois_monomial_transformation_action(
+        self: &Arc<Self>,
+    ) -> Arc<
+        impl LeftGroupActionSignature<
+            ConstSizeGaloisMonomialTransformationsStructure<N, Basis, Field>,
+            Self,
+        >,
+    > {
+        LeftGaloisMonomialTransformationActionOnConstFinitelyFreeModuleStructure::new(
+            self.clone(),
+            self.galois_monomial_transformations(),
+        )
+    }
+}
+
+impl<
+    const N: usize,
+    Basis: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
+    Field: GaloisFieldWithGroupSignature + TryReciprocalSignature,
+>
+    LeftGroupActionSignature<
+        ConstSizeGaloisMonomialTransformationsStructure<N, Basis, Field>,
+        ConstFinitelyFreeModuleStructure<N, Basis, Field>,
+    >
+    for LeftGaloisMonomialTransformationActionOnConstFinitelyFreeModuleStructure<N, Basis, Field>
+{
+    fn group(
+        self: &Arc<Self>,
+    ) -> Arc<ConstSizeGaloisMonomialTransformationsStructure<N, Basis, Field>> {
+        self.group.clone()
+    }
+
+    fn set(self: &Arc<Self>) -> Arc<ConstFinitelyFreeModuleStructure<N, Basis, Field>> {
+        self.module.clone()
+    }
+
+    fn apply(
+        self: &Arc<Self>,
+        g: &ConstSizeGaloisMonomialTransformation<
+            N,
+            Basis::Elem,
+            Field::Elem,
+            <Field::GaloisGroup as SetSignature>::Elem,
+        >,
+        vec: &Function<N, Basis::Elem, Field::Elem>,
+    ) -> Function<N, Basis::Elem, Field::Elem> {
+        let mod_fns = self.module.functions_restructure();
+        let field = self.module.ring();
+        let (monomial, galois_aut) = self
+            .group
+            .galois_automorphism_then_monomial_transformation(g);
+        self.module.monomial_transformation_action().apply(
+            &monomial,
+            &mod_fns
+                .function(|i| {
+                    field
+                        .clone()
+                        .galois_group_action()
+                        .apply(&galois_aut, mod_fns.image(vec, i))
+                })
+                .unwrap(),
+        )
     }
 }
 

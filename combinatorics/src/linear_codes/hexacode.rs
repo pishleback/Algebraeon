@@ -261,7 +261,17 @@ type OrderedSynthemeGaloisAutomorphism =
 
 /// Does this automorphism of F4^6 preserve the hexacode?
 pub fn is_hexacode_automorphism(aut: &OrderedSynthemeGaloisAutomorphism) -> bool {
-    todo!()
+    for vector in hexacode_subspace_structure().list_all_elements() {
+        if !space_structure().submodules().contains_element(
+            hexacode_subspace(),
+            &space_structure()
+                .galois_monomial_transformation_action()
+                .apply(aut, &vector),
+        ) {
+            return false;
+        }
+    }
+    true
 }
 
 #[cfg(test)]
@@ -271,7 +281,7 @@ mod tests {
     use algebraeon_rings::{
         linear::monomial_transformations::{
             GaloisMonomialTransformationsSignature as _,
-            MetaGaloisMonomialTransformationsSignature, MonomialTransformationsSubsetSignature,
+            MetaGaloisMonomialTransformationsSignature, MonomialTransformationsSupersetSignature,
         },
         structure::FreeModuleSignature,
     };
@@ -300,6 +310,11 @@ mod tests {
         println!("{:?}", aut1.galois_automorphism_part());
         println!("{:?}", aut2.galois_automorphism_part());
         println!("{:?}", aut3.galois_automorphism_part());
+
+        assert!(!is_hexacode_automorphism(&aut1));
+        assert!(!is_hexacode_automorphism(&aut2));
+        assert!(is_hexacode_automorphism(&aut3));
+        assert!(is_hexacode_automorphism(&aut2.compose(&aut1)));
     }
 
     #[test]
