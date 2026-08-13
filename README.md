@@ -146,3 +146,10 @@ Output:
 Despite the output, the roots found are _not_ numerical approximations. Rather, they are stored internally as exact algebraic numbers by using isolating boxes in the complex plane and isolating intervals on the real line.
 
 <img width="2158" height="1308" alt="Capture" src="https://github.com/user-attachments/assets/c727c71a-2345-45e4-81a5-35c8066024ea" />
+
+## Use of AI
+
+The vast majority of the codebase was written by a human without AI assistance. Where AI has been used, it has been fully reviewed by a human prior to inclusion into the codebase.
+
+
+
