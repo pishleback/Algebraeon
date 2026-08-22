@@ -454,6 +454,8 @@ pub fn ecm_one_factor_target_digits(
     rng: &mut Rng,
 ) -> Result<Natural, ()> {
     // The target factor has fith_target_factor_digits*5 many digits
+
+    #[cfg(target_pointer_width = "64")]
     let (b1, b2, max_curve) = match fith_target_factor_digits {
         0..=2 => (2_000, 160_000, 35),
         3 => (5_000, 500_000, 50),
@@ -467,6 +469,15 @@ pub fn ecm_one_factor_target_digits(
         11 => (110_000_000, 780_000_000_000, 17769),
         12 => (260_000_000, 3_200_000_000_000, 42017),
         _ => (850_000_000, 16_000_000_000_000, 69408),
+    };
+    #[cfg(target_pointer_width = "32")]
+    let (b1, b2, max_curve) = match fith_target_factor_digits {
+        0..=2 => (2_000, 160_000, 35),
+        3 => (5_000, 500_000, 50),
+        4 => (11_000, 1_900_000, 74),
+        5 => (50_000, 13_000_000, 214),
+        6 => (250_000, 130_000_000, 430),
+        _ => (1_000_000, 1_000_000_000, 904),
     };
     ecm_one_factor_raw(n, b1, b2, max_curve, rng)
 }
