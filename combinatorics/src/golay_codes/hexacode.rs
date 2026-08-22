@@ -96,7 +96,7 @@ impl Add<&HexacodeVector> for &HexacodeVector {
     type Output = HexacodeVector;
 
     fn add(self, other: &HexacodeVector) -> Self::Output {
-        LabelledPoints::<F4>::new(|p| F4::add(self.0.image(&p), other.0.image(&p))).into()
+        LabelledPoints::<F4>::new(|p| *self.0.image(&p) + *other.0.image(&p)).into()
     }
 }
 
@@ -195,7 +195,7 @@ impl HexacodeVector {
 /// Returns None if the number of given coordinates is not 3
 pub fn complete_hexacodeword_from_3(given: LabelledPoints<Option<F4>>) -> Option<HexacodeVector> {
     if given
-        .iter()
+        .images()
         .map(|x| if x.is_some() { 1 } else { 0 })
         .sum::<usize>()
         != 3
@@ -203,7 +203,7 @@ pub fn complete_hexacodeword_from_3(given: LabelledPoints<Option<F4>>) -> Option
         None
     } else {
         for codeword in hexacode_structure().list_all_elements() {
-            if given.iter().enumerate().all(|(i, x)| {
+            if given.images().enumerate().all(|(i, x)| {
                 if let Some(x) = x {
                     x == &codeword[i]
                 } else {
@@ -222,7 +222,7 @@ pub fn complete_hexacodeword_from_3(given: LabelledPoints<Option<F4>>) -> Option
 /// Returns None if the number of given coordinates is not 5
 pub fn correct_hexacodeword_from_5(given: LabelledPoints<Option<F4>>) -> Option<HexacodeVector> {
     if given
-        .iter()
+        .images()
         .map(|x| if x.is_some() { 1 } else { 0 })
         .sum::<usize>()
         != 5
@@ -231,7 +231,7 @@ pub fn correct_hexacodeword_from_5(given: LabelledPoints<Option<F4>>) -> Option<
     } else {
         for codeword in hexacode_structure().list_all_elements() {
             if given
-                .iter()
+                .images()
                 .enumerate()
                 .map(|(i, x)| {
                     if let Some(x) = x

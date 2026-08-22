@@ -47,6 +47,7 @@ pub trait PermutationsSignature<Set: SetSignature>: GroupSignature {
 
     /// The disjoint cycle decomposition
     /// Cycles may appear in any order and the elements of each cycle may come in any order
+    /// Cycles of length 1 are excluded
     fn disjoint_cycles(self: &Arc<Self>, perm: &Self::Elem) -> Vec<Vec<Set::Elem>>;
 
     fn cycle_shape(self: &Arc<Self>, perm: &Self::Elem) -> HashMap<usize, usize> {

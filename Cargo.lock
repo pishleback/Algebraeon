@@ -44,6 +44,7 @@ dependencies = [
 name = "algebraeon"
 version = "0.0.17"
 dependencies = [
+ "algebraeon-combinatorics",
  "algebraeon-drawing",
  "algebraeon-geometry",
  "algebraeon-groups",
@@ -56,7 +57,7 @@ dependencies = [
 
 [[package]]
 name = "algebraeon-combinatorics"
-version = "0.0.0"
+version = "0.0.17"
 dependencies = [
  "algebraeon-groups",
  "algebraeon-macros",
@@ -92,7 +93,6 @@ name = "algebraeon-examples"
 version = "0.0.0"
 dependencies = [
  "algebraeon",
- "algebraeon-combinatorics",
 ]
 
 [[package]]
@@ -150,7 +150,7 @@ dependencies = [
  "itertools 0.15.0",
  "lalrpop 0.23.1",
  "lalrpop-util 0.23.1",
- "rand 0.10.1",
+ "rand 0.10.2",
  "rayon",
  "static_assertions",
 ]
@@ -165,7 +165,7 @@ dependencies = [
  "indexmap",
  "itertools 0.15.0",
  "paste",
- "rand 0.10.1",
+ "rand 0.10.2",
 ]
 
 [[package]]
@@ -175,7 +175,7 @@ dependencies = [
  "algebraeon-macros",
  "malachite",
  "paste",
- "rand 0.10.1",
+ "rand 0.10.2",
 ]
 
 [[package]]
@@ -2043,9 +2043,9 @@ dependencies = [
 
 [[package]]
 name = "rand"
-version = "0.10.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2e8e8bcc7961af1fdac401278c6a831614941f6164ee3bf4ce61b7edb162207"
+checksum = "c7f5fa3a058cd35567ef9bfa5e75732bee0f9e4c55fa90477bef2dfcdbc4be80"
 dependencies = [
  "chacha20",
  "getrandom 0.4.3",

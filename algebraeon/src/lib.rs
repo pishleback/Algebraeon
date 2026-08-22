@@ -1,3 +1,4 @@
+pub use algebraeon_combinatorics as combinatorics;
 pub use algebraeon_drawing as drawing;
 pub use algebraeon_geometry as geometry;
 pub use algebraeon_groups as groups;

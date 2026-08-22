@@ -333,7 +333,10 @@ pub fn ecm_one_factor_raw(
     // When calculating T, if (B1 - 2*D) is negative, it cannot be calculated.
     let big_d = std::cmp::min(b2.isqrt(), b1 / 2 - 1);
     let mut k = Natural::ONE;
-    for p in primes().take_while(|&p| p <= b1) {
+    for p in primes()
+        .map(|p| p.try_into().unwrap())
+        .take_while(|&p| p <= b1)
+    {
         k *= Natural::from(p).nat_pow(&b1.ilog(p).into());
     }
     // Pre-calculate the prime numbers to be used in stage 2.
@@ -345,7 +348,8 @@ pub fn ecm_one_factor_raw(
     for r in (b1 + 2 * big_d..b2 + 2 * big_d).step_by(4 * big_d) {
         let mut deltas = HashSet::new();
         for q in primes()
-            .take_while(|&q| q < r + 2 * big_d)
+            .map(|p| p.try_into().unwrap())
+            .take_while(|q: &usize| *q < r + 2 * big_d)
             .filter(|&q| r - 2 * big_d < q)
         {
             deltas.insert((q.abs_diff(r) - 1) / 2);

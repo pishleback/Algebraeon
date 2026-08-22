@@ -50,6 +50,7 @@ impl<const N: usize, Elem> ConstSizePermutation<N, Elem> {
         }
     }
 
+    /// The disjoint cycles of this permutation including those of length 1
     fn disjoint_cycles(&self) -> Vec<Vec<usize>> {
         // vector of pairs of moved elements and whether they have been accounted for
         let mut elems_todo = (0..N).map(|elem| (elem, false)).collect::<Vec<_>>();
@@ -279,11 +280,17 @@ impl<const N: usize, Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSigna
         debug_assert!(self.is_element(perm));
         perm.disjoint_cycles()
             .into_iter()
-            .map(|cycle| {
-                cycle
-                    .into_iter()
-                    .map(|i| self.set().enumeration_to_element(&i.into()).unwrap())
-                    .collect()
+            .filter_map(|cycle| {
+                if cycle.len() == 1 {
+                    None
+                } else {
+                    Some(
+                        cycle
+                            .into_iter()
+                            .map(|i| self.set().enumeration_to_element(&i.into()).unwrap())
+                            .collect(),
+                    )
+                }
             })
             .collect()
     }

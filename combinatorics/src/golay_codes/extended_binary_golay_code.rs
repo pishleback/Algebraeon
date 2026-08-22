@@ -1,7 +1,7 @@
 //! The extended binary golay code on the cartesian product of the standard ordered syntheme and the finite field of 4 elements
 
 use crate::golay_codes::{
-    hexacode::{self},
+    hexacode::{self, HexacodeVector},
     ordered_syntheme::{OrderedSynthemePair, OrderedSynthemePoint, OrderedSynthemeSide},
 };
 use algebraeon_macros::CanonicalStructure;
@@ -17,8 +17,8 @@ use algebraeon_rings::{
     matrix::Matrix,
     num_theory::modulo::const_naive::Modulo,
     structure::{
-        FinitelyFreeModuleSignature, MetaAdditionSignature, MetaOneSignature, MetaZeroEqSignature,
-        MetaZeroSignature, ZeroSignature,
+        FinitelyFreeModuleSignature, MetaAdditionSignature, MetaOneSignature,
+        MetaTryReciprocalSignature, MetaZeroEqSignature, MetaZeroSignature, ZeroSignature,
     },
 };
 use algebraeon_sets::sets::{
@@ -70,8 +70,8 @@ type F4 = QuaternaryField;
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Finite, CanonicalStructure)]
 #[canonical_structure(eq, partial_ord, ord, finite, ord_finite)]
 pub struct Point {
-    row: F4,
-    col: OrderedSynthemePoint,
+    pub row: F4,
+    pub col: OrderedSynthemePoint,
 }
 
 impl ConstSizeFiniteSetSignature<24> for PointCanonicalStructure {}
@@ -79,7 +79,9 @@ impl ConstSizeFiniteSetSignature<24> for PointCanonicalStructure {}
 pub type LabelledPoints<Elem> = Function<24, Point, Elem>;
 
 #[derive(CanonicalStructure, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Vector(LabelledPoints<F2>);
+pub struct Vector {
+    pub coords: LabelledPoints<F2>,
+}
 
 impl std::fmt::Debug for Vector {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -105,20 +107,20 @@ impl std::fmt::Debug for Vector {
 }
 
 impl From<LabelledPoints<F2>> for Vector {
-    fn from(value: LabelledPoints<F2>) -> Self {
-        Self(value)
+    fn from(coords: LabelledPoints<F2>) -> Self {
+        Self { coords }
     }
 }
 
 impl From<Vector> for LabelledPoints<F2> {
     fn from(value: Vector) -> Self {
-        value.0
+        value.coords
     }
 }
 
 impl<'a> From<&'a Vector> for &'a LabelledPoints<F2> {
     fn from(value: &'a Vector) -> Self {
-        &value.0
+        &value.coords
     }
 }
 
@@ -130,15 +132,17 @@ impl From<[F2; 24]> for Vector {
 
 impl Vector {
     pub fn from_fn(f: impl FnMut(Point) -> F2) -> Vector {
-        Vector(LabelledPoints::new(f))
+        Vector {
+            coords: LabelledPoints::new(f),
+        }
     }
 
     pub fn at(&self, point: &Point) -> &F2 {
-        &self.0[point.element_to_enumeration().try_into().unwrap()]
+        &self.coords[point.element_to_enumeration().try_into().unwrap()]
     }
 
     pub fn at_mut(&mut self, point: &Point) -> &mut F2 {
-        &mut self.0[point.element_to_enumeration().try_into().unwrap()]
+        &mut self.coords[point.element_to_enumeration().try_into().unwrap()]
     }
 }
 
@@ -146,7 +150,7 @@ impl Add<&Vector> for &Vector {
     type Output = Vector;
 
     fn add(self, other: &Vector) -> Self::Output {
-        LabelledPoints::<F2>::new(|p| F2::add(self.0.image(&p), other.0.image(&p))).into()
+        LabelledPoints::<F2>::new(|p| F2::add(self.coords.image(&p), other.coords.image(&p))).into()
     }
 }
 
@@ -179,7 +183,10 @@ impl BitAnd<&Vector> for &Vector {
 
     fn bitand(self, other: &Vector) -> Self::Output {
         LabelledPoints::<F2>::new(|p| {
-            match (self.0.image(&p).is_zero(), other.0.image(&p).is_zero()) {
+            match (
+                self.coords.image(&p).is_zero(),
+                other.coords.image(&p).is_zero(),
+            ) {
                 (true, true) | (true, false) | (false, true) => ZERO,
                 (false, false) => ONE,
             }
@@ -217,7 +224,10 @@ impl BitOr<&Vector> for &Vector {
 
     fn bitor(self, other: &Vector) -> Self::Output {
         LabelledPoints::<F2>::new(|p| {
-            match (self.0.image(&p).is_zero(), other.0.image(&p).is_zero()) {
+            match (
+                self.coords.image(&p).is_zero(),
+                other.coords.image(&p).is_zero(),
+            ) {
                 (true, true) => ZERO,
                 (false, false) | (true, false) | (false, true) => ONE,
             }
@@ -252,7 +262,9 @@ impl BitOr<Vector> for Vector {
 
 impl Vector {
     pub fn zero() -> Self {
-        Self(ebgc_structure().zero())
+        Self {
+            coords: ebgc_structure().zero(),
+        }
     }
 
     pub fn is_codeword(&self) -> bool {
@@ -260,7 +272,10 @@ impl Vector {
     }
 
     pub fn weight(&self) -> usize {
-        self.0.iter().map(|x| if *x == ZERO { 0 } else { 1 }).sum()
+        self.coords
+            .iter()
+            .map(|(_, x)| if *x == ZERO { 0 } else { 1 })
+            .sum()
     }
 
     pub fn is_octad(&self) -> bool {
@@ -272,7 +287,7 @@ impl Vector {
     }
 
     pub fn contains_point(&self, p: &Point) -> bool {
-        self.0.image(p).equal(&F2::one())
+        self.coords.image(p).equal(&F2::one())
     }
 
     pub fn points(&self) -> impl Iterator<Item = Point> {
@@ -280,11 +295,11 @@ impl Vector {
     }
 
     pub fn from_points(points: &Vec<Point>) -> Self {
-        let mut inner = LabelledPoints::new(|_| F2::zero());
+        let mut coords = LabelledPoints::new(|_| F2::zero());
         for p in points {
-            *inner.image_mut(p) = F2::one();
+            *coords.image_mut(p) = F2::one();
         }
-        Self(inner)
+        Self { coords }
     }
 
     pub fn to_row(&self) -> Matrix<F2> {
@@ -340,6 +355,15 @@ impl Vector {
             None
         }
     }
+
+    pub fn permute(&self, perm: &ConstSizePermutation<24, Point>) -> Self {
+        Self {
+            coords: Point::structure()
+                .const_size_functions_to(&F2::structure())
+                .output_const_size_permutation_action()
+                .apply(perm, &self.coords),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -349,14 +373,14 @@ pub struct OrderedSextet {
 }
 
 impl OrderedSextet {
-    fn permute(&self, permutation: ConstSizePermutation<6, OrderedSynthemePoint>) -> Self {
+    pub fn permute(&self, permutation: &ConstSizePermutation<6, OrderedSynthemePoint>) -> Self {
         Self {
             inner: Point::structure()
                 .const_size_functions_to(&OrderedSynthemePoint::structure())
                 .left_action_from_range_action(
                     OrderedSynthemePoint::structure().const_size_permutation_action(),
                 )
-                .apply(&permutation, &self.inner),
+                .apply(permutation, &self.inner),
         }
     }
 
@@ -366,6 +390,26 @@ impl OrderedSextet {
             *foursomes.image_mut(self.inner.image(&p)).at_mut(&p) = F2::one();
         }
         foursomes
+    }
+
+    pub fn from_foursomes(foursomes: hexacode::LabelledPoints<Vector>) -> Self {
+        for foursome in foursomes.images() {
+            debug_assert_eq!(foursome.weight(), 4);
+        }
+        let mut labels = LabelledPoints::new(|_| OrderedSynthemePoint {
+            side: OrderedSynthemeSide::Left,
+            pair: OrderedSynthemePair::Left,
+        });
+        for (i, foursome) in foursomes.images().enumerate() {
+            let q = OrderedSynthemePoint::enumeration_to_element(&i.into()).unwrap();
+            for p in foursome.points() {
+                *labels.image_mut(&p) = q;
+            }
+        }
+        let s = OrderedSextet { inner: labels };
+        #[cfg(debug_assertions)]
+        s.validate().unwrap();
+        s
     }
 
     fn validate(&self) -> Result<(), String> {
@@ -424,26 +468,10 @@ impl Sextet {
         })
     }
 
-    pub fn from_foursomes(foursomes: [Vector; 6]) -> Self {
-        for foursome in &foursomes {
-            debug_assert_eq!(foursome.weight(), 4);
+    pub fn from_foursomes(foursomes: hexacode::LabelledPoints<Vector>) -> Self {
+        Self {
+            inner: OrderedSextet::from_foursomes(foursomes),
         }
-        let mut labels = LabelledPoints::new(|_| OrderedSynthemePoint {
-            side: OrderedSynthemeSide::Left,
-            pair: OrderedSynthemePair::Left,
-        });
-        for (i, foursome) in foursomes.iter().enumerate() {
-            let q = OrderedSynthemePoint::enumeration_to_element(&i.into()).unwrap();
-            for p in foursome.points() {
-                *labels.image_mut(&p) = q;
-            }
-        }
-        let s = Self {
-            inner: OrderedSextet { inner: labels },
-        };
-        #[cfg(debug_assertions)]
-        s.validate().unwrap();
-        s
     }
 
     fn validate(&self) -> Result<(), String> {
@@ -455,7 +483,7 @@ impl Sextet {
         OrderedSynthemePoint::structure()
             .const_size_permutations()
             .generate_all_elements()
-            .map(move |perm| root.permute(perm))
+            .map(move |perm| root.permute(&perm))
     }
 }
 
@@ -468,6 +496,10 @@ pub struct OrderedSextetLabelling {
 impl OrderedSextetLabelling {
     pub fn foursomes(&self) -> hexacode::LabelledPoints<Vector> {
         self.sextet.foursomes()
+    }
+
+    pub fn point_foursomes(&self) -> &LabelledPoints<OrderedSynthemePoint> {
+        &self.sextet.inner
     }
 
     fn validate(&self) -> Result<(), String> {
@@ -527,6 +559,49 @@ impl OrderedSextetLabelling {
             })
             .unwrap(),
         )
+    }
+
+    pub fn permute_foursomes(self, perm: &ConstSizePermutation<6, OrderedSynthemePoint>) -> Self {
+        Self {
+            sextet: self.sextet.permute(perm),
+            f4_labels: self.f4_labels,
+        }
+    }
+
+    pub fn labels(&self) -> &LabelledPoints<F4> {
+        &self.f4_labels
+    }
+
+    pub fn add_vector(self, vector: &HexacodeVector) -> Self {
+        let point_foursomes = &self.sextet.inner;
+        Self {
+            f4_labels: LabelledPoints::new(|point: Point| {
+                let foursome = point_foursomes.image(&point);
+                *self.f4_labels.get(&point) + *vector.at(foursome)
+            }),
+            sextet: self.sextet,
+        }
+    }
+
+    pub fn scalar_mul(self, lambda: F4) -> Self {
+        assert_ne!(lambda, F4::Zero);
+        Self {
+            f4_labels: LabelledPoints::new(|point: Point| {
+                // use lambda.reciprocal() here because we want to permute the points not the labels
+                *self.f4_labels.get(&point) * lambda.try_reciprocal().unwrap()
+            }),
+            sextet: self.sextet,
+        }
+    }
+
+    pub fn conjugate(self) -> Self {
+        Self {
+            f4_labels: LabelledPoints::new(|point: Point| {
+                // use lambda.reciprocal() here because we want to permute the points not the labels
+                self.f4_labels.get(&point).conjugate()
+            }),
+            sextet: self.sextet,
+        }
     }
 }
 
@@ -713,10 +788,10 @@ pub fn complete_sextet(four_pts: Vector) -> Sextet {
 ///  - w is labelled alpha
 pub fn complete_sextet_labelling(
     sextet: &OrderedSextet,
-    x: Point,
-    y: Point,
-    z: Point,
-    w: Point,
+    x: &Point,
+    y: &Point,
+    z: &Point,
+    w: &Point,
     alpha: F4,
 ) -> OrderedSextetLabelling {
     let foursomes = sextet.foursomes();
@@ -759,7 +834,7 @@ pub fn complete_sextet_labelling(
     // Use the octad containing (T1 \ {x}) U {z, w} to label 1 point in each of T3, T4, T5, T6
     let octad = complete_octad(&Vector::from_points(
         &t0.points()
-            .filter(|p| *p != x)
+            .filter(|p| p != x)
             .chain(vec![z.clone(), w.clone()])
             .collect(),
     ));
@@ -769,7 +844,7 @@ pub fn complete_sextet_labelling(
         take_unique_pt(&octad & t4),
         take_unique_pt(&octad & t5),
     );
-    debug_assert_eq!(w2, w);
+    debug_assert_eq!(&w2, w);
     *labels.image_mut(&w3) = beta;
     *labels.image_mut(&w4) = gamma;
     *labels.image_mut(&w5) = delta;
@@ -785,7 +860,7 @@ pub fn complete_sextet_labelling(
     ] {
         let octad = complete_octad(&Vector::from_points(
             &t0.points()
-                .filter(|p| *p != x)
+                .filter(|p| p != x)
                 .chain(vec![y.clone(), wi.clone()])
                 .collect(),
         ));
@@ -856,6 +931,41 @@ pub fn complete_sextet_labelling(
     OrderedSextetLabelling {
         sextet: sextet.clone(),
         f4_labels: labels,
+    }
+}
+
+pub enum NearestCodewordsResult {
+    Unique { codeword: Vector, distance: usize },
+    Six { codewords: [Vector; 6] },
+}
+
+impl NearestCodewordsResult {
+    pub fn distance(&self) -> usize {
+        match self {
+            NearestCodewordsResult::Unique { distance, .. } => *distance,
+            NearestCodewordsResult::Six { .. } => 4,
+        }
+    }
+}
+
+pub fn nearest_ebgc_codeword(vector: &Vector) -> NearestCodewordsResult {
+    let mut dist_4_codewords = vec![];
+    for codeword in all_ebgc_codewords() {
+        let diff = vector + &codeword;
+        let distance = diff.weight();
+        if distance <= 3 {
+            debug_assert!(dist_4_codewords.is_empty());
+            return NearestCodewordsResult::Unique {
+                codeword: codeword.clone(),
+                distance,
+            };
+        } else if distance == 4 {
+            dist_4_codewords.push(codeword);
+        }
+    }
+    debug_assert_eq!(dist_4_codewords.len(), 6);
+    NearestCodewordsResult::Six {
+        codewords: std::array::from_fn(|i| dist_4_codewords[i].clone()),
     }
 }
 
@@ -1005,7 +1115,8 @@ mod tests {
 
         println!("{:#?}", sextet);
 
-        let sextet_labelling = complete_sextet_labelling(&sextet, p(0), p(1), p(7), p(2), F4::Zero);
+        let sextet_labelling =
+            complete_sextet_labelling(&sextet, &p(0), &p(1), &p(7), &p(2), F4::Zero);
 
         println!("{:#?}", sextet_labelling);
     }

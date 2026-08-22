@@ -19,11 +19,11 @@ pub struct Function<const N: usize, DomainElem, RangeElem> {
     images: [RangeElem; N],
 }
 
-impl<const N: usize, DomainElem: MetaType, RangeElem> Function<N, DomainElem, RangeElem> {
-    pub fn new(f: impl FnMut(DomainElem) -> RangeElem) -> Self
-    where
-        DomainElem::Signature: OrderedFiniteSetSignature + ConstSizeFiniteSetSignature<N>,
-    {
+impl<const N: usize, DomainElem: MetaType, RangeElem> Function<N, DomainElem, RangeElem>
+where
+    DomainElem::Signature: OrderedFiniteSetSignature + ConstSizeFiniteSetSignature<N>,
+{
+    pub fn new(f: impl FnMut(DomainElem) -> RangeElem) -> Self {
         Self {
             _domain: PhantomData,
             images: DomainElem::structure()
@@ -36,15 +36,56 @@ impl<const N: usize, DomainElem: MetaType, RangeElem> Function<N, DomainElem, Ra
                 .unwrap(),
         }
     }
+
+    pub fn new_constant(value: &RangeElem) -> Self
+    where
+        RangeElem: Clone,
+    {
+        Self::new(|_| value.clone())
+    }
+
+    pub fn get(&self, d: &DomainElem) -> &RangeElem {
+        let i: usize = d.element_to_enumeration().try_into().unwrap();
+        &self.images[i]
+    }
+
+    pub fn get_mut(&mut self, d: &DomainElem) -> &mut RangeElem {
+        let i: usize = d.element_to_enumeration().try_into().unwrap();
+        &mut self.images[i]
+    }
+
+    pub fn set(&mut self, d: &DomainElem, r: RangeElem) {
+        let i: usize = d.element_to_enumeration().try_into().unwrap();
+        self.images[i] = r;
+    }
+
+    pub fn set_all(&mut self, r: &RangeElem)
+    where
+        RangeElem: Clone,
+    {
+        self.images = std::array::from_fn(|_| r.clone())
+    }
 }
 
 impl<const N: usize, DomainElem, RangeElem> Function<N, DomainElem, RangeElem> {
-    pub fn iter(&self) -> std::slice::Iter<'_, RangeElem> {
+    pub fn images(&self) -> impl Iterator<Item = &RangeElem> {
         self.images.iter()
     }
 
-    pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, RangeElem> {
+    pub fn images_mut(&mut self) -> impl Iterator<Item = &mut RangeElem> {
         self.images.iter_mut()
+    }
+}
+
+impl<const N: usize, DomainElem: MetaType, RangeElem> Function<N, DomainElem, RangeElem>
+where
+    DomainElem::Signature: OrderedFiniteSetSignature + ConstSizeFiniteSetSignature<N>,
+{
+    pub fn iter(&self) -> impl Iterator<Item = (DomainElem, &RangeElem)> {
+        self.images
+            .iter()
+            .enumerate()
+            .map(|(i, r)| (DomainElem::enumeration_to_element(&i.into()).unwrap(), r))
     }
 
     pub fn map<NewRangeElem>(

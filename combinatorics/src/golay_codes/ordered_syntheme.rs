@@ -10,6 +10,15 @@ pub enum OrderedSynthemeSide {
     Right,
 }
 
+impl OrderedSynthemeSide {
+    pub fn flip(self) -> Self {
+        match self {
+            OrderedSynthemeSide::Left => OrderedSynthemeSide::Right,
+            OrderedSynthemeSide::Right => OrderedSynthemeSide::Left,
+        }
+    }
+}
+
 impl ConstSizeFiniteSetSignature<2> for OrderedSynthemeSideCanonicalStructure {}
 
 /// Given an ordered syntheme `ab cd ef` specify a pair i.e. `ab`, `cd`, or `ef`.
