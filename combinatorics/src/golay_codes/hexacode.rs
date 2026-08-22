@@ -15,7 +15,7 @@ use algebraeon_rings::{
         finitely_free_submodule::FinitelyFreeSubmoduleStructure,
         finitely_free_submodules::FinitelyFreeSubmodule,
     },
-    structure::{FinitelyFreeModuleSignature, MetaAdditionSignature},
+    structure::FinitelyFreeModuleSignature,
 };
 use algebraeon_sets::sets::Function;
 use algebraeon_structures::*;

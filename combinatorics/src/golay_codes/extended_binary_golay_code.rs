@@ -474,6 +474,7 @@ impl Sextet {
         }
     }
 
+    #[allow(unused)]
     fn validate(&self) -> Result<(), String> {
         self.inner.validate()
     }
@@ -502,6 +503,7 @@ impl OrderedSextetLabelling {
         &self.sextet.inner
     }
 
+    #[allow(unused)]
     fn validate(&self) -> Result<(), String> {
         self.sextet.validate()?;
         for foursome in self.foursomes() {
@@ -796,16 +798,16 @@ pub fn complete_sextet_labelling(
 ) -> OrderedSextetLabelling {
     let foursomes = sextet.foursomes();
     let osp = |i: usize| OrderedSynthemePoint::enumeration_to_element(&i.into()).unwrap();
-    assert!(foursomes.image(&osp(0)).contains_point(&x));
-    assert!(foursomes.image(&osp(1)).contains_point(&y));
-    assert!(foursomes.image(&osp(1)).contains_point(&z));
-    assert!(foursomes.image(&osp(2)).contains_point(&w));
+    assert!(foursomes.image(&osp(0)).contains_point(x));
+    assert!(foursomes.image(&osp(1)).contains_point(y));
+    assert!(foursomes.image(&osp(1)).contains_point(z));
+    assert!(foursomes.image(&osp(2)).contains_point(w));
     assert_ne!(y, z);
     let mut labels = LabelledPoints::new(|_| F4::Zero);
-    debug_assert_eq!(labels.image(&x), &F4::Zero);
-    debug_assert_eq!(labels.image(&y), &F4::Zero);
-    *labels.image_mut(&z) = F4::One;
-    *labels.image_mut(&w) = alpha;
+    debug_assert_eq!(labels.image(x), &F4::Zero);
+    debug_assert_eq!(labels.image(y), &F4::Zero);
+    *labels.image_mut(z) = F4::One;
+    *labels.image_mut(w) = alpha;
 
     let t0 = foursomes.image(&osp(0));
     let t1 = foursomes.image(&osp(1));
@@ -898,9 +900,9 @@ pub fn complete_sextet_labelling(
             }
         }
     }
-    debug_assert_eq!(labels.image(&x), &F4::Zero);
-    debug_assert_eq!(labels.image(&y), &F4::Zero);
-    debug_assert_eq!(labels.image(&z), &F4::One);
+    debug_assert_eq!(labels.image(x), &F4::Zero);
+    debug_assert_eq!(labels.image(y), &F4::Zero);
+    debug_assert_eq!(labels.image(z), &F4::One);
     debug_assert_eq!(labels.image(&w2), &alpha);
     debug_assert_eq!(labels.image(&w3), &beta);
     debug_assert_eq!(labels.image(&w4), &gamma);
@@ -934,6 +936,7 @@ pub fn complete_sextet_labelling(
     }
 }
 
+#[allow(clippy::large_enum_variant)]
 pub enum NearestCodewordsResult {
     Unique { codeword: Vector, distance: usize },
     Six { codewords: [Vector; 6] },
