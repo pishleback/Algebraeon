@@ -28,6 +28,7 @@ use algebraeon_sets::sets::{
 use algebraeon_structures::*;
 use cantor::Finite;
 use std::{
+    borrow::Borrow,
     collections::{BTreeMap, HashSet},
     ops::{Add, BitAnd, BitOr},
     sync::{Arc, OnceLock},
@@ -294,10 +295,10 @@ impl Vector {
         Point::generate_all_elements().filter(|p| self.contains_point(p))
     }
 
-    pub fn from_points(points: &Vec<Point>) -> Self {
+    pub fn from_points(points: &Vec<impl Borrow<Point>>) -> Self {
         let mut coords = LabelledPoints::new(|_| F2::zero());
         for p in points {
-            *coords.image_mut(p) = F2::one();
+            *coords.image_mut(p.borrow()) = F2::one();
         }
         Self { coords }
     }
@@ -495,6 +496,18 @@ pub struct OrderedSextetLabelling {
 }
 
 impl OrderedSextetLabelling {
+    pub fn standard_labelling() -> Self {
+        let s = Self {
+            sextet: OrderedSextet {
+                inner: Function::new(|p: Point| p.col),
+            },
+            f4_labels: Function::new(|p: Point| p.row),
+        };
+        #[cfg(debug_assertions)]
+        s.validate().unwrap();
+        s
+    }
+
     pub fn foursomes(&self) -> hexacode::LabelledPoints<Vector> {
         self.sextet.foursomes()
     }
@@ -598,12 +611,17 @@ impl OrderedSextetLabelling {
 
     pub fn conjugate(self) -> Self {
         Self {
-            f4_labels: LabelledPoints::new(|point: Point| {
-                // use lambda.reciprocal() here because we want to permute the points not the labels
-                self.f4_labels.get(&point).conjugate()
-            }),
+            f4_labels: LabelledPoints::new(|point: Point| self.f4_labels.get(&point).conjugate()),
             sextet: self.sextet,
         }
+    }
+
+    pub fn permutation_to_standard_labelling(&self) -> ConstSizePermutation<24, Point> {
+        ConstSizePermutation::new_fn(|p| Point {
+            row: *self.f4_labels.image(p),
+            col: *self.sextet.inner.image(p),
+        })
+        .unwrap()
     }
 }
 
@@ -690,11 +708,8 @@ fn cache() -> &'static ExtendedBinaryGolayCodeCache {
                                 for e in 0..d {
                                     octad_from_5_points.insert(
                                         Vector::from_points(&vec![
-                                            points[a].clone(),
-                                            points[b].clone(),
-                                            points[c].clone(),
-                                            points[d].clone(),
-                                            points[e].clone(),
+                                            &points[a], &points[b], &points[c], &points[d],
+                                            &points[e],
                                         ]),
                                         vector.clone(),
                                     );
@@ -937,6 +952,7 @@ pub fn complete_sextet_labelling(
 }
 
 #[allow(clippy::large_enum_variant)]
+#[derive(Debug, Clone)]
 pub enum NearestCodewordsResult {
     Unique { codeword: Vector, distance: usize },
     Six { codewords: [Vector; 6] },
@@ -992,6 +1008,186 @@ impl EbgcPointPermutation for ConstSizePermutation<24, Point> {
         }
         true
     }
+}
+
+/// Return an element of M24 sending (a, b, c, d, e) to the following points of the MOG
+///
+/// a e  - -  - -
+/// b -  - -  - -
+/// c -  - -  - -
+/// d -  - -  - -
+///
+/// There may be more than one such permutation, there is no guarantee which one this returns.
+///
+/// # Errors
+/// If a, b, c, d, e are not all mutually distinct
+#[allow(clippy::result_unit_err)]
+pub fn find_5_transitive_permutation_to_standard_points(
+    a: &Point,
+    b: &Point,
+    c: &Point,
+    d: &Point,
+    e: &Point,
+) -> Result<ConstSizePermutation<24, Point>, ()> {
+    /*
+    Strategy:
+    1. Take an ordered sextet starting with the tetrad {a, b, c, d}
+    2. Using a sextet labelling, move {a, b, c, d} to the first standard tetrad
+    3. Use hexacode automorphisms to put a, b, c, d into their places:
+      - Add hexacodewords to put a in its place
+      - Multiply by a scalar from F4 to put b in its place
+      - Optionally conjugate to put c and d in their place
+    4. An alternating permutation of the last 5 standard tetrads puts e in the second standard tetrad
+    5. Adding a hexacodeword of the form 0x---- puts e in its place
+     */
+
+    let given_points = vec![a, b, c, d, e];
+    let given_sorted_points = Point::structure().sort(given_points);
+    if !Point::structure().is_sorted_and_unique(&given_sorted_points) {
+        return Err(());
+    }
+
+    let first_tetrad = OrderedSynthemePoint::enumeration_to_element(&Natural::ZERO).unwrap();
+    let second_tetrad = OrderedSynthemePoint::enumeration_to_element(&Natural::ONE).unwrap();
+    let third_tetrad = OrderedSynthemePoint::enumeration_to_element(&Natural::TWO).unwrap();
+    let fourth_tetrad = OrderedSynthemePoint::enumeration_to_element(&Natural::from(3u8)).unwrap();
+
+    // make a labelling with a, b, c, d in the first sextet and e in the second sextet
+    let mut ordered_sextet_labelling = {
+        let mut ordered_sextet = complete_sextet(Vector::from_points(&vec![a, b, c, d]))
+            .orderings()
+            .next()
+            .unwrap();
+
+        // make {a, b, c, d} the first tetrad
+        let abcd_tetrad = ordered_sextet.inner.image(a);
+        if *abcd_tetrad != first_tetrad {
+            ordered_sextet = ordered_sextet
+                .permute(&ConstSizePermutation::new_swap(first_tetrad, *abcd_tetrad).unwrap());
+        }
+
+        // put e in the second tetrad
+        let e_tetrad = ordered_sextet.inner.image(e);
+        if *e_tetrad != second_tetrad {
+            ordered_sextet = ordered_sextet
+                .permute(&ConstSizePermutation::new_swap(second_tetrad, *e_tetrad).unwrap());
+        }
+
+        // any point in the second tetrad different from e
+        let f = {
+            let ordered_sextet_foursomes = ordered_sextet.foursomes();
+            let mut second_tetrad_points = ordered_sextet_foursomes.image(&second_tetrad).points();
+            let f = second_tetrad_points.next().unwrap();
+            if *e != f {
+                f
+            } else {
+                second_tetrad_points.next().unwrap()
+            }
+        };
+
+        // any point in the third tetrad
+        let g = ordered_sextet
+            .foursomes()
+            .image(&third_tetrad)
+            .points()
+            .next()
+            .unwrap();
+
+        complete_sextet_labelling(&ordered_sextet, a, e, &f, &g, F4::Zero)
+    };
+
+    debug_assert!(
+        ordered_sextet_labelling
+            .permutation_to_standard_labelling()
+            .is_ebgc_automorphism()
+    );
+
+    // add a vector to give `a` the label `F4::Zero`
+    let hexacode_vector = HexacodeVector::new(|q| match q.pair {
+        OrderedSynthemePair::Left => F4::One,
+        OrderedSynthemePair::Middle => F4::One,
+        OrderedSynthemePair::Right => F4::Zero,
+    });
+    let a_label = *ordered_sextet_labelling.f4_labels.image(a);
+    ordered_sextet_labelling = ordered_sextet_labelling.add_vector(&(a_label * &hexacode_vector));
+    debug_assert_eq!(ordered_sextet_labelling.f4_labels.image(a), &F4::Zero);
+    debug_assert!(
+        ordered_sextet_labelling
+            .permutation_to_standard_labelling()
+            .is_ebgc_automorphism()
+    );
+
+    // multiply by a scalar to give `b` the label `F4::ONE`
+    let b_label = *ordered_sextet_labelling.f4_labels.image(b);
+    ordered_sextet_labelling = ordered_sextet_labelling.scalar_mul(b_label);
+    debug_assert_eq!(ordered_sextet_labelling.f4_labels.image(a), &F4::Zero);
+    debug_assert_eq!(ordered_sextet_labelling.f4_labels.image(b), &F4::One);
+    debug_assert!(
+        ordered_sextet_labelling
+            .permutation_to_standard_labelling()
+            .is_ebgc_automorphism()
+    );
+
+    // conjugate if necessary to give `c` and `d` the labels `F4::Alpha` and `F4::Beta` respectively
+    if *ordered_sextet_labelling.f4_labels.image(c) != F4::Alpha {
+        ordered_sextet_labelling = ordered_sextet_labelling.conjugate();
+        ordered_sextet_labelling = ordered_sextet_labelling.permute_foursomes(
+            &ConstSizePermutation::new_swap(third_tetrad, fourth_tetrad).unwrap(),
+        );
+    }
+    debug_assert_eq!(ordered_sextet_labelling.f4_labels.image(a), &F4::Zero);
+    debug_assert_eq!(ordered_sextet_labelling.f4_labels.image(b), &F4::One);
+    debug_assert_eq!(ordered_sextet_labelling.f4_labels.image(c), &F4::Alpha);
+    debug_assert_eq!(ordered_sextet_labelling.f4_labels.image(d), &F4::Beta);
+    debug_assert!(
+        ordered_sextet_labelling
+            .permutation_to_standard_labelling()
+            .is_ebgc_automorphism()
+    );
+
+    // add a vector to give `e` the label `F4::Zero`
+    let hexacode_vector = HexacodeVector::new(|q| match q.pair {
+        OrderedSynthemePair::Left | OrderedSynthemePair::Middle => match q.side {
+            OrderedSynthemeSide::Left => F4::Zero,
+            OrderedSynthemeSide::Right => F4::One,
+        },
+        OrderedSynthemePair::Right => match q.side {
+            OrderedSynthemeSide::Left => F4::Alpha,
+            OrderedSynthemeSide::Right => F4::Beta,
+        },
+    });
+    let e_label = *ordered_sextet_labelling.f4_labels.image(e);
+    ordered_sextet_labelling = ordered_sextet_labelling.add_vector(&(e_label * &hexacode_vector));
+    debug_assert_eq!(ordered_sextet_labelling.f4_labels.image(a), &F4::Zero);
+    debug_assert_eq!(ordered_sextet_labelling.f4_labels.image(b), &F4::One);
+    debug_assert_eq!(ordered_sextet_labelling.f4_labels.image(c), &F4::Alpha);
+    debug_assert_eq!(ordered_sextet_labelling.f4_labels.image(d), &F4::Beta);
+    debug_assert_eq!(ordered_sextet_labelling.f4_labels.image(e), &F4::Zero);
+
+    let aut = ordered_sextet_labelling.permutation_to_standard_labelling();
+    debug_assert!(aut.is_ebgc_automorphism());
+    Ok(aut)
+}
+
+/// Return an element of M24 sending 5 distinct points to 5 other distinct points
+///
+/// # Errors
+/// If any of the 5 inputs are not mutually distinct or if any of the 5 outputs are not mutually distinct
+#[allow(clippy::result_unit_err)]
+pub fn find_5_transitive_permutation(
+    a: (&Point, &Point),
+    b: (&Point, &Point),
+    c: (&Point, &Point),
+    d: (&Point, &Point),
+    e: (&Point, &Point),
+) -> Result<ConstSizePermutation<24, Point>, ()> {
+    Ok(
+        find_5_transitive_permutation_to_standard_points(a.1, b.1, c.1, d.1, e.1)?
+            .inverse()
+            .compose(&find_5_transitive_permutation_to_standard_points(
+                a.0, b.0, c.0, d.0, e.0,
+            )?),
+    )
 }
 
 #[cfg(test)]
@@ -1281,5 +1477,21 @@ mod tests {
             }
         });
         assert_eq!(x.to_mat(), Vector::from_mat(&x.to_mat()).unwrap().to_mat());
+    }
+
+    #[test]
+    fn test_5_transitive() {
+        let p = |n: usize| -> Point { Point::enumeration_to_element(&n.into()).unwrap() };
+
+        let perm =
+            find_5_transitive_permutation_to_standard_points(&p(7), &p(9), &p(21), &p(6), &p(5))
+                .unwrap();
+
+        assert!(perm.is_ebgc_automorphism());
+        assert_eq!(perm.image(&p(7)), p(0));
+        assert_eq!(perm.image(&p(9)), p(6));
+        assert_eq!(perm.image(&p(21)), p(12));
+        assert_eq!(perm.image(&p(6)), p(18));
+        assert_eq!(perm.image(&p(5)), p(1));
     }
 }

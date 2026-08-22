@@ -20,7 +20,7 @@ use algebraeon_rings::{
 use algebraeon_sets::sets::Function;
 use algebraeon_structures::*;
 use std::{
-    ops::Add,
+    ops::{Add, Mul},
     sync::{Arc, OnceLock},
 };
 
@@ -97,6 +97,14 @@ impl Add<&HexacodeVector> for &HexacodeVector {
 
     fn add(self, other: &HexacodeVector) -> Self::Output {
         LabelledPoints::<F4>::new(|p| *self.0.image(&p) + *other.0.image(&p)).into()
+    }
+}
+
+impl Mul<&HexacodeVector> for QuaternaryField {
+    type Output = HexacodeVector;
+
+    fn mul(self, other: &HexacodeVector) -> Self::Output {
+        LabelledPoints::<F4>::new(|p| self * *other.0.image(&p)).into()
     }
 }
 
