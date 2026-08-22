@@ -76,6 +76,8 @@ x^2 - 5x + 6 = (x-2)(x-3)
 x^{15}-1 = (x-1)(x^2+x+1)(x^4+x^3+x^2+x+1)(x^8-x^7+x^5-x^4+x^3-x+1)
 ```
 
+Algebraeon implements the [Berlekamp Zassenhaus](https://en.wikipedia.org/wiki/Berlekamp%E2%80%93Zassenhaus_algorithm) for factoring integer polynomials, including use of the van Hoeij algorithm to handle cases where the number of modular factors is large.
+
 ## Linear Systems of Equations
 
 Find the general solution to the linear system
