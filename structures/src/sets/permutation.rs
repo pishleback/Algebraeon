@@ -72,3 +72,25 @@ pub trait PermutationsSignature<Set: SetSignature>: GroupSignature {
         !self.is_even(perm)
     }
 }
+
+#[signature_meta_trait]
+pub trait FiniteSetPermutationsSignature<Set: FiniteSetSignature>:
+    PermutationsSignature<Set>
+{
+    #[allow(clippy::result_unit_err)]
+    fn new_fn(
+        self: &Arc<Self>,
+        mut f: impl FnMut(&Set::Elem) -> Set::Elem,
+    ) -> Result<Self::Elem, ()> {
+        self.new_perm(
+            self.set()
+                .clone()
+                .generate_all_elements()
+                .map(move |x| {
+                    let y = f(&x);
+                    (x, y)
+                })
+                .collect(),
+        )
+    }
+}

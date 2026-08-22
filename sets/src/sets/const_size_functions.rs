@@ -150,6 +150,28 @@ where
     }
 }
 
+impl<const N: usize, DomainElem: MetaType + Eq, RangeElem: MetaType + Eq> PartialOrd
+    for Function<N, DomainElem, RangeElem>
+where
+    DomainElem::Signature: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
+    RangeElem::Signature: OrdSignature,
+{
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl<const N: usize, DomainElem: MetaType + Eq, RangeElem: MetaType + Eq> Ord
+    for Function<N, DomainElem, RangeElem>
+where
+    DomainElem::Signature: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
+    RangeElem::Signature: OrdSignature,
+{
+    fn cmp(&self, other: &Self) -> Ordering {
+        Self::structure().cmp(self, other)
+    }
+}
+
 /// Represent all functions from `domain` to `range`
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ConstSizeFunctionsStructure<
@@ -247,6 +269,16 @@ impl<
         debug_assert!(self.is_element(f));
         debug_assert!(self.domain().is_element(x));
         &f[TryInto::<usize>::try_into(self.domain().element_to_enumeration(x)).unwrap()]
+    }
+
+    fn image_mut<'a>(
+        self: &Arc<Self>,
+        f: &'a mut Self::Elem,
+        x: &<Domain as SetSignature>::Elem,
+    ) -> &'a mut <Range as SetSignature>::Elem {
+        debug_assert!(self.is_element(f));
+        debug_assert!(self.domain().is_element(x));
+        &mut f[TryInto::<usize>::try_into(self.domain().element_to_enumeration(x)).unwrap()]
     }
 }
 

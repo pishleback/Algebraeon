@@ -42,14 +42,6 @@ impl<const N: usize, Elem> ConstSizePermutation<N, Elem> {
         Ok(())
     }
 
-    fn identity() -> Self {
-        Self {
-            _elem: PhantomData,
-            forward: std::array::from_fn(|i| i),
-            backward: std::array::from_fn(|i| i),
-        }
-    }
-
     fn inverse(self) -> Self {
         Self {
             _elem: PhantomData,
@@ -147,7 +139,7 @@ impl<const N: usize, Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSigna
     fn new_cycle(self: &Arc<Self>, cycle: Vec<Set::Elem>) -> Result<Self::Elem, ()> {
         let k = cycle.len();
         if k == 0 {
-            return Ok(ConstSizePermutation::identity());
+            return Ok(self.identity());
         }
         let cycle = cycle
             .into_iter()
@@ -298,6 +290,11 @@ impl<const N: usize, Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSigna
 }
 
 impl<const N: usize, Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature>
+    FiniteSetPermutationsSignature<Set> for ConstSizePermutationsStructure<N, Set>
+{
+}
+
+impl<const N: usize, Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature>
     CompositionSignature for ConstSizePermutationsStructure<N, Set>
 {
     fn compose(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
@@ -342,7 +339,11 @@ impl<const N: usize, Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSigna
     IdentitySignature for ConstSizePermutationsStructure<N, Set>
 {
     fn identity(self: &Arc<Self>) -> Self::Elem {
-        ConstSizePermutation::identity()
+        ConstSizePermutation {
+            _elem: PhantomData,
+            forward: std::array::from_fn(|i| i),
+            backward: std::array::from_fn(|i| i),
+        }
     }
 }
 

@@ -1,6 +1,6 @@
 //! The hexacode on the standard ordered syntheme
 
-use crate::linear_codes::pointed_ordered_3cycle::{
+use crate::golay_codes::pointed_ordered_3cycle::{
     PointedOrdered3Cycle, PointedOrdered3CycleCanonicalStructure,
 };
 use algebraeon_rings::{
