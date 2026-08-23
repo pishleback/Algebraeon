@@ -1,6 +1,6 @@
 //! The hexacode on the standard ordered syntheme
 
-use crate::linear_codes::pointed_ordered_3cycle::{
+use crate::golay_codes::pointed_ordered_3cycle::{
     PointedOrdered3Cycle, PointedOrdered3CycleCanonicalStructure,
 };
 use algebraeon_rings::{
@@ -189,7 +189,7 @@ impl TetracodeVector {
 /// Returns None if the number of given coordinates is not 2
 pub fn complete_tetracodeword_from_2(given: LabelledPoints<Option<F3>>) -> Option<TetracodeVector> {
     if given
-        .iter()
+        .images()
         .map(|x| if x.is_some() { 1 } else { 0 })
         .sum::<usize>()
         != 2
@@ -197,7 +197,7 @@ pub fn complete_tetracodeword_from_2(given: LabelledPoints<Option<F3>>) -> Optio
         None
     } else {
         for codeword in tetracode_subspace_structure().list_all_elements() {
-            if given.iter().enumerate().all(|(i, x)| {
+            if given.images().enumerate().all(|(i, x)| {
                 if let Some(x) = x {
                     x == &codeword[i]
                 } else {
@@ -215,7 +215,7 @@ pub fn complete_tetracodeword_from_2(given: LabelledPoints<Option<F3>>) -> Optio
 pub fn correct_tetracodeword_from_4(given: LabelledPoints<F3>) -> TetracodeVector {
     for codeword in tetracode_subspace_structure().list_all_elements() {
         if given
-            .iter()
+            .images()
             .enumerate()
             .map(|(i, x)| if x == &codeword[i] { 1 } else { 0 })
             .sum::<usize>()

@@ -47,6 +47,7 @@ pub trait PermutationsSignature<Set: SetSignature>: GroupSignature {
 
     /// The disjoint cycle decomposition
     /// Cycles may appear in any order and the elements of each cycle may come in any order
+    /// Cycles of length 1 are excluded
     fn disjoint_cycles(self: &Arc<Self>, perm: &Self::Elem) -> Vec<Vec<Set::Elem>>;
 
     fn cycle_shape(self: &Arc<Self>, perm: &Self::Elem) -> HashMap<usize, usize> {
@@ -70,5 +71,27 @@ pub trait PermutationsSignature<Set: SetSignature>: GroupSignature {
 
     fn is_odd(self: &Arc<Self>, perm: &Self::Elem) -> bool {
         !self.is_even(perm)
+    }
+}
+
+#[signature_meta_trait]
+pub trait FiniteSetPermutationsSignature<Set: FiniteSetSignature>:
+    PermutationsSignature<Set>
+{
+    #[allow(clippy::result_unit_err)]
+    fn new_fn(
+        self: &Arc<Self>,
+        mut f: impl FnMut(&Set::Elem) -> Set::Elem,
+    ) -> Result<Self::Elem, ()> {
+        self.new_perm(
+            self.set()
+                .clone()
+                .generate_all_elements()
+                .map(move |x| {
+                    let y = f(&x);
+                    (x, y)
+                })
+                .collect(),
+        )
     }
 }

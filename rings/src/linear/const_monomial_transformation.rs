@@ -9,7 +9,9 @@ use crate::{
             ConstSizeFunctionsToRingUnitsGroup,
             ConstSizeLeftPermutationActionOnFunctionsToRingUnitsGroupStructure,
         },
-        monomial_transformations::MonomialTransformationsSignature,
+        monomial_transformations::{
+            MonomialTransformationsSignature, MonomialTransformationsSupersetSignature,
+        },
     },
     structure::{GaloisFieldWithGroupSignature, RingSignature, TryReciprocalSignature},
 };
@@ -290,26 +292,26 @@ impl<
     const N: usize,
     Basis: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
     Ring: RingSignature + TryReciprocalSignature,
-> MonomialTransformationsSignature<Basis, Ring>
+> MonomialTransformationsSupersetSignature<Basis, Ring>
     for ConstSizeMonomialTransformationsStructure<N, Basis, Ring>
 {
     type Permutations = ConstSizePermutationsStructure<N, Basis>;
     type FinitelyFreeModule = ConstFinitelyFreeModuleStructure<N, Basis, Ring>;
 
-    fn basis(self: &Arc<Self>) -> &Arc<Basis> {
-        &self.basis
+    fn basis(self: &Arc<Self>) -> Arc<Basis> {
+        self.basis.clone()
     }
 
     fn basis_permutations(self: &Arc<Self>) -> Arc<Self::Permutations> {
         self.basis().const_size_permutations()
     }
 
-    fn ring(self: &Arc<Self>) -> &Arc<Ring> {
-        &self.ring
+    fn ring(self: &Arc<Self>) -> Arc<Ring> {
+        self.ring.clone()
     }
 
     fn module(self: &Arc<Self>) -> Arc<Self::FinitelyFreeModule> {
-        self.ring().free_module(self.basis())
+        self.ring().free_module(&self.basis())
     }
 
     fn new_permutation(
@@ -349,7 +351,15 @@ impl<
             .new_h_compose_n(permutation, scalars)
             .into()
     }
+}
 
+impl<
+    const N: usize,
+    Basis: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
+    Ring: RingSignature + TryReciprocalSignature,
+> MonomialTransformationsSignature<Basis, Ring>
+    for ConstSizeMonomialTransformationsStructure<N, Basis, Ring>
+{
     fn permutation_part(
         self: &Arc<Self>,
         monomial_transformation: &Self::Elem,
@@ -381,6 +391,93 @@ impl<
         debug_assert!(self.is_element(monomial_transformation));
         self.semidirect_product_structure()
             .h_compose_n(&monomial_transformation.repr)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct LeftMonomialTransformationActionOnConstFinitelyFreeModuleStructure<
+    const N: usize,
+    Basis: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
+    Ring: RingSignature + TryReciprocalSignature,
+> {
+    module: Arc<ConstFinitelyFreeModuleStructure<N, Basis, Ring>>,
+    group: Arc<ConstSizeMonomialTransformationsStructure<N, Basis, Ring>>,
+}
+
+impl<
+    const N: usize,
+    Basis: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
+    Ring: RingSignature + TryReciprocalSignature,
+> LeftMonomialTransformationActionOnConstFinitelyFreeModuleStructure<N, Basis, Ring>
+{
+    fn new(
+        module: Arc<ConstFinitelyFreeModuleStructure<N, Basis, Ring>>,
+        group: Arc<ConstSizeMonomialTransformationsStructure<N, Basis, Ring>>,
+    ) -> Arc<Self> {
+        Self { module, group }.into()
+    }
+}
+
+impl<
+    const N: usize,
+    Basis: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
+    Ring: RingSignature + TryReciprocalSignature,
+> Signature for LeftMonomialTransformationActionOnConstFinitelyFreeModuleStructure<N, Basis, Ring>
+{
+}
+
+impl<
+    const N: usize,
+    Basis: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
+    Ring: RingSignature + TryReciprocalSignature,
+> ConstFinitelyFreeModuleStructure<N, Basis, Ring>
+{
+    pub fn monomial_transformation_action(
+        self: &Arc<Self>,
+    ) -> Arc<
+        impl LeftGroupActionSignature<ConstSizeMonomialTransformationsStructure<N, Basis, Ring>, Self>,
+    > {
+        LeftMonomialTransformationActionOnConstFinitelyFreeModuleStructure::new(
+            self.clone(),
+            self.monomial_transformations(),
+        )
+    }
+}
+
+impl<
+    const N: usize,
+    Basis: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature,
+    Ring: RingSignature + TryReciprocalSignature,
+>
+    LeftGroupActionSignature<
+        ConstSizeMonomialTransformationsStructure<N, Basis, Ring>,
+        ConstFinitelyFreeModuleStructure<N, Basis, Ring>,
+    > for LeftMonomialTransformationActionOnConstFinitelyFreeModuleStructure<N, Basis, Ring>
+{
+    fn group(self: &Arc<Self>) -> Arc<ConstSizeMonomialTransformationsStructure<N, Basis, Ring>> {
+        self.group.clone()
+    }
+
+    fn set(self: &Arc<Self>) -> Arc<ConstFinitelyFreeModuleStructure<N, Basis, Ring>> {
+        self.module.clone()
+    }
+
+    fn apply(
+        self: &Arc<Self>,
+        g: &ConstSizeMonomialTransformation<N, Basis::Elem, Ring::Elem>,
+        vec: &Function<N, Basis::Elem, Ring::Elem>,
+    ) -> Function<N, Basis::Elem, Ring::Elem> {
+        let mod_fns = self.module.functions_restructure();
+        let basis_perms = self.group.basis_permutations();
+        let (scalars, perm) = self.group.permutation_then_scalars(g);
+        mod_fns
+            .function(|i| {
+                self.module.ring().mul(
+                    mod_fns.image(&scalars, i),
+                    mod_fns.image(vec, &basis_perms.preimage(&perm, i)),
+                )
+            })
+            .unwrap()
     }
 }
 

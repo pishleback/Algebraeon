@@ -702,7 +702,7 @@ fn factorize_primitive_squarefree_by_berlekamp_zassenhaus_with_optional_van_hoei
     let mut good_primes_checked = 0;
     let max_good_primes = 5;
     let mut possible_proper_factor_degrees = (1..f.degree().unwrap()).collect::<BTreeSet<_>>();
-    for p in primes() {
+    for p in primes().map(|p| p.try_into().unwrap()) {
         if let Some(prime_factorization) = FactorizationAtGoodPrime::try_new(p, f) {
             good_primes_checked += 1;
             let factor_degrees = prime_factorization.factor_degrees();

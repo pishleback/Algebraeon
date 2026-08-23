@@ -42,14 +42,6 @@ impl<const N: usize, Elem> ConstSizePermutation<N, Elem> {
         Ok(())
     }
 
-    fn identity() -> Self {
-        Self {
-            _elem: PhantomData,
-            forward: std::array::from_fn(|i| i),
-            backward: std::array::from_fn(|i| i),
-        }
-    }
-
     fn inverse(self) -> Self {
         Self {
             _elem: PhantomData,
@@ -58,6 +50,7 @@ impl<const N: usize, Elem> ConstSizePermutation<N, Elem> {
         }
     }
 
+    /// The disjoint cycles of this permutation including those of length 1
     fn disjoint_cycles(&self) -> Vec<Vec<usize>> {
         // vector of pairs of moved elements and whether they have been accounted for
         let mut elems_todo = (0..N).map(|elem| (elem, false)).collect::<Vec<_>>();
@@ -147,7 +140,7 @@ impl<const N: usize, Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSigna
     fn new_cycle(self: &Arc<Self>, cycle: Vec<Set::Elem>) -> Result<Self::Elem, ()> {
         let k = cycle.len();
         if k == 0 {
-            return Ok(ConstSizePermutation::identity());
+            return Ok(self.identity());
         }
         let cycle = cycle
             .into_iter()
@@ -287,14 +280,25 @@ impl<const N: usize, Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSigna
         debug_assert!(self.is_element(perm));
         perm.disjoint_cycles()
             .into_iter()
-            .map(|cycle| {
-                cycle
-                    .into_iter()
-                    .map(|i| self.set().enumeration_to_element(&i.into()).unwrap())
-                    .collect()
+            .filter_map(|cycle| {
+                if cycle.len() == 1 {
+                    None
+                } else {
+                    Some(
+                        cycle
+                            .into_iter()
+                            .map(|i| self.set().enumeration_to_element(&i.into()).unwrap())
+                            .collect(),
+                    )
+                }
             })
             .collect()
     }
+}
+
+impl<const N: usize, Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature>
+    FiniteSetPermutationsSignature<Set> for ConstSizePermutationsStructure<N, Set>
+{
 }
 
 impl<const N: usize, Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSignature>
@@ -342,7 +346,11 @@ impl<const N: usize, Set: ConstSizeFiniteSetSignature<N> + OrderedFiniteSetSigna
     IdentitySignature for ConstSizePermutationsStructure<N, Set>
 {
     fn identity(self: &Arc<Self>) -> Self::Elem {
-        ConstSizePermutation::identity()
+        ConstSizePermutation {
+            _elem: PhantomData,
+            forward: std::array::from_fn(|i| i),
+            backward: std::array::from_fn(|i| i),
+        }
     }
 }
 

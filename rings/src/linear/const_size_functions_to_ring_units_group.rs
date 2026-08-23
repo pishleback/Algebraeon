@@ -46,7 +46,7 @@ impl<
     type Elem = Function<N, Basis::Elem, Ring::Elem>;
 
     fn validate_element(self: &Arc<Self>, x: &Self::Elem) -> Result<(), String> {
-        if !x.iter().all(|lambda| self.ring.is_unit(lambda)) {
+        if !x.images().all(|lambda| self.ring.is_unit(lambda)) {
             return Err("Scalars are not all units".to_string());
         }
         Ok(())
