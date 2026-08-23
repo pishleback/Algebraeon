@@ -40,4 +40,13 @@ pub struct OrderedSynthemePoint {
     pub side: OrderedSynthemeSide,
 }
 
+impl OrderedSynthemePoint {
+    pub fn flip_side(self) -> Self {
+        Self {
+            pair: self.pair,
+            side: self.side.flip(),
+        }
+    }
+}
+
 impl ConstSizeFiniteSetSignature<6> for OrderedSynthemePointCanonicalStructure {}

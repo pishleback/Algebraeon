@@ -1190,6 +1190,155 @@ pub fn find_5_transitive_permutation(
     )
 }
 
+/// The unique element of M24 which fixes the points marked x and cyclicly permutes (y z w)
+///
+/// x x  - -  - -
+/// x y  - -  - -
+/// x z  - -  - -
+/// x w  - -  - -
+fn octad_standard_3_cycle() -> ConstSizePermutation<24, Point> {
+    let p = |i: usize| -> Point { Point::enumeration_to_element(&i.into()).unwrap() };
+    /*
+    0  1  2  3  4  5
+    6  7  8  9  10 11
+    12 13 14 15 16 17
+    18 19 20 21 22 23
+    */
+    let aut = ConstSizePermutation::new_cycles(vec![
+        vec![p(7), p(13), p(19)],
+        vec![p(20), p(14), p(8)],
+        vec![p(3), p(4), p(5)],
+        vec![p(9), p(22), p(17)],
+        vec![p(15), p(10), p(23)],
+        vec![p(21), p(16), p(11)],
+    ])
+    .unwrap();
+    debug_assert!(aut.is_ebgc_automorphism());
+    aut
+}
+
+/// Return the 48 permutations forming the pointwise stabilizer of the 5 points marked x
+///
+/// x x  - -  - -
+/// x -  - -  - -
+/// x -  - -  - -
+/// x -  - -  - -
+fn stabilizer_perms_standard_5_points() -> Vec<ConstSizePermutation<24, Point>> {
+    let mut perms = vec![];
+
+    let hexacode_vector = HexacodeVector::new(|q| match q.pair {
+        OrderedSynthemePair::Left => F4::Zero,
+        OrderedSynthemePair::Middle => F4::One,
+        OrderedSynthemePair::Right => F4::One,
+    });
+
+    for lambda in F4::list_all_elements() {
+        let perm1 = OrderedSextetLabelling::standard_labelling()
+            .add_vector(&(lambda * &hexacode_vector))
+            .permutation_to_standard_labelling();
+        for tetrads_perm2 in [
+            ConstSizePermutation::identity(),
+            ConstSizePermutation::new_fn(|q: &OrderedSynthemePoint| match q.pair {
+                OrderedSynthemePair::Left => *q,
+                OrderedSynthemePair::Middle | OrderedSynthemePair::Right => q.flip_side(),
+            })
+            .unwrap(),
+        ] {
+            let perm2 = OrderedSextetLabelling::standard_labelling()
+                .permute_foursomes(&tetrads_perm2)
+                .permutation_to_standard_labelling();
+            for tetrads_perm3 in [
+                ConstSizePermutation::identity(),
+                ConstSizePermutation::new_fn(|q: &OrderedSynthemePoint| OrderedSynthemePoint {
+                    pair: match q.pair {
+                        OrderedSynthemePair::Left => OrderedSynthemePair::Left,
+                        OrderedSynthemePair::Middle => OrderedSynthemePair::Right,
+                        OrderedSynthemePair::Right => OrderedSynthemePair::Middle,
+                    },
+                    side: q.side,
+                })
+                .unwrap(),
+            ] {
+                let perm3 = OrderedSextetLabelling::standard_labelling()
+                    .permute_foursomes(&tetrads_perm3)
+                    .permutation_to_standard_labelling();
+                for power_of_3_cycle in 0usize..3 {
+                    let perm4 = octad_standard_3_cycle().nat_pow(&power_of_3_cycle.into());
+                    perms.push(perm1.compose(&perm2).compose(&perm3).compose(&perm4));
+                }
+            }
+        }
+    }
+    debug_assert_eq!(perms.len(), 48);
+    for perm in &perms {
+        debug_assert!(perm.is_ebgc_automorphism());
+    }
+    perms
+}
+
+/// Return the 48 permutations forming the pointwise stabilizer of the 5 given points
+#[allow(clippy::result_unit_err)]
+pub fn stabilizer_perms_5_points(
+    a: &Point,
+    b: &Point,
+    c: &Point,
+    d: &Point,
+    e: &Point,
+) -> Result<Vec<ConstSizePermutation<24, Point>>, ()> {
+    let given_points = vec![a, b, c, d, e];
+    let given_sorted_points = Point::structure().sort(given_points);
+    if !Point::structure().is_sorted_and_unique(&given_sorted_points) {
+        return Err(());
+    }
+    let conj_perm = find_5_transitive_permutation_to_standard_points(a, b, c, d, e).unwrap();
+    Ok(stabilizer_perms_standard_5_points()
+        .into_iter()
+        .map(|perm| conj_perm.inverse().compose(&perm).compose(&conj_perm))
+        .collect())
+}
+
+/// Find all permutations mapping each of the given pairs of points
+///
+/// # Errors
+///
+/// If the number of pairs of points given is less than 5
+#[allow(clippy::result_unit_err)]
+pub fn find_permutations_from_mappings(
+    mappings: &[(Point, Point)],
+) -> Result<Vec<ConstSizePermutation<24, Point>>, ()> {
+    if mappings.len() < 5 {
+        return Err(());
+    }
+    let (first_five, rest) = mappings.split_at(5);
+    let first_five: [_; 5] = std::array::from_fn(|i| (&first_five[i].0, &first_five[i].1));
+    if let Ok(root_perm) = find_5_transitive_permutation(
+        first_five[0],
+        first_five[1],
+        first_five[2],
+        first_five[3],
+        first_five[4],
+    ) {
+        let mut perms = vec![];
+        for stab_perm in stabilizer_perms_5_points(
+            first_five[0].0,
+            first_five[1].0,
+            first_five[2].0,
+            first_five[3].0,
+            first_five[4].0,
+        )
+        .unwrap()
+        {
+            let perm = root_perm.compose(&stab_perm);
+            if rest.iter().all(|(from, to)| perm.image(from) == *to) {
+                perms.push(perm);
+            }
+        }
+        Ok(perms)
+    } else {
+        Ok(vec![])
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::golay_codes::hexacode::hexacode_ambient_space_structure;
@@ -1494,5 +1643,62 @@ mod tests {
         assert_eq!(perm.image(&p(21)), p(12));
         assert_eq!(perm.image(&p(6)), p(18));
         assert_eq!(perm.image(&p(5)), p(1));
+    }
+
+    #[test]
+    fn test_octad_standard_3_cycle() {
+        let aut = octad_standard_3_cycle();
+        assert!(aut.is_ebgc_automorphism());
+    }
+
+    #[test]
+    fn test_standard_5_stabilizer_perms() {
+        let p = |n: usize| -> Point { Point::enumeration_to_element(&n.into()).unwrap() };
+        for perm in stabilizer_perms_standard_5_points() {
+            assert!(perm.is_ebgc_automorphism());
+            assert_eq!(perm.image(&p(0)), p(0));
+            assert_eq!(perm.image(&p(6)), p(6));
+            assert_eq!(perm.image(&p(12)), p(12));
+            assert_eq!(perm.image(&p(18)), p(18));
+            assert_eq!(perm.image(&p(1)), p(1));
+        }
+    }
+
+    #[test]
+    fn test_find_permutations_from_mappings() {
+        let p = |n: usize| -> Point { Point::enumeration_to_element(&n.into()).unwrap() };
+
+        for mapping in [
+            vec![
+                (p(0), p(0)),
+                (p(1), p(1)),
+                (p(2), p(2)),
+                (p(3), p(3)),
+                (p(4), p(4)),
+            ],
+            vec![
+                (p(0), p(5)),
+                (p(1), p(4)),
+                (p(2), p(3)),
+                (p(3), p(2)),
+                (p(4), p(1)),
+            ],
+            vec![
+                (p(0), p(0)),
+                (p(1), p(1)),
+                (p(2), p(2)),
+                (p(3), p(3)),
+                (p(4), p(4)),
+                (p(5), p(5)),
+            ],
+        ] {
+            let perms = find_permutations_from_mappings(&mapping).unwrap();
+            for perm in perms {
+                assert!(perm.is_ebgc_automorphism());
+                for (from, to) in &mapping {
+                    assert!(perm.image(from) == *to)
+                }
+            }
+        }
     }
 }
