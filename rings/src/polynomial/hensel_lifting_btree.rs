@@ -490,8 +490,8 @@ impl<RS: EuclideanDomainSignature + GreatestCommonDivisorSignature + FactoringMo
 
                 f_factorization.h = lifted_f;
                 g_factorization.h = lifted_g;
-                *a = pring_mod_i2n.add(a, &delta_a);
-                *b = pring_mod_i2n.add(b, &delta_b);
+                *a = pring_mod_i2n.add(&*a, &delta_a);
+                *b = pring_mod_i2n.add(&*b, &delta_b);
 
                 f_factorization.quadratic_lift(ring, i, n);
                 g_factorization.quadratic_lift(ring, i, n);

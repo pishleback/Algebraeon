@@ -211,7 +211,7 @@ impl<
                             for (a_p, a_k) in &mut a.powers {
                                 debug_assert!(self.objects().is_fav_assoc(a_p));
                                 if self.objects().equal(a_p, b_p) {
-                                    *a_k = self.exponents().add(a_k, b_k);
+                                    *a_k = self.exponents().add(&*a_k, b_k);
                                     break 'A_LOOP;
                                 }
                             }

@@ -49,8 +49,16 @@ impl ZeroSignature for IntegerIdealsStructure {
 }
 
 impl AdditionSignature for IntegerIdealsStructure {
-    fn add(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
-        gcd(a.clone(), b.clone())
+    fn add<'a>(
+        self: &Arc<Self>,
+        a: impl Into<Arg<'a, Self::Elem>>,
+        b: impl Into<Arg<'a, Self::Elem>>,
+    ) -> Self::Elem
+    where
+        Self: 'a,
+        Self::Elem: 'a,
+    {
+        gcd(a.into().into_owned(), b.into().into_owned())
     }
 }
 
