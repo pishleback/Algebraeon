@@ -516,6 +516,10 @@ impl OrderedSextetLabelling {
         &self.sextet.inner
     }
 
+    pub fn f4_labels(&self) -> &LabelledPoints<F4> {
+        &self.f4_labels
+    }
+
     #[allow(unused)]
     fn validate(&self) -> Result<(), String> {
         self.sextet.validate()?;
@@ -616,12 +620,21 @@ impl OrderedSextetLabelling {
         }
     }
 
-    pub fn permutation_to_standard_labelling(&self) -> ConstSizePermutation<24, Point> {
+    pub fn to_permutation_to_standard_labelling(&self) -> ConstSizePermutation<24, Point> {
         ConstSizePermutation::new_fn(|p| Point {
             row: *self.f4_labels.image(p),
             col: *self.sextet.inner.image(p),
         })
         .unwrap()
+    }
+
+    pub fn from_permutation_to_standard_labelling(perm: &ConstSizePermutation<24, Point>) -> Self {
+        Self {
+            sextet: OrderedSextet {
+                inner: Function::new(|p: Point| perm.image(&p).col),
+            },
+            f4_labels: Function::new(|p: Point| perm.image(&p).row),
+        }
     }
 }
 
@@ -1098,7 +1111,7 @@ pub fn find_5_transitive_permutation_to_standard_points(
 
     debug_assert!(
         ordered_sextet_labelling
-            .permutation_to_standard_labelling()
+            .to_permutation_to_standard_labelling()
             .is_ebgc_automorphism()
     );
 
@@ -1113,7 +1126,7 @@ pub fn find_5_transitive_permutation_to_standard_points(
     debug_assert_eq!(ordered_sextet_labelling.f4_labels.image(a), &F4::Zero);
     debug_assert!(
         ordered_sextet_labelling
-            .permutation_to_standard_labelling()
+            .to_permutation_to_standard_labelling()
             .is_ebgc_automorphism()
     );
 
@@ -1124,7 +1137,7 @@ pub fn find_5_transitive_permutation_to_standard_points(
     debug_assert_eq!(ordered_sextet_labelling.f4_labels.image(b), &F4::One);
     debug_assert!(
         ordered_sextet_labelling
-            .permutation_to_standard_labelling()
+            .to_permutation_to_standard_labelling()
             .is_ebgc_automorphism()
     );
 
@@ -1141,7 +1154,7 @@ pub fn find_5_transitive_permutation_to_standard_points(
     debug_assert_eq!(ordered_sextet_labelling.f4_labels.image(d), &F4::Beta);
     debug_assert!(
         ordered_sextet_labelling
-            .permutation_to_standard_labelling()
+            .to_permutation_to_standard_labelling()
             .is_ebgc_automorphism()
     );
 
@@ -1164,7 +1177,7 @@ pub fn find_5_transitive_permutation_to_standard_points(
     debug_assert_eq!(ordered_sextet_labelling.f4_labels.image(d), &F4::Beta);
     debug_assert_eq!(ordered_sextet_labelling.f4_labels.image(e), &F4::Zero);
 
-    let aut = ordered_sextet_labelling.permutation_to_standard_labelling();
+    let aut = ordered_sextet_labelling.to_permutation_to_standard_labelling();
     debug_assert!(aut.is_ebgc_automorphism());
     Ok(aut)
 }
@@ -1235,7 +1248,7 @@ fn stabilizer_perms_standard_5_points() -> Vec<ConstSizePermutation<24, Point>> 
     for lambda in F4::list_all_elements() {
         let perm1 = OrderedSextetLabelling::standard_labelling()
             .add_vector(&(lambda * &hexacode_vector))
-            .permutation_to_standard_labelling();
+            .to_permutation_to_standard_labelling();
         for tetrads_perm2 in [
             ConstSizePermutation::identity(),
             ConstSizePermutation::new_fn(|q: &OrderedSynthemePoint| match q.pair {
@@ -1246,7 +1259,7 @@ fn stabilizer_perms_standard_5_points() -> Vec<ConstSizePermutation<24, Point>> 
         ] {
             let perm2 = OrderedSextetLabelling::standard_labelling()
                 .permute_foursomes(&tetrads_perm2)
-                .permutation_to_standard_labelling();
+                .to_permutation_to_standard_labelling();
             for tetrads_perm3 in [
                 ConstSizePermutation::identity(),
                 ConstSizePermutation::new_fn(|q: &OrderedSynthemePoint| OrderedSynthemePoint {
@@ -1261,7 +1274,7 @@ fn stabilizer_perms_standard_5_points() -> Vec<ConstSizePermutation<24, Point>> 
             ] {
                 let perm3 = OrderedSextetLabelling::standard_labelling()
                     .permute_foursomes(&tetrads_perm3)
-                    .permutation_to_standard_labelling();
+                    .to_permutation_to_standard_labelling();
                 for power_of_3_cycle in 0usize..3 {
                     let perm4 = octad_standard_3_cycle().nat_pow(&power_of_3_cycle.into());
                     perms.push(perm1.compose(&perm2).compose(&perm3).compose(&perm4));
