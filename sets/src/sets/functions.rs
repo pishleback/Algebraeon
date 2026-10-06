@@ -80,6 +80,16 @@ impl<Domain: OrderedFiniteSetSignature, Range: SetSignature> FunctionsSignature<
         debug_assert!(self.domain().is_element(x));
         &f[TryInto::<usize>::try_into(self.domain().element_to_enumeration(x)).unwrap()]
     }
+
+    fn image_mut<'a>(
+        self: &Arc<Self>,
+        f: &'a mut Vec<Range::Elem>,
+        x: &Domain::Elem,
+    ) -> &'a mut Range::Elem {
+        debug_assert!(self.is_element(f));
+        debug_assert!(self.domain().is_element(x));
+        &mut f[TryInto::<usize>::try_into(self.domain().element_to_enumeration(x)).unwrap()]
+    }
 }
 
 impl<Domain: OrderedFiniteSetSignature, Range: SetSignature> SetSignature

@@ -3,7 +3,11 @@ use algebraeon_groups::examples::c2::{C2, C2CanonicalStructure};
 use algebraeon_macros::CanonicalStructure;
 use algebraeon_structures::*;
 use cantor::Finite;
-use std::{fmt::Display, sync::Arc};
+use std::{
+    fmt::Display,
+    ops::{Add, Mul, Neg},
+    sync::Arc,
+};
 
 //the finite field of 4 elements
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Ord, Eq, Hash, CanonicalStructure, Finite)]
@@ -278,6 +282,30 @@ impl GaloisFieldWithGroupSignature for QuaternaryFieldCanonicalStructure {
     }
 }
 
+impl Add<QuaternaryField> for QuaternaryField {
+    type Output = QuaternaryField;
+
+    fn add(self, other: QuaternaryField) -> Self::Output {
+        QuaternaryField::structure().add(&self, &other)
+    }
+}
+
+impl Neg for QuaternaryField {
+    type Output = QuaternaryField;
+
+    fn neg(self) -> Self::Output {
+        QuaternaryField::structure().neg(&self)
+    }
+}
+
+impl Mul<QuaternaryField> for QuaternaryField {
+    type Output = QuaternaryField;
+
+    fn mul(self, other: QuaternaryField) -> Self::Output {
+        QuaternaryField::structure().mul(&self, &other)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -298,67 +326,67 @@ mod tests {
     #[test]
     fn test_add() {
         assert_eq!(
-            QuaternaryField::add(&QuaternaryField::Zero, &QuaternaryField::Zero),
+            QuaternaryField::Zero + QuaternaryField::Zero,
             QuaternaryField::Zero
         );
         assert_eq!(
-            QuaternaryField::add(&QuaternaryField::Zero, &QuaternaryField::One),
+            QuaternaryField::Zero + QuaternaryField::One,
             QuaternaryField::One
         );
         assert_eq!(
-            QuaternaryField::add(&QuaternaryField::Zero, &QuaternaryField::Alpha),
+            QuaternaryField::Zero + QuaternaryField::Alpha,
             QuaternaryField::Alpha
         );
         assert_eq!(
-            QuaternaryField::add(&QuaternaryField::Zero, &QuaternaryField::Beta),
+            QuaternaryField::Zero + QuaternaryField::Beta,
             QuaternaryField::Beta
         );
         assert_eq!(
-            QuaternaryField::add(&QuaternaryField::One, &QuaternaryField::Zero),
+            QuaternaryField::One + QuaternaryField::Zero,
             QuaternaryField::One
         );
         assert_eq!(
-            QuaternaryField::add(&QuaternaryField::One, &QuaternaryField::One),
+            QuaternaryField::One + QuaternaryField::One,
             QuaternaryField::Zero
         );
         assert_eq!(
-            QuaternaryField::add(&QuaternaryField::One, &QuaternaryField::Alpha),
+            QuaternaryField::One + QuaternaryField::Alpha,
             QuaternaryField::Beta
         );
         assert_eq!(
-            QuaternaryField::add(&QuaternaryField::One, &QuaternaryField::Beta),
+            QuaternaryField::One + QuaternaryField::Beta,
             QuaternaryField::Alpha
         );
         assert_eq!(
-            QuaternaryField::add(&QuaternaryField::Alpha, &QuaternaryField::Zero),
+            QuaternaryField::Alpha + QuaternaryField::Zero,
             QuaternaryField::Alpha
         );
         assert_eq!(
-            QuaternaryField::add(&QuaternaryField::Alpha, &QuaternaryField::One),
+            QuaternaryField::Alpha + QuaternaryField::One,
             QuaternaryField::Beta
         );
         assert_eq!(
-            QuaternaryField::add(&QuaternaryField::Alpha, &QuaternaryField::Alpha),
+            QuaternaryField::Alpha + QuaternaryField::Alpha,
             QuaternaryField::Zero
         );
         assert_eq!(
-            QuaternaryField::add(&QuaternaryField::Alpha, &QuaternaryField::Beta),
+            QuaternaryField::Alpha + QuaternaryField::Beta,
             QuaternaryField::One
         );
         assert_eq!(
-            QuaternaryField::add(&QuaternaryField::Beta, &QuaternaryField::Zero),
+            QuaternaryField::Beta + QuaternaryField::Zero,
             QuaternaryField::Beta
         );
         assert_eq!(
-            QuaternaryField::add(&QuaternaryField::Beta, &QuaternaryField::One),
+            QuaternaryField::Beta + QuaternaryField::One,
             QuaternaryField::Alpha
         );
         assert_eq!(
-            QuaternaryField::add(&QuaternaryField::Beta, &QuaternaryField::Alpha),
+            QuaternaryField::Beta + QuaternaryField::Alpha,
             QuaternaryField::One
         );
         assert_eq!(
-            QuaternaryField::add(&QuaternaryField::Beta, &QuaternaryField::Beta),
+            QuaternaryField::Beta + QuaternaryField::Beta,
             QuaternaryField::Zero
         );
     }
@@ -366,67 +394,67 @@ mod tests {
     #[test]
     fn test_mul() {
         assert_eq!(
-            QuaternaryField::mul(&QuaternaryField::Zero, &QuaternaryField::Zero),
+            QuaternaryField::Zero * QuaternaryField::Zero,
             QuaternaryField::Zero
         );
         assert_eq!(
-            QuaternaryField::mul(&QuaternaryField::Zero, &QuaternaryField::One),
+            QuaternaryField::Zero * QuaternaryField::One,
             QuaternaryField::Zero
         );
         assert_eq!(
-            QuaternaryField::mul(&QuaternaryField::Zero, &QuaternaryField::Alpha),
+            QuaternaryField::Zero * QuaternaryField::Alpha,
             QuaternaryField::Zero
         );
         assert_eq!(
-            QuaternaryField::mul(&QuaternaryField::Zero, &QuaternaryField::Beta),
+            QuaternaryField::Zero * QuaternaryField::Beta,
             QuaternaryField::Zero
         );
         assert_eq!(
-            QuaternaryField::mul(&QuaternaryField::One, &QuaternaryField::Zero),
+            QuaternaryField::One * QuaternaryField::Zero,
             QuaternaryField::Zero
         );
         assert_eq!(
-            QuaternaryField::mul(&QuaternaryField::One, &QuaternaryField::One),
+            QuaternaryField::One * QuaternaryField::One,
             QuaternaryField::One
         );
         assert_eq!(
-            QuaternaryField::mul(&QuaternaryField::One, &QuaternaryField::Alpha),
+            QuaternaryField::One * QuaternaryField::Alpha,
             QuaternaryField::Alpha
         );
         assert_eq!(
-            QuaternaryField::mul(&QuaternaryField::One, &QuaternaryField::Beta),
+            QuaternaryField::One * QuaternaryField::Beta,
             QuaternaryField::Beta
         );
         assert_eq!(
-            QuaternaryField::mul(&QuaternaryField::Alpha, &QuaternaryField::Zero),
+            QuaternaryField::Alpha * QuaternaryField::Zero,
             QuaternaryField::Zero
         );
         assert_eq!(
-            QuaternaryField::mul(&QuaternaryField::Alpha, &QuaternaryField::One),
+            QuaternaryField::Alpha * QuaternaryField::One,
             QuaternaryField::Alpha
         );
         assert_eq!(
-            QuaternaryField::mul(&QuaternaryField::Alpha, &QuaternaryField::Alpha),
+            QuaternaryField::Alpha * QuaternaryField::Alpha,
             QuaternaryField::Beta
         );
         assert_eq!(
-            QuaternaryField::mul(&QuaternaryField::Alpha, &QuaternaryField::Beta),
+            QuaternaryField::Alpha * QuaternaryField::Beta,
             QuaternaryField::One
         );
         assert_eq!(
-            QuaternaryField::mul(&QuaternaryField::Beta, &QuaternaryField::Zero),
+            QuaternaryField::Beta * QuaternaryField::Zero,
             QuaternaryField::Zero
         );
         assert_eq!(
-            QuaternaryField::mul(&QuaternaryField::Beta, &QuaternaryField::One),
+            QuaternaryField::Beta * QuaternaryField::One,
             QuaternaryField::Beta
         );
         assert_eq!(
-            QuaternaryField::mul(&QuaternaryField::Beta, &QuaternaryField::Alpha),
+            QuaternaryField::Beta * QuaternaryField::Alpha,
             QuaternaryField::One
         );
         assert_eq!(
-            QuaternaryField::mul(&QuaternaryField::Beta, &QuaternaryField::Beta),
+            QuaternaryField::Beta * QuaternaryField::Beta,
             QuaternaryField::Alpha
         );
     }

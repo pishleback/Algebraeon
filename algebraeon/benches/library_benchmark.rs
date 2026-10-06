@@ -81,15 +81,15 @@ library_benchmark_group!(
             vec![0, 0, 0, 0, 1, 0, 18196916159],
             vec![0, 0, 0, 0, 0, 1, 21134756212],
     ]),
-    &StandardInnerProduct::new(Integer::structure()),
+    StandardInnerProduct::new(Integer::structure()),
     Rational::from_str("3/4").unwrap()
 )]
-fn bench_lll_integral_dim6(
+fn bench_lll_integral_dim6<IP: RealInnerProduct<IntegerCanonicalStructure>>(
     mat: Matrix<Integer>,
-    inner_product: &Arc<impl RealInnerProduct<IntegerCanonicalStructure>>,
+    inner_product: Arc<IP>,
     delta: Rational,
 ) {
-    black_box(mat.lll_integral_row_reduction_algorithm(inner_product, &delta));
+    black_box(mat.lll_integral_row_reduction_algorithm(&inner_product, &delta));
 }
 
 library_benchmark_group!(

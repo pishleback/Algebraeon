@@ -1,9 +1,9 @@
 use crate::*;
 
 /// Return an iterator generating all prime numbers.
-pub fn primes() -> impl Iterator<Item = usize> {
+pub fn primes() -> impl Iterator<Item = u64> {
     use malachite::base::num::factorization::traits::Primes;
-    usize::primes()
+    u64::primes()
 }
 
 impl Natural {

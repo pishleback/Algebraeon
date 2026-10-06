@@ -4,7 +4,7 @@ use algebraeon_structures::*;
 pub enum IsPowerTestResult {
     Zero,
     One,
-    Power(Natural, usize),
+    Power(Natural, u64),
     No,
 }
 
@@ -18,7 +18,7 @@ pub fn is_power_test(n: &Natural) -> IsPowerTestResult {
         // The largest power n can possibly be is when n is a power of 2 and n = 2^{bitcount(n)+1}
         // So we only need to check n isn't a kth power up to k = bitcount(n)+1
         // We also only need to check for prime k
-        let max_k = n.bitcount() + 1;
+        let max_k = n.bitcount() as u64 + 1;
         for k in primes().take_while(|&k| k <= max_k) {
             let a = n.nth_root_floor(&k.into());
             if *n == a.pow(&k.into()) {

@@ -180,18 +180,18 @@ pub trait FinitelyFreeModuleSignature<Basis: FiniteSetSignature, Ring: RingSigna
 
     fn generated_submodule(
         self: &Arc<Self>,
-        generators: Vec<&Self::Elem>,
+        generators: Vec<impl Borrow<Self::Elem>>,
     ) -> FinitelyFreeSubmodule<Ring::Elem>
     where
         Basis: OrderedFiniteSetSignature,
         Ring: ReducedHermiteAlgorithmSignature,
     {
         for generator in &generators {
-            debug_assert!(self.validate_element(generator).is_ok());
+            debug_assert!(self.validate_element(generator.borrow()).is_ok());
         }
         let generators = generators
             .into_iter()
-            .map(|g| self.to_vec(g))
+            .map(|g| self.to_vec(g.borrow()))
             .collect::<Vec<_>>();
         let row_span = Matrix::construct(generators.len(), self.rank(), |r, c| {
             generators[r][c].clone()
