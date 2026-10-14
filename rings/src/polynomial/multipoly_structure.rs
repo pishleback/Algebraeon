@@ -99,8 +99,21 @@ impl<RS: RingEqSignature> ZeroSignature for MultiPolynomialStructure<RS> {
 }
 
 impl<RS: RingEqSignature> AdditionSignature for MultiPolynomialStructure<RS> {
-    fn add(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
-        let mut a = a.clone();
+    fn add<'a>(
+        self: &Arc<Self>,
+        a: impl Into<Arg<'a, Self::Elem>>,
+        b: impl Into<Arg<'a, Self::Elem>>,
+    ) -> Self::Elem
+    where
+        Self: 'a,
+        Self::Elem: 'a,
+    {
+        let (mut a, b) = match (a.into(), b.into()) {
+            (Arg::Borrowed(a), Arg::Borrowed(b)) => (a.clone(), Arg::Borrowed(b)),
+            (Arg::Owned(a), b) => (a, b),
+            (a, Arg::Owned(b)) => (b, a),
+        };
+
         let mut existing_monomials: HashMap<Monomial, usize> = HashMap::new(); //the index of each monomial
         for (
             idx,

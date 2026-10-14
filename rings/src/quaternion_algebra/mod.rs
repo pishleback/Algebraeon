@@ -121,7 +121,17 @@ impl<Field: FieldSignature> ZeroSignature for QuaternionAlgebraStructure<Field> 
 }
 
 impl<Field: FieldSignature> AdditionSignature for QuaternionAlgebraStructure<Field> {
-    fn add(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn add<'a>(
+        self: &Arc<Self>,
+        a: impl Into<Arg<'a, Self::Elem>>,
+        b: impl Into<Arg<'a, Self::Elem>>,
+    ) -> Self::Elem
+    where
+        Self: 'a,
+        Self::Elem: 'a,
+    {
+        let a = a.into();
+        let b = b.into();
         QuaternionAlgebraElement {
             x: self.base.add(&a.x, &b.x),
             y: self.base.add(&a.y, &b.y),

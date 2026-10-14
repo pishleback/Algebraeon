@@ -201,7 +201,15 @@ impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> ZeroSignature
 impl<RS: EuclideanDomainSignature, const IS_FIELD: bool> AdditionSignature
     for EuclideanRemainderQuotientStructure<RS, IS_FIELD>
 {
-    fn add(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn add<'a>(
+        self: &Arc<Self>,
+        a: impl Into<Arg<'a, Self::Elem>>,
+        b: impl Into<Arg<'a, Self::Elem>>,
+    ) -> Self::Elem
+    where
+        Self: 'a,
+        Self::Elem: 'a,
+    {
         self.ring().rem(&self.ring().add(a, b), &self.modulus)
     }
 }

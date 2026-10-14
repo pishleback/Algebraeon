@@ -187,11 +187,22 @@ impl ZeroSignature for MontgomeryModuloOddStructure {
 }
 
 impl AdditionSignature for MontgomeryModuloOddStructure {
-    fn add(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn add<'a>(
+        self: &Arc<Self>,
+        a: impl Into<Arg<'a, Self::Elem>>,
+        b: impl Into<Arg<'a, Self::Elem>>,
+    ) -> Self::Elem
+    where
+        Self: 'a,
+        Self::Elem: 'a,
+    {
+        let a = a.into().into_owned();
+        let b = b.into().into_owned();
+
         #[cfg(debug_assertions)]
         {
-            self.validate_element(a).unwrap();
-            self.validate_element(b).unwrap();
+            self.validate_element(&a).unwrap();
+            self.validate_element(&b).unwrap();
         }
         let s = a + b;
         let s = if s >= self.n { s - self.n } else { s };
@@ -395,7 +406,15 @@ impl ZeroSignature for MontgomeryModuloOddPrimeStructure {
 }
 
 impl AdditionSignature for MontgomeryModuloOddPrimeStructure {
-    fn add(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
+    fn add<'a>(
+        self: &Arc<Self>,
+        a: impl Into<Arg<'a, Self::Elem>>,
+        b: impl Into<Arg<'a, Self::Elem>>,
+    ) -> Self::Elem
+    where
+        Self: 'a,
+        Self::Elem: 'a,
+    {
         self.sup.add(a, b)
     }
 }

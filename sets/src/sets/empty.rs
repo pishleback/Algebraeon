@@ -28,9 +28,9 @@ impl<Elem> Default for EmptySetStructure<Elem> {
     }
 }
 
-impl<Elem: Clone + Send + Sync> Signature for EmptySetStructure<Elem> {}
+impl<Elem: Clone + Send + Sync + 'static> Signature for EmptySetStructure<Elem> {}
 
-impl<Elem: Debug + Clone + Send + Sync> SetSignature for EmptySetStructure<Elem> {
+impl<Elem: Debug + Clone + Send + Sync + 'static> SetSignature for EmptySetStructure<Elem> {
     type Elem = Elem;
 
     fn validate_element(self: &Arc<Self>, _: &Self::Elem) -> Result<(), String> {
@@ -38,19 +38,19 @@ impl<Elem: Debug + Clone + Send + Sync> SetSignature for EmptySetStructure<Elem>
     }
 }
 
-impl<Elem: Debug + Clone + Send + Sync> EqSignature for EmptySetStructure<Elem> {
+impl<Elem: Debug + Clone + Send + Sync + 'static> EqSignature for EmptySetStructure<Elem> {
     fn equal(self: &Arc<Self>, _: &Self::Elem, _: &Self::Elem) -> bool {
         panic!("Empty set had no elements to compare for equality")
     }
 }
 
-impl<Elem: Debug + Clone + Send + Sync> PartialOrdSignature for EmptySetStructure<Elem> {
+impl<Elem: Debug + Clone + Send + Sync + 'static> PartialOrdSignature for EmptySetStructure<Elem> {
     fn partial_cmp(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Option<std::cmp::Ordering> {
         Some(self.cmp(a, b))
     }
 }
 
-impl<Elem: Debug + Clone + Send + Sync> OrdSignature for EmptySetStructure<Elem> {
+impl<Elem: Debug + Clone + Send + Sync + 'static> OrdSignature for EmptySetStructure<Elem> {
     fn cmp(self: &Arc<Self>, _: &Self::Elem, _: &Self::Elem) -> std::cmp::Ordering {
         panic!("Empty set had no elements to compare for ordering")
     }

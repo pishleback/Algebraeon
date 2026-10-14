@@ -75,7 +75,14 @@ mod unconstructable_universal_structure {
     }
 
     impl<Set: Debug + Clone + Send + Sync> AdditionSignature for UnconstructableStructure<Set> {
-        fn add(self: &Arc<Self>, _a: &Self::Elem, _b: &Self::Elem) -> Self::Elem {
+        fn add<'a>(
+            self: &Arc<Self>,
+            _a: impl Into<Arg<'a, Self::Elem>>,
+            _b: impl Into<Arg<'a, Self::Elem>>,
+        ) -> Self::Elem
+        where
+            Self::Elem: 'a,
+        {
             unreachable!()
         }
     }
@@ -201,10 +208,17 @@ pub trait ZeroSignature: RinglikeSpecializationSignature {
 /// A set with an associative commutative binary operation of addition.
 #[signature_meta_trait]
 pub trait AdditionSignature: RinglikeSpecializationSignature {
-    fn add(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem;
+    fn add<'a>(
+        self: &Arc<Self>,
+        a: impl Into<Arg<'a, Self::Elem>>,
+        b: impl Into<Arg<'a, Self::Elem>>,
+    ) -> Self::Elem
+    where
+        Self: 'a,
+        Self::Elem: 'a;
 
     fn add_mut(self: &Arc<Self>, a: &mut Self::Elem, b: &Self::Elem) {
-        *a = self.add(a, b);
+        *a = self.add(&*a, b);
     }
 }
 

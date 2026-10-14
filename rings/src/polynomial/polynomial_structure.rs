@@ -362,8 +362,16 @@ impl<RS: SemiRingEqSignature> ZeroSignature for PolynomialStructure<RS> {
 }
 
 impl<RS: SemiRingEqSignature> AdditionSignature for PolynomialStructure<RS> {
-    fn add(self: &Arc<Self>, a: &Self::Elem, b: &Self::Elem) -> Self::Elem {
-        self.add_impl(a, b)
+    fn add<'a>(
+        self: &Arc<Self>,
+        a: impl Into<Arg<'a, Self::Elem>>,
+        b: impl Into<Arg<'a, Self::Elem>>,
+    ) -> Self::Elem
+    where
+        Self: 'a,
+        Self::Elem: 'a,
+    {
+        self.add_impl(&a.into(), &b.into())
     }
 }
 
